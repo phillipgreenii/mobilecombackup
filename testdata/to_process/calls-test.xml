@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<!--File Created By Call Logs Backup & Restore v3.51 on 18/04/2015 08:00:56-->
+<?xml-stylesheet type="text/xsl" href="calls.xsl"?>
+<calls count="56">
+  <call number="5555550000" duration="0" date="1410881505425" type="3" readable_date="Sep 16, 2014 11:31:45 AM" contact_name="(Unknown)" />
+  <call number="5555550001" duration="38" date="1410886983207" type="1" readable_date="Sep 16, 2014 1:03:03 PM" contact_name="John Stuart" />
+  <call number="5555550001" duration="43" date="1411053850787" type="1" readable_date="Sep 18, 2014 11:24:10 AM" contact_name="John Stuart" />
+  <call number="5555550003" duration="0" date="1411159516747" type="3" readable_date="Sep 19, 2014 4:45:16 PM" contact_name="Jack Daniels" />
+  <call number="5555550004" duration="39" date="1411220005294" type="1" readable_date="Sep 20, 2014 9:33:25 AM" contact_name="Oscar Wilde" />
+  <call number="5555550004" duration="20" date="1411306115904" type="1" readable_date="Sep 21, 2014 9:28:35 AM" contact_name="Oscar Wilde" />
+  <call number="5555550004" duration="130" date="1411331568231" type="2" readable_date="Sep 21, 2014 4:32:48 PM" contact_name="Oscar Wilde" />
+  <call number="15555550014" duration="576" date="1413899227828" type="2" readable_date="Oct 21, 2014 9:47:07 AM" contact_name="(Unknown)" />
+  <call number="5555550008" duration="0" date="1413928624905" type="3" readable_date="Oct 21, 2014 5:57:04 PM" contact_name="Cindy Lauper" />
+  <call number="5555550008" duration="142" date="1413931152037" type="2" readable_date="Oct 21, 2014 6:39:12 PM" contact_name="Cindy Lauper" />
+  <call number="+15555550013" duration="33" date="1415054053956" type="2" readable_date="Nov 3, 2014 5:34:13 PM" contact_name="Cindy Lauper" />
+  <call number="+15555550015" duration="20" date="1415057583749" type="2" readable_date="Nov 3, 2014 6:33:03 PM" contact_name="(Unknown)" />
+  <call number="+15555550015" duration="22" date="1415057619663" type="2" readable_date="Nov 3, 2014 6:33:39 PM" contact_name="(Unknown)" />
+  <call number="5555550016" duration="0" date="1417480628929" type="3" readable_date="Dec 1, 2014 7:37:08 PM" contact_name="(Unknown)" />
+  <call number="5555550017" duration="123" date="1417624661510" type="2" readable_date="Dec 3, 2014 11:37:41 AM" contact_name="(Unknown)" />
+  <call number="5555550018" duration="505" date="1417634637883" type="2" readable_date="Dec 3, 2014 2:23:57 PM" contact_name="(Unknown)" />
+  <call number="+15555550013" duration="43" date="1417648866955" type="2" readable_date="Dec 3, 2014 6:21:06 PM" contact_name="Cindy Lauper" />
+  <call number="5555550019" duration="86" date="1417663947773" type="2" readable_date="Dec 3, 2014 10:32:27 PM" contact_name="(Unknown)" />
+  <call number="5555550027" duration="0" date="1429195819560" type="3" readable_date="Apr 16, 2015 10:50:19 AM" contact_name="(Unknown)" />
+  <call number="5555550028" duration="0" date="1429223346465" type="3" readable_date="Apr 16, 2015 6:29:06 PM" contact_name="(Unknown)" />
+  <call number="5555550029" duration="36" date="1429304773088" type="2" readable_date="Apr 17, 2015 5:06:13 PM" contact_name="(Unknown)" />
+  <call number="5555550001" duration="1001" date="1429319742235" type="1" readable_date="Apr 17, 2015 9:15:42 PM" contact_name="John Stuart" />
+</calls>
