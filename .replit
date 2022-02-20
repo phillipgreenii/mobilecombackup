@@ -1,5 +1,5 @@
-run = ["go", "run", "main.go"]
-entrypoint = "main.go"
+run = ["go", "run", "cmd/mobilecombackup/main.go"]
+entrypoint = "cmd/mobilecombackup/main.go"
 
 [languages.go]
 pattern = "**/*.go"
