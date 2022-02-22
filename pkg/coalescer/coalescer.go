@@ -11,5 +11,6 @@ type Result struct {
 type Coalescer interface {
 	Coalesce(filePath string) (Result, error)
   Supports(filePath string) (bool, error)
+  Flush() error
 }
 

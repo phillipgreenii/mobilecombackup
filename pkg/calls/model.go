@@ -11,6 +11,7 @@ import (
 type Calls struct {
 	XMLName xml.Name `xml:"calls"`
 	Calls   []Call   `xml:"call"`
+	Count   int      `xml:"count,attr"`
 }
 
 type Call struct {

@@ -1,6 +1,7 @@
 package mobilecombackup
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 
@@ -30,10 +31,9 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 	go func() {
 		filepath.Walk(fileRoot, func(path string, info os.FileInfo, err error) error {
 
-			if !info.IsDir() {
+			if info.IsDir() {
 				return nil
 			}
-
 			var supports, serr = c.Supports(path)
 
 			if err != nil {
@@ -41,6 +41,7 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 			}
 
 			if supports {
+				log.Printf("found path: %s\n", path)
 				paths <- path
 			}
 
@@ -50,38 +51,37 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 	}()
 
 	go func() {
-		var keepGoing bool = true
+		// var keepGoing bool = true
 		for {
-			select {
-			case p, ok := <-paths:
-				keepGoing = ok
-				var r, err = c.Coalesce(p)
-				if err != nil {
-					// todo
-				} else {
-					results <- r
-				}
-
-			}
-			if !keepGoing {
+			p, ok := <-paths
+			if !ok {
 				break
 			}
+			// keepGoing = ok
+			var r, err = c.Coalesce(p)
+			log.Printf("Coalesced [%s]: %v;%v", p, r, err)
+			if err != nil {
+				// todo
+			} else {
+				results <- r
+			}
 		}
-
+    var err = c.Flush()
+    if err != nil {
+      log.Printf("Error on Flush: %v", err)
+      
+    }
 		close(results)
 	}()
 
-	var keepGoing bool = true
 	for {
-		select {
-		case r, ok := <-results:
-			keepGoing = ok
-			res.Total = r.Total
-			res.New += r.New
-		}
-		if !keepGoing {
+		r, ok := <-results
+		if !ok {
 			break
 		}
+		res.Total = r.Total
+		res.New += r.New
+
 	}
 
 	return res, nil
