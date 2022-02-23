@@ -31,6 +31,6 @@ jobs:
           overwrite: true
           pre_command: export CGO_ENABLED=0
           # Where to run `go build .`
-          project_path: mobilecombackup
+          project_path: cmd/mobilecombackup
           binary_name: mobilecombackup
           asset_name: "${{ matrix.goos }}_${{ matrix.goarch }}"
