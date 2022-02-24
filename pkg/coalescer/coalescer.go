@@ -1,16 +1,14 @@
 package coalescer
 
-import (
-)
+import ()
 
 type Result struct {
-	Total    int
-	New      int
+	Total int
+	New   int
 }
 
 type Coalescer interface {
 	Coalesce(filePath string) (Result, error)
-  Supports(filePath string) (bool, error)
-  Flush() error
+	Supports(filePath string) (bool, error)
+	Flush() error
 }
-

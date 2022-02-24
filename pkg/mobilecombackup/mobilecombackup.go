@@ -41,7 +41,6 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 			}
 
 			if supports {
-				log.Printf("found path: %s\n", path)
 				paths <- path
 			}
 
@@ -51,26 +50,23 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 	}()
 
 	go func() {
-		// var keepGoing bool = true
 		for {
 			p, ok := <-paths
 			if !ok {
 				break
 			}
-			// keepGoing = ok
 			var r, err = c.Coalesce(p)
-			log.Printf("Coalesced [%s]: %v;%v", p, r, err)
 			if err != nil {
-				// todo
+        log.Printf("Error on Coalescing [%s]: %v", p, err)
 			} else {
+        log.Printf("Coalesced [%s]: %v", p, r)
 				results <- r
 			}
 		}
-    var err = c.Flush()
-    if err != nil {
-      log.Printf("Error on Flush: %v", err)
-      
-    }
+		var err = c.Flush()
+		if err != nil {
+			log.Printf("Error on Flush: %v", err)
+		}
 		close(results)
 	}()
 
@@ -98,9 +94,9 @@ func (s *processorState) Process(fileRoot string) (Result, error) {
 	return Result{cResult}, nil
 }
 
-func Init(rootPath string) Processor {
+func Init(rootPath string) (Processor, error) {
 	return &processorState{
 		rootPath,
 		calls.Init(rootPath),
-	}
+	}, nil
 }
