@@ -2,14 +2,12 @@ package calls
 
 import (
 	"encoding/xml"
+	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	//"errors"
-	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 )
 
 type Key struct {

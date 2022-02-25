@@ -1,4 +1,4 @@
-package main
+package mobilecombackup
 
 import (
 	"bytes"
@@ -20,12 +20,12 @@ func parseFlags(progname string, args []string) (conf *config, output string, er
 	var buf bytes.Buffer
 	flags.SetOutput(&buf)
 
-  flags.Usage = func() {
-        fmt.Fprintf(flags.Output(), "Usage of %s [options] [pathToProcess1 ... pathToProcessN]:\n", progname)
+	flags.Usage = func() {
+		fmt.Fprintf(flags.Output(), "Usage of %s [options] [pathToProcess1 ... pathToProcessN]:\n", progname)
 
-        flags.PrintDefaults()
-  }
-  
+		flags.PrintDefaults()
+	}
+
 	var c config
 	flags.StringVar(&c.repoPath, "repo", ".", "path which contains repository")
 
@@ -68,29 +68,34 @@ func doWork(conf *config) error {
 	}
 }
 
-func main() {
-	exitCode := 0
-	defer func() { os.Exit(exitCode) }()
-
-	conf, output, err := parseFlags(os.Args[0], os.Args[1:])
+func Run(args []string) (exitCode int, output *string, err error) {
+	conf, o, err := parseFlags(args[0], args[1:])
 	if err == flag.ErrHelp {
-		fmt.Fprintln(os.Stderr, output)
-		os.Exit(4)
+		return 4, nil, err
 	} else if err != nil {
-		fmt.Fprintln(os.Stderr, "got error:", err)
-		fmt.Fprintln(os.Stderr, "output:\n", output)
-		os.Exit(3)
+		return 3, &o, err
 	}
 
 	err = validateConfig(conf)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "got error:", err)
-		os.Exit(2)
+		return 2, nil, err
 	}
 
 	err = doWork(conf)
 	if err != nil {
+		return 1, nil, err
+	}
+
+	return 0, nil, nil
+}
+
+func main() {
+	exitCode, output, err := Run(os.Args)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "got error:", err)
-		os.Exit(1)
+		if output != nil {
+			fmt.Fprintln(os.Stderr, "output:\n", output)
+		}
+		os.Exit(exitCode)
 	}
 }

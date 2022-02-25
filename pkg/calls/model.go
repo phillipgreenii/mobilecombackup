@@ -2,10 +2,6 @@ package calls
 
 import (
 	"encoding/xml"
-	//"os"
-	//"strings"
-  //"path/filepath"
-	//"errors"
 )
 
 type Calls struct {
@@ -23,4 +19,3 @@ type Call struct {
 	ReadableDate string   `xml:"readable_date,attr"`
 	ContactName  string   `xml:"contact_name,attr"`
 }
-
