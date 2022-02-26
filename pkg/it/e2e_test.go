@@ -3,12 +3,14 @@
 package it_test
 
 import (
-	"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup"
+	"bufio"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/mobilecombackup"
 )
 
 func TestE2E(t *testing.T) {
@@ -18,10 +20,13 @@ func TestE2E(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	repoDir := filepath.Join(tmpdir, "archive")
+	pathToProcess := filepath.Join(tmpdir, "to_process")
+
 	exitCode, _, err := mobilecombackup.Run([]string{
 		"mobilecombackup-test",
-		"-repo", filepath.Join(tmpdir, "archive"),
-		filepath.Join(tmpdir, "to_process"),
+		"-repo", repoDir,
+		pathToProcess,
 	})
 
 	if err != nil {
@@ -31,10 +36,17 @@ func TestE2E(t *testing.T) {
 		t.Errorf("exitCode got %d, want 0", exitCode)
 	}
 
-	// need to check that coalesced calls.xml matches expected value
-	// to make this run, the package was changed on cmd/mobilecombackup/main.go which doesn't seem to allow it to be buildable, so may need to refactor the code some more.
-  // perhaps result of Run could include result counts?
-	t.Errorf("implement me")
+	callLineCount, err := countLines(filepath.Join(repoDir, "calls.xml"))
+	if err != nil {
+		t.Errorf("error while counting call lines: %v", err)
+	}
+	expectedCallLineCount := (2 + // header
+		1 + // opening tag
+		1 + // closing tag
+		22) // count of calls
+	if callLineCount != expectedCallLineCount {
+		t.Errorf("callLineCount got %d, want %d", callLineCount, expectedCallLineCount)
+	}
 }
 
 // based on https://stackoverflow.com/a/64733815/388006
@@ -72,4 +84,15 @@ func copyFile(source, destination string) error {
 	_, err = io.Copy(d, s)
 
 	return err
+}
+
+func countLines(source string) (int, error) {
+	file, _ := os.Open(source)
+	defer file.Close()
+	fileScanner := bufio.NewScanner(file)
+	lineCount := 0
+	for fileScanner.Scan() {
+		lineCount++
+	}
+	return lineCount, nil
 }
