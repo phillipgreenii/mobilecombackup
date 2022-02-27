@@ -15,7 +15,7 @@ import (
 
 func TestE2E(t *testing.T) {
 	tmpdir := t.TempDir()
-	err := copyDir("../../testdata", tmpdir)
+	err := copyDir("../testdata", tmpdir)
 	if err != nil {
 		t.Fatal(err)
 	}
