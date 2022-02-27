@@ -49,9 +49,9 @@ func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) 
 			}
 			var r, err = c.Coalesce(p)
 			if err != nil {
-        log.Printf("Error on Coalescing [%s]: %v", p, err)
+				log.Printf("Error on Coalescing [%s]: %v", p, err)
 			} else {
-        log.Printf("Coalesced [%s]: %v", p, r)
+				log.Printf("Coalesced [%s]: %v", p, r)
 				results <- r
 			}
 		}
