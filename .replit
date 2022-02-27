@@ -1,4 +1,4 @@
-run = ["go", "test", "./..."]
+run = ["go", "test", "-race", "./..."]
 entrypoint = "cmd/mobilecombackup/main.go"
 
 [languages.go]
