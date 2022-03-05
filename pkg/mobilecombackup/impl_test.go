@@ -19,11 +19,11 @@ func TestProcess(t *testing.T) {
 	repoDir := filepath.Join(tmpdir, "archive")
 	pathToProcess := filepath.Join(tmpdir, "to_process")
 
-	mockCC := mockCallCoalescer{}
+	mockCC := mockCallCoalescer{total: 10}
 
 	processor := processorState{
 		repoDir,
-		mockCC,
+		&mockCC,
 	}
 
 	result, err := processor.Process(pathToProcess)
@@ -31,7 +31,18 @@ func TestProcess(t *testing.T) {
 		t.Errorf("err got %v, want nil", err)
 	}
 
-	// TODO check files, result, flush
+	if result.Calls.Total != 38 {
+		t.Errorf("total got %d, want 38", result.Calls.Total)
+	}
+	if result.Calls.New != 28 {
+		t.Errorf("new got %d, want 28", result.Calls.New)
+	}
+	if len(mockCC.pathsCoalesced) != 2 {
+		t.Errorf("pathsCoalesced got %d, want 2", len(mockCC.pathsCoalesced))
+	}
+	if mockCC.flushes != 1 {
+		t.Errorf("flushes got %d, want 1", mockCC.flushes)
+	}
 }
 
 type mockCallCoalescer struct {
@@ -46,18 +57,18 @@ func (mcc *mockCallCoalescer) Supports(filePath string) (bool, error) {
 }
 
 func (mcc *mockCallCoalescer) Coalesce(filePath string) (coalescer.Result, error) {
+	entriesAdded := len(filepath.Base(filePath))
 	mcc.pathsCoalesced = append(mcc.pathsCoalesced, filePath)
-	mcc.total += len(mcc.pathsCoalesced)
+	mcc.total += entriesAdded
 
 	var result coalescer.Result
-	result.New = len(mcc.pathsCoalesced)
+	result.New = entriesAdded
 	result.Total = mcc.total
 
 	return result, nil
 }
 
 func (mcc *mockCallCoalescer) Flush() error {
-
 	mcc.flushes += 1
 
 	return nil
