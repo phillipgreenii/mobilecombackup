@@ -2,7 +2,9 @@ package calls
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,19 +28,44 @@ type backup struct {
 	calls     map[Key]Call
 }
 
+type multierror struct {
+	msg    string
+	errors []error
+}
+
+func (m *multierror) Error() string {
+	var sb strings.Builder
+	sb.WriteString(m.msg)
+	for _, m := range m.errors {
+		sb.WriteString("\n\t")
+		sb.WriteString(m.Error())
+	}
+	return sb.String()
+}
+
 func (b *backup) ingest(file *os.File) error {
 	// load file
 	decoder := xml.NewDecoder(file)
+	errs := make([]error, 20)
 	for {
-		t, _ := decoder.Token()
-		if t == nil {
+		t, err := decoder.Token()
+		if err == io.EOF || t == nil {
 			break
 		}
+		if err != nil {
+			errs = append(errs, err)
+			break
+		}
+
 		switch se := t.(type) {
 		case xml.StartElement:
 			if se.Name.Local == "call" {
 				var call Call
-				decoder.DecodeElement(&call, &se)
+				err := decoder.DecodeElement(&call, &se)
+				if err != nil {
+					errs = append(errs, err)
+					break
+				}
 				var k = call.key()
 				if _, ok := b.calls[k]; !ok {
 					b.calls[k] = call
@@ -47,6 +74,10 @@ func (b *backup) ingest(file *os.File) error {
 		default:
 		}
 	}
+	if len(errs) > 0 {
+		return &multierror{msg: fmt.Sprintf("Error parsing %s", file.Name()), errors: errs}
+	}
+
 	return nil
 }
 
