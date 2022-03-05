@@ -1,10 +1,10 @@
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
       - name: Run linters
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.29
+          version: latest
   test:
     strategy:
       matrix:
