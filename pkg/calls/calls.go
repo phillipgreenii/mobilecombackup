@@ -157,10 +157,13 @@ func (b *backup) BackingFile() string {
 func Init(rootDir string) coalescer.Coalescer {
 	var backup = backup{rootDir, map[Key]Call{}}
 	var cf = backup.BackingFile()
+	var err error
 	if _, err := os.Stat(cf); err == nil {
-		backup.Coalesce(cf)
+		_, err = backup.Coalesce(cf)
 	}
-	// FIXME process err
+	if err != nil {
+		panic(err.Error())
+	}
 
 	return &backup
 }

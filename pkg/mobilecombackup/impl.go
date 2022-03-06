@@ -1,6 +1,7 @@
 package mobilecombackup
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,7 +34,7 @@ func searchPath(c coalescer.Coalescer, root string) <-chan string {
 	paths := make(chan string, 10)
 
 	go func() {
-		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 
 			if info.IsDir() {
 				// skip directories
@@ -51,6 +52,9 @@ func searchPath(c coalescer.Coalescer, root string) <-chan string {
 
 			return nil
 		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "while walking", root, "got error:", err)
+		}
 		close(paths)
 	}()
 

@@ -12,7 +12,7 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "got error:", err)
 		if output != nil {
-			fmt.Fprintln(os.Stderr, "output:\n", output)
+			fmt.Fprintln(os.Stderr, "output:", output)
 		}
 		os.Exit(exitCode)
 	}

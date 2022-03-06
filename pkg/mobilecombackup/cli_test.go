@@ -48,10 +48,10 @@ func TestParseFlagsError(t *testing.T) {
 			if conf != nil {
 				t.Errorf("conf got %v, want nil", conf)
 			}
-			if strings.Index(err.Error(), tt.errstr) < 0 {
+			if !strings.Contains(err.Error(), tt.errstr) {
 				t.Errorf("err got %q, want to find %q", err.Error(), tt.errstr)
 			}
-			if strings.Index(output, "Usage of prog") < 0 {
+			if !strings.Contains(output, "Usage of prog") {
 				t.Errorf("output got %q", output)
 			}
 		})
@@ -93,7 +93,7 @@ func TestValidateConfigError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			err := validateConfig(&tt.conf)
-			if strings.Index(err.Error(), tt.errstr) < 0 {
+			if !strings.Contains(err.Error(), tt.errstr) {
 				t.Errorf("err got %q, want to find %q", err.Error(), tt.errstr)
 			}
 		})

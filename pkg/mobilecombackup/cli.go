@@ -60,7 +60,7 @@ func doWork(conf *config) error {
 		}
 	}
 	if errorCount > 0 {
-		return errors.New(fmt.Sprintf("Had %d failures", errorCount))
+		return fmt.Errorf("Had %d failures", errorCount)
 	} else {
 		return nil
 	}
