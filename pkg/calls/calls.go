@@ -36,9 +36,9 @@ type multierror struct {
 func (m *multierror) Error() string {
 	var sb strings.Builder
 	sb.WriteString(m.msg)
-	for _, m := range m.errors {
+	for _, e := range m.errors {
 		sb.WriteString("\n\t")
-		sb.WriteString(m.Error())
+		sb.WriteString(e.Error())
 	}
 	return sb.String()
 }
@@ -46,7 +46,7 @@ func (m *multierror) Error() string {
 func (b *backup) ingest(file *os.File) error {
 	// load file
 	decoder := xml.NewDecoder(file)
-	errs := make([]error, 20)
+	errs := make([]error, 0, 20)
 	for {
 		t, err := decoder.Token()
 		if err == io.EOF || t == nil {
@@ -82,7 +82,6 @@ func (b *backup) ingest(file *os.File) error {
 }
 
 func (b *backup) Supports(filePath string) (bool, error) {
-
 	return strings.Contains(path.Base(filePath), "call"), nil
 }
 
@@ -157,10 +156,11 @@ func (b *backup) BackingFile() string {
 func Init(rootDir string) coalescer.Coalescer {
 	var backup = backup{rootDir, map[Key]Call{}}
 	var cf = backup.BackingFile()
-	var err error
-	if _, err := os.Stat(cf); err == nil {
-		_, err = backup.Coalesce(cf)
+	_, err := os.Stat(cf)
+	if err != nil {
+		panic(err.Error())
 	}
+	_, err = backup.Coalesce(cf)
 	if err != nil {
 		panic(err.Error())
 	}
