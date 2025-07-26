@@ -47,12 +47,70 @@ Calls are stored as XML, schema is as follows:
           - 2: ?
           - 3: ?
           - 4: ?
-        - `readlable_date`: `date` formated to be consumed by humans; may not be consistent, don't use in comparison
+        - `readable_date`: `date` formated to be consumed by humans; may not be consistent, don't use in comparison
         - `contact_name`: name associated with phone number; may not be consistent, don't use in comparisonA
 
 ### SMS Backup (`sms.xml`)
 
-__TODO: define SMS backup schema__
+SMS and MMS messages are stored as XML, schema is as follows:
+
+- `smses`
+  - attributes:
+    - `count`: number of SMS/MMS entries in this file
+  - children:
+    - `sms`: regular SMS message
+      - attributes:
+        - `protocol`: protocol version (typically "0")
+        - `address`: phone number or short code
+          - possible formats: `dddd`, `ddddddd`, `dddddddddd`, `+1dddddddddd`
+          - can also be email for MMS group messages: `user@domain.com`
+        - `date`: timestamp in epoch milliseconds
+        - `type`: enum to represent the type of message
+          - 1: received
+          - 2: sent
+        - `subject`: subject line (typically "null" for SMS)
+        - `body`: message text content
+        - `toa`: type of address (typically "null")
+        - `sc_toa`: service center type of address (typically "null")
+        - `service_center`: SMSC number (e.g., "+13123149623" or "null")
+        - `read`: read status (0=unread, 1=read)
+        - `status`: delivery status (typically "-1")
+        - `locked`: locked status (0=unlocked, 1=locked)
+        - `date_sent`: timestamp when sent in epoch milliseconds (0 for received)
+        - `readable_date`: `date` formatted for humans; may not be consistent, don't use in comparison
+        - `contact_name`: name associated with phone number; may not be consistent, don't use in comparison
+    - `mms`: multimedia message
+      - attributes:
+        - `date`: timestamp in epoch milliseconds
+        - `msg_box`: message box type (1=inbox, 2=sent)
+        - `address`: recipient(s) phone number(s), can be multiple separated by "~"
+        - `m_type`: MMS message type (128=send request, 132=retrieve confirmation)
+        - `m_id`: unique message ID
+        - `thread_id`: conversation thread ID (optional)
+        - `readable_date`: `date` formatted for humans; may not be consistent, don't use in comparison
+        - `contact_name`: name(s) associated with phone number(s); may not be consistent, don't use in comparison
+        - Additional MMS-specific attributes: `callback_set`, `text_only`, `sub`, `retr_st`, `ct_cls`, `sub_cs`, `read`, `ct_l`, `tr_id`, `st`, `d_tm`, `read_status`, `ct_t`, `retr_txt_cs`, `deletable`, `d_rpt`, `date_sent`, `seen`, `reserved`, `v`, `exp`, `pri`, `hidden`, `msg_id`, `rr`, `app_id`, `resp_txt`, `rpt_a`, `locked`, `retr_txt`, `resp_st`, `m_size`, `m_cls`
+      - children:
+        - `parts`: container for message parts
+          - `part`: individual content part
+            - attributes:
+              - `seq`: sequence number (-1 for SMIL layout, 0+ for content)
+              - `ct`: content type (e.g., "application/smil", "text/plain", "image/png")
+              - `name`: file name (can be "null")
+              - `chset`: character set (e.g., "106" for UTF-8, can be "null")
+              - `cd`: content disposition (e.g., "attachment", can be "null")
+              - `fn`: filename (can be "null")
+              - `cid`: content ID
+              - `cl`: content location
+              - `ctt_s`, `ctt_t`: content type start/type (typically "null")
+              - `text`: text content or SMIL layout XML
+              - `data`: base64-encoded binary data for attachments (images, etc.)
+        - `addrs`: recipient addresses (for group MMS)
+          - `addr`: individual address
+            - attributes:
+              - `address`: phone number
+              - `type`: address type (137=from, 151=to)
+              - `charset`: character encoding
 
 ### Repository
 
@@ -144,8 +202,12 @@ summary:
 These files are of the same schema as outlined previousl in "Calls Backup".
 
 There should be a file per year: 
- * `calls-2015.xml`
- * `calls-2016.xml`
+
+```
+calls/
+├── calls-2015.xml
+└── calls-2016.xml
+```
 
 #### sms/
 
@@ -153,16 +215,22 @@ These files are of the same schema as outlined previousl in "SMS Backup".
 
 There should be a file per year: 
 
- * `sms-2015.xml`
- * `sms-2016.xml`
+```
+sms/
+├── sms-2015.xml
+└── sms-2016.xml
+```
 
 #### attachments/
 
 Contents will be the attachments identified by their hash.  They will be grouped into directories based upon the first 2 characters of the hash:
 
- * `ab`
-   * `ab54363e39`
-   * `ab8bd623a0`
- * `b2`
-   * `b28fe7c6ab`
+```
+attachments/
+├── ab/
+│   ├── ab54363e39
+│   └── ab8bd623a0
+└── b2/
+    └── b28fe7c6ab
+```
 
