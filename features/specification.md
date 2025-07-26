@@ -40,15 +40,14 @@ Calls are stored as XML, schema is as follows:
         - `number`: phone number
           - possible formats: `ddddddd`, `dddddddddd`, `+1dddddddddd`
         - `duration`: duration of the call in seconds
-        - `date`: timestamp in epoch seconds
-        - `type`: enum to represent the type of call
-          - TODO: define meaning of each type
-          - 1: ?
-          - 2: ?
-          - 3: ?
-          - 4: ?
-        - `readable_date`: `date` formated to be consumed by humans; may not be consistent, don't use in comparison
-        - `contact_name`: name associated with phone number; may not be consistent, don't use in comparisonA
+        - `date`: timestamp in epoch milliseconds
+        - `type`: enum to represent the type of call (matches Android CallLog.Calls constants)
+          - 1: incoming (INCOMING_TYPE)
+          - 2: outgoing (OUTGOING_TYPE)
+          - 3: missed (MISSED_TYPE)
+          - 4: voicemail (VOICEMAIL_TYPE)
+        - `readable_date`: `date` formatted to be consumed by humans; may not be consistent, don't use in comparison
+        - `contact_name`: name associated with phone number; may not be consistent, don't use in comparison
 
 ### SMS Backup (`sms.xml`)
 
@@ -65,9 +64,9 @@ SMS and MMS messages are stored as XML, schema is as follows:
           - possible formats: `dddd`, `ddddddd`, `dddddddddd`, `+1dddddddddd`
           - can also be email for MMS group messages: `user@domain.com`
         - `date`: timestamp in epoch milliseconds
-        - `type`: enum to represent the type of message
-          - 1: received
-          - 2: sent
+        - `type`: enum to represent the type of message (matches Android Telephony.Sms constants)
+          - 1: received (MESSAGE_TYPE_INBOX)
+          - 2: sent (MESSAGE_TYPE_SENT)
         - `subject`: subject line (typically "null" for SMS)
         - `body`: message text content
         - `toa`: type of address (typically "null")
@@ -83,7 +82,7 @@ SMS and MMS messages are stored as XML, schema is as follows:
       - attributes:
         - `date`: timestamp in epoch milliseconds
         - `msg_box`: message box type (1=inbox, 2=sent)
-        - `address`: recipient(s) phone number(s), can be multiple separated by "~"
+        - `address`: recipient(s) phone number(s), can be multiple separated by "~" for group messages
         - `m_type`: MMS message type (128=send request, 132=retrieve confirmation)
         - `m_id`: unique message ID
         - `thread_id`: conversation thread ID (optional)
@@ -94,8 +93,8 @@ SMS and MMS messages are stored as XML, schema is as follows:
         - `parts`: container for message parts
           - `part`: individual content part
             - attributes:
-              - `seq`: sequence number (-1 for SMIL layout, 0+ for content)
-              - `ct`: content type (e.g., "application/smil", "text/plain", "image/png")
+              - `seq`: sequence number (-1 for SMIL layout defining MMS presentation, 0+ for actual content parts)
+              - `ct`: content type (e.g., "application/smil", "text/plain", "image/png", "image/jpeg")
               - `name`: file name (can be "null")
               - `chset`: character set (e.g., "106" for UTF-8, can be "null")
               - `cd`: content disposition (e.g., "attachment", can be "null")
@@ -149,17 +148,20 @@ contacts:
 
 #### files.yaml
 
-`files.yaml` lists all files in the repository with their associated sha256.
+`files.yaml` lists all files in the repository with their associated sha256 and size.
  - Exclusions: `files.yaml` and `files.yaml.sha256`
 
 ```yaml
 files:
   - file: summary.yaml
     sha256: ...
+    size_bytes: 1234
   - file: contacts.yaml
     sha256: ...
+    size_bytes: 567
   - file: calls/calls-2015.xml
     sha256: ...
+    size_bytes: 89012
 ```
 
 #### files.yaml.sha256
@@ -233,4 +235,30 @@ attachments/
 └── b2/
     └── b28fe7c6ab
 ```
+
+## Important Notes
+
+### Contact Name Handling
+The `contact_name` field should NOT be used for comparing or identifying duplicate records. This field may vary between backups due to:
+- Contact name changes in the phone's address book
+- Sync timing differences
+- Unknown numbers showing as "(Unknown)" vs actual names
+
+The phone number (`number` for calls, `address` for SMS/MMS) should be used as the primary identifier. The `contacts.yaml` file will maintain the authoritative mapping of numbers to names.
+
+### Timezone Considerations
+- The `readable_date` field uses the timezone of where the backup was performed
+- When writing to the repository, all `readable_date` fields will be recalculated using EST
+- The `date` field (epoch milliseconds) is always UTC and should be used for sorting and year partitioning
+
+### MMS Structure
+- MMS messages can be group messages with multiple recipients separated by "~"
+- SMIL (Synchronized Multimedia Integration Language) parts define the presentation layout
+- Actual content (text, images) is stored in separate parts with positive sequence numbers
+- Image attachments are base64-encoded in the `data` attribute
+
+### Hash Algorithm
+SHA-256 will be used consistently for:
+- Attachment content hashing and storage
+- Entry deduplication (excluding `readable_date` and after attachment extraction)
 
