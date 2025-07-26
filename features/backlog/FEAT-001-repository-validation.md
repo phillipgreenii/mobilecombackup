@@ -6,7 +6,7 @@
 
 ## Overview
 The repository is what will hold all of the records.  To ensure it stays trustworthy, we need to have define a validation process.
-This feature will define how to validate the correctness of a given repository. Details on how to create and modify a repository are outside the scope of this feature.
+This feature will define how to validate the correctness of a given repository by leveraging the reader components (FEAT-002 through FEAT-005) and performing cross-file consistency checks. Details on how to create and modify a repository are outside the scope of this feature.
 
 ## Background
 See section `Repository` in `specification.md`
@@ -32,27 +32,22 @@ See section `Repository` in `specification.md`
 #### Repository Structure Validation
 - [ ] Verify required directories exist: `calls/`, `sms/`, `attachments/`
 - [ ] Verify required files exist: `contacts.yaml`, `summary.yaml`
-- [ ] Check attachment files follow the `[2-char-prefix]/[full-hash]` structure
-- [ ] Verify attachment directory names are exactly 2 lowercase hex characters
 
-#### Content Validation
-- [ ] Validate XML schema for all `calls-YYYY.xml` files
-- [ ] Validate XML schema for all `sms-YYYY.xml` files
-- [ ] Verify year in filename matches actual record dates (e.g., `calls-2015.xml` contains only calls for the year 2015, as per UTC)
-- [ ] Check that attachment references in SMS/MMS point to existing files
-- [ ] Validate `contacts.yaml` and `summary.yaml` against their schemas
+#### Summary Validation
+- [ ] Validate `summary.yaml` exists and has correct schema
+- [ ] Verify summary data using readers from FEAT-002, FEAT-003, FEAT-004, FEAT-005
 
 #### Cross-File Consistency
-- [ ] Verify `summary.yaml` `counts` match actual record counts
+- [ ] Verify `summary.yaml` `counts` match actual record counts (using CallsReader and SMSReader)
 - [ ] Verify `summary.yaml` `size_bytes` match actual file sizes
-- [ ] Check that all attachments referenced in SMS files exist in `attachments/`
-- [ ] Verify no orphaned attachments (files not referenced by any SMS)
+- [ ] Check that all attachments referenced in SMS files exist (using AttachmentReader)
+- [ ] Verify no orphaned attachments (using AttachmentReader with SMS references)
 
 ### Non-Functional Requirements
 - [ ] Scalable directory structure (avoid too many files per directory)
 - [ ] Clear violation messages
 - [ ] Performance: Validation should complete in reasonable time for large repositories (>1GB)
-- [ ] Memory efficiency: Stream processing for large XML files to avoid loading all into memory
+- [ ] Memory efficiency: Leverage streaming capabilities of reader components
 - [ ] Detailed reporting: Generate validation report with specific violations and locations
 - [ ] Exit codes: Clear exit codes (0=valid, 1=violations found, 2=validation error)
 
@@ -62,8 +57,8 @@ See section `Repository` in `specification.md`
 1. **Structure Validation**: Check directory/file structure exists
 2. **Manifest Validation**: Verify files.yaml completeness and accuracy
 3. **Checksum Validation**: Verify all SHA-256 hashes
-4. **Schema Validation**: Check XML/YAML files against schemas
-5. **Consistency Validation**: Cross-check references and counts
+4. **Content Validation**: Use reader components to validate file contents
+5. **Consistency Validation**: Cross-check references and counts using reader APIs
 
 ### Error Reporting Format
 ```yaml
@@ -90,10 +85,11 @@ validation_report:
 ## Implementation Tasks
 - [ ] Implement file manifest reader and validator
 - [ ] Implement SHA-256 calculation and verification
-- [ ] Create XML schema validators for calls and SMS
-- [ ] Create YAML schema validators for contacts and summary
-- [ ] Implement attachment reference checker
-- [ ] Build cross-file consistency validator
+- [ ] Integrate CallsReader (FEAT-002) for calls validation
+- [ ] Integrate SMSReader (FEAT-003) for SMS validation and attachment tracking
+- [ ] Integrate AttachmentReader (FEAT-004) for attachment validation
+- [ ] Integrate ContactsReader (FEAT-005) for contacts validation
+- [ ] Build cross-file consistency validator using reader APIs
 - [ ] Design and implement validation report generator
 - [ ] Add performance optimizations for large repositories
 - [ ] Write comprehensive test suite
@@ -103,6 +99,12 @@ validation_report:
 - Integration tests with sample valid/invalid repositories
 - Performance tests with large repositories
 - Edge cases: empty repository, corrupted files, missing directories, missing files
+
+## Dependencies
+- FEAT-002: Read Calls from Repository (CallsReader)
+- FEAT-003: Read SMS from Repository (SMSReader)
+- FEAT-004: Read Attachments from Repository (AttachmentReader)
+- FEAT-005: Read Contacts from Repository (ContactsReader)
 
 ## References
 - See section `Repository` in `specification.md`

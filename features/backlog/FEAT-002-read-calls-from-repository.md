@@ -5,7 +5,7 @@
 - **Priority**: high
 
 ## Overview
-Implement functionality to read call records from the repository structure. This feature provides the foundation for accessing and processing call data stored in the repository's XML files.
+Implement functionality to read call records from the repository structure. This feature provides the foundation for accessing and processing call data stored in the repository's XML files, including validation of the XML structure and data consistency.
 
 ## Background
 The repository stores call records in XML files organized by year (e.g., `calls/calls-2015.xml`). Each file contains call entries with attributes like number, duration, date, type, etc. This feature will provide a clean interface for reading these records, which is essential for validation, analysis, and other operations.
@@ -14,11 +14,15 @@ The repository stores call records in XML files organized by year (e.g., `calls/
 ### Functional Requirements
 - [ ] Read call records from `calls/calls-YYYY.xml` files
 - [ ] Parse XML structure according to the calls schema
+- [ ] Validate XML structure matches expected schema
 - [ ] Handle all call attributes: number, duration, date, type, readable_date, contact_name
 - [ ] Support streaming for large files (memory efficiency)
 - [ ] Convert epoch milliseconds in `date` field to proper time.Time
 - [ ] Handle missing or optional fields gracefully
 - [ ] Return structured call data with proper types
+- [ ] Verify year in filename matches actual record dates (e.g., `calls-2015.xml` contains only 2015 calls based on UTC)
+- [ ] Provide total count of records per year
+- [ ] Validate count attribute matches actual number of call entries
 
 ### Non-Functional Requirements
 - [ ] Memory efficient - stream processing for files >100MB
@@ -67,6 +71,12 @@ type CallsReader interface {
     
     // GetAvailableYears returns list of years with call data
     GetAvailableYears() ([]int, error)
+    
+    // GetCallsCount returns total number of calls for a year
+    GetCallsCount(year int) (int, error)
+    
+    // ValidateCallsFile validates XML structure and year consistency
+    ValidateCallsFile(year int) error
 }
 ```
 
@@ -81,8 +91,10 @@ type CallsReader interface {
 - [ ] Define Call struct and CallType constants
 - [ ] Create CallsReader interface
 - [ ] Implement XML streaming parser
+- [ ] Add XML schema validation
 - [ ] Add date conversion utilities
 - [ ] Implement count validation
+- [ ] Add year consistency validation
 - [ ] Add error handling with context
 - [ ] Write comprehensive unit tests
 - [ ] Add integration tests with sample files
@@ -120,7 +132,6 @@ type CallsReader interface {
   - **Mitigation**: Graceful error handling, partial results where possible
 
 ## References
-- Related features: FEAT-001 (Repository Validation)
 - Specification: See "Call Backup" section in specification.md
 - Code location: pkg/calls/reader.go (to be created)
 

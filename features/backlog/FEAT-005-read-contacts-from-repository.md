@@ -5,7 +5,7 @@
 - **Priority**: high
 
 ## Overview
-Implement functionality to read contact information from the repository's `contacts.yaml` file. This feature provides access to the mapping between phone numbers and contact names, which is essential for validation and display purposes.
+Implement functionality to read contact information from the repository's `contacts.yaml` file. This feature provides access to the mapping between phone numbers and contact names, validates the YAML structure, and supports efficient lookup operations.
 
 ## Background
 The repository maintains a `contacts.yaml` file that maps phone numbers to contact names. This centralized mapping ensures consistency across all records and allows for contact information updates without modifying the actual call/SMS records. The format supports multiple numbers per contact and handles unknown numbers.
@@ -13,12 +13,14 @@ The repository maintains a `contacts.yaml` file that maps phone numbers to conta
 ## Requirements
 ### Functional Requirements
 - [ ] Read and parse `contacts.yaml` file
+- [ ] Validate `contacts.yaml` against expected schema
 - [ ] Support multiple phone numbers per contact
 - [ ] Handle special "<unknown>" contact designation
 - [ ] Provide efficient lookup by phone number
 - [ ] Support reverse lookup (numbers by contact name)
 - [ ] Validate YAML structure and format
 - [ ] Handle missing contacts.yaml gracefully
+- [ ] Detect duplicate phone numbers across contacts
 
 ### Non-Functional Requirements
 - [ ] Fast lookup performance (O(1) for phone number lookup)
@@ -133,7 +135,7 @@ type ContactsManager struct {
   - **Mitigation**: Validation and clear error messages
 
 ## References
-- Related features: FEAT-001 (Validation), FEAT-002 (Calls), FEAT-003 (SMS)
+- Related features: FEAT-002 (Calls), FEAT-003 (SMS)
 - Specification: See "contacts.yaml" section
 - Code location: pkg/contacts/reader.go (to be created)
 

@@ -5,7 +5,7 @@
 - **Priority**: high
 
 ## Overview
-Implement functionality to read SMS and MMS records from the repository structure. This feature provides the foundation for accessing and processing SMS/MMS data stored in the repository's XML files, including handling attachments references.
+Implement functionality to read SMS and MMS records from the repository structure. This feature provides the foundation for accessing and processing SMS/MMS data stored in the repository's XML files, including validation of the XML structure, handling attachment references, and tracking which attachments are used.
 
 ## Background
 The repository stores SMS/MMS records in XML files organized by year (e.g., `sms/sms-2015.xml`). SMS entries are simple text messages, while MMS entries are more complex with multiple parts, addresses, and attachment references. This feature will provide a clean interface for reading these records.
@@ -14,13 +14,18 @@ The repository stores SMS/MMS records in XML files organized by year (e.g., `sms
 ### Functional Requirements
 - [ ] Read SMS/MMS records from `sms/sms-YYYY.xml` files
 - [ ] Parse XML structure according to SMS and MMS schemas
+- [ ] Validate XML structure matches expected schema
 - [ ] Handle SMS attributes: protocol, address, date, type, subject, body, etc.
 - [ ] Handle MMS structure with parts and addresses
 - [ ] Extract attachment references from MMS parts
+- [ ] Track which attachments are referenced by messages
 - [ ] Support streaming for large files (memory efficiency)
 - [ ] Convert epoch milliseconds to proper time.Time
 - [ ] Handle group messages (multiple addresses)
 - [ ] Parse SMIL presentation data
+- [ ] Verify year in filename matches actual record dates (based on UTC)
+- [ ] Provide total count of records per year
+- [ ] Validate count attribute matches actual number of entries
 
 ### Non-Functional Requirements
 - [ ] Memory efficient - stream processing for files >1GB
@@ -107,8 +112,17 @@ type SMSReader interface {
     // GetAttachmentRefs returns all attachment references in a year
     GetAttachmentRefs(year int) ([]string, error)
     
+    // GetAllAttachmentRefs returns all attachment references across all years
+    GetAllAttachmentRefs() (map[string]bool, error)
+    
     // GetAvailableYears returns list of years with SMS data
     GetAvailableYears() ([]int, error)
+    
+    // GetMessageCount returns total number of messages for a year
+    GetMessageCount(year int) (int, error)
+    
+    // ValidateSMSFile validates XML structure and year consistency
+    ValidateSMSFile(year int) error
 }
 ```
 
@@ -123,9 +137,11 @@ type SMSReader interface {
 - [ ] Define Message interface and concrete types
 - [ ] Create SMSReader interface
 - [ ] Implement XML streaming parser
+- [ ] Add XML schema validation
 - [ ] Add SMS parsing logic
 - [ ] Add MMS parsing with parts/addresses
-- [ ] Implement attachment reference extraction
+- [ ] Implement attachment reference extraction and tracking
+- [ ] Add year consistency validation
 - [ ] Add date/time conversion utilities
 - [ ] Write comprehensive unit tests
 - [ ] Add integration tests
@@ -163,7 +179,7 @@ type SMSReader interface {
   - **Mitigation**: Streaming API mandatory
 
 ## References
-- Related features: FEAT-001 (Validation), FEAT-004 (Attachments)
+- Related features: FEAT-004 (Attachments)
 - Specification: See "SMS Backup" section in specification.md
 - Code location: pkg/sms/reader.go (to be created)
 

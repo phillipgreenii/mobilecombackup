@@ -5,7 +5,7 @@
 - **Priority**: high
 
 ## Overview
-Implement functionality to read and manage attachments stored in the repository. This feature provides access to attachment files that are referenced by SMS/MMS messages, stored in a content-addressed structure.
+Implement functionality to read and manage attachments stored in the repository. This feature provides access to attachment files that are referenced by SMS/MMS messages, stored in a content-addressed structure, and validates the attachment directory structure.
 
 ## Background
 Attachments are stored in the repository under `attachments/` using a hash-based directory structure (e.g., `attachments/ab/ab54363e39`). These files are referenced by MMS messages and need to be accessible for validation, export, and analysis purposes. The structure uses the first two characters of the hash as a subdirectory to avoid too many files in a single directory.
@@ -18,7 +18,10 @@ Attachments are stored in the repository under `attachments/` using a hash-based
 - [ ] List all attachments in repository
 - [ ] Get attachment metadata (size, hash)
 - [ ] Validate hash matches actual file content
-- [ ] Support for finding orphaned attachments (not referenced)
+- [ ] Validate attachment files follow the `[2-char-prefix]/[full-hash]` structure
+- [ ] Verify attachment directory names are exactly 2 lowercase hex characters
+- [ ] Support for finding orphaned attachments (not referenced by any SMS)
+- [ ] Track which attachments are referenced vs orphaned
 
 ### Non-Functional Requirements
 - [ ] Efficient directory traversal for large attachment stores
@@ -67,6 +70,13 @@ type AttachmentReader interface {
     
     // GetAttachmentPath returns the expected path for a hash
     GetAttachmentPath(hash string) string
+    
+    // FindOrphanedAttachments returns attachments not referenced by any messages
+    // Requires a set of referenced attachment hashes from SMS reader
+    FindOrphanedAttachments(referencedHashes map[string]bool) ([]*Attachment, error)
+    
+    // ValidateAttachmentStructure validates the directory structure
+    ValidateAttachmentStructure() error
 }
 
 // AttachmentStats provides statistics about attachments
@@ -91,6 +101,8 @@ type AttachmentStats struct {
 - [ ] Implement hash-based path resolution
 - [ ] Add directory traversal logic
 - [ ] Implement content reading with verification
+- [ ] Add directory structure validation
+- [ ] Implement orphaned attachment detection
 - [ ] Add streaming API for large repositories
 - [ ] Create attachment statistics collector
 - [ ] Write unit tests
@@ -128,7 +140,7 @@ type AttachmentStats struct {
   - **Mitigation**: Document security considerations
 
 ## References
-- Related features: FEAT-001 (Validation), FEAT-003 (SMS Reading)
+- Related features: FEAT-003 (SMS Reading)
 - Specification: See "Repository/attachments" section
 - Code location: pkg/attachments/reader.go (to be created)
 
