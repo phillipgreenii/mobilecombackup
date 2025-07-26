@@ -3,7 +3,7 @@
 
   inputs = {
     #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     # devenv
     devenv-root = {
       url = "file+file:///dev/null";
@@ -58,7 +58,7 @@
             in
             pkgs.lib.mkIf (devenvRootFileContent != "") devenvRootFileContent;
 
-          name = "beancount";
+          name = "mobilebackup";
 
           # hooks keep failing even though the individual checks seem to pass
           pre-commit.default_stages = [ "manual" ];
@@ -99,6 +99,9 @@
 
             #go
             go
+
+	    #agent
+	    claude-code
 
             # neovim
             (pkgs.neovim.override {
