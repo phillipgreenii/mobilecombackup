@@ -52,3 +52,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+
+#########
+# TEMP
+#
+# Temporary files for development
+tmp/

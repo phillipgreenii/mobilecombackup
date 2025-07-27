@@ -318,6 +318,7 @@ Based on analysis of existing features, the following patterns and best practice
 3. **Remove conflicting code**: If feature conflicts with legacy code, remove the old implementation
 4. **Commit individual tasks**: Never use `git add .` or `git commit -a` - explicitly add files
 5. **Reference feature in commits**: Include "FEAT-XXX:" prefix in commit messages
+6. **Temporary files**: Create temp files in `tmp/` within the repository (not `/tmp`), clean up after use, never commit them
 
 ### Testing Best Practices
 1. **Test early and often**: Build and test after each significant change
@@ -335,6 +336,26 @@ Based on analysis of existing features, the following patterns and best practice
 2. **Use descriptive names**: `types.go`, `reader.go`, `xml_reader.go`, `*_test.go`, `example_test.go`
 3. **Group related functionality**: Keep interfaces and implementations in same package
 4. **Add usage examples**: Create `example_test.go` with runnable code examples
+
+### Temporary File Management
+1. **Location**: Always use `tmp/` directory in the repository root, never `/tmp` or other system directories
+2. **Cleanup**: Delete temporary files immediately after use
+3. **Git ignore**: The `tmp/` directory should be in `.gitignore` to prevent accidental commits
+4. **Naming**: Use descriptive names that indicate purpose (e.g., `tmp/test-date-conversion.go`)
+5. **Example**:
+   ```bash
+   # Create temp file for testing
+   mkdir -p tmp
+   cat > tmp/test-snippet.go << 'EOF'
+   // temporary test code
+   EOF
+   
+   # Use the file
+   go run tmp/test-snippet.go
+   
+   # Clean up immediately
+   rm tmp/test-snippet.go
+   ```
 
 ### Git Workflow Details
 ```bash
