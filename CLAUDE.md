@@ -57,6 +57,12 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
   - `xml_reader.go`: XMLCallsReader implementation with streaming support
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
+- **pkg/sms**: SMS/MMS message processing
+  - `types.go`: Message interface, SMS and MMS structs, MessageType constants
+  - `reader.go`: SMSReader interface for reading from repository
+  - `xml_reader.go`: XMLSMSReader implementation with streaming support
+  - `*_test.go`: Comprehensive unit and integration tests
+  - `example_test.go`: Usage documentation and examples
 - **pkg/coalescer**: Core deduplication logic using hash-based comparison
 - **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
 - **internal/**: Test utilities and integration tests
@@ -67,6 +73,8 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
 - `BackupWriter[V any]`: Writes processed entries to XML files
 - `Coalescer[V any]`: Manages deduplication with `Add()` and `Dump()` methods
 - `CallsReader`: Reads call records from repository with methods for streaming, validation, and metadata
+- `SMSReader`: Reads SMS/MMS records from repository with attachment tracking capabilities
+- `Message`: Base interface for SMS and MMS messages with common accessors
 
 ### Key Types
 - `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
@@ -109,11 +117,24 @@ repository/
   - Attachments extracted and stored by hash
   - Hash calculated on all fields except `readable_date`
 
+### SMS/MMS Structure
+- **SMS messages**: Simple structure with attributes like address, body, date, type
+- **MMS messages**: Complex structure with multiple parts and addresses:
+  - Parts array containing text, images, and SMIL presentation data
+  - Each part has content type, charset, and either text or data field
+  - SMIL parts (application/smil) define visual presentation layout
+  - Text parts (text/plain) contain the actual message content
+  - Image parts contain base64 data that needs extraction
+  - Address field is primary recipient/sender
+  - Additional addresses in separate addresses array for group messages
+- **Message types**: Determined by `type` field for SMS (1=received, 2=sent) and `msg_box` field for MMS
+
 ### Attachment Storage
 - Convert base64 data to bytes and hash
 - Store in `attachments/[first-2-chars]/[full-hash]` structure
 - Replace attachment field with relative path to file
 - Example: `attachments/ac/ac78543342e3`
+- MMS attachments are found in the `data` field of parts with image/video content types
 
 ### Deduplication
 - Memory store using map[string][V] keyed by hash
@@ -252,7 +273,11 @@ Based on analysis of existing features, the following patterns and best practice
 - **Hash-based operations**: Use SHA-256 consistently for deduplication and content addressing
 - **Progress reporting**: Report progress every 100 entries for long operations
 - **Atomic operations**: Ensure related changes succeed or fail together
-- **Performance targets**: Set specific throughput goals (e.g., 10,000 records/second)
+- **Performance targets**: Set specific throughput goals (e.g., 10,000 records/second for calls, 5,000 messages/second for SMS)
+- **Null value handling**: Check for "null" string values in XML attributes and convert to empty strings
+- **Interface-based polymorphism**: Use base interfaces (like Message) to handle different types uniformly
+- **Type determination**: Use numeric fields (type, msg_box) to determine message direction
+- **Complex nested parsing**: Handle nested XML structures (MMS parts/addresses) with separate parser functions
 
 ### Testing Strategy
 - **Three-tier testing**: Always include Unit Tests, Integration Tests, and Edge Cases
@@ -299,7 +324,11 @@ Based on analysis of existing features, the following patterns and best practice
 2. **Use existing test data**: Leverage files in `testdata/` for integration tests
 3. **Handle test data quirks**: Some test files have count mismatches (e.g., count="56" but 12 entries)
 4. **Aim for high coverage**: Target 80%+ test coverage with `go test -covermode=set`
+   - FEAT-002 (calls): Achieved 85.5% coverage
+   - FEAT-003 (sms): Achieved 81.2% coverage
 5. **Test realistic scenarios**: Use actual test data from `testdata/archive/` and `testdata/it/`
+6. **Integration test pattern**: Copy test files to temp directory to simulate repository structure
+7. **Test both success and failure paths**: Validate that validation functions properly detect errors
 
 ### File Organization Patterns
 1. **Separate concerns**: Split types, interfaces, implementations, tests, and examples
@@ -340,6 +369,11 @@ EOF
 - **Test data count mismatches**: These are expected in some files; use for validation testing
 - **Legacy code conflicts**: Remove old implementations when starting fresh features
 - **Import path issues**: Always use full module path `github.com/phillipgreen/mobilecombackup/pkg/...`
+- **Date conversion**: Timestamps are in milliseconds, not seconds - divide by 1000 for Unix time
+- **Empty vs null**: XML attributes with value "null" should be treated as empty/zero values
+- **Unused variables in tests**: Remove unused test fixtures to avoid compilation errors
+- **Year validation**: Test data often contains mixed years - adjust tests accordingly
+- **MMS type field**: Use `msg_box` (1=received, 2=sent) not `m_type` for message direction
 
 ## Test Data Structure and Usage
 
@@ -353,10 +387,14 @@ EOF
 
 ### Test Data Characteristics
 - **Count mismatches**: Some files have `count="56"` but only 12 actual entries
-- **Mixed years**: Test data may span multiple years (2014-2015)
+- **Mixed years**: Test data may span multiple years (2013-2015 in SMS, 2014-2015 in calls)
 - **Realistic content**: Uses 555 phone numbers, anonymized contacts
 - **Binary attachments**: MMS files contain real PNG data in base64
 - **Validation opportunities**: Count mismatches are useful for testing validation logic
+- **SMS test data**: `sms-test.xml` contains mix of SMS (6) and MMS (9) messages
+- **MMS complexity**: Test MMS messages include SMIL parts, text parts, and group messages
+- **Character encoding**: MMS parts use various charsets (106, 3, null)
+- **Special characters**: SMS bodies contain escaped XML entities (&amp; for &)
 
 ### Using Test Data Effectively
 ```go
