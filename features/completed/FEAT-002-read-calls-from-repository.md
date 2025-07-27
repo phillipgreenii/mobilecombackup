@@ -1,7 +1,7 @@
 # FEAT-002: Read Calls from Repository
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-01-27
 - **Priority**: high
 
 ## Overview
@@ -88,17 +88,17 @@ type CallsReader interface {
 - ContactName is informational only, not used for identity
 
 ## Tasks
-- [ ] Define Call struct and CallType constants
-- [ ] Create CallsReader interface
-- [ ] Implement XML streaming parser
-- [ ] Add XML schema validation
-- [ ] Add date conversion utilities
-- [ ] Implement count validation
-- [ ] Add year consistency validation
-- [ ] Add error handling with context
-- [ ] Write comprehensive unit tests
-- [ ] Add integration tests with sample files
-- [ ] Document usage examples
+- [x] Define Call struct and CallType constants
+- [x] Create CallsReader interface
+- [x] Implement XML streaming parser
+- [x] Add XML schema validation
+- [x] Add date conversion utilities
+- [x] Implement count validation
+- [x] Add year consistency validation
+- [x] Add error handling with context
+- [x] Write comprehensive unit tests
+- [x] Add integration tests with sample files
+- [x] Document usage examples
 
 ## Testing
 ### Unit Tests
