@@ -262,3 +262,124 @@ SHA-256 will be used consistently for:
 - Attachment content hashing and storage
 - Entry deduplication (excluding `readable_date` and after attachment extraction)
 
+## Reader Interfaces
+
+### CallsReader Interface
+
+The CallsReader provides access to call records stored in the repository:
+
+```go
+type CallsReader interface {
+    // ReadCalls reads all calls from a specific year
+    ReadCalls(year int) ([]Call, error)
+    
+    // StreamCalls streams calls for memory efficiency
+    StreamCalls(year int, callback func(Call) error) error
+    
+    // GetAvailableYears returns list of years with call data
+    GetAvailableYears() ([]int, error)
+    
+    // GetCallCount returns total number of calls for a year
+    GetCallCount(year int) (int, error)
+    
+    // ValidateCallsFile validates XML structure and year consistency
+    ValidateCallsFile(year int) error
+}
+```
+
+**Key Features:**
+- Streaming API for memory-efficient processing of large files
+- Year-based validation ensuring call dates match filename years (UTC-based)
+- XML schema validation including count attribute verification
+- Support for all call types: incoming (1), outgoing (2), missed (3), voicemail (4)
+
+### SMSReader Interface
+
+The SMSReader provides access to SMS and MMS records stored in the repository:
+
+```go
+type SMSReader interface {
+    // ReadMessages reads all messages from a specific year
+    ReadMessages(year int) ([]Message, error)
+    
+    // StreamMessages streams messages for memory efficiency
+    StreamMessages(year int, callback func(Message) error) error
+    
+    // GetAttachmentRefs returns all attachment references in a year
+    GetAttachmentRefs(year int) ([]string, error)
+    
+    // GetAllAttachmentRefs returns all attachment references across all years
+    GetAllAttachmentRefs() (map[string]bool, error)
+    
+    // GetAvailableYears returns list of years with SMS data
+    GetAvailableYears() ([]int, error)
+    
+    // GetMessageCount returns total number of messages for a year
+    GetMessageCount(year int) (int, error)
+    
+    // ValidateSMSFile validates XML structure and year consistency
+    ValidateSMSFile(year int) error
+}
+```
+
+**Key Features:**
+- Unified interface for SMS and MMS messages through Message interface
+- Attachment reference tracking for cleanup operations
+- Complex MMS parsing with parts and addresses
+- Group message support (multiple recipients)
+- SMIL part filtering and handling
+
+### Message Types
+
+#### Message Interface
+```go
+type Message interface {
+    GetDate() time.Time
+    GetAddress() string
+    GetType() MessageType
+    GetReadableDate() string
+    GetContactName() string
+}
+```
+
+#### MessageType Constants
+```go
+type MessageType int
+
+const (
+    ReceivedMessage MessageType = 1  // Inbox/received
+    SentMessage     MessageType = 2  // Sent messages
+)
+```
+
+**SMS Type Determination:** Uses `type` attribute (1=received, 2=sent)
+**MMS Type Determination:** Uses `msg_box` attribute (1=received, 2=sent)
+
+### Validation Requirements
+
+Both CallsReader and SMSReader implementations provide validation capabilities:
+
+1. **XML Schema Validation**
+   - Verify count attribute matches actual number of entries
+   - Validate required fields are present and properly formatted
+   - Handle null values appropriately (convert "null" strings to empty values)
+
+2. **Year Consistency Validation**
+   - Ensure all records in a file belong to the year specified in filename
+   - Use UTC timezone for year determination
+   - Report specific violations with context (file path, record details)
+
+3. **Date Conversion**
+   - Convert epoch milliseconds to time.Time objects
+   - Handle timezone-independent processing using UTC
+   - Validate date ranges and detect anomalies
+
+### Performance Characteristics
+
+- **Streaming Processing:** Both readers support streaming APIs to handle large files (>1GB) without memory issues
+- **Performance Targets:**
+  - Calls: 10,000 records/second minimum
+  - SMS: 5,000 messages/second minimum
+- **Memory Efficiency:** Use encoding/xml.Decoder for streaming XML parsing
+- **Error Resilience:** Continue processing on individual record failures, collect errors for reporting
+
