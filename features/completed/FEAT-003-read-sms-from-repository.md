@@ -1,7 +1,7 @@
 # FEAT-003: Read SMS from Repository
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-01-27
 - **Priority**: high
 
 ## Overview
@@ -134,18 +134,18 @@ type SMSReader interface {
 - Handle group message addresses (separated by ~)
 
 ## Tasks
-- [ ] Define Message interface and concrete types
-- [ ] Create SMSReader interface
-- [ ] Implement XML streaming parser
-- [ ] Add XML schema validation
-- [ ] Add SMS parsing logic
-- [ ] Add MMS parsing with parts/addresses
-- [ ] Implement attachment reference extraction and tracking
-- [ ] Add year consistency validation
-- [ ] Add date/time conversion utilities
-- [ ] Write comprehensive unit tests
-- [ ] Add integration tests
-- [ ] Document complex MMS structure
+- [x] Define Message interface and concrete types
+- [x] Create SMSReader interface
+- [x] Implement XML streaming parser
+- [x] Add XML schema validation
+- [x] Add SMS parsing logic
+- [x] Add MMS parsing with parts/addresses
+- [x] Implement attachment reference extraction and tracking
+- [x] Add year consistency validation
+- [x] Add date/time conversion utilities
+- [x] Write comprehensive unit tests
+- [x] Add integration tests
+- [x] Document complex MMS structure
 
 ## Testing
 ### Unit Tests
