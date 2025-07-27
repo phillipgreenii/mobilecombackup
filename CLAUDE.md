@@ -38,13 +38,25 @@ treefmt
 nix develop
 
 # The environment includes: go 1.16, golangci-lint, pre-commit hooks, treefmt
+
+# If nix develop fails due to devenv issues, use nix-shell as fallback:
+nix-shell -p go_1_23 --run "command here"
+
+# Example: Build and test
+nix-shell -p go_1_23 --run "go build ./pkg/calls"
+nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
 ```
 
 ## Architecture
 
 ### Package Structure
 - **cmd/mobilecombackup**: Main CLI entry point with command parsing and orchestration
-- **pkg/calls**: XML parsing and models for call logs (Calls, Call structs)
+- **pkg/calls**: Call log processing
+  - `types.go`: Call struct and CallType constants  
+  - `reader.go`: CallsReader interface for reading from repository
+  - `xml_reader.go`: XMLCallsReader implementation with streaming support
+  - `*_test.go`: Comprehensive unit and integration tests
+  - `example_test.go`: Usage documentation and examples
 - **pkg/coalescer**: Core deduplication logic using hash-based comparison
 - **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
 - **internal/**: Test utilities and integration tests
@@ -54,6 +66,7 @@ nix develop
 - `BackupReader[B BackupEntry]`: Reads XML files and returns `[]BackupEntryMetadata`
 - `BackupWriter[V any]`: Writes processed entries to XML files
 - `Coalescer[V any]`: Manages deduplication with `Add()` and `Dump()` methods
+- `CallsReader`: Reads call records from repository with methods for streaming, validation, and metadata
 
 ### Key Types
 - `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
@@ -266,6 +279,100 @@ Based on analysis of existing features, the following patterns and best practice
 - **Output format examples**: Show expected outputs clearly
 - **API documentation**: Include Go code examples in Design sections
 - **Command-line examples**: Demonstrate various flag combinations
+
+## Implementing Features: Practical Workflow
+
+### Initial Setup
+1. **Move feature to active**: `git mv features/ready/FEAT-XXX.md features/active/FEAT-XXX.md`
+2. **Commit the move**: Use format "Starting to implement FEAT-XXX"
+3. **Use TodoWrite tool**: Create todo list from feature tasks for progress tracking
+
+### Development Cycle
+1. **Work on one task at a time**: Focus on single task until completion
+2. **Ensure compilability**: Code must compile and tests pass before marking task complete
+3. **Remove conflicting code**: If feature conflicts with legacy code, remove the old implementation
+4. **Commit individual tasks**: Never use `git add .` or `git commit -a` - explicitly add files
+5. **Reference feature in commits**: Include "FEAT-XXX:" prefix in commit messages
+
+### Testing Best Practices
+1. **Test early and often**: Build and test after each significant change
+2. **Use existing test data**: Leverage files in `testdata/` for integration tests
+3. **Handle test data quirks**: Some test files have count mismatches (e.g., count="56" but 12 entries)
+4. **Aim for high coverage**: Target 80%+ test coverage with `go test -covermode=set`
+5. **Test realistic scenarios**: Use actual test data from `testdata/archive/` and `testdata/it/`
+
+### File Organization Patterns
+1. **Separate concerns**: Split types, interfaces, implementations, tests, and examples
+2. **Use descriptive names**: `types.go`, `reader.go`, `xml_reader.go`, `*_test.go`, `example_test.go`
+3. **Group related functionality**: Keep interfaces and implementations in same package
+4. **Add usage examples**: Create `example_test.go` with runnable code examples
+
+### Git Workflow Details
+```bash
+# Safe file staging (NEVER use git add . or git commit -a)
+git add pkg/specific/file.go
+git add pkg/specific/file_test.go
+
+# Commit with feature reference and description
+git commit -m "$(cat <<'EOF'
+FEAT-XXX: Brief description of what was implemented
+
+Detailed explanation of changes:
+- What was added/changed
+- Why it was needed
+- Any important implementation notes
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+```
+
+### Feature Completion
+1. **Update task checkboxes**: Mark all tasks as `[x]` in feature document
+2. **Set completion date**: Update Status section with completion date
+3. **Move to completed**: `git mv features/active/FEAT-XXX.md features/completed/FEAT-XXX.md`
+4. **Final commit**: Commit the completed feature document
+
+### Common Issues and Solutions
+- **Nix environment problems**: Use `nix-shell -p go_1_23 --run "command"` as fallback
+- **Test data count mismatches**: These are expected in some files; use for validation testing
+- **Legacy code conflicts**: Remove old implementations when starting fresh features
+- **Import path issues**: Always use full module path `github.com/phillipgreen/mobilecombackup/pkg/...`
+
+## Test Data Structure and Usage
+
+### Test Data Locations
+- `testdata/archive/`: Original backup files (calls.xml with 16 entries, realistic data)
+- `testdata/to_process/`: Files to be processed (calls-test.xml with count issues)
+- `testdata/it/scenerio-00/`: Integration test scenario with before/after states
+  - `original_repo_root/`: Existing repository state
+  - `to_process/`: New files to import  
+  - `expected_repo_root/`: Expected result after processing
+
+### Test Data Characteristics
+- **Count mismatches**: Some files have `count="56"` but only 12 actual entries
+- **Mixed years**: Test data may span multiple years (2014-2015)
+- **Realistic content**: Uses 555 phone numbers, anonymized contacts
+- **Binary attachments**: MMS files contain real PNG data in base64
+- **Validation opportunities**: Count mismatches are useful for testing validation logic
+
+### Using Test Data Effectively
+```go
+// Copy test data to temporary location for integration tests
+func copyFile(src, dst string) error {
+    // Create destination directory
+    if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+        return err
+    }
+    // Copy file content...
+}
+
+// Test with realistic data from testdata/
+err := copyFile("../../testdata/archive/calls.xml", 
+                filepath.Join(tempDir, "calls", "calls-2014.xml"))
+```
 
 ## Next Steps
 See `features/next_steps.md`
