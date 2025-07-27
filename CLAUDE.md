@@ -1,0 +1,272 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a Go command-line tool for processing mobile phone backup files (Call and SMS logs in XML format). It coalesces multiple backup files, removes duplicates, extracts attachments, and organizes data by year.
+
+## Development Commands
+
+### Testing
+```bash
+# Run all tests with coverage
+go test -v -covermode=set ./...
+
+# Run a specific test
+go test -v -run TestName ./pkg/packagename
+
+# In Nix environment
+run-tests
+```
+
+### Linting and Formatting
+```bash
+# Run golangci-lint (ensure it's installed)
+golangci-lint run
+
+# In Nix environment - format all files
+treefmt
+
+# Pre-commit checks (in Nix environment)
+# Includes: check-go, markdownlint, typos, nil
+```
+
+### Development Environment
+```bash
+# Enter Nix development shell with all dependencies
+nix develop
+
+# The environment includes: go 1.16, golangci-lint, pre-commit hooks, treefmt
+```
+
+## Architecture
+
+### Package Structure
+- **cmd/mobilecombackup**: Main CLI entry point with command parsing and orchestration
+- **pkg/calls**: XML parsing and models for call logs (Calls, Call structs)
+- **pkg/coalescer**: Core deduplication logic using hash-based comparison
+- **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
+- **internal/**: Test utilities and integration tests
+
+### Key Interfaces
+- `BackupEntry`: Base interface with `Timestamp()` and `Year()` methods
+- `BackupReader[B BackupEntry]`: Reads XML files and returns `[]BackupEntryMetadata`
+- `BackupWriter[V any]`: Writes processed entries to XML files
+- `Coalescer[V any]`: Manages deduplication with `Add()` and `Dump()` methods
+
+### Key Types
+- `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
+- `CoalImpl[V any]`: Implementation with memory store (map[string][V])
+- `CoalesceSummary`: Tracks added, duplicate, and error counts
+
+### Processing Flow
+1. Parse CLI arguments for repo root and paths to process
+2. Initialize coalescers and read existing repository
+3. Walk additional paths, adding files to appropriate coalescers
+4. For each entry:
+   - Remove `readable_date` field (timezone-dependent)
+   - Extract and write attachments to disk (hash-based naming)
+   - Calculate hash on all fields except `readable_date`
+   - Check for duplicates by hash
+5. Sort all entries by timestamp
+6. Partition by year (using `date` field)
+7. Write to repository structure with recalculated `readable_date` in EST
+
+### Repository Output Structure
+```
+repository/
+├── calls/
+│   ├── calls-2015.xml
+│   └── calls-2016.xml
+├── sms/
+│   ├── sms-2015.xml
+│   └── sms-2016.xml
+└── attachments/
+    └── [hash-based subdirectories]
+```
+
+## Important Implementation Details
+
+### Generic XML Parsing
+- Parse XML generically into map of maps to handle schema changes
+- Top-level element contains count (verify against actual entries)
+- Child elements processed with:
+  - `readable_date` removed before hashing
+  - Attachments extracted and stored by hash
+  - Hash calculated on all fields except `readable_date`
+
+### Attachment Storage
+- Convert base64 data to bytes and hash
+- Store in `attachments/[first-2-chars]/[full-hash]` structure
+- Replace attachment field with relative path to file
+- Example: `attachments/ac/ac78543342e3`
+
+### Deduplication
+- Memory store using map[string][V] keyed by hash
+- Process existing repository first, then new files
+- Track added, duplicate, and error counts
+- `readable_date` recalculated using EST timezone on write
+
+### Error Handling
+- Continue processing despite errors (track but don't fail)
+- Missing/empty repository is warning, not failure
+- Failed repository read causes app failure
+- Per-entry errors collected and reported at end
+
+### CLI Usage
+```bash
+mobilecombackup --repo-root path/to/reporoot path/to/file_to_import path/to/directory/to/scan
+```
+
+## Design Decisions
+
+### Core Principles
+- **Append-only system**: No updates to existing data, only new additions
+- **Per-record resilience**: Each record processed independently; one failure doesn't stop others
+- **No data removal**: Attachments are never deleted, so reference counting unnecessary
+- **Manual conflict resolution**: Rare conflicts handled manually, not automatically
+
+### Attachment Handling
+- **Deduplication**: Multiple SMS messages can reference the same attachment file
+- **Hash algorithm**: SHA-256 for content addressing
+- **Storage**: `attachments/[first-2-chars]/[full-hash]` structure remains permanent
+
+### Error Handling Strategy
+- **Rejected records**: Written to `rejected/` directory with metadata
+- **Rejection reasons**:
+  - `missing-timestamp`: No valid date field
+  - `malformed-attachment`: Base64 decode failure
+  - `parse-error`: XML parsing failure
+- **Rejected file format**:
+  ```xml
+  <rejected-entries>
+    <entry rejection-reason="missing-timestamp" source-file="backup-2024-01-15.xml">
+      <!-- original XML content -->
+    </entry>
+  </rejected-entries>
+  ```
+
+### Timestamp and Ordering
+- **UTC-based**: All timestamp storage and year partitioning uses UTC
+- **Same timestamp handling**: Records with identical timestamps both kept
+- **Secondary sort**: Preserve insertion order for identical timestamps
+- **Year extraction**: Based on UTC interpretation of `date` field
+
+### Summary Output Enhancement
+Should include rejected record counts:
+```
+              Initial     Final     Delta     Duplicates    Rejected    Errors
+Calls              10        12         2              5           1         0
+SMS                23        33        10             17           2         0
+```
+
+## Feature Development Workflow
+
+### Feature Documentation Structure
+All features are documented in the `features/` directory:
+```
+features/
+├── template.md        # Template for new features
+├── next_steps.md      # Notes about current work and what to start next
+├── active/            # Features actively being implemented
+│   └── FEAT-XXX-name.md
+├── ready/             # Fully planned features; ready to be implemented
+│   └── FEAT-XXX-name.md
+├── backlog/           # Features being planned; not yet ready to be implemented
+│   └── FEAT-XXX-name.md
+├── completed/         # Implemented features (reference)
+│   └── FEAT-XXX-name.md
+└── README.md          # Overview
+```
+
+### Feature Workflow
+1. **Create Feature Document**
+   - Copy `features/template.md` to `features/backlog/FEAT-XXX-descriptive-name.md`
+   - Use sequential numbering (FEAT-001, FEAT-002, etc.)
+   - Start with minimal details, filling in as you plan
+
+2. **Planning Phase**
+   - Define requirements (functional and non-functional)
+   - Document design approach and key decisions
+   - Break down into specific tasks
+   - Identify risks and dependencies
+   - Once planning is complete, move the feature to `features/ready/`.
+
+3. **Implementation Phase**
+   - When implementation starts, move the feature to `features/active/`.
+   - Check off tasks as completed
+   - Update implementation notes with decisions made
+   - Keep design sections current with actual implementation
+
+4. **Completion**
+   - Update completed status to today's date.
+   - Move feature to `completed/`
+   - Update with final implementation details
+   - Document any deviations from original plan
+
+### Task Management
+When planning features:
+- Not all sections are required, so may be removed; new sections may also be added.
+- Cross-reference related features in the References section
+
+When implementing features:
+- Work on one task at a time
+- Update task checkboxes in the feature document
+- Reference the feature document in commits (e.g., "FEAT-001: Implement generic XML parser")
+- Cross-reference related features in the References section
+
+## Feature Development Best Practices
+
+Based on analysis of existing features, the following patterns and best practices should be followed:
+
+### Feature Structure
+- **Consistent sections**: Status, Overview, Background, Requirements, Design, Tasks, Testing, References
+- **Clear priority levels**: high/medium/low based on user impact and dependencies
+- **Explicit dependencies**: Use "Pre-req:", "Depends on:", "Related:" prefixes
+- **Reference specifications**: Link to relevant sections in specification.md
+
+### Design Principles
+- **Interface-first design**: Define clear APIs before implementation
+- **Memory efficiency**: Use streaming APIs for large data processing
+- **Error resilience**: Continue processing on individual failures, collecting errors for reporting
+- **Graceful degradation**: Handle missing/optional fields without failing
+- **Conservative auto-fixes**: Only fix what's safe to fix automatically
+- **Explicit dangerous operations**: Require specific flags for destructive actions
+
+### Implementation Patterns
+- **Streaming for large files**: Process data in chunks to avoid memory issues
+- **Hash-based operations**: Use SHA-256 consistently for deduplication and content addressing
+- **Progress reporting**: Report progress every 100 entries for long operations
+- **Atomic operations**: Ensure related changes succeed or fail together
+- **Performance targets**: Set specific throughput goals (e.g., 10,000 records/second)
+
+### Testing Strategy
+- **Three-tier testing**: Always include Unit Tests, Integration Tests, and Edge Cases
+- **Edge case focus**: Empty data, corrupted inputs, large datasets, invalid formats, special characters
+- **Performance testing**: Include benchmarks for data-intensive operations
+- **Validation testing**: Verify all validation rules with positive and negative test cases
+
+### Task Breakdown Pattern
+1. Define data structures/interfaces
+2. Implement core logic
+3. Add validation/error handling
+4. Write tests (unit, then integration)
+5. Add documentation/examples
+6. Performance optimization (if needed)
+
+### Error Handling
+- **Context-rich errors**: Include file paths, line numbers, and specific violation types
+- **Structured rejection format**: Use consistent XML format for rejected entries
+- **Exit codes**: 0=success, 1=violations found, 2=errors occurred
+- **Violation tracking**: Track and report all issues found during processing
+
+### Documentation Requirements
+- **Usage examples**: Provide multiple scenarios showing different use cases
+- **Output format examples**: Show expected outputs clearly
+- **API documentation**: Include Go code examples in Design sections
+- **Command-line examples**: Demonstrate various flag combinations
+
+## Next Steps
+See `features/next_steps.md`
+
