@@ -241,7 +241,7 @@ features/
 
 ### Task Management
 When planning features:
-- Not all sections are required, so may be removed; new sections may also be added.
+- Not all sections are required, some may be removed; new sections may also be added.
 - Cross-reference related features in the References section
 
 When implementing features:
@@ -358,6 +358,8 @@ Based on analysis of existing features, the following patterns and best practice
    ```
 
 ### Git Workflow Details
+- Only commit files in which you modified as part of the work.
+
 ```bash
 # Safe file staging (NEVER use git add . or git commit -a)
 git add pkg/specific/file.go
