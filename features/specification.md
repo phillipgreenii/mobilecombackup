@@ -355,6 +355,57 @@ const (
 **SMS Type Determination:** Uses `type` attribute (1=received, 2=sent)
 **MMS Type Determination:** Uses `msg_box` attribute (1=received, 2=sent)
 
+### ContactsReader Interface
+
+The ContactsReader provides access to contact information stored in the repository:
+
+```go
+type ContactsReader interface {
+    // LoadContacts loads all contacts from contacts.yaml
+    LoadContacts() error
+    
+    // GetContactByNumber returns contact name for a phone number
+    GetContactByNumber(number string) (string, bool)
+    
+    // GetNumbersByContact returns all numbers for a contact name
+    GetNumbersByContact(name string) ([]string, bool)
+    
+    // GetAllContacts returns all contacts
+    GetAllContacts() ([]*Contact, error)
+    
+    // ContactExists checks if a contact name exists
+    ContactExists(name string) bool
+    
+    // IsKnownNumber checks if a number has a contact
+    IsKnownNumber(number string) bool
+    
+    // GetContactsCount returns total number of contacts
+    GetContactsCount() int
+}
+```
+
+**Key Features:**
+- Efficient O(1) phone number lookup using hash maps
+- Phone number normalization for consistent matching
+- Handles multiple number formats (+1XXXXXXXXXX, (XXX) XXX-XXXX, etc.)
+- Special handling for `<unknown>` contact designation
+- Duplicate number detection and validation
+- Graceful handling of missing contacts.yaml files
+
+#### Contact Structure
+```go
+type Contact struct {
+    Name    string   `yaml:"name"`
+    Numbers []string `yaml:"numbers"`
+}
+```
+
+#### Phone Number Normalization
+- Removes all non-digit characters
+- Strips leading "1" for US numbers (11 digits starting with 1)
+- Provides consistent lookup regardless of input format
+- Supports formats: +1XXXXXXXXXX, 1XXXXXXXXXX, XXXXXXXXXX, (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX
+
 ### Validation Requirements
 
 Both CallsReader and SMSReader implementations provide validation capabilities:
