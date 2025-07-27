@@ -63,6 +63,11 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
   - `xml_reader.go`: XMLSMSReader implementation with streaming support
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
+- **pkg/contacts**: Contact information management
+  - `types.go`: Contact struct and ContactsReader interface
+  - `reader.go`: ContactsManager implementation with YAML parsing
+  - `*_test.go`: Comprehensive unit and integration tests
+  - `example_test.go`: Usage documentation and examples
 - **pkg/coalescer**: Core deduplication logic using hash-based comparison
 - **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
 - **internal/**: Test utilities and integration tests
@@ -75,6 +80,7 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
 - `CallsReader`: Reads call records from repository with methods for streaming, validation, and metadata
 - `SMSReader`: Reads SMS/MMS records from repository with attachment tracking capabilities
 - `Message`: Base interface for SMS and MMS messages with common accessors
+- `ContactsReader`: Reads contact information from repository with phone number normalization and lookup capabilities
 
 ### Key Types
 - `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
@@ -327,6 +333,7 @@ Based on analysis of existing features, the following patterns and best practice
 4. **Aim for high coverage**: Target 80%+ test coverage with `go test -covermode=set`
    - FEAT-002 (calls): Achieved 85.5% coverage
    - FEAT-003 (sms): Achieved 81.2% coverage
+   - FEAT-005 (contacts): Achieved 97.3% coverage
 5. **Test realistic scenarios**: Use actual test data from `testdata/archive/` and `testdata/it/`
 6. **Integration test pattern**: Copy test files to temp directory to simulate repository structure
 7. **Test both success and failure paths**: Validate that validation functions properly detect errors
@@ -434,6 +441,74 @@ func copyFile(src, dst string) error {
 err := copyFile("../../testdata/archive/calls.xml", 
                 filepath.Join(tempDir, "calls", "calls-2014.xml"))
 ```
+
+## Slash Commands for Feature Development
+
+The repository includes custom slash commands in `.claude/commands/` to streamline feature development:
+
+### Available Commands
+- **`/implement-feature FEAT-XXX`**: Start implementing a feature following the established workflow
+  - Moves feature from `ready/` to `active/`
+  - Creates TodoWrite list from feature tasks
+  - Ensures code compilation and test passing before task completion
+  - Commits only modified files
+  - Updates both feature document and `specification.md` on completion
+
+- **`/ready-feature FEAT-XXX`**: Validate if a feature has enough detail for implementation
+  - Reviews feature document completeness
+  - Moves from `backlog/` to `ready/` if sufficiently detailed
+
+- **`/review-feature FEAT-XXX`**: Review a feature specification
+  - Provides feedback and suggestions for improvements
+  - Asks clarifying questions about requirements
+
+- **`/remember-anything-learned-this-session`**: Update CLAUDE.md with session learnings
+  - Captures development workflow improvements
+  - Documents new patterns and best practices
+
+### Using Slash Commands
+These commands are invoked by the user and provide structured prompts for common feature development tasks. They help ensure consistency across feature implementations and reduce the cognitive load of remembering all workflow steps.
+
+## Session Learnings: FEAT-005 Implementation
+
+### YAML Dependency Management
+- **Adding Go dependencies**: Use `nix-shell -p go_1_23 --run "go get package"` when Nix develop environment isn't available
+- **Dependency visibility**: Added `gopkg.in/yaml.v3 v3.0.1` to `go.mod` for contacts YAML parsing
+- **Build verification**: Always test compilation after adding dependencies
+
+### ContactsReader Implementation Insights
+- **O(1) Lookup Performance**: Built efficient hash maps for phone number→name and name→contact lookups
+- **Phone Number Normalization**: Critical for handling various input formats (+1XXXXXXXXXX, (XXX) XXX-XXXX, etc.)
+  - Remove all non-digits with regex `\D`
+  - Strip leading "1" for 11-digit US numbers
+  - Provides consistent lookups regardless of input format
+- **Duplicate Detection**: Validate during load that no phone number appears in multiple contacts
+- **Error Handling**: Graceful handling of missing `contacts.yaml` (not an error condition)
+
+### Testing Excellence Patterns
+- **High Coverage Achievement**: FEAT-005 achieved 97.3% test coverage through comprehensive unit tests
+- **Integration Test Strategies**:
+  - Large dataset testing (100 contacts) for performance validation
+  - Phone number format variation testing
+  - Reload functionality testing
+  - Empty repository handling
+- **Example Documentation**: Provide extensive `example_test.go` with real-world usage patterns
+
+### Non-XML Data Handling
+- **YAML Parsing**: Used `gopkg.in/yaml.v3` for structured contact data
+- **Data Validation**: Check for empty contact names and duplicate phone numbers during load
+- **Memory Efficiency**: Use maps for O(1) lookups while providing array access via `GetAllContacts()`
+
+### Architecture Pattern Consistency
+- **Interface-First Design**: Defined `ContactsReader` interface before implementation
+- **Separation of Concerns**: Clear split between types, implementation, tests, and examples
+- **Error Resilience**: Methods work safely on unloaded managers (return empty/false results)
+- **Copy Semantics**: Return copies from `GetAllContacts()` to prevent external modification
+
+### Specification Maintenance
+- **Living Documentation**: Update `features/specification.md` with each completed feature
+- **API Documentation**: Include interface definitions and key features in specification
+- **Cross-Referencing**: Maintain links between completed features and specification sections
 
 ## Next Steps
 See `features/next_steps.md`
