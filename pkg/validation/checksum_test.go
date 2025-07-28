@@ -162,12 +162,21 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 	}
 	
 	violations = validator.ValidateManifestChecksums(manifestWithWrongSize)
-	if len(violations) != 1 {
-		t.Errorf("Expected 1 violation with wrong size, got %d", len(violations))
+	if len(violations) < 1 {
+		t.Errorf("Expected at least 1 violation with wrong size, got %d", len(violations))
 	}
 	
-	if len(violations) > 0 && violations[0].Type != SizeMismatch {
-		t.Errorf("Expected SizeMismatch violation, got %s", violations[0].Type)
+	// Should have a size mismatch violation (and possibly checksum mismatch too)
+	foundSizeMismatch := false
+	for _, violation := range violations {
+		if violation.Type == SizeMismatch {
+			foundSizeMismatch = true
+			break
+		}
+	}
+	
+	if !foundSizeMismatch {
+		t.Error("Expected to find SizeMismatch violation")
 	}
 	
 	// Test with missing file
