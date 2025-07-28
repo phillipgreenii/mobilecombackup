@@ -68,6 +68,11 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
   - `reader.go`: ContactsManager implementation with YAML parsing
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
+- **pkg/attachments**: Attachment file management
+  - `types.go`: Attachment struct and AttachmentReader interface
+  - `reader.go`: AttachmentManager implementation with hash-based storage
+  - `*_test.go`: Comprehensive unit and integration tests
+  - `example_test.go`: Usage documentation and examples
 - **pkg/coalescer**: Core deduplication logic using hash-based comparison
 - **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
 - **internal/**: Test utilities and integration tests
@@ -81,6 +86,7 @@ nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
 - `SMSReader`: Reads SMS/MMS records from repository with attachment tracking capabilities
 - `Message`: Base interface for SMS and MMS messages with common accessors
 - `ContactsReader`: Reads contact information from repository with phone number normalization and lookup capabilities
+- `AttachmentReader`: Reads attachment files from repository with hash-based storage and verification capabilities
 
 ### Key Types
 - `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
@@ -333,6 +339,7 @@ Based on analysis of existing features, the following patterns and best practice
 4. **Aim for high coverage**: Target 80%+ test coverage with `go test -covermode=set`
    - FEAT-002 (calls): Achieved 85.5% coverage
    - FEAT-003 (sms): Achieved 81.2% coverage
+   - FEAT-004 (attachments): Achieved 84.8% coverage
    - FEAT-005 (contacts): Achieved 97.3% coverage
 5. **Test realistic scenarios**: Use actual test data from `testdata/archive/` and `testdata/it/`
 6. **Integration test pattern**: Copy test files to temp directory to simulate repository structure
@@ -509,6 +516,76 @@ These commands are invoked by the user and provide structured prompts for common
 - **Living Documentation**: Update `features/specification.md` with each completed feature
 - **API Documentation**: Include interface definitions and key features in specification
 - **Cross-Referencing**: Maintain links between completed features and specification sections
+
+## Session Learnings: FEAT-004 Implementation
+
+### Hash-Based Storage Implementation
+- **Content-Addressed Storage**: Use SHA-256 hashes for immutable content addressing
+- **Directory Sharding**: First 2 characters of hash as subdirectory prevents filesystem bottlenecks
+  - Structure: `attachments/ab/ab123456...` for hash starting with "ab"
+  - Prevents too many files in single directory (performance optimization)
+- **Hash Validation**: Implement strict 64-character lowercase hex validation
+  - Use regex `^[0-9a-f]{64}$` for validation
+  - Normalize input to lowercase for consistent lookup
+- **Path Generation**: Simple algorithm: `attachments/[hash[:2]]/[hash]`
+
+### Binary File Handling Patterns
+- **Content Verification**: Always verify file content matches expected hash
+- **Binary Data Processing**: Handle arbitrary binary content (images, videos, etc.)
+- **File Size Tracking**: Store file sizes for statistics and validation
+- **Existence Checking**: Distinguish between "file doesn't exist" vs "file exists but corrupted"
+
+### Test Data Management for Binary Content
+- **Generate Real Test Data**: Use crypto/sha256 to create proper 64-character hashes
+- **Temporary Hash Generation**: Create temporary files for hash calculation when needed
+  ```go
+  hasher := sha256.New()
+  hasher.Write(content)
+  hash := fmt.Sprintf("%x", hasher.Sum(nil))
+  ```
+- **Test with Various Content**: Test with different content sizes and types
+- **Handle Missing Test Data**: Gracefully skip integration tests when test data unavailable
+
+### Directory Structure Validation Patterns
+- **Comprehensive Validation**: Check directory names, file placement, and structure integrity
+- **Error Accumulation**: Collect all validation errors, don't stop at first error
+- **Context-Rich Errors**: Include specific paths and violation details in error messages
+- **Validation Categories**:
+  - Directory name format (2 lowercase hex characters)
+  - File placement (hash must start with directory name)
+  - No files in root attachments directory
+  - No unexpected subdirectories
+
+### Streaming and Memory Efficiency
+- **Callback-Based Streaming**: Use `func(item) error` pattern for memory-efficient processing
+- **Directory Walking**: Use `os.ReadDir` for efficient directory traversal
+- **Error Handling in Streams**: Continue processing on individual failures, log errors
+- **Performance Testing**: Test with 100+ items to verify streaming efficiency
+
+### Cross-Package Integration Patterns
+- **Referenced Hash Maps**: Use `map[string]bool` for efficient lookup of referenced items
+- **Orphan Detection**: Cross-reference with other packages (SMS reader) to find unreferenced items
+- **Statistics Collection**: Aggregate data across multiple operations for repository analysis
+- **Interface Consistency**: Follow same patterns as other readers (List, Stream, Validate, etc.)
+
+### File System Operation Best Practices
+- **Graceful Missing Directories**: Empty repository (no attachments/) is valid, not an error
+- **Atomic Operations**: Read file metadata and content separately for better error handling
+- **Path Manipulation**: Use `filepath.Join` for cross-platform compatibility
+- **Temporary Directory Testing**: Use `t.TempDir()` for isolated test environments
+
+### Error Handling for File Operations
+- **Distinguish Error Types**: File not found vs permission errors vs validation failures
+- **Context Preservation**: Wrap errors with additional context about what operation failed
+- **Validation vs Runtime Errors**: Separate validation failures from system errors
+- **Robust Directory Walking**: Continue processing other files when individual files fail
+
+### Performance Optimization Strategies
+- **Lazy Loading**: Only read file content when specifically requested
+- **Efficient Metadata**: Use `os.Stat` for size/existence without reading content
+- **Directory Caching**: Could cache directory listings for repeated operations
+- **Hash Calculation**: Only calculate hashes during verification, not regular operations
+- **Streaming APIs**: Mandatory for large repositories to prevent memory issues
 
 ## Next Steps
 See `features/next_steps.md`
