@@ -65,26 +65,6 @@ const (
 	SeverityWarning Severity = "warning"
 )
 
-// RepositoryValidator validates repository structure and consistency
-type RepositoryValidator interface {
-	// ValidateRepository performs comprehensive repository validation
-	ValidateRepository() (*ValidationReport, error)
-	
-	// ValidateStructure checks basic directory/file structure
-	ValidateStructure() error
-	
-	// ValidateManifest validates files.yaml completeness and accuracy
-	ValidateManifest() error
-	
-	// ValidateChecksums verifies all SHA-256 hashes
-	ValidateChecksums() error
-	
-	// ValidateContent uses reader components to validate file contents
-	ValidateContent() error
-	
-	// ValidateConsistency performs cross-file consistency checks
-	ValidateConsistency() error
-}
 
 // ManifestValidator validates files.yaml structure and content
 type ManifestValidator interface {

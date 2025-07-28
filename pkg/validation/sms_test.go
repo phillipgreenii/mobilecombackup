@@ -47,10 +47,10 @@ func (m *mockSMSReader) GetAttachmentRefs(year int) ([]string, error) {
 }
 
 func (m *mockSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
-	if m.allAttachmentRefs != nil {
-		return m.allAttachmentRefs, nil
+	if m.allAttachmentRefs == nil {
+		return nil, fmt.Errorf("mock error: allAttachmentRefs is nil")
 	}
-	return make(map[string]bool), nil
+	return m.allAttachmentRefs, nil
 }
 
 func (m *mockSMSReader) GetAvailableYears() ([]int, error) {
