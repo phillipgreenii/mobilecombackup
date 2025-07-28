@@ -400,6 +400,138 @@ type Contact struct {
 }
 ```
 
+## Validation Interface
+
+### RepositoryValidator Interface
+
+The RepositoryValidator provides comprehensive validation of repository structure and content:
+
+```go
+type RepositoryValidator interface {
+    // ValidateRepository performs comprehensive repository validation
+    ValidateRepository() (*ValidationReport, error)
+    
+    // ValidateStructure validates overall repository structure
+    ValidateStructure() []ValidationViolation
+    
+    // ValidateManifest validates files.yaml completeness and accuracy
+    ValidateManifest() []ValidationViolation
+    
+    // ValidateContent validates all content files
+    ValidateContent() []ValidationViolation
+    
+    // ValidateConsistency performs cross-file consistency validation
+    ValidateConsistency() []ValidationViolation
+}
+```
+
+### ValidationReport Structure
+```go
+type ValidationReport struct {
+    Timestamp      time.Time             `yaml:"timestamp"`
+    RepositoryPath string                `yaml:"repository_path"`
+    Status         ValidationStatus      `yaml:"status"`
+    Violations     []ValidationViolation `yaml:"violations"`
+}
+
+type ValidationViolation struct {
+    Type     ViolationType `yaml:"type"`
+    Severity Severity      `yaml:"severity"`
+    File     string        `yaml:"file"`
+    Message  string        `yaml:"message"`
+    Expected string        `yaml:"expected,omitempty"`
+    Actual   string        `yaml:"actual,omitempty"`
+}
+```
+
+### Validation Types and Severity
+```go
+type ViolationType string
+
+const (
+    MissingFile        ViolationType = "missing_file"
+    ExtraFile          ViolationType = "extra_file"
+    ChecksumMismatch   ViolationType = "checksum_mismatch"
+    InvalidFormat      ViolationType = "invalid_format"
+    OrphanedAttachment ViolationType = "orphaned_attachment"
+    CountMismatch      ViolationType = "count_mismatch"
+    SizeMismatch       ViolationType = "size_mismatch"
+    StructureViolation ViolationType = "structure_violation"
+)
+
+type Severity string
+
+const (
+    SeverityError   Severity = "error"
+    SeverityWarning Severity = "warning"
+)
+```
+
+### ReportGenerator Interface
+
+The ReportGenerator creates formatted validation reports:
+
+```go
+type ReportGenerator interface {
+    // GenerateReport creates a formatted validation report
+    GenerateReport(report *ValidationReport, format ReportFormat, 
+                  options *ReportFilterOptions) (string, error)
+    
+    // GenerateSummary creates a brief summary of validation results
+    GenerateSummary(report *ValidationReport) (*ValidationSummary, error)
+}
+
+type ReportFormat string
+
+const (
+    FormatYAML ReportFormat = "yaml"
+    FormatJSON ReportFormat = "json"
+    FormatText ReportFormat = "text"
+)
+```
+
+### OptimizedRepositoryValidator Interface
+
+The OptimizedRepositoryValidator extends base validation with performance features:
+
+```go
+type OptimizedRepositoryValidator interface {
+    RepositoryValidator
+    
+    // ValidateRepositoryWithOptions performs validation with performance controls
+    ValidateRepositoryWithOptions(ctx context.Context, 
+                                 options *PerformanceOptions) (*ValidationReport, error)
+    
+    // ValidateAsync performs validation asynchronously with progress reporting
+    ValidateAsync(options *PerformanceOptions) (<-chan *ValidationReport, <-chan error)
+    
+    // GetMetrics returns current validation performance metrics
+    GetMetrics() *ValidationMetrics
+    
+    // ClearCache clears the validation cache
+    ClearCache()
+}
+
+type PerformanceOptions struct {
+    ParallelValidation bool
+    EarlyTermination   bool
+    MaxConcurrency     int
+    ProgressCallback   func(stage string, progress float64)
+    Timeout           time.Duration
+}
+```
+
+**Key Features:**
+- Comprehensive validation of repository structure, manifest, content, and consistency
+- Two-tier severity system (errors vs warnings)
+- Multi-format report generation (YAML, JSON, human-readable text)
+- Filtering and customization options for reports
+- Performance optimizations for large repositories
+- Parallel validation with configurable concurrency
+- Progress reporting and metrics tracking
+- Early termination on critical errors
+- Context-aware cancellation support
+
 #### Phone Number Normalization
 - Removes all non-digit characters
 - Strips leading "1" for US numbers (11 digits starting with 1)
