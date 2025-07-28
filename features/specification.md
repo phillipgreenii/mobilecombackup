@@ -406,6 +406,66 @@ type Contact struct {
 - Provides consistent lookup regardless of input format
 - Supports formats: +1XXXXXXXXXX, 1XXXXXXXXXX, XXXXXXXXXX, (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX
 
+### AttachmentReader Interface
+
+The AttachmentReader provides access to attachment files stored in the repository:
+
+```go
+type AttachmentReader interface {
+    // GetAttachment retrieves attachment info by hash
+    GetAttachment(hash string) (*Attachment, error)
+    
+    // ReadAttachment reads the actual file content
+    ReadAttachment(hash string) ([]byte, error)
+    
+    // AttachmentExists checks if attachment exists
+    AttachmentExists(hash string) (bool, error)
+    
+    // ListAttachments returns all attachments in repository
+    ListAttachments() ([]*Attachment, error)
+    
+    // StreamAttachments streams attachment info for memory efficiency
+    StreamAttachments(callback func(*Attachment) error) error
+    
+    // VerifyAttachment checks if file content matches its hash
+    VerifyAttachment(hash string) (bool, error)
+    
+    // GetAttachmentPath returns the expected path for a hash
+    GetAttachmentPath(hash string) string
+    
+    // FindOrphanedAttachments returns attachments not referenced by any messages
+    FindOrphanedAttachments(referencedHashes map[string]bool) ([]*Attachment, error)
+    
+    // ValidateAttachmentStructure validates the directory structure
+    ValidateAttachmentStructure() error
+}
+```
+
+**Key Features:**
+- Hash-based content addressing using SHA-256
+- Directory structure: `attachments/[first-2-chars]/[full-hash]`
+- Content verification against stored hashes
+- Efficient streaming for large attachment repositories
+- Orphaned attachment detection for cleanup operations
+- Directory structure validation
+- Statistics collection for repository analysis
+
+#### Attachment Structure
+```go
+type Attachment struct {
+    Hash   string // SHA-256 hash in lowercase hex
+    Path   string // Relative path: attachments/ab/ab54363e39...
+    Size   int64  // File size in bytes
+    Exists bool   // Whether the file exists on disk
+}
+```
+
+#### Hash-Based Storage
+- Uses first 2 characters of SHA-256 hash as subdirectory prefix
+- Prevents filesystem performance issues with too many files in single directory
+- Content-addressed storage ensures data integrity
+- No file extensions needed (content type stored in MMS metadata)
+
 ### Validation Requirements
 
 Both CallsReader and SMSReader implementations provide validation capabilities:

@@ -1,7 +1,7 @@
 # FEAT-004: Read Attachments from Repository
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-01-27
 - **Priority**: high
 
 ## Overview
@@ -96,18 +96,18 @@ type AttachmentStats struct {
 - Cache directory listings for performance
 
 ## Tasks
-- [ ] Define Attachment struct and related types
-- [ ] Create AttachmentReader interface
-- [ ] Implement hash-based path resolution
-- [ ] Add directory traversal logic
-- [ ] Implement content reading with verification
-- [ ] Add directory structure validation
-- [ ] Implement orphaned attachment detection
-- [ ] Add streaming API for large repositories
-- [ ] Create attachment statistics collector
-- [ ] Write unit tests
-- [ ] Add integration tests
-- [ ] Performance optimization for large stores
+- [x] Define Attachment struct and related types
+- [x] Create AttachmentReader interface
+- [x] Implement hash-based path resolution
+- [x] Add directory traversal logic
+- [x] Implement content reading with verification
+- [x] Add directory structure validation
+- [x] Implement orphaned attachment detection
+- [x] Add streaming API for large repositories
+- [x] Create attachment statistics collector
+- [x] Write unit tests
+- [x] Add integration tests
+- [x] Performance optimization for large stores
 
 ## Testing
 ### Unit Tests
