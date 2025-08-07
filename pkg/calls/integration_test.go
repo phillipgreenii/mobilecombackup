@@ -18,13 +18,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() { _ = dstFile.Close() }()
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
@@ -33,7 +33,7 @@ func copyFile(src, dst string) error {
 func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 	// Use existing test data from testdata/archive/calls.xml
 	repoRoot := "../../testdata/archive"
-	reader := NewXMLCallsReader(repoRoot)
+	_ = NewXMLCallsReader(repoRoot)
 
 	// We need to copy the test file to the expected location structure
 	// Create a temp directory and copy test data to expected structure
@@ -44,7 +44,7 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 		t.Fatalf("Failed to setup test data: %v", err)
 	}
 
-	reader = NewXMLCallsReader(tempDir)
+	reader := NewXMLCallsReader(tempDir)
 
 	// Test ReadCalls with real data
 	calls, err := reader.ReadCalls(2014)

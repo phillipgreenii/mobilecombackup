@@ -46,7 +46,7 @@ func (r *XMLSMSReader) StreamMessages(year int, callback func(Message) error) er
 	if err != nil {
 		return fmt.Errorf("failed to open SMS file %s: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return r.streamMessagesFromReader(file, callback)
 }
@@ -475,7 +475,7 @@ func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to open SMS file %s: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
 	for {

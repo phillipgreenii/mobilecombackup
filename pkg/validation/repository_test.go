@@ -292,9 +292,10 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 	hasErrors := false
 	hasWarnings := false
 	for _, violation := range report.Violations {
-		if violation.Severity == SeverityError {
+		switch violation.Severity {
+		case SeverityError:
 			hasErrors = true
-		} else if violation.Severity == SeverityWarning {
+		case SeverityWarning:
 			hasWarnings = true
 		}
 	}

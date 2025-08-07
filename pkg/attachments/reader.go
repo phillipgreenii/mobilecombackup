@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+var (
+	// Compile regex once at package initialization
+	dirNameRegex = regexp.MustCompile("^[0-9a-f]{2}$")
+)
+
 // AttachmentManager provides attachment management functionality
 type AttachmentManager struct {
 	repoPath string
@@ -243,8 +248,7 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 			continue
 		}
 		
-		matched, _ := regexp.MatchString("^[0-9a-f]{2}$", name)
-		if !matched {
+		if !dirNameRegex.MatchString(name) {
 			errors = append(errors, fmt.Sprintf("invalid directory name format: %s", name))
 			continue
 		}

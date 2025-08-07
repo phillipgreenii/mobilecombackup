@@ -46,13 +46,14 @@ func TestNewOptimizedRepositoryValidator(t *testing.T) {
 	}
 
 	// Verify it implements the interface
-	_, ok := optimized.(OptimizedRepositoryValidator)
-	if !ok {
-		t.Error("Expected OptimizedRepositoryValidator interface implementation")
+	// Note: optimized is already of type OptimizedRepositoryValidator
+	// This test is redundant but kept for clarity
+	if optimized == nil {
+		t.Error("Expected non-nil OptimizedRepositoryValidator")
 	}
 
 	// Verify it still implements the base interface
-	_, ok = optimized.(RepositoryValidator)
+	_, ok := optimized.(RepositoryValidator)
 	if !ok {
 		t.Error("Expected RepositoryValidator interface implementation")
 	}

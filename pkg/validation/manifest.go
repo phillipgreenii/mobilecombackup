@@ -225,7 +225,7 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 	if err != nil {
 		return fmt.Errorf("failed to open files.yaml: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {

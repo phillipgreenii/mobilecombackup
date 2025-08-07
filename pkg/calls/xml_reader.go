@@ -58,7 +58,7 @@ func (r *XMLCallsReader) StreamCalls(year int, callback func(Call) error) error 
 	if err != nil {
 		return fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
 	
@@ -191,7 +191,7 @@ func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
 	
@@ -224,7 +224,7 @@ func (r *XMLCallsReader) ValidateCallsFile(year int) error {
 	if err != nil {
 		return fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Parse the entire file to validate structure
 	var xmlData xmlCalls

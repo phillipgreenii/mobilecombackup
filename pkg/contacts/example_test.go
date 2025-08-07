@@ -32,7 +32,7 @@ func ExampleContactsManager() {
 // Example demonstrates phone number lookup with various formats
 func ExampleContactsManager_GetContactByNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	// All these formats will find the same contact if the number exists
 	testNumbers := []string{
@@ -56,7 +56,7 @@ func ExampleContactsManager_GetContactByNumber() {
 // Example demonstrates getting all numbers for a contact
 func ExampleContactsManager_GetNumbersByContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	// Get all numbers for a specific contact
 	numbers, found := manager.GetNumbersByContact("Bob Ross")
@@ -71,7 +71,7 @@ func ExampleContactsManager_GetNumbersByContact() {
 // Example demonstrates checking if numbers are known
 func ExampleContactsManager_IsKnownNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	testNumbers := []string{
 		"5555551234",
@@ -91,7 +91,7 @@ func ExampleContactsManager_IsKnownNumber() {
 // Example demonstrates iterating through all contacts
 func ExampleContactsManager_GetAllContacts() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	contacts, err := manager.GetAllContacts()
 	if err != nil {
@@ -110,7 +110,7 @@ func ExampleContactsManager_GetAllContacts() {
 // Example demonstrates contact existence checking
 func ExampleContactsManager_ContactExists() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	contacts := []string{
 		"Bob Ross",
@@ -130,7 +130,7 @@ func ExampleContactsManager_ContactExists() {
 // Example demonstrates handling the special "<unknown>" contact
 func ExampleContactsManager_unknownContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	// Check if a number belongs to unknown contacts
 	name, found := manager.GetContactByNumber("8888888888")
@@ -170,7 +170,7 @@ func ExampleContactsManager_errorHandling() {
 // Example demonstrates phone number normalization behavior
 func Example_phoneNumberNormalization() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	manager.LoadContacts()
+	_ = manager.LoadContacts()
 
 	// These variations all normalize to the same number
 	variations := []string{

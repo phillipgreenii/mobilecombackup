@@ -15,7 +15,7 @@ type processorState struct {
 }
 
 func coalesce(c coalescer.Coalescer, fileRoot string) (coalescer.Result, error) {
-	var res coalescer.Result = coalescer.Result{Total: 0, New: 0}
+	res := coalescer.Result{Total: 0, New: 0}
 
 	// find all files to process
 	paths := searchPath(c, fileRoot)

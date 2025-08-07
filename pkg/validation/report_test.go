@@ -507,9 +507,10 @@ func TestNewReportGenerator(t *testing.T) {
 	}
 
 	// Verify it implements the interface
-	_, ok := generator.(ReportGenerator)
-	if !ok {
-		t.Error("Expected ReportGenerator interface implementation")
+	// Note: generator is already of type ReportGenerator
+	// This test is redundant but kept for clarity
+	if generator == nil {
+		t.Error("Expected non-nil ReportGenerator")
 	}
 }
 

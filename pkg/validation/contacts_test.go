@@ -215,18 +215,18 @@ func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.
 	foundDuplicateName := false
 	
 	for _, violation := range violations {
-		switch {
-		case violation.Message == "Contact name cannot be empty":
+		switch violation.Message {
+		case "Contact name cannot be empty":
 			foundEmptyName = true
-		case violation.Message == "Contact 'John Doe' has no phone numbers":
+		case "Contact 'John Doe' has no phone numbers":
 			foundNoNumbers = true
-		case violation.Message == "Empty phone number for contact 'Jane Smith'":
+		case "Empty phone number for contact 'Jane Smith'":
 			foundEmptyNumber = true
-		case violation.Message == "Phone number 'invalid@phone' has unusual format for contact 'Bob Johnson'":
+		case "Phone number 'invalid@phone' has unusual format for contact 'Bob Johnson'":
 			foundInvalidFormat = true
-		case violation.Message == "Phone number '+15551234567' assigned to multiple contacts: '(unnamed contact 1)' and 'Alice Brown'":
+		case "Phone number '+15551234567' assigned to multiple contacts: '(unnamed contact 1)' and 'Alice Brown'":
 			foundDuplicateNumber = true
-		case violation.Message == "Duplicate contact name: John Doe":
+		case "Duplicate contact name: John Doe":
 			foundDuplicateName = true
 		}
 	}
@@ -298,13 +298,13 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 	foundMissingBobJohnson := false
 	
 	for _, violation := range violations {
-		switch {
-		case violation.Message == "Contact 'Unknown User' referenced in calls/SMS but not found in contacts.yaml":
+		switch violation.Message {
+		case "Contact 'Unknown User' referenced in calls/SMS but not found in contacts.yaml":
 			foundMissingUnknownUser = true
 			if violation.Severity != SeverityError {
 				t.Errorf("Expected error severity for missing contact reference, got %s", violation.Severity)
 			}
-		case violation.Message == "Contact 'Bob Johnson' referenced in calls/SMS but not found in contacts.yaml":
+		case "Contact 'Bob Johnson' referenced in calls/SMS but not found in contacts.yaml":
 			foundMissingBobJohnson = true
 		}
 	}

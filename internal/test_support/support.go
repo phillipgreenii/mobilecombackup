@@ -11,8 +11,8 @@ import (
 // based on https://stackoverflow.com/a/64733815/388006
 // and https://golangbyexample.com/copy-file-go/
 func CopyDir(source, destination string) error {
-	var err error = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
-		var relPath string = strings.Replace(path, source, "", 1)
+	err := filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		relPath := strings.Replace(path, source, "", 1)
 		if relPath == "" {
 			return nil
 		}
@@ -31,13 +31,13 @@ func CopyFile(source, destination string) error {
 	if err != nil {
 		return err
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	d, err := os.Create(destination)
 	if err != nil {
 		return err
 	}
-	defer d.Close()
+	defer func() { _ = d.Close() }()
 
 	//This will copy
 	_, err = io.Copy(d, s)
@@ -46,8 +46,11 @@ func CopyFile(source, destination string) error {
 }
 
 func CountLines(source string) (int, error) {
-	file, _ := os.Open(source)
-	defer file.Close()
+	file, err := os.Open(source)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = file.Close() }()
 	fileScanner := bufio.NewScanner(file)
 	lineCount := 0
 	for fileScanner.Scan() {

@@ -19,7 +19,7 @@ func parseFlags(progname string, args []string) (conf *config, output string, er
 	flags.SetOutput(&buf)
 
 	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage of %s [options] [pathToProcess1 ... pathToProcessN]:\n", progname)
+		_, _ = fmt.Fprintf(flags.Output(), "Usage of %s [options] [pathToProcess1 ... pathToProcessN]:\n", progname)
 
 		flags.PrintDefaults()
 	}
@@ -37,7 +37,7 @@ func parseFlags(progname string, args []string) (conf *config, output string, er
 
 func validateConfig(conf *config) error {
 	if len(conf.pathsToProcess) <= 0 {
-		return errors.New("Atleast one path to process must be specified")
+		return errors.New("at least one path to process must be specified")
 	}
 	return nil
 }
@@ -60,7 +60,7 @@ func doWork(conf *config) error {
 		}
 	}
 	if errorCount > 0 {
-		return fmt.Errorf("Had %d failures", errorCount)
+		return fmt.Errorf("had %d failures", errorCount)
 	} else {
 		return nil
 	}

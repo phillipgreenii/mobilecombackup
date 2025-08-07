@@ -18,13 +18,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() { _ = dstFile.Close() }()
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
@@ -331,16 +331,18 @@ func TestXMLSMSReader_Integration_MessageTypes(t *testing.T) {
 	err = reader.StreamMessages(2013, func(msg Message) error {
 		switch m := msg.(type) {
 		case SMS:
-			if m.Type == ReceivedMessage {
+			switch m.Type {
+			case ReceivedMessage:
 				smsReceived++
-			} else if m.Type == SentMessage {
+			case SentMessage:
 				smsSent++
 			}
 		case MMS:
 			// MMS type is determined by msg_box attribute
-			if m.MsgBox == 1 {
+			switch m.MsgBox {
+			case 1:
 				mmsReceived++
-			} else if m.MsgBox == 2 {
+			case 2:
 				mmsSent++
 			}
 		}
