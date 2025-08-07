@@ -1,26 +1,26 @@
-# FEAT-015: Validate .mobilecombackup Marker File
+# FEAT-015: Validate .mobilecombackup.yaml Marker File
 
 ## Status
 - **Completed**: Not yet started
 - **Priority**: high (dependency for FEAT-014)
 
 ## Overview
-Update repository validation (FEAT-001) to validate the presence and content of the `.mobilecombackup` marker file. This file contains key-value pairs including the repository structure version, enabling future migration paths.
+Update repository validation (FEAT-001) to validate the presence and content of the `.mobilecombackup.yaml` marker file. This file contains key-value pairs including the repository structure version, enabling future migration paths.
 
 ## Background
-FEAT-014 introduces a `.mobilecombackup` marker file to identify initialized repositories and track the repository structure version. This file needs to be validated as part of the repository validation process to ensure all repositories have proper version tracking.
+FEAT-014 introduces a `.mobilecombackup.yaml` marker file to identify initialized repositories and track the repository structure version. This file needs to be validated as part of the repository validation process to ensure all repositories have proper version tracking.
 
 ## Requirements
 ### Functional Requirements
-- [ ] Add .mobilecombackup to the list of required files in repository validation
-- [ ] Validate .mobilecombackup file exists in repository root
-- [ ] Validate .mobilecombackup contains valid YAML (validate YAML structure before checking fields)
+- [ ] Add .mobilecombackup.yaml to the list of required files in repository validation
+- [ ] Validate .mobilecombackup.yaml file exists in repository root
+- [ ] Validate .mobilecombackup.yaml contains valid YAML (validate YAML structure before checking fields)
 - [ ] Validate repository_structure_version key exists
 - [ ] Validate repository_structure_version value is exactly "1" (only latest version supported)
 - [ ] Validate created_at key exists and is a valid RFC3339 timestamp
 - [ ] Validate created_by key exists
-- [ ] Include .mobilecombackup in files.yaml manifest
-- [ ] Mark missing .mobilecombackup as a fixable violation with suggested fix content
+- [ ] Include .mobilecombackup.yaml in files.yaml manifest
+- [ ] Mark missing .mobilecombackup.yaml as a fixable violation with suggested fix content
 - [ ] Log warnings for extra fields but do not create validation violations
 
 ### Non-Functional Requirements
@@ -34,7 +34,7 @@ Extend the existing RepositoryValidator to include marker file validation as par
 
 ### API/Interface
 ```go
-// MarkerFileValidator validates the .mobilecombackup marker file
+// MarkerFileValidator validates the .mobilecombackup.yaml marker file
 type MarkerFileValidator struct {
     repoRoot string
 }
@@ -55,7 +55,7 @@ type FixableViolation struct {
     SuggestedFix string // YAML content that would fix the violation
 }
 
-// MarkerFileContent represents the .mobilecombackup file structure
+// MarkerFileContent represents the .mobilecombackup.yaml file structure
 type MarkerFileContent struct {
     RepositoryStructureVersion string `yaml:"repository_structure_version"`
     CreatedAt                  string `yaml:"created_at"`
@@ -77,19 +77,19 @@ type MarkerFileContent struct {
 ## Tasks
 - [ ] Add MarkerFileValidator to pkg/validation
 - [ ] Update RepositoryValidator to validate marker file first
-- [ ] Add .mobilecombackup to required files list
+- [ ] Add .mobilecombackup.yaml to required files list
 - [ ] Implement YAML structure validation before field parsing
 - [ ] Implement RFC3339 timestamp validation
 - [ ] Include suggested fix content in fixable violations
 - [ ] Add logic to skip further validation if version unsupported
 - [ ] Implement warning logging for extra fields
 - [ ] Write unit tests for marker file validation
-- [ ] Update integration tests to include .mobilecombackup
+- [ ] Update integration tests to include .mobilecombackup.yaml
 - [ ] Update validation report format documentation
 
 ## Testing
 ### Unit Tests
-- Test validation with missing .mobilecombackup file (verify suggested fix content)
+- Test validation with missing .mobilecombackup.yaml file (verify suggested fix content)
 - Test validation with malformed YAML content
 - Test validation with valid YAML but missing repository_structure_version
 - Test validation with missing created_at or created_by
@@ -100,12 +100,12 @@ type MarkerFileContent struct {
 - Test that validation stops if version is unsupported
 
 ### Integration Tests
-- Update existing repository validation tests to include .mobilecombackup
+- Update existing repository validation tests to include .mobilecombackup.yaml
 - Test fixable violation reporting with suggested fix content
 - Test that validation halts when version is unsupported
 
 ### Edge Cases
-- Empty .mobilecombackup file
+- Empty .mobilecombackup.yaml file
 - Malformed YAML (invalid syntax)
 - Extra unexpected keys in marker file (should warn but not fail)
 - Non-string version value

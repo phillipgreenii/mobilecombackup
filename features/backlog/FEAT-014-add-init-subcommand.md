@@ -17,7 +17,7 @@ Currently, users must manually create the repository directory structure or rely
 ## Requirements
 ### Functional Requirements
 - [ ] Create repository directory structure: calls/, sms/, attachments/
-- [ ] Create .mobilecombackup marker file with key-value pairs
+- [ ] Create .mobilecombackup.yaml marker file with key-value pairs
   - [ ] Include "repository_structure_version" with value "1"
   - [ ] Include "created_at" with ISO timestamp
   - [ ] Include "created_by" with CLI version
@@ -27,7 +27,7 @@ Currently, users must manually create the repository directory structure or rely
 - [ ] Use current directory as default repo root if --repo-root not specified
 - [ ] Validate target directory is either non-existent or empty
 - [ ] Error if directory exists with files:
-  - [ ] Provide specific error if it looks like an existing repository (has .mobilecombackup or expected directories)
+  - [ ] Provide specific error if it looks like an existing repository (has .mobilecombackup.yaml or expected directories)
   - [ ] Provide different error for non-empty directory with other files
 - [ ] Check write permissions before creating any directories
 - [ ] Display created structure in tree-style format upon successful completion
@@ -75,7 +75,7 @@ var RepositoryStructure = []string{
     "attachments",
 }
 
-// MarkerFileContent defines the content of .mobilecombackup
+// MarkerFileContent defines the content of .mobilecombackup.yaml
 type MarkerFileContent struct {
     RepositoryStructureVersion string `yaml:"repository_structure_version"`
     CreatedAt                  string `yaml:"created_at"`
@@ -109,27 +109,27 @@ type InitResult struct {
 
 ### Implementation Notes
 - Use os.MkdirAll with 0750 permissions for directory creation
-- Create .mobilecombackup file with YAML content using gopkg.in/yaml.v3
+- Create .mobilecombackup.yaml file with YAML content using gopkg.in/yaml.v3
 - Create empty contacts.yaml and summary.yaml with appropriate initial content
 - Validate write permissions using os.OpenFile with O_CREATE|O_EXCL
-- Check for existing repository by looking for .mobilecombackup marker file or directory structure
+- Check for existing repository by looking for .mobilecombackup.yaml marker file or directory structure
 - Error messages:
-  - "Directory already contains a mobilecombackup repository" (if .mobilecombackup exists)
+  - "Directory already contains a mobilecombackup repository" (if .mobilecombackup.yaml exists)
   - "Directory appears to be a repository (found calls/, sms/, or attachments/ directories)" (if dirs exist)
   - "Directory is not empty" (for other non-empty directories)
 - Use filepath.Join for cross-platform path handling
-- The .mobilecombackup file should be included in files.yaml during future operations
+- The .mobilecombackup.yaml file should be included in files.yaml during future operations
 - Tree-style output should show the created structure hierarchically
 
 ## Tasks
 - [ ] Add init subcommand to CLI parser
 - [ ] Implement directory validation logic
   - [ ] Check if path exists and is empty
-  - [ ] Detect existing repository structure (.mobilecombackup file)
+  - [ ] Detect existing repository structure (.mobilecombackup.yaml file)
   - [ ] Validate write permissions
 - [ ] Implement directory creation logic
   - [ ] Create directories with 0750 permissions
-  - [ ] Create .mobilecombackup marker file with version, timestamp, and CLI version
+  - [ ] Create .mobilecombackup.yaml marker file with version, timestamp, and CLI version
   - [ ] Create empty contacts.yaml
   - [ ] Create summary.yaml with zero counts
 - [ ] Add --dry-run support
@@ -137,7 +137,7 @@ type InitResult struct {
 - [ ] Implement tree-style output formatting
 - [ ] Write unit tests
   - [ ] Test empty directory initialization
-  - [ ] Test .mobilecombackup file creation
+  - [ ] Test .mobilecombackup.yaml file creation
   - [ ] Test permission validation
   - [ ] Test existing repository detection
   - [ ] Test dry-run mode
@@ -148,7 +148,7 @@ type InitResult struct {
 - [ ] Update documentation
   - [ ] Add init command to README
   - [ ] Update CLI help text
-  - [ ] Document .mobilecombackup file format
+  - [ ] Document .mobilecombackup.yaml file format
 
 ## Testing
 ### Unit Tests
@@ -187,8 +187,8 @@ type InitResult struct {
 - Similar patterns: Repository validation in FEAT-001
 
 ## Notes
-- The .mobilecombackup marker file enables repository version tracking for future migrations
+- The .mobilecombackup.yaml marker file enables repository version tracking for future migrations
 - The attachments/ directory structure (with hash-based subdirectories) will be created on demand during import
 - Future enhancements could extend the marker file with additional metadata (creation date, tool version, etc.)
-- FEAT-001 (Repository Validation) will need to be updated to validate the presence of .mobilecombackup file
+- FEAT-001 (Repository Validation) will need to be updated to validate the presence of .mobilecombackup.yaml file
 - The marker file being missing is a fixable validation violation (can be created with default version "1")
