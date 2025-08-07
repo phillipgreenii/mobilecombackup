@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 )
 
@@ -99,8 +98,7 @@ func (s *processorState) Process(fileRoot string) (Result, error) {
 }
 
 func Init(rootPath string) (Processor, error) {
-	return &processorState{
-		rootPath,
-		calls.Init(rootPath),
-	}, nil
+	// TODO: This implementation needs to be updated to match the new architecture
+	// The old coalescer pattern doesn't match the new CallsReader/SMSReader pattern
+	return nil, fmt.Errorf("Init not implemented - architecture mismatch")
 }

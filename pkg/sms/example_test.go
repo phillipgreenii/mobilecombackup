@@ -61,7 +61,7 @@ func ExampleXMLSMSReader_ValidateSMSFile() {
 }
 
 // Example demonstrates message type handling
-func ExampleMessageInterface() {
+func Example_messageInterface() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
 	err := reader.StreamMessages(2014, func(msg sms.Message) error {

@@ -168,7 +168,7 @@ func ExampleContactsManager_errorHandling() {
 }
 
 // Example demonstrates phone number normalization behavior
-func ExamplePhoneNumberNormalization() {
+func Example_phoneNumberNormalization() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	manager.LoadContacts()
 
