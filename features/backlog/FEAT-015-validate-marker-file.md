@@ -14,13 +14,14 @@ FEAT-014 introduces a `.mobilecombackup` marker file to identify initialized rep
 ### Functional Requirements
 - [ ] Add .mobilecombackup to the list of required files in repository validation
 - [ ] Validate .mobilecombackup file exists in repository root
-- [ ] Validate .mobilecombackup contains valid YAML
+- [ ] Validate .mobilecombackup contains valid YAML (validate YAML structure before checking fields)
 - [ ] Validate repository_structure_version key exists
-- [ ] Validate repository_structure_version value is a supported version (currently only "1")
-- [ ] Validate created_at key exists and is a valid ISO timestamp
+- [ ] Validate repository_structure_version value is exactly "1" (only latest version supported)
+- [ ] Validate created_at key exists and is a valid RFC3339 timestamp
 - [ ] Validate created_by key exists
 - [ ] Include .mobilecombackup in files.yaml manifest
-- [ ] Mark missing .mobilecombackup as a fixable violation (can be created with default values)
+- [ ] Mark missing .mobilecombackup as a fixable violation with suggested fix content
+- [ ] Log warnings for extra fields but do not create validation violations
 
 ### Non-Functional Requirements
 - [ ] Clear error messages for marker file violations
@@ -41,9 +42,17 @@ type MarkerFileValidator struct {
 // Validate checks the marker file exists and has valid content
 func (v *MarkerFileValidator) Validate() ([]ValidationViolation, error) {
     // Check file exists
+    // Validate YAML structure first
     // Parse YAML content
     // Validate required fields
+    // Check for extra fields and log warnings
     // Return violations
+}
+
+// FixableViolation includes suggested fix content
+type FixableViolation struct {
+    ValidationViolation
+    SuggestedFix string // YAML content that would fix the violation
 }
 
 // MarkerFileContent represents the .mobilecombackup file structure
@@ -55,47 +64,61 @@ type MarkerFileContent struct {
 ```
 
 ### Implementation Notes
-- Add to structure validation phase before other file validations
+- Validate marker file first in structure validation phase (before other validations)
 - Use gopkg.in/yaml.v3 for parsing (already a dependency)
-- Missing file violation should have type "missing_marker_file" with fixable flag
-- Invalid content violations should specify what's wrong (missing key, invalid version, invalid timestamp format)
-- Supported versions should be defined as constants
+- Missing file violation should have type "missing_marker_file" with fixable flag and suggested content
+- Invalid content violations should specify what's wrong (missing key, invalid version, invalid RFC3339 format)
+- Only version "1" is supported (reject all others)
+- If version is unsupported, skip remaining repository validations
+- Extra fields should be logged as warnings but not create violations
+- Validate YAML structure before attempting to parse fields for clearer errors
+- Include default marker file content in fixable violation for missing files
 
 ## Tasks
 - [ ] Add MarkerFileValidator to pkg/validation
-- [ ] Update RepositoryValidator to include marker file validation
+- [ ] Update RepositoryValidator to validate marker file first
 - [ ] Add .mobilecombackup to required files list
-- [ ] Implement YAML parsing and validation logic
-- [ ] Mark missing marker file as fixable violation
+- [ ] Implement YAML structure validation before field parsing
+- [ ] Implement RFC3339 timestamp validation
+- [ ] Include suggested fix content in fixable violations
+- [ ] Add logic to skip further validation if version unsupported
+- [ ] Implement warning logging for extra fields
 - [ ] Write unit tests for marker file validation
 - [ ] Update integration tests to include .mobilecombackup
 - [ ] Update validation report format documentation
 
 ## Testing
 ### Unit Tests
-- Test validation with missing .mobilecombackup file
-- Test validation with invalid YAML content
-- Test validation with missing repository_structure_version
+- Test validation with missing .mobilecombackup file (verify suggested fix content)
+- Test validation with malformed YAML content
+- Test validation with valid YAML but missing repository_structure_version
 - Test validation with missing created_at or created_by
-- Test validation with invalid ISO timestamp format
-- Test validation with unsupported version number
+- Test validation with invalid RFC3339 timestamp format
+- Test validation with unsupported version number (not "1")
 - Test validation with valid marker file
+- Test that extra fields generate warnings but not violations
+- Test that validation stops if version is unsupported
 
 ### Integration Tests
 - Update existing repository validation tests to include .mobilecombackup
-- Test fixable violation reporting
+- Test fixable violation reporting with suggested fix content
+- Test that validation halts when version is unsupported
 
 ### Edge Cases
 - Empty .mobilecombackup file
-- Malformed YAML
-- Extra unexpected keys in marker file
+- Malformed YAML (invalid syntax)
+- Extra unexpected keys in marker file (should warn but not fail)
 - Non-string version value
+- Various invalid RFC3339 formats (missing timezone, wrong format)
+- Version "2" or other future versions (should halt validation)
 
 ## Risks and Mitigations
 - **Risk**: Breaking existing validation for repositories without marker file
-  - **Mitigation**: Mark as fixable violation, not critical error
-- **Risk**: Version compatibility issues
-  - **Mitigation**: Define clear version support matrix
+  - **Mitigation**: Mark as fixable violation with clear suggested fix content
+- **Risk**: Future version compatibility when repository structure changes
+  - **Mitigation**: Only accept current version "1", future versions require migration
+- **Risk**: Unclear error messages for YAML parsing failures
+  - **Mitigation**: Validate YAML structure separately before field validation
 
 ## References
 - Pre-req: FEAT-014 (Add Init Subcommand)
@@ -105,4 +128,7 @@ type MarkerFileContent struct {
 ## Notes
 - This validation ensures all repositories can be tracked for future migrations
 - The fixable nature allows existing repositories to be upgraded gracefully
-- Future versions might add more fields to the marker file
+- Only version "1" is supported; future versions will require explicit migration
+- Extra fields in the marker file generate warnings but are not validation violations
+- RFC3339 is the only accepted timestamp format for consistency
+- Validation should halt early if the repository version is unsupported to prevent confusion
