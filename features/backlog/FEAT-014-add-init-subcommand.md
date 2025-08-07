@@ -19,13 +19,20 @@ Currently, users must manually create the repository directory structure or rely
 - [ ] Create repository directory structure: calls/, sms/, attachments/
 - [ ] Create .mobilecombackup marker file with key-value pairs
   - [ ] Include "repository_structure_version" with value "1"
+  - [ ] Include "created_at" with ISO timestamp
+  - [ ] Include "created_by" with CLI version
   - [ ] Use YAML format for easy parsing and future extensibility
+- [ ] Create empty contacts.yaml file
+- [ ] Create summary.yaml file with zero counts for calls and sms
 - [ ] Use current directory as default repo root if --repo-root not specified
 - [ ] Validate target directory is either non-existent or empty
-- [ ] Error if directory exists with files (distinguish between existing repo vs other files)
+- [ ] Error if directory exists with files:
+  - [ ] Provide specific error if it looks like an existing repository (has .mobilecombackup or expected directories)
+  - [ ] Provide different error for non-empty directory with other files
 - [ ] Check write permissions before creating any directories
-- [ ] Display created structure upon successful completion
+- [ ] Display created structure in tree-style format upon successful completion
 - [ ] Support --dry-run mode to preview actions without creating directories
+- [ ] Support --quiet flag to suppress output
 
 ### Non-Functional Requirements
 - [ ] Atomic operation - either create all directories or none
@@ -47,6 +54,7 @@ The init command will:
 type InitCommand struct {
     RepoRoot string
     DryRun   bool
+    Quiet    bool
 }
 
 // Execute runs the init command
@@ -55,7 +63,7 @@ func (c *InitCommand) Execute() error {
 }
 
 // CLI usage
-// mobilecombackup init [--repo-root <path>] [--dry-run]
+// mobilecombackup init [--repo-root <path>] [--dry-run] [--quiet]
 ```
 
 ### Data Structures
@@ -70,13 +78,25 @@ var RepositoryStructure = []string{
 // MarkerFileContent defines the content of .mobilecombackup
 type MarkerFileContent struct {
     RepositoryStructureVersion string `yaml:"repository_structure_version"`
+    CreatedAt                  string `yaml:"created_at"`
+    CreatedBy                  string `yaml:"created_by"`
 }
 
 // DefaultMarkerContent returns the default marker file content
-func DefaultMarkerContent() MarkerFileContent {
+func DefaultMarkerContent(version string) MarkerFileContent {
     return MarkerFileContent{
         RepositoryStructureVersion: "1",
+        CreatedAt:                  time.Now().UTC().Format(time.RFC3339),
+        CreatedBy:                  fmt.Sprintf("mobilecombackup v%s", version),
     }
+}
+
+// SummaryContent defines the initial summary.yaml content
+type SummaryContent struct {
+    Counts struct {
+        Calls int `yaml:"calls"`
+        SMS   int `yaml:"sms"`
+    } `yaml:"counts"`
 }
 
 // InitResult contains the result of initialization
@@ -88,13 +108,18 @@ type InitResult struct {
 ```
 
 ### Implementation Notes
-- Use os.MkdirAll with 0755 permissions for directory creation
+- Use os.MkdirAll with 0750 permissions for directory creation
 - Create .mobilecombackup file with YAML content using gopkg.in/yaml.v3
+- Create empty contacts.yaml and summary.yaml with appropriate initial content
 - Validate write permissions using os.OpenFile with O_CREATE|O_EXCL
-- Check for existing repository by looking for .mobilecombackup marker file
-- Implement rollback on failure (remove partially created directories and files)
+- Check for existing repository by looking for .mobilecombackup marker file or directory structure
+- Error messages:
+  - "Directory already contains a mobilecombackup repository" (if .mobilecombackup exists)
+  - "Directory appears to be a repository (found calls/, sms/, or attachments/ directories)" (if dirs exist)
+  - "Directory is not empty" (for other non-empty directories)
 - Use filepath.Join for cross-platform path handling
 - The .mobilecombackup file should be included in files.yaml during future operations
+- Tree-style output should show the created structure hierarchically
 
 ## Tasks
 - [ ] Add init subcommand to CLI parser
@@ -103,11 +128,13 @@ type InitResult struct {
   - [ ] Detect existing repository structure (.mobilecombackup file)
   - [ ] Validate write permissions
 - [ ] Implement directory creation logic
-  - [ ] Create directories atomically
-  - [ ] Create .mobilecombackup marker file with version
-  - [ ] Handle rollback on failure
+  - [ ] Create directories with 0750 permissions
+  - [ ] Create .mobilecombackup marker file with version, timestamp, and CLI version
+  - [ ] Create empty contacts.yaml
+  - [ ] Create summary.yaml with zero counts
 - [ ] Add --dry-run support
-- [ ] Implement output formatting (display created structure)
+- [ ] Add --quiet flag support
+- [ ] Implement tree-style output formatting
 - [ ] Write unit tests
   - [ ] Test empty directory initialization
   - [ ] Test .mobilecombackup file creation
@@ -144,12 +171,13 @@ type InitResult struct {
 - Very long path names
 - Directory with hidden files only
 - Concurrent initialization attempts
+- Directory names with spaces or special characters
 
 ## Risks and Mitigations
 - **Risk**: Partial directory creation on failure
-  - **Mitigation**: Implement atomic creation with rollback
+  - **Mitigation**: Since directory must be empty, user can simply delete and retry
 - **Risk**: Permission issues on different platforms
-  - **Mitigation**: Use standard Go os package permissions
+  - **Mitigation**: Use standard Go os package permissions (0750)
 - **Risk**: Race conditions with concurrent access
   - **Mitigation**: Use file locking or clear documentation about single-user assumption
 

@@ -17,8 +17,10 @@ FEAT-014 introduces a `.mobilecombackup` marker file to identify initialized rep
 - [ ] Validate .mobilecombackup contains valid YAML
 - [ ] Validate repository_structure_version key exists
 - [ ] Validate repository_structure_version value is a supported version (currently only "1")
+- [ ] Validate created_at key exists and is a valid ISO timestamp
+- [ ] Validate created_by key exists
 - [ ] Include .mobilecombackup in files.yaml manifest
-- [ ] Mark missing .mobilecombackup as a fixable violation (can be created with default version "1")
+- [ ] Mark missing .mobilecombackup as a fixable violation (can be created with default values)
 
 ### Non-Functional Requirements
 - [ ] Clear error messages for marker file violations
@@ -47,6 +49,8 @@ func (v *MarkerFileValidator) Validate() ([]ValidationViolation, error) {
 // MarkerFileContent represents the .mobilecombackup file structure
 type MarkerFileContent struct {
     RepositoryStructureVersion string `yaml:"repository_structure_version"`
+    CreatedAt                  string `yaml:"created_at"`
+    CreatedBy                  string `yaml:"created_by"`
 }
 ```
 
@@ -54,7 +58,7 @@ type MarkerFileContent struct {
 - Add to structure validation phase before other file validations
 - Use gopkg.in/yaml.v3 for parsing (already a dependency)
 - Missing file violation should have type "missing_marker_file" with fixable flag
-- Invalid content violations should specify what's wrong (missing key, invalid version)
+- Invalid content violations should specify what's wrong (missing key, invalid version, invalid timestamp format)
 - Supported versions should be defined as constants
 
 ## Tasks
@@ -72,6 +76,8 @@ type MarkerFileContent struct {
 - Test validation with missing .mobilecombackup file
 - Test validation with invalid YAML content
 - Test validation with missing repository_structure_version
+- Test validation with missing created_at or created_by
+- Test validation with invalid ISO timestamp format
 - Test validation with unsupported version number
 - Test validation with valid marker file
 
