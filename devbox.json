@@ -2,13 +2,17 @@
   "$schema":  "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
 	  "go@1.24",
-	   "golangci-lint@latest"
+	  "golangci-lint@latest",
+	  "claude-code@latest"
   ],
   "shell": {
     "init_hook": [
       "go mod tidy"
     ],
     "scripts": {
+      "builder": [
+              "go build -v ./..."
+      ],
       "tests": [
               "go test -v -covermode=set ./..."
       ],

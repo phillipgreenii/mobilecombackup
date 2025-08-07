@@ -8,43 +8,52 @@ This is a Go command-line tool for processing mobile phone backup files (Call an
 
 ## Development Commands
 
+### Building
+```bash
+# Build all packages
+go build -v ./...
+# or using devbox:
+devbox run builder
+```
+
 ### Testing
 ```bash
 # Run all tests with coverage
 go test -v -covermode=set ./...
+# or using devbox:
+devbox run tests
 
 # Run a specific test
 go test -v -run TestName ./pkg/packagename
-
-# In Nix environment
-run-tests
 ```
 
 ### Linting and Formatting
 ```bash
-# Run golangci-lint (ensure it's installed)
+# Run golangci-lint
 golangci-lint run
-
-# In Nix environment - format all files
-treefmt
-
-# Pre-commit checks (in Nix environment)
-# Includes: check-go, markdownlint, typos, nil
+# or using devbox:
+devbox run linter
 ```
 
 ### Development Environment
 ```bash
-# Enter Nix development shell with all dependencies
-nix develop
+# Enter devbox development shell with all dependencies
+devbox shell
 
-# The environment includes: go 1.16, golangci-lint, pre-commit hooks, treefmt
+# The environment includes: go 1.24, golangci-lint, claude-code
 
-# If nix develop fails due to devenv issues, use nix-shell as fallback:
-nix-shell -p go_1_23 --run "command here"
+# Build all packages
+devbox run builder
 
-# Example: Build and test
-nix-shell -p go_1_23 --run "go build ./pkg/calls"
-nix-shell -p go_1_23 --run "go test -v -covermode=set ./pkg/calls"
+# Run tests directly
+devbox run tests
+
+# Run linter directly  
+devbox run linter
+
+# Alternative: Run one-off commands in devbox environment
+devbox run go build ./pkg/calls
+devbox run go test -v -covermode=set ./pkg/calls
 ```
 
 ## Architecture
@@ -402,7 +411,7 @@ EOF
 4. **Final commit**: Commit the completed feature document
 
 ### Common Issues and Solutions
-- **Nix environment problems**: Use `nix-shell -p go_1_23 --run "command"` as fallback
+- **Devbox environment problems**: Use `devbox run command` to run commands without entering the shell
 - **Test data count mismatches**: These are expected in some files; use for validation testing
 - **Legacy code conflicts**: Remove old implementations when starting fresh features
 - **Import path issues**: Always use full module path `github.com/phillipgreen/mobilecombackup/pkg/...`
@@ -479,7 +488,7 @@ These commands are invoked by the user and provide structured prompts for common
 ## Session Learnings: FEAT-005 Implementation
 
 ### YAML Dependency Management
-- **Adding Go dependencies**: Use `nix-shell -p go_1_23 --run "go get package"` when Nix develop environment isn't available
+- **Adding Go dependencies**: Use `devbox run go get package` or enter `devbox shell` and run `go get package`
 - **Dependency visibility**: Added `gopkg.in/yaml.v3 v3.0.1` to `go.mod` for contacts YAML parsing
 - **Build verification**: Always test compilation after adding dependencies
 
