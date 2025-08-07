@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<?xml-stylesheet type="text/xsl" href="calls.xsl"?>
+<calls count="1">
+  <call number="5555550028" duration="0" date="1429223346465" type="3" readable_date="Apr 16, 2015 6:29:06 PM" contact_name="(Unknown)" />
+</calls>
