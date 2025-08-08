@@ -596,6 +596,69 @@ These commands are invoked by the user and provide structured prompts for common
 - **Hash Calculation**: Only calculate hashes during verification, not regular operations
 - **Streaming APIs**: Mandatory for large repositories to prevent memory issues
 
+## Session Learnings: CLI Subcommand Implementation (FEAT-006, FEAT-014, FEAT-007)
+
+### Cobra CLI Framework Integration
+- **Package Structure**: Create `cmd/mobilecombackup/cmd/` directory for command implementations
+- **Root Command Setup**: Define global flags in `root.go` (--quiet, --repo-root, --version, --help)
+- **Subcommand Pattern**: Each subcommand gets its own file (init.go, validate.go, etc.)
+- **Version Injection**: Use ldflags during build for version information
+  ```bash
+  go build -ldflags "-X main.Version=1.2.3" -o mobilecombackup
+  ```
+
+### CLI Testing Patterns
+- **Unit Tests**: Test individual command functions and flag parsing
+- **Integration Tests**: Build binary and test via exec.Command for realistic behavior
+- **Test Binary Creation**: Build once per test suite to avoid repeated compilation
+  ```go
+  testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
+  buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+  ```
+- **Exit Code Testing**: Use exitErr.ExitCode() to verify proper exit codes
+- **Output Verification**: Capture stdout/stderr and verify expected content
+
+### Integration Test Best Practices
+- **Avoid Duplicate Functions**: Package-level test functions can conflict across files
+- **Test Repository Creation**: Create minimal valid repositories for testing
+- **Handle Working Directory**: Some tests change directories - save and restore
+- **Environment Variable Testing**: Test MB_REPO_ROOT and other env vars properly
+- **Performance Testing**: Include tests with larger datasets to ensure scalability
+
+### Validation Command Specifics
+- **Repository Reader Creation**: Must create all readers (calls, SMS, attachments, contacts)
+- **JSON Output Formatting**: ValidationViolation struct needs proper JSON tags for lowercase fields
+- **Progress Reporting**: Interface pattern for future enhancement without breaking changes
+- **Output Modes**: Implement quiet (violations only), verbose (detailed progress), and JSON
+- **Exit Codes**: 0=valid, 1=violations found, 2=runtime error
+
+### Init Command Implementation Details
+- **Directory Validation**: Check for existing repository markers (.mobilecombackup.yaml, calls/, etc.)
+- **Tree Output**: Implement custom tree rendering for created structure display
+- **Dry Run Support**: Preview actions without creating files/directories
+- **Marker File Creation**: Include version, timestamp (RFC3339), and creator info
+- **File Permissions**: Use 0750 for directories, 0644 for files
+
+### Common Pitfalls and Solutions
+- **Tree Rendering Issues**: Root node needs special handling (isRoot parameter)
+- **Test Data Requirements**: Validation tests need complete repository structure
+- **JSON Field Names**: Go structs need json tags for proper JSON marshaling
+- **Integration Test Isolation**: Each test should create its own temp directory
+- **Help Command**: Cobra automatically provides help command - update tests accordingly
+
+### Documentation Requirements for CLI Commands
+- **README Updates**: Add command usage examples and descriptions
+- **Exit Code Documentation**: Clearly document what each exit code means
+- **Flag Documentation**: Include all flags with examples
+- **Output Examples**: Show both success and failure output examples
+- **Specification Updates**: Add command details to features/specification.md
+
+### Test Coverage Expectations
+- **Unit Tests**: Cover all command functions, flag parsing, output formatting
+- **Integration Tests**: Test real command execution with various scenarios
+- **Edge Cases**: Non-existent paths, permission issues, malformed input
+- **Performance Tests**: Ensure commands scale with repository size
+
 ## Next Steps
 See `features/next_steps.md`
 
