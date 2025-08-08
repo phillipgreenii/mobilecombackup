@@ -1,7 +1,7 @@
 # FEAT-010: Add Import subcommand
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-08
 - **Priority**: high
 
 ## Overview
@@ -12,26 +12,26 @@ Users need a simple interface to process backup files and import them in the rep
 
 ## Requirements
 ### Functional Requirements
-- [ ] Parse command-line arguments (repo-root, file paths)
-- [ ] Support processing individual files
-- [ ] Support scanning directories for backup files (case-sensitive: calls*.xml, sms*.xml)
-- [ ] Skip files already in repository structure when scanning
-- [ ] Will validate the repo-root before starting the import
-- [ ] Display processing summary with statistics (totals and per-year breakdown)
-- [ ] Support `--dry-run` flag to preview without importing (processes files, deduplicates, generates statistics)
-- [ ] Support `--verbose` flag for detailed logging
-- [ ] Support `--quiet` flag to suppress progress, show only summary
-- [ ] Support `--json` flag for machine-readable output
-- [ ] Support `--filter` flag to process only calls or only SMS (values: calls, sms)
-- [ ] Use exit code 1 to represent the import completed, but rejects were found
-- [ ] Support `--no-error-on-rejects` to return exit code 0 if the import completed, but rejects were found
-- [ ] Use exit code 2 to represent the import failed
+- [x] Parse command-line arguments (repo-root, file paths)
+- [x] Support processing individual files
+- [x] Support scanning directories for backup files (case-sensitive: calls*.xml, sms*.xml)
+- [x] Skip files already in repository structure when scanning
+- [x] Will validate the repo-root before starting the import
+- [x] Display processing summary with statistics (totals and per-year breakdown)
+- [x] Support `--dry-run` flag to preview without importing (processes files, deduplicates, generates statistics)
+- [x] Support `--verbose` flag for detailed logging
+- [x] Support `--quiet` flag to suppress progress, show only summary
+- [x] Support `--json` flag for machine-readable output
+- [x] Support `--filter` flag to process only calls or only SMS (values: calls, sms)
+- [x] Use exit code 1 to represent the import completed, but rejects were found
+- [x] Support `--no-error-on-rejects` to return exit code 0 if the import completed, but rejects were found
+- [x] Use exit code 2 to represent the import failed
 
 ### Non-Functional Requirements
-- [ ] Clear error messages
-- [ ] Progress indication for long operations (emit log at start of each file and every 100 records)
-- [ ] Command-line argument `--repo-root` takes precedence over `MB_REPO_ROOT` environment variable
-- [ ] Directory scanning follows symlinks, skips hidden directories, no depth limit
+- [x] Clear error messages
+- [x] Progress indication for long operations (emit log at start of each file and every 100 records)
+- [x] Command-line argument `--repo-root` takes precedence over `MB_REPO_ROOT` environment variable
+- [x] Directory scanning follows symlinks, skips hidden directories, no depth limit
 
 ### Usage Examples
 
@@ -204,37 +204,37 @@ Time taken: 2.3s
 - Track all errors for final summary
 
 ## Tasks
-- [ ] Create import command file (`cmd/mobilecombackup/cmd/import.go`)
-- [ ] Define command flags and help text using Cobra
-- [ ] Implement repository location resolution (flag > env > cwd)
-- [ ] Integrate repository validation from FEAT-007
-- [ ] Implement repository loading for deduplication:
-  - [ ] Load calls for building deduplication index
-  - [ ] Load SMS/MMS for building deduplication index
-- [ ] Implement file scanning logic:
-  - [ ] Recursive directory walking with symlink support
-  - [ ] Hidden directory filtering
-  - [ ] Pattern matching for backup files
-  - [ ] Repository file exclusion
-- [ ] Create progress reporter interface for 100-record intervals
-- [ ] Integrate FEAT-008 call import functionality
-- [ ] Integrate FEAT-009 SMS import functionality
-- [ ] Implement single repository update:
-  - [ ] Coordinate final write of all accumulated data
-  - [ ] Ensure atomic update (no partial writes)
-  - [ ] Skip writing if --dry-run
-- [ ] Implement summary statistics collection and formatting
-- [ ] Add JSON output formatter
-- [ ] Implement dry-run mode (process without writing)
-- [ ] Add filter flag logic (calls-only, sms-only)
-- [ ] Calculate and display processing time
-- [ ] Write unit tests for command parsing
-- [ ] Write unit tests for file scanning logic
-- [ ] Write integration test: Import with various flag combinations
-- [ ] Write integration test: Import with missing repository
-- [ ] Write integration test: Import with file errors
-- [ ] Write integration test: Dry-run verification
-- [ ] Update main.go to register import subcommand
+- [x] Create import command file (`cmd/mobilecombackup/cmd/import.go`)
+- [x] Define command flags and help text using Cobra
+- [x] Implement repository location resolution (flag > env > cwd)
+- [x] Integrate repository validation from FEAT-007
+- [x] Implement repository loading for deduplication:
+  - [x] Load calls for building deduplication index
+  - [x] Load SMS/MMS for building deduplication index
+- [x] Implement file scanning logic:
+  - [x] Recursive directory walking with symlink support
+  - [x] Hidden directory filtering
+  - [x] Pattern matching for backup files
+  - [x] Repository file exclusion
+- [x] Create progress reporter interface for 100-record intervals
+- [x] Integrate FEAT-008 call import functionality
+- [x] Integrate FEAT-009 SMS import functionality
+- [x] Implement single repository update:
+  - [x] Coordinate final write of all accumulated data
+  - [x] Ensure atomic update (no partial writes)
+  - [x] Skip writing if --dry-run
+- [x] Implement summary statistics collection and formatting
+- [x] Add JSON output formatter
+- [x] Implement dry-run mode (process without writing)
+- [x] Add filter flag logic (calls-only, sms-only)
+- [x] Calculate and display processing time
+- [x] Write unit tests for command parsing
+- [x] Write unit tests for file scanning logic
+- [x] Write integration test: Import with various flag combinations
+- [x] Write integration test: Import with missing repository
+- [x] Write integration test: Import with file errors
+- [x] Write integration test: Dry-run verification
+- [x] Update main.go to register import subcommand
 
 ## References
 - Pre-req: `FEAT-001: Repository Validation`
