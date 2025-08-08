@@ -216,29 +216,40 @@ Calls              10        12         2              5           1         0
 SMS                23        33        10             17           2         0
 ```
 
-## Feature Development Workflow
+## Issue Development Workflow
 
-### Feature Documentation Structure
-All features are documented in the `features/` directory:
+### Issue Documentation Structure
+All issues (features and bugs) are documented in the `issues/` directory:
 ```
-features/
-├── template.md        # Template for new features
-├── next_steps.md      # Notes about current work and what to start next
-├── active/            # Features actively being implemented
-│   └── FEAT-XXX-name.md
-├── ready/             # Fully planned features; ready to be implemented
-│   └── FEAT-XXX-name.md
-├── backlog/           # Features being planned; not yet ready to be implemented
-│   └── FEAT-XXX-name.md
-├── completed/         # Implemented features (reference)
-│   └── FEAT-XXX-name.md
-└── README.md          # Overview
+issues/
+├── feature_template.md # Template for new features
+├── bug_template.md     # Template for bug reports
+├── next_steps.md       # Notes about current work and what to start next
+├── active/             # Issues actively being implemented/fixed
+│   ├── FEAT-XXX-name.md
+│   └── BUG-XXX-name.md
+├── ready/              # Fully planned issues ready for implementation
+│   ├── FEAT-XXX-name.md
+│   └── BUG-XXX-name.md
+├── backlog/            # Issues being planned; not yet ready
+│   ├── FEAT-XXX-name.md
+│   └── BUG-XXX-name.md
+├── completed/          # Resolved issues (reference)
+│   ├── FEAT-XXX-name.md
+│   └── BUG-XXX-name.md
+└── README.md           # Overview
 ```
+
+### Issue Numbering
+- All issues (features and bugs) share a single sequential numbering system
+- Numbers are unique across all issue types (e.g., FEAT-001, BUG-002, FEAT-003)
+- When creating a new issue, use the next number after the highest existing FEAT or BUG number
 
 ### Feature Workflow
 1. **Create Feature Document**
-   - Copy `features/template.md` to `features/backlog/FEAT-XXX-descriptive-name.md`
-   - Use sequential numbering (FEAT-001, FEAT-002, etc.)
+   - Find the highest issue number across all FEAT-XXX and BUG-XXX files
+   - Copy `issues/feature_template.md` to `issues/backlog/FEAT-XXX-descriptive-name.md`
+   - Use the next sequential number
    - Start with minimal details, filling in as you plan
 
 2. **Planning Phase**
@@ -246,10 +257,10 @@ features/
    - Document design approach and key decisions
    - Break down into specific tasks
    - Identify risks and dependencies
-   - Once planning is complete, move the feature to `features/ready/`.
+   - Once planning is complete, move the feature to `issues/ready/`.
 
 3. **Implementation Phase**
-   - When implementation starts, move the feature to `features/active/`.
+   - When implementation starts, move the feature to `issues/active/`.
    - Check off tasks as completed
    - Update implementation notes with decisions made
    - Keep design sections current with actual implementation
@@ -260,22 +271,47 @@ features/
    - Update with final implementation details
    - Document any deviations from original plan
 
-### Task Management
-When planning features:
-- Not all sections are required, some may be removed; new sections may also be added.
-- Cross-reference related features in the References section
+### Bug Workflow
+1. **Create Bug Report**
+   - Find the highest issue number across all FEAT-XXX and BUG-XXX files
+   - Copy `issues/bug_template.md` to `issues/backlog/BUG-XXX-descriptive-name.md`
+   - Use the next sequential number
+   - Include reproduction steps, expected vs actual behavior
 
-When implementing features:
+2. **Investigation Phase**
+   - Reproduce the issue
+   - Identify root cause
+   - Document findings in Root Cause Analysis section
+   - Define fix approach
+   - Once investigation is complete, move the bug to `issues/ready/`.
+
+3. **Fix Implementation**
+   - When fix starts, move the bug to `issues/active/`.
+   - Implement the fix
+   - Add regression tests
+   - Verify fix resolves the issue
+
+4. **Completion**
+   - Update fixed date to today's date.
+   - Move bug to `completed/`
+   - Document verification steps
+
+### Task Management
+When planning issues:
+- Not all sections are required, some may be removed; new sections may also be added.
+- Cross-reference related issues in the References section
+
+When implementing issues:
 - Work on one task at a time
 - Update task checkboxes in the feature document
 - Reference the feature document in commits (e.g., "FEAT-001: Implement generic XML parser")
 - Cross-reference related features in the References section
 
-## Feature Development Best Practices
+## Issue Development Best Practices
 
-Based on analysis of existing features, the following patterns and best practices should be followed:
+Based on analysis of existing issues, the following patterns and best practices should be followed:
 
-### Feature Structure
+### Issue Structure
 - **Consistent sections**: Status, Overview, Background, Requirements, Design, Tasks, Testing, References
 - **Clear priority levels**: high/medium/low based on user impact and dependencies
 - **Explicit dependencies**: Use "Pre-req:", "Depends on:", "Related:" prefixes
@@ -326,10 +362,10 @@ Based on analysis of existing features, the following patterns and best practice
 - **API documentation**: Include Go code examples in Design sections
 - **Command-line examples**: Demonstrate various flag combinations
 
-## Implementing Features: Practical Workflow
+## Implementing Issues: Practical Workflow
 
 ### Initial Setup
-1. **Move feature to active**: `git mv features/ready/FEAT-XXX.md features/active/FEAT-XXX.md`
+1. **Move issue to active**: `git mv issues/ready/FEAT-XXX.md issues/active/FEAT-XXX.md`
 2. **Commit the move**: Use format "Starting to implement FEAT-XXX"
 3. **Use TodoWrite tool**: Create todo list from feature tasks for progress tracking
 
@@ -404,11 +440,11 @@ EOF
 )"
 ```
 
-### Feature Completion
-1. **Update task checkboxes**: Mark all tasks as `[x]` in feature document
+### Issue Completion
+1. **Update task checkboxes**: Mark all tasks as `[x]` in issue document
 2. **Set completion date**: Update Status section with completion date
-3. **Move to completed**: `git mv features/active/FEAT-XXX.md features/completed/FEAT-XXX.md`
-4. **Final commit**: Commit the completed feature document
+3. **Move to completed**: `git mv issues/active/FEAT-XXX.md issues/completed/FEAT-XXX.md` (or BUG-XXX.md)
+4. **Final commit**: Commit the completed issue document
 
 ### Common Issues and Solutions
 - **Devbox environment problems**: Use `devbox run command` to run commands without entering the shell
@@ -458,32 +494,42 @@ err := copyFile("../../testdata/archive/calls.xml",
                 filepath.Join(tempDir, "calls", "calls-2014.xml"))
 ```
 
-## Slash Commands for Feature Development
+## Slash Commands for Issue Development
 
-The repository includes custom slash commands in `.claude/commands/` to streamline feature development:
+The repository includes custom slash commands in `.claude/commands/` to streamline issue development:
 
 ### Available Commands
-- **`/implement-feature FEAT-XXX`**: Start implementing a feature following the established workflow
-  - Moves feature from `ready/` to `active/`
-  - Creates TodoWrite list from feature tasks
+- **`/implement-issue FEAT-XXX or BUG-XXX`**: Start implementing an issue following the established workflow
+  - Moves issue from `ready/` to `active/`
+  - Creates TodoWrite list from issue tasks
   - Ensures code compilation and test passing before task completion
   - Commits only modified files
-  - Updates both feature document and `specification.md` on completion
+  - Updates both issue document and `specification.md` on completion
 
-- **`/ready-feature FEAT-XXX`**: Validate if a feature has enough detail for implementation
-  - Reviews feature document completeness
+- **`/ready-issue FEAT-XXX or BUG-XXX`**: Validate if an issue has enough detail for implementation
+  - Reviews issue document completeness
   - Moves from `backlog/` to `ready/` if sufficiently detailed
 
-- **`/review-feature FEAT-XXX`**: Review a feature specification
+- **`/review-issue FEAT-XXX or BUG-XXX`**: Review an issue specification
   - Provides feedback and suggestions for improvements
   - Asks clarifying questions about requirements
+
+- **`/create-feature <description>`**: Create a new feature issue
+  - Finds next sequential issue number
+  - Creates FEAT-XXX document from template
+  - Places in `backlog/` for planning
+
+- **`/create-bug <description>`**: Create a new bug report
+  - Finds next sequential issue number
+  - Creates BUG-XXX document from template
+  - Places in `backlog/` for investigation
 
 - **`/remember-anything-learned-this-session`**: Update CLAUDE.md with session learnings
   - Captures development workflow improvements
   - Documents new patterns and best practices
 
 ### Using Slash Commands
-These commands are invoked by the user and provide structured prompts for common feature development tasks. They help ensure consistency across feature implementations and reduce the cognitive load of remembering all workflow steps.
+These commands are invoked by the user and provide structured prompts for common issue development tasks. They help ensure consistency across issue implementations and reduce the cognitive load of remembering all workflow steps.
 
 ## Session Learnings: FEAT-005 Implementation
 
@@ -522,7 +568,7 @@ These commands are invoked by the user and provide structured prompts for common
 - **Copy Semantics**: Return copies from `GetAllContacts()` to prevent external modification
 
 ### Specification Maintenance
-- **Living Documentation**: Update `features/specification.md` with each completed feature
+- **Living Documentation**: Update `issues/specification.md` with each completed feature
 - **API Documentation**: Include interface definitions and key features in specification
 - **Cross-Referencing**: Maintain links between completed features and specification sections
 
@@ -651,7 +697,7 @@ These commands are invoked by the user and provide structured prompts for common
 - **Exit Code Documentation**: Clearly document what each exit code means
 - **Flag Documentation**: Include all flags with examples
 - **Output Examples**: Show both success and failure output examples
-- **Specification Updates**: Add command details to features/specification.md
+- **Specification Updates**: Add command details to issues/specification.md
 
 ### Test Coverage Expectations
 - **Unit Tests**: Cover all command functions, flag parsing, output formatting
@@ -660,5 +706,5 @@ These commands are invoked by the user and provide structured prompts for common
 - **Performance Tests**: Ensure commands scale with repository size
 
 ## Next Steps
-See `features/next_steps.md`
+See `issues/next_steps.md`
 
