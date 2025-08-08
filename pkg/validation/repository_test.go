@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -62,6 +64,127 @@ func TestRepositoryValidatorImpl_ValidateRepository(t *testing.T) {
 	// Status should be determined by violation severity
 	if report.Status == "" {
 		t.Error("Expected status to be set")
+	}
+	
+	// Should have violation for missing marker file
+	hasMarkerViolation := false
+	for _, v := range report.Violations {
+		if v.Type == MissingMarkerFile {
+			hasMarkerViolation = true
+			break
+		}
+	}
+	if !hasMarkerViolation {
+		t.Error("Expected MissingMarkerFile violation")
+	}
+}
+
+func TestRepositoryValidatorImpl_ValidateRepositoryWithMarkerFile(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create a valid marker file
+	markerContent := `repository_structure_version: "1"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup v1.0.0"
+`
+	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+	
+	// Create mock readers
+	callsReader := &mockCallsReader{availableYears: []int{}}
+	smsReader := &mockSMSReader{
+		availableYears:    []int{},
+		allAttachmentRefs: make(map[string]bool),
+	}
+	attachmentReader := &mockAttachmentReader{attachments: []*attachments.Attachment{}}
+	contactsReader := &mockContactsReader{contacts: []*contacts.Contact{}}
+	
+	validator := NewRepositoryValidator(
+		tempDir,
+		callsReader,
+		smsReader,
+		attachmentReader,
+		contactsReader,
+	)
+	
+	report, err := validator.ValidateRepository()
+	if err != nil {
+		t.Fatalf("ValidateRepository failed: %v", err)
+	}
+	
+	// Should NOT have marker file violations
+	for _, v := range report.Violations {
+		if v.Type == MissingMarkerFile || v.Type == UnsupportedVersion {
+			t.Errorf("Unexpected marker file violation: %+v", v)
+		}
+	}
+}
+
+func TestRepositoryValidatorImpl_UnsupportedVersion(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create marker file with unsupported version
+	markerContent := `repository_structure_version: "2"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup v2.0.0"
+`
+	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+	
+	// Create mock readers
+	callsReader := &mockCallsReader{availableYears: []int{}}
+	smsReader := &mockSMSReader{
+		availableYears:    []int{},
+		allAttachmentRefs: make(map[string]bool),
+	}
+	attachmentReader := &mockAttachmentReader{attachments: []*attachments.Attachment{}}
+	contactsReader := &mockContactsReader{contacts: []*contacts.Contact{}}
+	
+	validator := NewRepositoryValidator(
+		tempDir,
+		callsReader,
+		smsReader,
+		attachmentReader,
+		contactsReader,
+	)
+	
+	report, err := validator.ValidateRepository()
+	if err != nil {
+		t.Fatalf("ValidateRepository failed: %v", err)
+	}
+	
+	// Should have unsupported version violation
+	hasUnsupportedVersion := false
+	for _, v := range report.Violations {
+		if v.Type == UnsupportedVersion {
+			hasUnsupportedVersion = true
+			break
+		}
+	}
+	if !hasUnsupportedVersion {
+		t.Error("Expected UnsupportedVersion violation")
+	}
+	
+	// Status should be Invalid due to unsupported version
+	if report.Status != Invalid {
+		t.Errorf("Expected Invalid status, got %s", report.Status)
+	}
+	
+	// Should not run other validations - check that we don't have many other violations
+	// (we expect only marker file related violations)
+	markerViolations := 0
+	for _, v := range report.Violations {
+		if v.File == ".mobilecombackup.yaml" {
+			markerViolations++
+		}
+	}
+	if markerViolations != len(report.Violations) {
+		t.Errorf("Expected only marker file violations when version unsupported, got %d other violations", 
+			len(report.Violations)-markerViolations)
 	}
 }
 
@@ -271,11 +394,12 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 	
 	// Create a validator that can control violation types
 	testValidator := &RepositoryValidatorImpl{
-		repositoryRoot:    tempDir,
-		manifestValidator: NewManifestValidator(tempDir),
-		checksumValidator: NewChecksumValidator(tempDir),
-		callsValidator:    NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
-		smsValidator:      NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
+		repositoryRoot:       tempDir,
+		markerFileValidator:  NewMarkerFileValidator(tempDir),
+		manifestValidator:    NewManifestValidator(tempDir),
+		checksumValidator:    NewChecksumValidator(tempDir),
+		callsValidator:       NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
+		smsValidator:         NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
 		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}),
 		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
 	}

@@ -457,6 +457,8 @@ const (
     CountMismatch      ViolationType = "count_mismatch"
     SizeMismatch       ViolationType = "size_mismatch"
     StructureViolation ViolationType = "structure_violation"
+    MissingMarkerFile  ViolationType = "missing_marker_file"
+    UnsupportedVersion ViolationType = "unsupported_version"
 )
 
 type Severity string
@@ -465,6 +467,12 @@ const (
     SeverityError   Severity = "error"
     SeverityWarning Severity = "warning"
 )
+
+// FixableViolation extends ValidationViolation with suggested fix content
+type FixableViolation struct {
+    ValidationViolation
+    SuggestedFix string `yaml:"suggested_fix,omitempty"`
+}
 ```
 
 ### ReportGenerator Interface
@@ -522,6 +530,7 @@ type PerformanceOptions struct {
 ```
 
 **Key Features:**
+- Marker file validation as first step with version support checking
 - Comprehensive validation of repository structure, manifest, content, and consistency
 - Two-tier severity system (errors vs warnings)
 - Multi-format report generation (YAML, JSON, human-readable text)
@@ -529,8 +538,9 @@ type PerformanceOptions struct {
 - Performance optimizations for large repositories
 - Parallel validation with configurable concurrency
 - Progress reporting and metrics tracking
-- Early termination on critical errors
+- Early termination on critical errors or unsupported versions
 - Context-aware cancellation support
+- Fixable violations with suggested fix content
 
 #### Phone Number Normalization
 - Removes all non-digit characters
@@ -597,6 +607,39 @@ type Attachment struct {
 - Prevents filesystem performance issues with too many files in single directory
 - Content-addressed storage ensures data integrity
 - No file extensions needed (content type stored in MMS metadata)
+
+### Marker File Validation
+
+The `.mobilecombackup.yaml` marker file is validated first before any other repository validation:
+
+#### MarkerFileValidator Interface
+```go
+type MarkerFileValidator interface {
+    // ValidateMarkerFile checks the marker file exists and has valid content
+    // Returns: violations, versionSupported, error
+    ValidateMarkerFile() ([]ValidationViolation, bool, error)
+    
+    // GetSuggestedFix returns the suggested content for a missing marker file
+    GetSuggestedFix() string
+}
+```
+
+#### Marker File Requirements
+- **Required Fields:**
+  - `repository_structure_version`: Must be "1" (only supported version)
+  - `created_at`: RFC3339 timestamp of repository creation
+  - `created_by`: Tool and version that created the repository
+- **Validation Process:**
+  1. Check file exists (missing file is a fixable violation)
+  2. Validate YAML syntax before field parsing
+  3. Validate all required fields are present
+  4. Validate RFC3339 timestamp format
+  5. Check version is supported (only "1" currently)
+  6. Log warnings for extra fields (not violations)
+- **Version Support:**
+  - If version is unsupported, validation stops immediately
+  - Repository with unsupported version is marked Invalid
+  - Prevents processing of incompatible repository structures
 
 ### Validation Requirements
 

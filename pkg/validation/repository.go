@@ -30,13 +30,14 @@ type RepositoryValidator interface {
 
 // RepositoryValidatorImpl implements comprehensive repository validation
 type RepositoryValidatorImpl struct {
-	repositoryRoot      string
-	manifestValidator   ManifestValidator
-	checksumValidator   ChecksumValidator
-	callsValidator      CallsValidator
-	smsValidator        SMSValidator
+	repositoryRoot       string
+	markerFileValidator  MarkerFileValidator
+	manifestValidator    ManifestValidator
+	checksumValidator    ChecksumValidator
+	callsValidator       CallsValidator
+	smsValidator         SMSValidator
 	attachmentsValidator AttachmentsValidator
-	contactsValidator   ContactsValidator
+	contactsValidator    ContactsValidator
 }
 
 // NewRepositoryValidator creates a comprehensive repository validator
@@ -49,6 +50,7 @@ func NewRepositoryValidator(
 ) RepositoryValidator {
 	return &RepositoryValidatorImpl{
 		repositoryRoot:       repositoryRoot,
+		markerFileValidator:  NewMarkerFileValidator(repositoryRoot),
 		manifestValidator:    NewManifestValidator(repositoryRoot),
 		checksumValidator:    NewChecksumValidator(repositoryRoot),
 		callsValidator:       NewCallsValidator(repositoryRoot, callsReader),
@@ -65,6 +67,32 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*ValidationReport, error
 		RepositoryPath: v.repositoryRoot,
 		Status:         Valid,
 		Violations:     []ValidationViolation{},
+	}
+	
+	// Validate marker file first
+	markerViolations, versionSupported, err := v.markerFileValidator.ValidateMarkerFile()
+	if err != nil {
+		return nil, fmt.Errorf("marker file validation error: %w", err)
+	}
+	
+	// Handle fixable violations for missing marker file
+	for _, violation := range markerViolations {
+		if violation.Type == MissingMarkerFile {
+			// Create a fixable violation with suggested content
+			fixable := FixableViolation{
+				ValidationViolation: violation,
+				SuggestedFix:        v.markerFileValidator.GetSuggestedFix(),
+			}
+			report.Violations = append(report.Violations, fixable.ValidationViolation)
+		} else {
+			report.Violations = append(report.Violations, violation)
+		}
+	}
+	
+	// If version is not supported, stop further validation
+	if !versionSupported {
+		report.Status = Invalid
+		return report, nil
 	}
 	
 	// Validate in logical order: structure -> manifest -> content -> consistency

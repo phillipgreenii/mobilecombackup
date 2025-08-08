@@ -1,7 +1,7 @@
 # FEAT-015: Validate .mobilecombackup.yaml Marker File
 
 ## Status
-- **Completed**: Not yet started
+- **Completed**: 2025-08-07
 - **Priority**: high (dependency for FEAT-014)
 
 ## Overview
@@ -75,17 +75,17 @@ type MarkerFileContent struct {
 - Include default marker file content in fixable violation for missing files
 
 ## Tasks
-- [ ] Add MarkerFileValidator to pkg/validation
-- [ ] Update RepositoryValidator to validate marker file first
-- [ ] Add .mobilecombackup.yaml to required files list
-- [ ] Implement YAML structure validation before field parsing
-- [ ] Implement RFC3339 timestamp validation
-- [ ] Include suggested fix content in fixable violations
-- [ ] Add logic to skip further validation if version unsupported
-- [ ] Implement warning logging for extra fields
-- [ ] Write unit tests for marker file validation
-- [ ] Update integration tests to include .mobilecombackup.yaml
-- [ ] Update validation report format documentation
+- [x] Add MarkerFileValidator to pkg/validation
+- [x] Update RepositoryValidator to validate marker file first
+- [x] Add .mobilecombackup.yaml to required files list
+- [x] Implement YAML structure validation before field parsing
+- [x] Implement RFC3339 timestamp validation
+- [x] Include suggested fix content in fixable violations
+- [x] Add logic to skip further validation if version unsupported
+- [x] Implement warning logging for extra fields
+- [x] Write unit tests for marker file validation
+- [x] Update integration tests to include .mobilecombackup.yaml
+- [x] Update validation report format documentation
 
 ## Testing
 ### Unit Tests

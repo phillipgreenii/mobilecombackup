@@ -47,14 +47,16 @@ type ValidationViolation struct {
 type ViolationType string
 
 const (
-	MissingFile       ViolationType = "missing_file"
-	ExtraFile         ViolationType = "extra_file"
-	ChecksumMismatch  ViolationType = "checksum_mismatch"
-	InvalidFormat     ViolationType = "invalid_format"
+	MissingFile        ViolationType = "missing_file"
+	ExtraFile          ViolationType = "extra_file"
+	ChecksumMismatch   ViolationType = "checksum_mismatch"
+	InvalidFormat      ViolationType = "invalid_format"
 	OrphanedAttachment ViolationType = "orphaned_attachment"
-	CountMismatch     ViolationType = "count_mismatch"
-	SizeMismatch      ViolationType = "size_mismatch"
+	CountMismatch      ViolationType = "count_mismatch"
+	SizeMismatch       ViolationType = "size_mismatch"
 	StructureViolation ViolationType = "structure_violation"
+	MissingMarkerFile  ViolationType = "missing_marker_file"
+	UnsupportedVersion ViolationType = "unsupported_version"
 )
 
 // Severity indicates the importance of a validation issue
@@ -64,6 +66,12 @@ const (
 	SeverityError   Severity = "error"
 	SeverityWarning Severity = "warning"
 )
+
+// FixableViolation extends ValidationViolation with suggested fix content
+type FixableViolation struct {
+	ValidationViolation
+	SuggestedFix string `yaml:"suggested_fix,omitempty"`
+}
 
 
 // ManifestValidator validates files.yaml structure and content
