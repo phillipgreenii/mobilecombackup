@@ -18,6 +18,9 @@
       ],
       "linter": [
               "golangci-lint run"
+      ],
+      "build-cli": [
+              "sh -c 'VERSION=$(git describe --tags --always --dirty) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
       ]
     }
   }

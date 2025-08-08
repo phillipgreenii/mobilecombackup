@@ -626,3 +626,52 @@ Both CallsReader and SMSReader implementations provide validation capabilities:
 - **Memory Efficiency:** Use encoding/xml.Decoder for streaming XML parsing
 - **Error Resilience:** Continue processing on individual record failures, collect errors for reporting
 
+## Command-Line Interface
+
+### Overview
+
+The mobilecombackup CLI provides a command-line interface built on the Cobra framework for interacting with mobile backup repositories.
+
+### Global Flags
+
+All commands support the following global flags:
+
+- `--repo-root string`: Path to repository root (default ".")
+- `--quiet`: Suppress non-error output
+- `--version, -v`: Display version information
+- `--help, -h`: Display help information
+
+### Version Information
+
+The CLI supports version injection during build:
+```bash
+go build -ldflags "-X main.Version=1.2.3" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
+```
+
+Version output format: `mobilecombackup version X.Y.Z`
+
+### Exit Codes
+
+- `0`: Success
+- `1`: Command/flag error or execution failure
+- `2`: Runtime error (used by subcommands)
+
+### Error Handling
+
+- All errors are prefixed with "Error: " and written to stderr
+- Unknown commands and flags produce specific error messages
+- Help is displayed when no arguments are provided
+
+### Package Structure
+
+```
+cmd/mobilecombackup/
+├── main.go           # Entry point with version injection
+└── cmd/
+    └── root.go       # Root command definition and global flags
+```
+
+### Helper Functions
+
+- `PrintError(format string, args ...interface{})`: Consistent error output to stderr
+

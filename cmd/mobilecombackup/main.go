@@ -1,19 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/mobilecombackup"
+	"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup/cmd"
+)
+
+var (
+	// Version is set via ldflags during build
+	Version   = "dev"
+	BuildTime = "unknown"
 )
 
 func main() {
-	exitCode, output, err := mobilecombackup.Run(os.Args)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "got error:", err)
-		if output != nil {
-			fmt.Fprintln(os.Stderr, "output:", output)
-		}
-		os.Exit(exitCode)
+	cmd.SetVersion(Version)
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
 	}
 }

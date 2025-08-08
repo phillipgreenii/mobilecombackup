@@ -1,7 +1,7 @@
 # FEAT-006: Enable CLI
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-07
 - **Priority**: medium
 
 ## Overview
@@ -186,19 +186,19 @@ devbox add --script "build-cli" -- "go build -ldflags \"-X main.Version=\$(git d
 ```
 
 ## Tasks
-- [ ] Add Cobra dependency to go.mod
-- [ ] Create cmd/mobilecombackup/cmd/ directory structure
-- [ ] Implement root.go with root command definition
-- [ ] Add global flags (--quiet, --repo-root)
-- [ ] Update main.go to use version injection
-- [ ] Configure help behavior for no arguments
-- [ ] Implement version flag handling with semantic versioning
-- [ ] Set up error handling with "Error: " prefix
-- [ ] Write helper functions for consistent error output
-- [ ] Write unit tests for CLI behavior
-- [ ] Write integration tests for command execution
-- [ ] Update devbox.json with build script
-- [ ] Document CLI usage in README
+- [x] Add Cobra dependency to go.mod
+- [x] Create cmd/mobilecombackup/cmd/ directory structure
+- [x] Implement root.go with root command definition
+- [x] Add global flags (--quiet, --repo-root)
+- [x] Update main.go to use version injection
+- [x] Configure help behavior for no arguments
+- [x] Implement version flag handling with semantic versioning
+- [x] Set up error handling with "Error: " prefix
+- [x] Write helper functions for consistent error output
+- [x] Write unit tests for CLI behavior
+- [x] Write integration tests for command execution
+- [x] Update devbox.json with build script
+- [x] Document CLI usage in README
 
 ## Testing
 ### Unit Tests
