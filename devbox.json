@@ -10,8 +10,8 @@
       "go mod tidy"
     ],
     "scripts": {
-      "list-features": [
-              "ls -1 features/{active,ready,backlog}"
+      "list-issues": [
+              "ls -1 issues/{active,ready,backlog}"
       ],
       "formatter": [
               "go fmt ./..."
