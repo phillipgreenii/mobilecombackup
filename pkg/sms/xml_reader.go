@@ -48,11 +48,11 @@ func (r *XMLSMSReader) StreamMessagesForYear(year int, callback func(Message) er
 	}
 	defer func() { _ = file.Close() }()
 
-	return r.streamMessagesFromReader(file, callback)
+	return r.StreamMessagesFromReader(file, callback)
 }
 
-// streamMessagesFromReader streams messages from an io.Reader
-func (r *XMLSMSReader) streamMessagesFromReader(reader io.Reader, callback func(Message) error) error {
+// StreamMessagesFromReader streams messages from an io.Reader
+func (r *XMLSMSReader) StreamMessagesFromReader(reader io.Reader, callback func(Message) error) error {
 	decoder := xml.NewDecoder(reader)
 
 	for {

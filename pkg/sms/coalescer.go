@@ -77,3 +77,8 @@ func (m MessageEntry) Year() int {
 func NewMessageCoalescer() coalescer.Coalescer[MessageEntry] {
 	return coalescer.NewCoalescer[MessageEntry]()
 }
+
+// NewMessageEntry creates a new MessageEntry from a Message
+func NewMessageEntry(msg Message) MessageEntry {
+	return MessageEntry{Message: msg}
+}

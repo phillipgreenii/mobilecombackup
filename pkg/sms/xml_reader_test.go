@@ -96,7 +96,7 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var result SMS
-			err := reader.streamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
+			err := reader.StreamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
 				if sms, ok := msg.(SMS); ok {
 					result = sms
 				}
@@ -223,7 +223,7 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var result MMS
-			err := reader.streamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
+			err := reader.StreamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
 				if mms, ok := msg.(MMS); ok {
 					result = mms
 				}
@@ -288,13 +288,13 @@ func TestXMLSMSReader_MessageInterface(t *testing.T) {
 	</smses>`
 
 	var messages []Message
-	err := reader.streamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
+	err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
 		messages = append(messages, msg)
 		return nil
 	})
 
 	if err != nil {
-		t.Fatalf("streamMessagesFromReader() error = %v", err)
+		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}
 
 	if len(messages) != 2 {
@@ -367,7 +367,7 @@ func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 			// Create a temporary reader that can read from string
 			tempReader := &XMLSMSReader{repoRoot: "/test"}
 
-			// We'll test the parsing logic by directly calling streamMessagesFromReader
+			// We'll test the parsing logic by directly calling StreamMessagesFromReader
 			// and checking for the count parsing behavior
 			decoder := strings.NewReader(tt.xmlData)
 			if tt.wantErr {
@@ -381,7 +381,7 @@ func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 
 			// For valid cases, test that we can parse the messages
 			messageCount := 0
-			err := tempReader.streamMessagesFromReader(decoder, func(msg Message) error {
+			err := tempReader.StreamMessagesFromReader(decoder, func(msg Message) error {
 				messageCount++
 				return nil
 			})
@@ -409,13 +409,13 @@ func TestXMLSMSReader_ValidateSMSFile_CountMismatch(t *testing.T) {
 
 	// Count actual messages
 	actualCount := 0
-	err := reader.streamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
+	err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
 		actualCount++
 		return nil
 	})
 
 	if err != nil {
-		t.Fatalf("streamMessagesFromReader() error = %v", err)
+		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}
 
 	if actualCount != 1 {
@@ -473,7 +473,7 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 			</smses>`
 
 			var result SMS
-			err := reader.streamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
+			err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
 				if sms, ok := msg.(SMS); ok {
 					result = sms
 				}
@@ -519,13 +519,13 @@ func TestXMLSMSReader_EmptyFile(t *testing.T) {
 		</smses>`
 
 	messageCount := 0
-	err := reader.streamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
+	err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
 		messageCount++
 		return nil
 	})
 
 	if err != nil {
-		t.Fatalf("streamMessagesFromReader() error = %v", err)
+		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}
 
 	if messageCount != 0 {
@@ -560,7 +560,7 @@ func TestXMLSMSReader_MalformedXML(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := reader.streamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
+			err := reader.StreamMessagesFromReader(strings.NewReader(tt.xmlData), func(msg Message) error {
 				return nil
 			})
 
