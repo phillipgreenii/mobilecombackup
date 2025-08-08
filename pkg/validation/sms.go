@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
@@ -136,15 +137,17 @@ func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []ValidationViol
 	filePath := filepath.Join("sms", fileName)
 
 	// Stream messages to check year consistency without loading all into memory
-	err := v.smsReader.StreamMessages(year, func(message sms.Message) error {
-		messageYear := message.GetDate().UTC().Year()
+	err := v.smsReader.StreamMessagesForYear(year, func(message sms.Message) error {
+		// Convert epoch milliseconds to time for year extraction
+		messageTime := time.Unix(message.GetDate()/1000, 0).UTC()
+		messageYear := messageTime.Year()
 		if messageYear != year {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
 				Message: fmt.Sprintf("Message dated %s belongs to year %d but found in %d file",
-					message.GetDate().Format("2006-01-02"), messageYear, year),
+					messageTime.Format("2006-01-02"), messageYear, year),
 				Expected: fmt.Sprintf("year %d", year),
 				Actual:   fmt.Sprintf("year %d", messageYear),
 			})
