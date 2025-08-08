@@ -35,7 +35,7 @@ func ExampleXMLSMSReader_StreamMessages() {
 
 	// Stream messages for memory-efficient processing
 	messageCount := 0
-	err := reader.StreamMessages(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
 		messageCount++
 		fmt.Printf("Message %d: %s -> %s (%d)\n",
 			messageCount, msg.GetAddress(), msg.GetContactName(), msg.GetType())
@@ -64,7 +64,7 @@ func ExampleXMLSMSReader_ValidateSMSFile() {
 func Example_messageInterface() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
-	err := reader.StreamMessages(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
 		// Handle different message types
 		switch m := msg.(type) {
 		case sms.SMS:
@@ -110,7 +110,7 @@ func ExampleXMLSMSReader_GetMessageCount() {
 func ExampleMMS_parts() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
-	err := reader.StreamMessages(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
 		if mms, ok := msg.(sms.MMS); ok {
 			fmt.Printf("MMS from %s:\n", mms.ContactName)
 

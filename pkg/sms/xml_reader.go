@@ -107,7 +107,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				if err != nil {
 					return sms, fmt.Errorf("invalid date format: %s", attr.Value)
 				}
-				sms.Date = time.Unix(timestamp/1000, (timestamp%1000)*1000000).UTC()
+				sms.Date = timestamp
 			}
 		case "type":
 			if attr.Value != "" && attr.Value != "null" {
@@ -128,7 +128,11 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.ServiceCenter = attr.Value
 			}
 		case "read":
-			sms.Read = attr.Value == "1"
+			if attr.Value == "1" {
+				sms.Read = 1
+			} else {
+				sms.Read = 0
+			}
 		case "status":
 			if attr.Value != "" && attr.Value != "null" {
 				status, err := strconv.Atoi(attr.Value)
@@ -138,19 +142,31 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.Status = status
 			}
 		case "locked":
-			sms.Locked = attr.Value == "1"
+			if attr.Value == "1" {
+				sms.Locked = 1
+			} else {
+				sms.Locked = 0
+			}
 		case "date_sent":
 			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return sms, fmt.Errorf("invalid date_sent format: %s", attr.Value)
 				}
-				sms.DateSent = time.Unix(timestamp/1000, (timestamp%1000)*1000000).UTC()
+				sms.DateSent = timestamp
 			}
 		case "readable_date":
 			sms.ReadableDate = attr.Value
 		case "contact_name":
 			sms.ContactName = attr.Value
+		case "toa":
+			if attr.Value != "null" {
+				sms.Toa = attr.Value
+			}
+		case "sc_toa":
+			if attr.Value != "null" {
+				sms.ScToa = attr.Value
+			}
 		}
 	}
 
@@ -175,7 +191,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				if err != nil {
 					return mms, fmt.Errorf("invalid date format: %s", attr.Value)
 				}
-				mms.Date = time.Unix(timestamp/1000, (timestamp%1000)*1000000).UTC()
+				mms.Date = timestamp
 			}
 		case "msg_box":
 			if attr.Value != "" && attr.Value != "null" {
@@ -200,7 +216,11 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 		case "thread_id":
 			mms.ThreadId = attr.Value
 		case "text_only":
-			mms.TextOnly = attr.Value == "1"
+			if attr.Value == "1" {
+				mms.TextOnly = 1
+			} else {
+				mms.TextOnly = 0
+			}
 		case "sub":
 			if attr.Value != "null" {
 				mms.Sub = attr.Value
@@ -210,24 +230,238 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 		case "contact_name":
 			mms.ContactName = attr.Value
 		case "read":
-			mms.Read = attr.Value == "1"
+			if attr.Value == "1" {
+				mms.Read = 1
+			} else {
+				mms.Read = 0
+			}
 		case "locked":
-			mms.Locked = attr.Value == "1"
+			if attr.Value == "1" {
+				mms.Locked = 1
+			} else {
+				mms.Locked = 0
+			}
 		case "date_sent":
 			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return mms, fmt.Errorf("invalid date_sent format: %s", attr.Value)
 				}
-				mms.DateSent = time.Unix(timestamp/1000, (timestamp%1000)*1000000).UTC()
+				mms.DateSent = timestamp
 			}
 		case "seen":
-			mms.Seen = attr.Value == "1"
+			if attr.Value == "1" {
+				mms.Seen = 1
+			} else {
+				mms.Seen = 0
+			}
 		case "deletable":
-			mms.Deletable = attr.Value == "1"
+			if attr.Value == "1" {
+				mms.Deletable = 1
+			} else {
+				mms.Deletable = 0
+			}
 		case "hidden":
-			mms.Hidden = attr.Value == "1"
-			// Add other MMS attributes as needed
+			if attr.Value == "1" {
+				mms.Hidden = 1
+			} else {
+				mms.Hidden = 0
+			}
+		case "sim_imsi":
+			if attr.Value != "null" {
+				mms.SimImsi = attr.Value
+			}
+		case "creator":
+			if attr.Value != "null" {
+				mms.Creator = attr.Value
+			}
+		case "sub_id":
+			if attr.Value != "" && attr.Value != "null" {
+				subId, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid sub_id format: %s", attr.Value)
+				}
+				mms.SubId = subId
+			}
+		case "sim_slot":
+			if attr.Value != "" && attr.Value != "null" {
+				simSlot, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid sim_slot format: %s", attr.Value)
+				}
+				mms.SimSlot = simSlot
+			}
+		case "spam_report":
+			if attr.Value == "1" {
+				mms.SpamReport = 1
+			} else {
+				mms.SpamReport = 0
+			}
+		case "safe_message":
+			if attr.Value == "1" {
+				mms.SafeMessage = 1
+			} else {
+				mms.SafeMessage = 0
+			}
+			// Handle other attributes that appear in test data
+		case "callback_set":
+			if attr.Value == "1" {
+				mms.CallbackSet = 1
+			} else {
+				mms.CallbackSet = 0
+			}
+		case "retr_st":
+			if attr.Value != "" && attr.Value != "null" {
+				retrSt, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid retr_st format: %s", attr.Value)
+				}
+				mms.RetrSt = retrSt
+			}
+		case "ct_cls":
+			if attr.Value != "null" {
+				mms.CtCls = attr.Value
+			}
+		case "sub_cs":
+			if attr.Value != "" && attr.Value != "null" {
+				subCs, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid sub_cs format: %s", attr.Value)
+				}
+				mms.SubCs = subCs
+			}
+		case "ct_l":
+			if attr.Value != "null" {
+				mms.CtL = attr.Value
+			}
+		case "tr_id":
+			if attr.Value != "null" {
+				mms.TrId = attr.Value
+			}
+		case "st":
+			if attr.Value != "" && attr.Value != "null" {
+				st, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid st format: %s", attr.Value)
+				}
+				mms.St = st
+			}
+		case "m_cls":
+			if attr.Value != "null" {
+				mms.MCls = attr.Value
+			}
+		case "d_tm":
+			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
+				if err != nil {
+					return mms, fmt.Errorf("invalid d_tm format: %s", attr.Value)
+				}
+				mms.DTm = timestamp
+			}
+		case "read_status":
+			if attr.Value != "" && attr.Value != "null" {
+				readStatus, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid read_status format: %s", attr.Value)
+				}
+				mms.ReadStatus = readStatus
+			}
+		case "ct_t":
+			if attr.Value != "null" {
+				mms.CtT = attr.Value
+			}
+		case "retr_txt_cs":
+			if attr.Value != "" && attr.Value != "null" {
+				retrTxtCs, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid retr_txt_cs format: %s", attr.Value)
+				}
+				mms.RetrTxtCs = retrTxtCs
+			}
+		case "d_rpt":
+			if attr.Value != "" && attr.Value != "null" {
+				drpt, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid d_rpt format: %s", attr.Value)
+				}
+				mms.DRpt = drpt
+			}
+		case "reserved":
+			if attr.Value != "" && attr.Value != "null" {
+				reserved, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid reserved format: %s", attr.Value)
+				}
+				mms.Reserved = reserved
+			}
+		case "v":
+			if attr.Value != "" && attr.Value != "null" {
+				v, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid v format: %s", attr.Value)
+				}
+				mms.V = v
+			}
+		case "exp":
+			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
+				if err != nil {
+					return mms, fmt.Errorf("invalid exp format: %s", attr.Value)
+				}
+				mms.Exp = timestamp
+			}
+		case "pri":
+			if attr.Value != "" && attr.Value != "null" {
+				pri, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid pri format: %s", attr.Value)
+				}
+				mms.Pri = pri
+			}
+		case "msg_id":
+			if attr.Value != "" && attr.Value != "null" {
+				msgId, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid msg_id format: %s", attr.Value)
+				}
+				mms.MsgId = msgId
+			}
+		case "rr":
+			if attr.Value != "" && attr.Value != "null" {
+				rr, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid rr format: %s", attr.Value)
+				}
+				mms.Rr = rr
+			}
+		case "app_id":
+			if attr.Value != "" && attr.Value != "null" {
+				appId, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid app_id format: %s", attr.Value)
+				}
+				mms.AppId = appId
+			}
+		case "resp_txt":
+			if attr.Value != "null" {
+				mms.RespTxt = attr.Value
+			}
+		case "rpt_a":
+			if attr.Value != "" && attr.Value != "null" {
+				rptA, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid rpt_a format: %s", attr.Value)
+				}
+				mms.RptA = rptA
+			}
+		case "m_size":
+			if attr.Value != "" && attr.Value != "null" {
+				mSize, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return mms, fmt.Errorf("invalid m_size format: %s", attr.Value)
+				}
+				mms.MSize = mSize
+			}
 		}
 	}
 
@@ -341,12 +575,20 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 				part.ContentLoc = attr.Value
 			}
 		case "ctt_s":
-			if attr.Value != "null" {
-				part.CttS = attr.Value
+			if attr.Value != "" && attr.Value != "null" {
+				cttS, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return part, fmt.Errorf("invalid ctt_s format: %s", attr.Value)
+				}
+				part.CttS = cttS
 			}
 		case "ctt_t":
-			if attr.Value != "null" {
-				part.CttT = attr.Value
+			if attr.Value != "" && attr.Value != "null" {
+				cttT, err := strconv.Atoi(attr.Value)
+				if err != nil {
+					return part, fmt.Errorf("invalid ctt_t format: %s", attr.Value)
+				}
+				part.CttT = cttT
 			}
 		case "text":
 			part.Text = attr.Value
@@ -532,11 +774,13 @@ func (r *XMLSMSReader) ValidateSMSFile(year int) error {
 
 	// Count actual messages
 	actualCount := 0
-	err = r.StreamMessages(year, func(msg Message) error {
+	err = r.StreamMessagesForYear(year, func(msg Message) error {
 		actualCount++
 
 		// Validate year consistency
-		msgYear := msg.GetDate().Year()
+		timestamp := msg.GetDate()
+		msgTime := time.Unix(timestamp/1000, (timestamp%1000)*int64(time.Millisecond))
+		msgYear := msgTime.Year()
 		if msgYear != year {
 			return fmt.Errorf("message dated %d found in %d file", msgYear, year)
 		}
@@ -558,7 +802,7 @@ func (r *XMLSMSReader) ValidateSMSFile(year int) error {
 // GetAttachmentRefs returns all attachment references in a year
 func (r *XMLSMSReader) GetAttachmentRefs(year int) ([]string, error) {
 	var refs []string
-	err := r.StreamMessages(year, func(msg Message) error {
+	err := r.StreamMessagesForYear(year, func(msg Message) error {
 		if mms, ok := msg.(MMS); ok {
 			for _, part := range mms.Parts {
 				if part.AttachmentRef != "" {

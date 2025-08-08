@@ -113,6 +113,12 @@ type MMS struct {
 	RetrTxt      string        `xml:"retr_txt,attr"`
 	RespSt       int           `xml:"resp_st,attr"`
 	MSize        int           `xml:"m_size,attr"`
+	SimImsi      string        `xml:"sim_imsi,attr"`
+	Creator      string        `xml:"creator,attr"`
+	SubId        int           `xml:"sub_id,attr"`
+	SimSlot      int           `xml:"sim_slot,attr"`
+	SpamReport   int           `xml:"spam_report,attr"`
+	SafeMessage  int           `xml:"safe_message,attr"`
 }
 
 // GetDate implements Message interface

@@ -26,15 +26,15 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 			expected: SMS{
 				Protocol:      "0",
 				Address:       "+15555550000",
-				Date:          time.Unix(1373942505, 322000000).UTC(),
+				Date:          1373942505322,
 				Type:          SentMessage,
 				Subject:       "Test",
 				Body:          "Hello World",
 				ServiceCenter: "+13123149623",
-				Read:          true,
+				Read:          1,
 				Status:        -1,
-				Locked:        false,
-				DateSent:      time.Unix(1373942505, 0).UTC(),
+				Locked:        0,
+				DateSent:      1373942505000,
 				ReadableDate:  "Jul 15, 2013 10:41:45 PM",
 				ContactName:   "John Doe",
 			},
@@ -51,15 +51,15 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 			expected: SMS{
 				Protocol:      "0",
 				Address:       "+15555550000",
-				Date:          time.Unix(1373942505, 322000000).UTC(),
+				Date:          1373942505322,
 				Type:          ReceivedMessage,
 				Subject:       "",
 				Body:          "Test message",
 				ServiceCenter: "",
-				Read:          true,
+				Read:          1,
 				Status:        -1,
-				Locked:        false,
-				DateSent:      time.Time{},
+				Locked:        0,
+				DateSent:      0,
 				ReadableDate:  "Jul 15, 2013 10:41:45 PM",
 				ContactName:   "(Unknown)",
 			},
@@ -77,15 +77,15 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 			expected: SMS{
 				Protocol:      "0",
 				Address:       "7535",
-				Date:          time.Unix(1373929642, 0).UTC(),
+				Date:          1373929642000,
 				Type:          ReceivedMessage,
 				Subject:       "",
 				Body:          "Free AT&T msg: Your account # ending in XXXX.",
 				ServiceCenter: "+13123149623",
-				Read:          true,
+				Read:          1,
 				Status:        -1,
-				Locked:        false,
-				DateSent:      time.Unix(1373929642, 0).UTC(),
+				Locked:        0,
+				DateSent:      1373929642000,
 				ReadableDate:  "Jul 15, 2013 7:07:22 PM",
 				ContactName:   "(Unknown)",
 			},
@@ -116,7 +116,7 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 				if result.Address != tt.expected.Address {
 					t.Errorf("Address = %v, want %v", result.Address, tt.expected.Address)
 				}
-				if !result.Date.Equal(tt.expected.Date) {
+				if result.Date != tt.expected.Date {
 					t.Errorf("Date = %v, want %v", result.Date, tt.expected.Date)
 				}
 				if result.Type != tt.expected.Type {
@@ -155,13 +155,13 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 				</mms>
 			</smses>`,
 			expected: MMS{
-				Date:         time.Unix(1414697344, 0).UTC(),
+				Date:         1414697344000,
 				MsgBox:       2,
 				Address:      "+15555550001",
 				MType:        128,
-				TextOnly:     true,
+				TextOnly:     1,
 				Sub:          "",
-				Read:         true,
+				Read:         1,
 				ReadableDate: "Oct 30, 2014 3:29:04 PM",
 				ContactName:  "Ted Turner",
 				Parts: []MMSPart{
@@ -191,13 +191,13 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 				</mms>
 			</smses>`,
 			expected: MMS{
-				Date:         time.Unix(1414712124, 0).UTC(),
+				Date:         1414712124000,
 				MsgBox:       1,
 				Address:      "+15555550001",
 				MType:        132,
-				TextOnly:     true,
+				TextOnly:     1,
 				Sub:          "",
-				Read:         true,
+				Read:         1,
 				ReadableDate: "Oct 30, 2014 7:35:24 PM",
 				ContactName:  "Ted Turner",
 				Parts: []MMSPart{
@@ -237,7 +237,7 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 
 			if !tt.wantErr {
 				// Compare basic fields
-				if !result.Date.Equal(tt.expected.Date) {
+				if result.Date != tt.expected.Date {
 					t.Errorf("Date = %v, want %v", result.Date, tt.expected.Date)
 				}
 				if result.MsgBox != tt.expected.MsgBox {
@@ -486,14 +486,16 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 			}
 
 			if !tt.wantErr && tt.dateAttr != "null" && tt.dateAttr != "" {
-				if result.Date.Year() != tt.expectedYear {
-					t.Errorf("Date year = %v, want %v", result.Date.Year(), tt.expectedYear)
+				// Convert epoch milliseconds to time for comparison
+				resultTime := time.Unix(result.Date/1000, (result.Date%1000)*int64(time.Millisecond)).UTC()
+				if resultTime.Year() != tt.expectedYear {
+					t.Errorf("Date year = %v, want %v", resultTime.Year(), tt.expectedYear)
 				}
-				if int(result.Date.Month()) != tt.expectedMonth {
-					t.Errorf("Date month = %v, want %v", result.Date.Month(), tt.expectedMonth)
+				if int(resultTime.Month()) != tt.expectedMonth {
+					t.Errorf("Date month = %v, want %v", resultTime.Month(), tt.expectedMonth)
 				}
-				if result.Date.Day() != tt.expectedDay {
-					t.Errorf("Date day = %v, want %v", result.Date.Day(), tt.expectedDay)
+				if resultTime.Day() != tt.expectedDay {
+					t.Errorf("Date day = %v, want %v", resultTime.Day(), tt.expectedDay)
 				}
 			}
 		})

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // copyFile copies a file from src to dst, creating directories as needed
@@ -71,7 +72,7 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 		}
 
 		// Validate all messages have required fields
-		if msg.GetDate().IsZero() {
+		if msg.GetDate() == 0 {
 			t.Error("Found message with zero date")
 		}
 		if msg.GetAddress() == "" {
@@ -100,7 +101,7 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamMessages(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
 		streamedCount++
 		return nil
 	})
@@ -178,7 +179,7 @@ func TestXMLSMSReader_Integration_MMSParts(t *testing.T) {
 
 	// Find MMS messages and verify parts are parsed correctly
 	var mmsMessages []MMS
-	err = reader.StreamMessages(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
 		if mms, ok := msg.(MMS); ok {
 			mmsMessages = append(mmsMessages, mms)
 		}
@@ -256,8 +257,11 @@ func TestXMLSMSReader_Integration_YearConsistency(t *testing.T) {
 
 	// Check year distribution in the test data
 	var year2013Count, year2014Count, year2015Count int
-	err = reader.StreamMessages(2013, func(msg Message) error {
-		msgYear := msg.GetDate().Year()
+	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
+		// Convert epoch milliseconds to time for year check
+		timestamp := msg.GetDate()
+		msgTime := time.Unix(timestamp/1000, (timestamp%1000)*int64(time.Millisecond))
+		msgYear := msgTime.Year()
 		switch msgYear {
 		case 2013:
 			year2013Count++
@@ -328,7 +332,7 @@ func TestXMLSMSReader_Integration_MessageTypes(t *testing.T) {
 	// Verify message type detection works correctly
 	var smsReceived, smsSent, mmsReceived, mmsSent int
 
-	err = reader.StreamMessages(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
 		switch m := msg.(type) {
 		case SMS:
 			switch m.Type {
