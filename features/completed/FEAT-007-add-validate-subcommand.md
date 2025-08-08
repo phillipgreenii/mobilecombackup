@@ -1,7 +1,7 @@
 # FEAT-007: Add Validate subcommand
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-08
 - **Priority**: high
 
 ## Overview
@@ -136,49 +136,49 @@ Or when violations are found:
 - Where possible, include hints for fixing (preparation for FEAT-011 autofix)
 
 ## Tasks
-- [ ] Add validate subcommand to CLI parser in cmd/mobilecombackup
-- [ ] Create ValidateCommand struct with Run method
-- [ ] Implement progress reporting interface for validation phases
-- [ ] Create output formatters (text and JSON)
-- [ ] Wire up validation logic from FEAT-001
-- [ ] Handle MB_REPO_ROOT environment variable
-- [ ] Implement verbose and quiet output modes
-- [ ] Add proper exit code handling (0/1/2)
-- [ ] Write unit tests for command parsing
-- [ ] Write integration tests for validation scenarios
-- [ ] Update help documentation and usage examples
+- [x] Add validate subcommand to CLI parser in cmd/mobilecombackup
+- [x] Create ValidateCommand struct with Run method
+- [x] Implement progress reporting interface for validation phases
+- [x] Create output formatters (text and JSON)
+- [x] Wire up validation logic from FEAT-001
+- [x] Handle MB_REPO_ROOT environment variable
+- [x] Implement verbose and quiet output modes
+- [x] Add proper exit code handling (0/1/2)
+- [x] Write unit tests for command parsing
+- [x] Write integration tests for validation scenarios
+- [x] Update help documentation and usage examples
 
 ## Testing
 
 ### Unit Tests
-- [ ] Command parsing with various flag combinations
-- [ ] Repository path resolution (CLI arg, env var, current dir)
-- [ ] Output formatter tests (text and JSON formats)
-- [ ] Exit code handling for different scenarios
+- [x] Command parsing with various flag combinations
+- [x] Repository path resolution (CLI arg, env var, current dir)
+- [x] Output formatter tests (text and JSON formats)
+- [x] Exit code handling for different scenarios
 
 ### Integration Tests
-- [ ] Valid repository (expect exit 0)
-- [ ] Repository with violations (expect exit 1)
-- [ ] Non-existent repository path (expect exit 2)
-- [ ] Empty repository (valid, no violations)
-- [ ] Large repository performance test
-- [ ] Corrupted data scenarios:
+- [x] Valid repository (expect exit 0)
+- [x] Repository with violations (expect exit 1)
+- [x] Non-existent repository path (expect exit 2)
+- [x] Empty repository (valid, no violations)
+- [x] Large repository performance test
+- [x] Corrupted data scenarios:
   - Missing required files
   - Invalid XML structure
   - Checksum mismatches
   - Count mismatches in manifests
-- [ ] Output format verification:
+- [x] Output format verification:
   - Default text output
   - JSON output structure
   - Quiet mode (only errors)
   - Verbose mode (detailed progress)
 
 ### Edge Cases
-- [ ] Repository on read-only filesystem
-- [ ] Interrupted validation (Ctrl+C handling)
-- [ ] Symbolic links in repository
-- [ ] Very long file paths
-- [ ] Unicode characters in violation messages
+- [x] Repository on read-only filesystem
+- [x] Interrupted validation (Ctrl+C handling)
+- [x] Symbolic links in repository
+- [x] Very long file paths
+- [x] Unicode characters in violation messages
 
 ## References
 - Pre-req: `FEAT-006: Enable CLI`

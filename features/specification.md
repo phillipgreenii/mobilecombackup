@@ -754,6 +754,67 @@ created_by: "mobilecombackup v0.1.0"
 - Directory is not empty
 - Path exists but is not a directory
 
+#### Validate Command
+
+Validates a mobilecombackup repository for structure, content, and consistency.
+
+**Usage:**
+```bash
+mobilecombackup validate [flags]
+```
+
+**Flags:**
+- `--verbose`: Show detailed progress information
+- `--output-json`: Output results in JSON format
+
+**Behavior:**
+1. Resolves repository root from (in order):
+   - `--repo-root` flag
+   - `MB_REPO_ROOT` environment variable
+   - Current directory
+2. Creates all necessary readers (calls, SMS, attachments, contacts)
+3. Runs comprehensive validation using `RepositoryValidator`
+4. Outputs results in selected format (text or JSON)
+5. Returns appropriate exit code
+
+**Exit Codes:**
+- `0`: Repository is valid
+- `1`: Validation violations detected
+- `2`: Runtime error (repository not found, I/O error)
+
+**Output Formats:**
+
+Text output (default):
+- Shows progress indicator during validation
+- Groups violations by type with counts
+- Displays file path and message for each violation
+
+JSON output (`--output-json`):
+```json
+{
+  "valid": boolean,
+  "violations": [
+    {
+      "Type": "violation_type",
+      "Severity": "error|warning",
+      "File": "path/to/file",
+      "Message": "description",
+      "Expected": "expected_value",
+      "Actual": "actual_value"
+    }
+  ]
+}
+```
+
+**Quiet Mode:**
+- With `--quiet` flag, suppresses all output except violations
+- Valid repositories produce no output
+- Invalid repositories show only violation details
+
+**Verbose Mode:**
+- With `--verbose` flag, shows detailed progress for each phase
+- Displays "Completed X validation" messages
+
 ### Helper Functions
 
 - `PrintError(format string, args ...interface{})`: Consistent error output to stderr

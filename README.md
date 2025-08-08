@@ -40,6 +40,7 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   init        Initialize a new mobilecombackup repository
+  validate    Validate a mobilecombackup repository
 
 Flags:
   -h, --help              help for mobilecombackup
@@ -95,6 +96,81 @@ repo
 ├── .mobilecombackup.yaml
 ├── contacts.yaml
 └── summary.yaml
+```
+
+### Validate Command
+
+Validate a mobilecombackup repository for structure, content, and consistency.
+
+```bash
+# Validate current directory
+$ mobilecombackup validate
+
+# Validate specific repository
+$ mobilecombackup validate --repo-root /path/to/repo
+
+# Use environment variable for repository
+$ MB_REPO_ROOT=/path/to/repo mobilecombackup validate
+
+# Quiet mode - only show violations
+$ mobilecombackup validate --quiet
+
+# Verbose mode - show detailed progress
+$ mobilecombackup validate --verbose
+
+# JSON output for scripting/CI
+$ mobilecombackup validate --output-json
+```
+
+The validate command performs comprehensive validation including:
+- Repository structure verification
+- Manifest file validation
+- Checksum verification
+- Content format validation
+- Cross-reference consistency checks
+
+Exit codes:
+- `0`: Repository is valid (no violations found)
+- `1`: Validation violations detected
+- `2`: Runtime error (e.g., invalid repository path)
+
+Example output:
+```
+Validating repository... done
+
+Validation Report for: /path/to/repo
+------------------------------------------------------------
+✓ Repository is valid
+```
+
+Or with violations:
+```
+Validating repository... done
+
+Validation Report for: /path/to/repo
+------------------------------------------------------------
+✗ Found 2 violation(s)
+
+missing_file (1):
+  files.yaml: Failed to load manifest
+
+invalid_format (1):
+  calls/calls-2015.xml: Call entry missing required 'date' field
+```
+
+JSON output format:
+```json
+{
+  "valid": false,
+  "violations": [
+    {
+      "Type": "missing_file",
+      "Severity": "error",
+      "File": "files.yaml",
+      "Message": "Failed to load manifest"
+    }
+  ]
+}
 ```
 
 ### Exit Codes
