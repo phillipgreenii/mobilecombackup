@@ -44,15 +44,15 @@ type xmlCall struct {
 // ReadCalls reads all calls from a specific year file
 func (r *XMLCallsReader) ReadCalls(year int) ([]Call, error) {
 	var calls []Call
-	err := r.StreamCalls(year, func(call Call) error {
+	err := r.StreamCallsForYear(year, func(call Call) error {
 		calls = append(calls, call)
 		return nil
 	})
 	return calls, err
 }
 
-// StreamCalls streams calls from a year file for memory efficiency
-func (r *XMLCallsReader) StreamCalls(year int, callback func(Call) error) error {
+// StreamCallsForYear streams calls from a year file for memory efficiency
+func (r *XMLCallsReader) StreamCallsForYear(year int, callback func(Call) error) error {
 	filename := r.getCallsFilePath(year)
 	file, err := os.Open(filename)
 	if err != nil {
@@ -136,7 +136,6 @@ func (r *XMLCallsReader) parseCallElement(se xml.StartElement) (Call, error) {
 	if err != nil {
 		return Call{}, fmt.Errorf("invalid date '%s': %w", xmlCall.Date, err)
 	}
-	date := time.Unix(0, dateMillis*int64(time.Millisecond))
 
 	typeInt, err := strconv.Atoi(xmlCall.Type)
 	if err != nil {
@@ -146,11 +145,29 @@ func (r *XMLCallsReader) parseCallElement(se xml.StartElement) (Call, error) {
 	return Call{
 		Number:       xmlCall.Number,
 		Duration:     duration,
-		Date:         date,
+		Date:         dateMillis,
 		Type:         CallType(typeInt),
 		ReadableDate: xmlCall.ReadableDate,
 		ContactName:  xmlCall.ContactName,
 	}, nil
+}
+
+// StreamCalls streams all calls from the repository across all years
+func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
+	years, err := r.GetAvailableYears()
+	if err != nil {
+		return err
+	}
+	
+	for _, year := range years {
+		if err := r.StreamCallsForYear(year, func(call Call) error {
+			return callback(&call)
+		}); err != nil {
+			return err
+		}
+	}
+	
+	return nil
 }
 
 // GetAvailableYears returns list of years with call data

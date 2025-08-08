@@ -130,15 +130,15 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 	filePath := filepath.Join("calls", fileName)
 
 	// Stream calls to check year consistency without loading all into memory
-	err := v.callsReader.StreamCalls(year, func(call calls.Call) error {
-		callYear := call.Date.UTC().Year()
+	err := v.callsReader.StreamCallsForYear(year, func(call calls.Call) error {
+		callYear := call.Timestamp().UTC().Year()
 		if callYear != year {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
 				Message: fmt.Sprintf("Call dated %s belongs to year %d but found in %d file",
-					call.Date.Format("2006-01-02"), callYear, year),
+					call.Timestamp().Format("2006-01-02"), callYear, year),
 				Expected: fmt.Sprintf("year %d", year),
 				Actual:   fmt.Sprintf("year %d", callYear),
 			})
