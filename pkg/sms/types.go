@@ -63,49 +63,49 @@ func (s SMS) GetContactName() string {
 
 // MMS represents a multimedia message
 type MMS struct {
-	Date           time.Time
-	MsgBox         int
-	Address        string // Primary address
-	MType          int
-	MId            string
-	ThreadId       string
-	TextOnly       bool
-	Sub            string
-	Parts          []MMSPart
-	Addresses      []MMSAddress
-	ReadableDate   string
-	ContactName    string
-	CallbackSet    int
-	RetrSt         string
-	CtCls          string
-	SubCs          string
-	Read           bool
-	CtL            string
-	TrId           string
-	St             string
-	MCls           string
-	DTm            string
-	ReadStatus     string
-	CtT            string
-	RetrTxtCs      string
-	Deletable      bool
-	DRpt           int
-	DateSent       time.Time
-	Seen           bool
-	Reserved       int
-	V              int
-	Exp            string
-	Pri            int
-	Hidden         bool
-	MsgId          int
-	Rr             int
-	AppId          int
-	RespTxt        string
-	RptA           string
-	Locked         bool
-	RetrTxt        string
-	RespSt         int
-	MSize          int
+	Date         time.Time
+	MsgBox       int
+	Address      string // Primary address
+	MType        int
+	MId          string
+	ThreadId     string
+	TextOnly     bool
+	Sub          string
+	Parts        []MMSPart
+	Addresses    []MMSAddress
+	ReadableDate string
+	ContactName  string
+	CallbackSet  int
+	RetrSt       string
+	CtCls        string
+	SubCs        string
+	Read         bool
+	CtL          string
+	TrId         string
+	St           string
+	MCls         string
+	DTm          string
+	ReadStatus   string
+	CtT          string
+	RetrTxtCs    string
+	Deletable    bool
+	DRpt         int
+	DateSent     time.Time
+	Seen         bool
+	Reserved     int
+	V            int
+	Exp          string
+	Pri          int
+	Hidden       bool
+	MsgId        int
+	Rr           int
+	AppId        int
+	RespTxt      string
+	RptA         string
+	Locked       bool
+	RetrTxt      string
+	RespSt       int
+	MSize        int
 }
 
 // GetDate implements Message interface

@@ -107,7 +107,7 @@ func TestAttachmentManager_Integration_WithTestData(t *testing.T) {
 		}
 
 		if int64(len(content)) != attachment.Size {
-			t.Errorf("Content size mismatch for %s: expected %d, got %d", 
+			t.Errorf("Content size mismatch for %s: expected %d, got %d",
 				attachment.Hash, attachment.Size, len(content))
 		}
 
@@ -161,11 +161,11 @@ func TestAttachmentManager_Integration_LargeRepository(t *testing.T) {
 	// Create a repository with many attachments for performance testing
 	numAttachments := 100
 	attachmentHashes := make([]string, numAttachments)
-	
+
 	for i := 0; i < numAttachments; i++ {
 		// Create unique content
 		content := []byte(fmt.Sprintf("test attachment content %d", i))
-		
+
 		// Calculate hash
 		hasher := sha256.New()
 		hasher.Write(content)
@@ -240,7 +240,7 @@ func TestAttachmentManager_Integration_CrossReference(t *testing.T) {
 	// Create test attachments
 	testContents := []string{
 		"image content 1",
-		"image content 2", 
+		"image content 2",
 		"orphaned content",
 	}
 
@@ -406,7 +406,7 @@ func TestAttachmentManager_Integration_ValidationErrors(t *testing.T) {
 
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || 
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(substr) <= len(s) && containsRec(s, substr, 0)))
 }
 

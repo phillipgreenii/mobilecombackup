@@ -93,7 +93,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			path := tt.setup(t)
 			err := validateTargetDirectory(path)
-			
+
 			if tt.wantError == "" {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
@@ -139,21 +139,21 @@ func TestInitializeRepository(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repoRoot := filepath.Join(t.TempDir(), "test-repo")
-			
+
 			result, err := initializeRepository(repoRoot, tt.dryRun, tt.quiet)
 			if err != nil {
 				t.Fatalf("initializeRepository failed: %v", err)
 			}
-			
+
 			// Check result
 			if result.RepoRoot != repoRoot {
 				t.Errorf("result.RepoRoot = %q, want %q", result.RepoRoot, repoRoot)
 			}
-			
+
 			if result.DryRun != tt.dryRun {
 				t.Errorf("result.DryRun = %v, want %v", result.DryRun, tt.dryRun)
 			}
-			
+
 			// Expected created items
 			expectedCreated := []string{
 				repoRoot,
@@ -164,11 +164,11 @@ func TestInitializeRepository(t *testing.T) {
 				filepath.Join(repoRoot, "contacts.yaml"),
 				filepath.Join(repoRoot, "summary.yaml"),
 			}
-			
+
 			if len(result.Created) != len(expectedCreated) {
 				t.Errorf("created %d items, want %d", len(result.Created), len(expectedCreated))
 			}
-			
+
 			// Check actual file creation
 			if tt.checkCreated {
 				// Check directories
@@ -181,7 +181,7 @@ func TestInitializeRepository(t *testing.T) {
 						t.Errorf("%s is not a directory", dir)
 					}
 				}
-				
+
 				// Check marker file
 				markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
 				data, err := os.ReadFile(markerPath)
@@ -203,7 +203,7 @@ func TestInitializeRepository(t *testing.T) {
 						}
 					}
 				}
-				
+
 				// Check contacts.yaml
 				contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 				data, err = os.ReadFile(contactsPath)
@@ -212,7 +212,7 @@ func TestInitializeRepository(t *testing.T) {
 				} else if !strings.Contains(string(data), "contacts: []") {
 					t.Errorf("contacts file has unexpected content: %s", string(data))
 				}
-				
+
 				// Check summary.yaml
 				summaryPath := filepath.Join(repoRoot, "summary.yaml")
 				data, err = os.ReadFile(summaryPath)
@@ -245,12 +245,12 @@ func TestInitializeRepositoryPermissions(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("skipping permission test when running as root")
 	}
-	
+
 	// Create a directory without write permission
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "no-write")
 	os.Mkdir(repoRoot, 0555) // read+execute only
-	
+
 	_, err := initializeRepository(repoRoot, false, true)
 	if err == nil {
 		t.Error("expected error for directory without write permission")
@@ -277,7 +277,7 @@ func TestPrintTree(t *testing.T) {
 			children: []string{},
 		},
 	}
-	
+
 	// Should not panic
 	printTree("", tree[""], tree, true, "", true)
 }

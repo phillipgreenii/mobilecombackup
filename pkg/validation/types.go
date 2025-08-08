@@ -28,9 +28,9 @@ type ValidationReport struct {
 type ValidationStatus string
 
 const (
-	Valid        ValidationStatus = "valid"
-	Invalid      ValidationStatus = "invalid"
-	ErrorStatus  ValidationStatus = "error"
+	Valid       ValidationStatus = "valid"
+	Invalid     ValidationStatus = "invalid"
+	ErrorStatus ValidationStatus = "error"
 )
 
 // ValidationViolation represents a specific validation issue
@@ -73,18 +73,17 @@ type FixableViolation struct {
 	SuggestedFix string `yaml:"suggested_fix,omitempty"`
 }
 
-
 // ManifestValidator validates files.yaml structure and content
 type ManifestValidator interface {
 	// LoadManifest reads and parses files.yaml
 	LoadManifest() (*FileManifest, error)
-	
+
 	// ValidateManifestFormat checks files.yaml structure and format
 	ValidateManifestFormat(manifest *FileManifest) []ValidationViolation
-	
+
 	// CheckManifestCompleteness verifies all files are listed
 	CheckManifestCompleteness(manifest *FileManifest) []ValidationViolation
-	
+
 	// VerifyManifestChecksum validates files.yaml.sha256
 	VerifyManifestChecksum() error
 }

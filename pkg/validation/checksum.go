@@ -12,10 +12,10 @@ import (
 type ChecksumValidator interface {
 	// CalculateFileChecksum calculates SHA-256 for a file
 	CalculateFileChecksum(filePath string) (string, error)
-	
+
 	// VerifyFileChecksum verifies a file matches expected SHA-256
 	VerifyFileChecksum(filePath string, expectedChecksum string) error
-	
+
 	// ValidateManifestChecksums verifies all files in manifest have correct checksums
 	ValidateManifestChecksums(manifest *FileManifest) []ValidationViolation
 }
@@ -39,12 +39,12 @@ func (v *ChecksumValidatorImpl) CalculateFileChecksum(filePath string) (string, 
 		return "", fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
 	defer func() { _ = file.Close() }()
-	
+
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {
 		return "", fmt.Errorf("failed to calculate SHA-256 for %s: %w", filePath, err)
 	}
-	
+
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
@@ -54,22 +54,22 @@ func (v *ChecksumValidatorImpl) VerifyFileChecksum(filePath string, expectedChec
 	if err != nil {
 		return err
 	}
-	
+
 	if actualChecksum != expectedChecksum {
-		return fmt.Errorf("checksum mismatch for %s: expected %s, got %s", 
+		return fmt.Errorf("checksum mismatch for %s: expected %s, got %s",
 			filePath, expectedChecksum, actualChecksum)
 	}
-	
+
 	return nil
 }
 
 // ValidateManifestChecksums verifies all files in manifest have correct checksums
 func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest) []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	for _, entry := range manifest.Files {
 		fullPath := filepath.Join(v.repositoryRoot, entry.File)
-		
+
 		// Check if file exists
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 			violations = append(violations, ValidationViolation{
@@ -80,7 +80,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 			})
 			continue
 		}
-		
+
 		// Calculate actual checksum
 		actualChecksum, err := v.CalculateFileChecksum(fullPath)
 		if err != nil {
@@ -92,7 +92,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 			})
 			continue
 		}
-		
+
 		// Verify checksum matches
 		if actualChecksum != entry.SHA256 {
 			violations = append(violations, ValidationViolation{
@@ -104,7 +104,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 				Actual:   actualChecksum,
 			})
 		}
-		
+
 		// Verify file size matches (if we can get it)
 		if fileInfo, err := os.Stat(fullPath); err == nil {
 			actualSize := fileInfo.Size()
@@ -120,6 +120,6 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 			}
 		}
 	}
-	
+
 	return violations
 }

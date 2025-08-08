@@ -11,16 +11,16 @@ import (
 type PerformanceOptions struct {
 	// ParallelValidation enables concurrent validation of different components
 	ParallelValidation bool
-	
+
 	// EarlyTermination stops validation on first critical error
 	EarlyTermination bool
-	
+
 	// MaxConcurrency limits the number of concurrent validation operations
 	MaxConcurrency int
-	
+
 	// ProgressCallback receives progress updates during validation
 	ProgressCallback func(stage string, progress float64)
-	
+
 	// Timeout sets maximum time for validation to complete
 	Timeout time.Duration
 }
@@ -32,23 +32,23 @@ func DefaultPerformanceOptions() *PerformanceOptions {
 		EarlyTermination:   false,
 		MaxConcurrency:     4,
 		ProgressCallback:   nil,
-		Timeout:           30 * time.Minute,
+		Timeout:            30 * time.Minute,
 	}
 }
 
 // OptimizedRepositoryValidator extends RepositoryValidator with performance optimizations
 type OptimizedRepositoryValidator interface {
 	RepositoryValidator
-	
+
 	// ValidateRepositoryWithOptions performs validation with performance controls
 	ValidateRepositoryWithOptions(ctx context.Context, options *PerformanceOptions) (*ValidationReport, error)
-	
+
 	// ValidateAsync performs validation asynchronously with progress reporting
 	ValidateAsync(options *PerformanceOptions) (<-chan *ValidationReport, <-chan error)
-	
+
 	// GetMetrics returns current validation performance metrics
 	GetMetrics() *ValidationMetrics
-	
+
 	// ClearCache clears the validation cache
 	ClearCache()
 }
@@ -56,38 +56,38 @@ type OptimizedRepositoryValidator interface {
 // OptimizedRepositoryValidatorImpl implements optimized validation
 type OptimizedRepositoryValidatorImpl struct {
 	*RepositoryValidatorImpl
-	cache  *validationCache
+	cache   *validationCache
 	metrics *ValidationMetrics
 }
 
 // ValidationMetrics tracks validation performance statistics
 type ValidationMetrics struct {
-	mu                sync.RWMutex
-	TotalDuration     time.Duration
-	StructureDuration time.Duration
-	ManifestDuration  time.Duration
-	ContentDuration   time.Duration
+	mu                  sync.RWMutex
+	TotalDuration       time.Duration
+	StructureDuration   time.Duration
+	ManifestDuration    time.Duration
+	ContentDuration     time.Duration
 	ConsistencyDuration time.Duration
-	FilesProcessed    int
-	CacheHits         int
-	CacheMisses       int
+	FilesProcessed      int
+	CacheHits           int
+	CacheMisses         int
 }
 
 // validationCache provides caching for frequently accessed validation data
 type validationCache struct {
-	mu            sync.RWMutex
-	checksums     map[string]string     // file path -> checksum
-	fileStats     map[string]FileInfo   // file path -> file info
-	lastModified  map[string]time.Time  // file path -> last modified time
-	enabled       bool
-	maxSize       int
+	mu           sync.RWMutex
+	checksums    map[string]string    // file path -> checksum
+	fileStats    map[string]FileInfo  // file path -> file info
+	lastModified map[string]time.Time // file path -> last modified time
+	enabled      bool
+	maxSize      int
 }
 
 // FileInfo holds cached file information
 type FileInfo struct {
-	Size     int64
-	ModTime  time.Time
-	Exists   bool
+	Size    int64
+	ModTime time.Time
+	Exists  bool
 }
 
 // NewOptimizedRepositoryValidator creates an optimized repository validator
@@ -203,7 +203,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 		wg.Add(1)
 		go func(taskName string, taskFn func() []ValidationViolation) {
 			defer wg.Done()
-			
+
 			// Acquire semaphore
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()

@@ -68,9 +68,9 @@ func (cm *ContactsManager) LoadContacts() error {
 			if number == "" {
 				continue
 			}
-			
+
 			normalized := normalizePhoneNumber(number)
-			
+
 			// Check for duplicates
 			if existingName, exists := cm.numberToName[normalized]; exists {
 				if existingName != contact.Name {
@@ -109,13 +109,13 @@ func normalizePhoneNumber(number string) string {
 	// Remove all non-digit characters
 	re := regexp.MustCompile(`\D`)
 	cleaned := re.ReplaceAllString(number, "")
-	
+
 	// Handle common US formats
 	if len(cleaned) == 11 && cleaned[0] == '1' {
 		// Remove leading 1 for US numbers (+1XXXXXXXXXX -> XXXXXXXXXX)
 		cleaned = cleaned[1:]
 	}
-	
+
 	return cleaned
 }
 
@@ -124,7 +124,7 @@ func (cm *ContactsManager) GetContactByNumber(number string) (string, bool) {
 	if !cm.loaded {
 		return "", false
 	}
-	
+
 	normalized := normalizePhoneNumber(number)
 	name, exists := cm.numberToName[normalized]
 	return name, exists
@@ -135,12 +135,12 @@ func (cm *ContactsManager) GetNumbersByContact(name string) ([]string, bool) {
 	if !cm.loaded {
 		return nil, false
 	}
-	
+
 	contact, exists := cm.contacts[name]
 	if !exists {
 		return nil, false
 	}
-	
+
 	// Return a copy to prevent modification
 	numbers := make([]string, len(contact.Numbers))
 	copy(numbers, contact.Numbers)
@@ -154,7 +154,7 @@ func (cm *ContactsManager) GetAllContacts() ([]*Contact, error) {
 			return nil, err
 		}
 	}
-	
+
 	contacts := make([]*Contact, 0, len(cm.contacts))
 	for _, contact := range cm.contacts {
 		// Return a copy to prevent modification
@@ -165,7 +165,7 @@ func (cm *ContactsManager) GetAllContacts() ([]*Contact, error) {
 		copy(contactCopy.Numbers, contact.Numbers)
 		contacts = append(contacts, contactCopy)
 	}
-	
+
 	return contacts, nil
 }
 
@@ -174,7 +174,7 @@ func (cm *ContactsManager) ContactExists(name string) bool {
 	if !cm.loaded {
 		return false
 	}
-	
+
 	_, exists := cm.contacts[name]
 	return exists
 }
@@ -190,6 +190,6 @@ func (cm *ContactsManager) GetContactsCount() int {
 	if !cm.loaded {
 		return 0
 	}
-	
+
 	return len(cm.contacts)
 }

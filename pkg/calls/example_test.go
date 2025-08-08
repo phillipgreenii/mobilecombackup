@@ -37,7 +37,7 @@ func ExampleXMLCallsReader_StreamCalls() {
 	callCount := 0
 	err := reader.StreamCalls(2014, func(call calls.Call) error {
 		callCount++
-		fmt.Printf("Call %d: %s -> %s (%d)\n", 
+		fmt.Printf("Call %d: %s -> %s (%d)\n",
 			callCount, call.Number, call.ContactName, call.Type)
 		return nil
 	})

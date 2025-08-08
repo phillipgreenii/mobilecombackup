@@ -306,13 +306,13 @@ func TestValidationResultTextOutput(t *testing.T) {
 func TestValidateCommandFlags(t *testing.T) {
 	// Test that flags are properly registered
 	cmd := validateCmd
-	
+
 	// Check verbose flag
 	verboseFlag := cmd.Flags().Lookup("verbose")
 	if verboseFlag == nil {
 		t.Error("verbose flag not registered")
 	}
-	
+
 	// Check output-json flag
 	jsonFlag := cmd.Flags().Lookup("output-json")
 	if jsonFlag == nil {
@@ -323,12 +323,12 @@ func TestValidateCommandFlags(t *testing.T) {
 func TestValidateWithProgress(t *testing.T) {
 	// Create a temporary test repository
 	tempDir := t.TempDir()
-	
+
 	// Create basic repository structure
 	os.MkdirAll(filepath.Join(tempDir, "calls"), 0755)
 	os.MkdirAll(filepath.Join(tempDir, "sms"), 0755)
 	os.MkdirAll(filepath.Join(tempDir, "attachments"), 0755)
-	
+
 	// Create marker file with valid content
 	markerContent := `repository_structure_version: "1"
 created_at: "2024-01-01T10:00:00Z"
@@ -338,11 +338,11 @@ created_by: "test"
 	if err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
-	
+
 	// Create empty contacts and summary files
 	os.WriteFile(filepath.Join(tempDir, "contacts.yaml"), []byte("contacts: []\n"), 0644)
 	os.WriteFile(filepath.Join(tempDir, "summary.yaml"), []byte("counts:\n  calls: 0\n  sms: 0\n"), 0644)
-	
+
 	// TODO: This test would be more complete with mocked readers
 	// For now, we're just testing that the function doesn't panic
 	// Full integration tests will be in the integration test file

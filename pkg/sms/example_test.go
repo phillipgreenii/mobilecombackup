@@ -37,7 +37,7 @@ func ExampleXMLSMSReader_StreamMessages() {
 	messageCount := 0
 	err := reader.StreamMessages(2014, func(msg sms.Message) error {
 		messageCount++
-		fmt.Printf("Message %d: %s -> %s (%d)\n", 
+		fmt.Printf("Message %d: %s -> %s (%d)\n",
 			messageCount, msg.GetAddress(), msg.GetContactName(), msg.GetType())
 		return nil
 	})
@@ -113,10 +113,10 @@ func ExampleMMS_parts() {
 	err := reader.StreamMessages(2014, func(msg sms.Message) error {
 		if mms, ok := msg.(sms.MMS); ok {
 			fmt.Printf("MMS from %s:\n", mms.ContactName)
-			
+
 			for i, part := range mms.Parts {
 				fmt.Printf("  Part %d: %s\n", i, part.ContentType)
-				
+
 				switch part.ContentType {
 				case "text/plain":
 					fmt.Printf("    Text: %s\n", part.Text)
@@ -155,7 +155,7 @@ func ExampleXMLSMSReader_GetAttachmentRefs() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Total attachment references: %d\n", len(allRefs))
-	
+
 	// List unique attachment files
 	for ref := range allRefs {
 		fmt.Printf("  %s\n", ref)
@@ -166,10 +166,10 @@ func ExampleXMLSMSReader_GetAttachmentRefs() {
 func ExampleMessageType() {
 	// Create a sample SMS message
 	smsMsg := sms.SMS{
-		Address:      "+15555551234",
-		Body:         "Hello World",
-		Type:         sms.SentMessage,
-		ContactName:  "John Doe",
+		Address:     "+15555551234",
+		Body:        "Hello World",
+		Type:        sms.SentMessage,
+		ContactName: "John Doe",
 	}
 
 	// Check message type

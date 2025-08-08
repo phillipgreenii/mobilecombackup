@@ -14,16 +14,16 @@ import (
 type RepositoryValidator interface {
 	// ValidateRepository performs complete repository validation
 	ValidateRepository() (*ValidationReport, error)
-	
+
 	// ValidateStructure validates overall repository structure
 	ValidateStructure() []ValidationViolation
-	
+
 	// ValidateManifest validates files.yaml and checksums
 	ValidateManifest() []ValidationViolation
-	
+
 	// ValidateContent validates all content files
 	ValidateContent() []ValidationViolation
-	
+
 	// ValidateConsistency performs cross-file consistency validation
 	ValidateConsistency() []ValidationViolation
 }
@@ -68,13 +68,13 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*ValidationReport, error
 		Status:         Valid,
 		Violations:     []ValidationViolation{},
 	}
-	
+
 	// Validate marker file first
 	markerViolations, versionSupported, err := v.markerFileValidator.ValidateMarkerFile()
 	if err != nil {
 		return nil, fmt.Errorf("marker file validation error: %w", err)
 	}
-	
+
 	// Handle fixable violations for missing marker file
 	for _, violation := range markerViolations {
 		if violation.Type == MissingMarkerFile {
@@ -88,25 +88,25 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*ValidationReport, error
 			report.Violations = append(report.Violations, violation)
 		}
 	}
-	
+
 	// If version is not supported, stop further validation
 	if !versionSupported {
 		report.Status = Invalid
 		return report, nil
 	}
-	
+
 	// Validate in logical order: structure -> manifest -> content -> consistency
 	structureViolations := v.ValidateStructure()
 	manifestViolations := v.ValidateManifest()
 	contentViolations := v.ValidateContent()
 	consistencyViolations := v.ValidateConsistency()
-	
+
 	// Combine all violations
 	report.Violations = append(report.Violations, structureViolations...)
 	report.Violations = append(report.Violations, manifestViolations...)
 	report.Violations = append(report.Violations, contentViolations...)
 	report.Violations = append(report.Violations, consistencyViolations...)
-	
+
 	// Determine overall status
 	hasErrors := false
 	for _, violation := range report.Violations {
@@ -115,37 +115,37 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*ValidationReport, error
 			break
 		}
 	}
-	
+
 	if hasErrors {
 		report.Status = Invalid
 	} else if len(report.Violations) > 0 {
 		// Only warnings
 		report.Status = Valid // Valid with warnings
 	}
-	
+
 	return report, nil
 }
 
 // ValidateStructure validates overall repository structure
 func (v *RepositoryValidatorImpl) ValidateStructure() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Note: Individual validators handle directory and file structure checks
 	// This method coordinates structure validation across all components
-	
+
 	// Validate each component's structure
 	violations = append(violations, v.callsValidator.ValidateCallsStructure()...)
 	violations = append(violations, v.smsValidator.ValidateSMSStructure()...)
 	violations = append(violations, v.attachmentsValidator.ValidateAttachmentsStructure()...)
 	violations = append(violations, v.contactsValidator.ValidateContactsStructure()...)
-	
+
 	return violations
 }
 
 // ValidateManifest validates files.yaml and checksums
 func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Load and validate manifest format
 	manifest, err := v.manifestValidator.LoadManifest()
 	if err != nil {
@@ -157,13 +157,13 @@ func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// Validate manifest format
 	violations = append(violations, v.manifestValidator.ValidateManifestFormat(manifest)...)
-	
+
 	// Check manifest completeness
 	violations = append(violations, v.manifestValidator.CheckManifestCompleteness(manifest)...)
-	
+
 	// Verify manifest checksum
 	if err := v.manifestValidator.VerifyManifestChecksum(); err != nil {
 		violations = append(violations, ValidationViolation{
@@ -173,36 +173,36 @@ func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
 			Message:  fmt.Sprintf("Manifest checksum verification failed: %v", err),
 		})
 	}
-	
+
 	// Validate file checksums
 	violations = append(violations, v.checksumValidator.ValidateManifestChecksums(manifest)...)
-	
+
 	return violations
 }
 
 // ValidateContent validates all content files
 func (v *RepositoryValidatorImpl) ValidateContent() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Validate calls content
 	violations = append(violations, v.callsValidator.ValidateCallsContent()...)
-	
-	// Validate SMS content  
+
+	// Validate SMS content
 	violations = append(violations, v.smsValidator.ValidateSMSContent()...)
-	
+
 	// Validate attachment integrity
 	violations = append(violations, v.attachmentsValidator.ValidateAttachmentIntegrity()...)
-	
+
 	// Validate contacts data
 	violations = append(violations, v.contactsValidator.ValidateContactsData()...)
-	
+
 	return violations
 }
 
 // ValidateConsistency performs cross-file consistency validation
 func (v *RepositoryValidatorImpl) ValidateConsistency() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Get attachment references from SMS
 	referencedAttachments, err := v.smsValidator.GetAllAttachmentReferences()
 	if err != nil {
@@ -216,16 +216,16 @@ func (v *RepositoryValidatorImpl) ValidateConsistency() []ValidationViolation {
 		// Validate attachment references
 		violations = append(violations, v.attachmentsValidator.ValidateAttachmentReferences(referencedAttachments)...)
 	}
-	
+
 	// Collect contact references from calls and SMS
 	callContactRefs, smsContactRefs := v.collectContactReferences()
-	
+
 	// Validate contact references
 	violations = append(violations, v.contactsValidator.ValidateContactReferences(callContactRefs, smsContactRefs)...)
-	
+
 	// TODO: Add summary.yaml validation when available
 	// This would validate counts and statistics against actual data
-	
+
 	return violations
 }
 
@@ -233,14 +233,14 @@ func (v *RepositoryValidatorImpl) ValidateConsistency() []ValidationViolation {
 func (v *RepositoryValidatorImpl) collectContactReferences() (map[string]bool, map[string]bool) {
 	callContacts := make(map[string]bool)
 	smsContacts := make(map[string]bool)
-	
+
 	// This is a simplified implementation - in a real scenario, we would
 	// need to add methods to the readers to extract contact names efficiently
 	// For now, we return empty maps to avoid errors
-	
+
 	// TODO: Implement contact extraction from calls and SMS
 	// This would require extending the reader interfaces or implementing
 	// streaming methods to extract contact names without loading all data
-	
+
 	return callContacts, smsContacts
 }

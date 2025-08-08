@@ -138,13 +138,13 @@ func TestXMLSMSReader_Integration_GetMessageCount(t *testing.T) {
 func TestXMLSMSReader_Integration_GetAvailableYears(t *testing.T) {
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
-	
+
 	// Copy test files to multiple years
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
 	if err != nil {
 		t.Fatalf("Failed to setup 2013 test data: %v", err)
 	}
-	
+
 	err = copyFile("../../testdata/it/scenerio-00/original_repo_root/sms/sms-2015.xml", filepath.Join(smsDir, "sms-2015.xml"))
 	if err != nil {
 		t.Fatalf("Failed to setup 2015 test data: %v", err)
@@ -195,7 +195,7 @@ func TestXMLSMSReader_Integration_MMSParts(t *testing.T) {
 	// Verify MMS parts are parsed correctly
 	foundTextPart := false
 	foundSMILPart := false
-	
+
 	for _, mms := range mmsMessages {
 		if len(mms.Parts) == 0 {
 			t.Error("Found MMS with no parts")
@@ -276,7 +276,7 @@ func TestXMLSMSReader_Integration_YearConsistency(t *testing.T) {
 
 	// The test data has mixed years (like calls test data)
 	t.Logf("Year distribution: 2013=%d, 2014=%d, 2015=%d", year2013Count, year2014Count, year2015Count)
-	
+
 	// Verify we have messages from multiple years
 	if year2013Count == 0 {
 		t.Error("Expected some messages from 2013")
@@ -327,7 +327,7 @@ func TestXMLSMSReader_Integration_MessageTypes(t *testing.T) {
 
 	// Verify message type detection works correctly
 	var smsReceived, smsSent, mmsReceived, mmsSent int
-	
+
 	err = reader.StreamMessages(2013, func(msg Message) error {
 		switch m := msg.(type) {
 		case SMS:

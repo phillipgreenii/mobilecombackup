@@ -156,11 +156,11 @@ func TestContactsManager_GetContactByNumber(t *testing.T) {
 		found    bool
 	}{
 		{"+15555551234", "Bob Ross", true},
-		{"5555551234", "Bob Ross", true},        // Normalized lookup
-		{"15555551234", "Bob Ross", true},       // Without +
-		{"(555) 555-1234", "Bob Ross", true},    // Formatted number
-		{"555-555-5678", "Bob Ross", true},      // Second number
-		{"+15555559999", "", false},             // Not found
+		{"5555551234", "Bob Ross", true},     // Normalized lookup
+		{"15555551234", "Bob Ross", true},    // Without +
+		{"(555) 555-1234", "Bob Ross", true}, // Formatted number
+		{"555-555-5678", "Bob Ross", true},   // Second number
+		{"+15555559999", "", false},          // Not found
 	}
 
 	for _, test := range tests {
@@ -321,7 +321,7 @@ func TestNormalizePhoneNumber(t *testing.T) {
 		{"555.555.1234", "5555551234"},
 		{"555 555 1234", "5555551234"},
 		{"+1-555-555-1234", "5555551234"},
-		{"12345678901", "2345678901"}, // 11 digits starting with 1
+		{"12345678901", "2345678901"},  // 11 digits starting with 1
 		{"22345678901", "22345678901"}, // 11 digits not starting with 1
 	}
 

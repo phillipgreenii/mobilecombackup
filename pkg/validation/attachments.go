@@ -11,13 +11,13 @@ import (
 type AttachmentsValidator interface {
 	// ValidateAttachmentsStructure validates attachments directory structure
 	ValidateAttachmentsStructure() []ValidationViolation
-	
+
 	// ValidateAttachmentIntegrity verifies attachment content matches hashes
 	ValidateAttachmentIntegrity() []ValidationViolation
-	
+
 	// ValidateAttachmentReferences checks attachment references against SMS data
 	ValidateAttachmentReferences(referencedHashes map[string]bool) []ValidationViolation
-	
+
 	// GetOrphanedAttachments returns attachments not referenced by any messages
 	GetOrphanedAttachments(referencedHashes map[string]bool) ([]*attachments.Attachment, error)
 }
@@ -39,10 +39,10 @@ func NewAttachmentsValidator(repositoryRoot string, attachmentReader attachments
 // ValidateAttachmentsStructure validates attachments directory structure
 func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Check if attachments directory exists
 	attachmentsDir := filepath.Join(v.repositoryRoot, "attachments")
-	
+
 	// Try to get attachments list to see if directory structure is valid
 	attachmentsList, err := v.attachmentReader.ListAttachments()
 	if err != nil {
@@ -66,12 +66,12 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 		}
 		return violations
 	}
-	
+
 	// If we have no attachments, directory structure is optional
 	if len(attachmentsList) == 0 {
 		return violations
 	}
-	
+
 	// Validate the attachment directory structure using the reader's validator
 	if err := v.attachmentReader.ValidateAttachmentStructure(); err != nil {
 		violations = append(violations, ValidationViolation{
@@ -81,14 +81,14 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 			Message:  fmt.Sprintf("Attachment directory structure validation failed: %v", err),
 		})
 	}
-	
+
 	return violations
 }
 
 // ValidateAttachmentIntegrity verifies attachment content matches hashes
 func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Get all attachments
 	attachmentsList, err := v.attachmentReader.ListAttachments()
 	if err != nil {
@@ -100,7 +100,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 		})
 		return violations
 	}
-	
+
 	// Verify each attachment's integrity
 	for _, attachment := range attachmentsList {
 		// Check if attachment exists
@@ -113,7 +113,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 			})
 			continue
 		}
-		
+
 		// Verify content matches hash
 		verified, err := v.attachmentReader.VerifyAttachment(attachment.Hash)
 		if err != nil {
@@ -125,7 +125,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 			})
 			continue
 		}
-		
+
 		if !verified {
 			violations = append(violations, ValidationViolation{
 				Type:     ChecksumMismatch,
@@ -137,14 +137,14 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 			})
 		}
 	}
-	
+
 	return violations
 }
 
 // ValidateAttachmentReferences checks attachment references against SMS data
 func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes map[string]bool) []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Check for referenced attachments that don't exist
 	for referencedHash := range referencedHashes {
 		// Generate expected path for the attachment
@@ -154,7 +154,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 		} else {
 			expectedPath = fmt.Sprintf("attachments/%s", referencedHash)
 		}
-		
+
 		exists, err := v.attachmentReader.AttachmentExists(referencedHash)
 		if err != nil {
 			violations = append(violations, ValidationViolation{
@@ -165,7 +165,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 			})
 			continue
 		}
-		
+
 		if !exists {
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile,
@@ -175,7 +175,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 			})
 		}
 	}
-	
+
 	// Find orphaned attachments (exist but not referenced)
 	orphanedAttachments, err := v.attachmentReader.FindOrphanedAttachments(referencedHashes)
 	if err != nil {
@@ -187,18 +187,18 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 		})
 		return violations
 	}
-	
+
 	// Report orphaned attachments as warnings (not errors)
 	for _, orphaned := range orphanedAttachments {
 		violations = append(violations, ValidationViolation{
 			Type:     OrphanedAttachment,
 			Severity: SeverityWarning,
 			File:     orphaned.Path,
-			Message:  fmt.Sprintf("Orphaned attachment not referenced by any message: %s (%d bytes)", 
+			Message: fmt.Sprintf("Orphaned attachment not referenced by any message: %s (%d bytes)",
 				orphaned.Hash, orphaned.Size),
 		})
 	}
-	
+
 	return violations
 }
 

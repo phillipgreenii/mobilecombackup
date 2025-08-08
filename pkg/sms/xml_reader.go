@@ -227,7 +227,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 			mms.Deletable = attr.Value == "1"
 		case "hidden":
 			mms.Hidden = attr.Value == "1"
-		// Add other MMS attributes as needed
+			// Add other MMS attributes as needed
 		}
 	}
 
@@ -455,7 +455,7 @@ func (r *XMLSMSReader) GetAvailableYears() ([]int, error) {
 		if strings.HasPrefix(name, "sms-") && strings.HasSuffix(name, ".xml") {
 			yearStr := strings.TrimPrefix(name, "sms-")
 			yearStr = strings.TrimSuffix(yearStr, ".xml")
-			
+
 			year, err := strconv.Atoi(yearStr)
 			if err != nil {
 				continue // Skip files with invalid year format
@@ -513,13 +513,13 @@ func (r *XMLSMSReader) ValidateSMSFile(year int) error {
 	actualCount := 0
 	err = r.StreamMessages(year, func(msg Message) error {
 		actualCount++
-		
+
 		// Validate year consistency
 		msgYear := msg.GetDate().Year()
 		if msgYear != year {
 			return fmt.Errorf("message dated %d found in %d file", msgYear, year)
 		}
-		
+
 		return nil
 	})
 	if err != nil {

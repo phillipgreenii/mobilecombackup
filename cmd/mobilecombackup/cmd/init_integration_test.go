@@ -182,7 +182,7 @@ func TestInitCommandTreeOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Chdir(oldDir)
-	
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")

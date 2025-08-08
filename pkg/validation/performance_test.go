@@ -76,7 +76,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_Sequential(t
 		ParallelValidation: false,
 		EarlyTermination:   false,
 		MaxConcurrency:     2,
-		Timeout:           5 * time.Second,
+		Timeout:            5 * time.Second,
 	}
 
 	ctx := context.Background()
@@ -110,7 +110,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_Parallel(t *
 		ParallelValidation: true,
 		EarlyTermination:   false,
 		MaxConcurrency:     2,
-		Timeout:           5 * time.Second,
+		Timeout:            5 * time.Second,
 	}
 
 	ctx := context.Background()
@@ -214,7 +214,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_EarlyTermina
 
 	// Create mock with critical error
 	attachmentReader := &mockAttachmentReader{
-		attachments: []*attachments.Attachment{},
+		attachments:    []*attachments.Attachment{},
 		structureError: fmt.Errorf("critical structure error"), // This will cause structure violation
 	}
 
@@ -285,7 +285,7 @@ func TestOptimizedRepositoryValidator_ValidateAsync(t *testing.T) {
 		ParallelValidation: true,
 		EarlyTermination:   false,
 		MaxConcurrency:     4,
-		Timeout:           0, // Disable timeout
+		Timeout:            0, // Disable timeout
 	}
 
 	reportCh, errorCh := optimized.ValidateAsync(options)

@@ -49,19 +49,19 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 				     readable_date="Jul 15, 2013 10:41:45 PM" contact_name="(Unknown)" />
 			</smses>`,
 			expected: SMS{
-				Protocol:     "0",
-				Address:      "+15555550000",
-				Date:         time.Unix(1373942505, 322000000).UTC(),
-				Type:         ReceivedMessage,
-				Subject:      "",
-				Body:         "Test message",
+				Protocol:      "0",
+				Address:       "+15555550000",
+				Date:          time.Unix(1373942505, 322000000).UTC(),
+				Type:          ReceivedMessage,
+				Subject:       "",
+				Body:          "Test message",
 				ServiceCenter: "",
-				Read:         true,
-				Status:       -1,
-				Locked:       false,
-				DateSent:     time.Time{},
-				ReadableDate: "Jul 15, 2013 10:41:45 PM",
-				ContactName:  "(Unknown)",
+				Read:          true,
+				Status:        -1,
+				Locked:        false,
+				DateSent:      time.Time{},
+				ReadableDate:  "Jul 15, 2013 10:41:45 PM",
+				ContactName:   "(Unknown)",
 			},
 			wantErr: false,
 		},
@@ -329,10 +329,10 @@ func TestXMLSMSReader_MessageInterface(t *testing.T) {
 func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 
 	tests := []struct {
-		name      string
-		xmlData   string
-		expected  int
-		wantErr   bool
+		name     string
+		xmlData  string
+		expected int
+		wantErr  bool
 	}{
 		{
 			name: "valid count",
@@ -366,7 +366,7 @@ func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a temporary reader that can read from string
 			tempReader := &XMLSMSReader{repoRoot: "/test"}
-			
+
 			// We'll test the parsing logic by directly calling streamMessagesFromReader
 			// and checking for the count parsing behavior
 			decoder := strings.NewReader(tt.xmlData)
@@ -378,14 +378,14 @@ func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 					return
 				}
 			}
-			
+
 			// For valid cases, test that we can parse the messages
 			messageCount := 0
 			err := tempReader.streamMessagesFromReader(decoder, func(msg Message) error {
 				messageCount++
 				return nil
 			})
-			
+
 			if tt.wantErr && err == nil {
 				t.Errorf("Expected error but got none")
 			}
@@ -429,12 +429,12 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 	reader := NewXMLSMSReader("/test/repo")
 
 	tests := []struct {
-		name           string
-		dateAttr       string
-		expectedYear   int
-		expectedMonth  int
-		expectedDay    int
-		wantErr        bool
+		name          string
+		dateAttr      string
+		expectedYear  int
+		expectedMonth int
+		expectedDay   int
+		wantErr       bool
 	}{
 		{
 			name:          "valid epoch milliseconds",

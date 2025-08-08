@@ -82,7 +82,7 @@ func ExampleAttachmentManager_StreamAttachments() {
 	err := manager.StreamAttachments(func(attachment *attachments.Attachment) error {
 		count++
 		totalSize += attachment.Size
-		
+
 		// Process each attachment without loading all into memory
 		fmt.Printf("Processing attachment %s...\n", attachment.Hash[:8])
 		return nil
@@ -112,7 +112,7 @@ func ExampleAttachmentManager_FindOrphanedAttachments() {
 
 	fmt.Printf("Found %d orphaned attachments:\n", len(orphaned))
 	for _, attachment := range orphaned {
-		fmt.Printf("  %s (%d bytes) - not referenced by any message\n", 
+		fmt.Printf("  %s (%d bytes) - not referenced by any message\n",
 			attachment.Hash, attachment.Size)
 	}
 }
@@ -185,7 +185,7 @@ func ExampleAttachmentManager_GetAttachmentPath() {
 
 	fmt.Printf("Attachment path for hash %s:\n", hash[:8])
 	fmt.Printf("  %s\n", path)
-	
+
 	// Path structure explanation
 	fmt.Printf("Path structure: attachments/[first-2-chars]/[full-hash]\n")
 	fmt.Printf("  First 2 chars: %s\n", hash[:2])

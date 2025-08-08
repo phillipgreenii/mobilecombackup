@@ -26,9 +26,9 @@ func NewXMLCallsReader(repoRoot string) *XMLCallsReader {
 
 // xmlCalls represents the root XML element
 type xmlCalls struct {
-	XMLName xml.Name   `xml:"calls"`
-	Count   int        `xml:"count,attr"`
-	Calls   []xmlCall  `xml:"call"`
+	XMLName xml.Name  `xml:"calls"`
+	Count   int       `xml:"count,attr"`
+	Calls   []xmlCall `xml:"call"`
 }
 
 // xmlCall represents a single call in XML format
@@ -61,14 +61,14 @@ func (r *XMLCallsReader) StreamCalls(year int, callback func(Call) error) error 
 	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
-	
+
 	// Read the opening calls element
 	for {
 		tok, err := decoder.Token()
 		if err != nil {
 			return fmt.Errorf("failed to parse XML: %w", err)
 		}
-		
+
 		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == "calls" {
 			// We found the calls element, now stream the call elements
 			return r.streamCallElements(decoder, callback)
@@ -194,14 +194,14 @@ func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
-	
+
 	// Read the opening calls element to get count attribute
 	for {
 		tok, err := decoder.Token()
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse XML: %w", err)
 		}
-		
+
 		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == "calls" {
 			for _, attr := range se.Attr {
 				if attr.Name.Local == "count" {

@@ -14,11 +14,11 @@ func initRootCmd() {
 
 func TestRootCommand(t *testing.T) {
 	tests := []struct {
-		name           string
-		args           []string
-		wantOut        string
-		wantErr        string
-		wantExitCode   bool // true if should exit with error
+		name         string
+		args         []string
+		wantOut      string
+		wantErr      string
+		wantExitCode bool // true if should exit with error
 	}{
 		{
 			name:    "no arguments shows help",

@@ -11,10 +11,10 @@ import (
 type CallsValidator interface {
 	// ValidateCallsStructure validates calls directory structure
 	ValidateCallsStructure() []ValidationViolation
-	
+
 	// ValidateCallsContent validates calls file content and consistency
 	ValidateCallsContent() []ValidationViolation
-	
+
 	// ValidateCallsCounts verifies call counts match manifest/summary
 	ValidateCallsCounts(expectedCounts map[int]int) []ValidationViolation
 }
@@ -36,7 +36,7 @@ func NewCallsValidator(repositoryRoot string, callsReader calls.CallsReader) Cal
 // ValidateCallsStructure validates calls directory structure
 func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Get available years from reader first
 	years, err := v.callsReader.GetAvailableYears()
 	if err != nil {
@@ -48,12 +48,12 @@ func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// If no years available, calls directory is optional
 	if len(years) == 0 {
 		return violations
 	}
-	
+
 	// Check if calls directory exists (only if we have years)
 	callsDir := filepath.Join(v.repositoryRoot, "calls")
 	if !dirExists(callsDir) {
@@ -65,12 +65,12 @@ func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// Validate each year file exists and has correct naming
 	for _, year := range years {
 		expectedFileName := fmt.Sprintf("calls-%d.xml", year)
 		expectedPath := filepath.Join(callsDir, expectedFileName)
-		
+
 		if !fileExists(expectedPath) {
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile,
@@ -80,14 +80,14 @@ func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
 			})
 		}
 	}
-	
+
 	return violations
 }
 
 // ValidateCallsContent validates calls file content and consistency
 func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Get available years
 	years, err := v.callsReader.GetAvailableYears()
 	if err != nil {
@@ -99,12 +99,12 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// Validate each year file
 	for _, year := range years {
 		fileName := fmt.Sprintf("calls-%d.xml", year)
 		filePath := filepath.Join("calls", fileName)
-		
+
 		// Validate file structure and year consistency
 		if err := v.callsReader.ValidateCallsFile(year); err != nil {
 			violations = append(violations, ValidationViolation{
@@ -115,11 +115,11 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
 			})
 			continue
 		}
-		
+
 		// Validate that all calls in the file belong to the correct year
 		violations = append(violations, v.validateCallsYearConsistency(year)...)
 	}
-	
+
 	return violations
 }
 
@@ -128,7 +128,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 	var violations []ValidationViolation
 	fileName := fmt.Sprintf("calls-%d.xml", year)
 	filePath := filepath.Join("calls", fileName)
-	
+
 	// Stream calls to check year consistency without loading all into memory
 	err := v.callsReader.StreamCalls(year, func(call calls.Call) error {
 		callYear := call.Date.UTC().Year()
@@ -137,7 +137,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
-				Message:  fmt.Sprintf("Call dated %s belongs to year %d but found in %d file", 
+				Message: fmt.Sprintf("Call dated %s belongs to year %d but found in %d file",
 					call.Date.Format("2006-01-02"), callYear, year),
 				Expected: fmt.Sprintf("year %d", year),
 				Actual:   fmt.Sprintf("year %d", callYear),
@@ -145,7 +145,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 		}
 		return nil
 	})
-	
+
 	if err != nil {
 		violations = append(violations, ValidationViolation{
 			Type:     InvalidFormat,
@@ -154,14 +154,14 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 			Message:  fmt.Sprintf("Failed to stream calls for year consistency check: %v", err),
 		})
 	}
-	
+
 	return violations
 }
 
 // ValidateCallsCounts verifies call counts match manifest/summary
 func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Get available years
 	years, err := v.callsReader.GetAvailableYears()
 	if err != nil {
@@ -173,12 +173,12 @@ func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []V
 		})
 		return violations
 	}
-	
+
 	// Check counts for each year
 	for _, year := range years {
 		fileName := fmt.Sprintf("calls-%d.xml", year)
 		filePath := filepath.Join("calls", fileName)
-		
+
 		// Get actual count from reader
 		actualCount, err := v.callsReader.GetCallsCount(year)
 		if err != nil {
@@ -190,7 +190,7 @@ func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []V
 			})
 			continue
 		}
-		
+
 		// Check against expected count if provided
 		if expectedCount, exists := expectedCounts[year]; exists {
 			if actualCount != expectedCount {
@@ -205,7 +205,7 @@ func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []V
 			}
 		}
 	}
-	
+
 	// Check for expected years that don't exist
 	for expectedYear := range expectedCounts {
 		found := false
@@ -215,7 +215,7 @@ func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []V
 				break
 			}
 		}
-		
+
 		if !found {
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile,
@@ -225,6 +225,6 @@ func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []V
 			})
 		}
 	}
-	
+
 	return violations
 }

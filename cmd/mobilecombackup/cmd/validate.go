@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -37,7 +37,7 @@ This command performs comprehensive validation including:
 
 func init() {
 	rootCmd.AddCommand(validateCmd)
-	
+
 	// Local flags
 	validateCmd.Flags().BoolVar(&verbose, "verbose", false, "Show detailed progress information")
 	validateCmd.Flags().BoolVar(&outputJSON, "output-json", false, "Output results in JSON format")
@@ -45,8 +45,8 @@ func init() {
 
 // ValidationResult represents the result of validation
 type ValidationResult struct {
-	Valid      bool                                `json:"valid"`
-	Violations []validation.ValidationViolation    `json:"violations"`
+	Valid      bool                             `json:"valid"`
+	Violations []validation.ValidationViolation `json:"violations"`
 }
 
 // ProgressReporter provides progress updates during validation
@@ -90,20 +90,20 @@ func (r *ConsoleProgressReporter) CompletePhase() {
 // NullProgressReporter discards all progress updates
 type NullProgressReporter struct{}
 
-func (r *NullProgressReporter) StartPhase(phase string)         {}
+func (r *NullProgressReporter) StartPhase(phase string)           {}
 func (r *NullProgressReporter) UpdateProgress(current, total int) {}
-func (r *NullProgressReporter) CompletePhase()                   {}
+func (r *NullProgressReporter) CompletePhase()                    {}
 
 func runValidate(cmd *cobra.Command, args []string) error {
 	// Resolve repository root
 	repoPath := resolveRepoRoot()
-	
+
 	// Convert to absolute path
 	absPath, err := filepath.Abs(repoPath)
 	if err != nil {
 		return fmt.Errorf("failed to resolve repository path: %w", err)
 	}
-	
+
 	// Check if repository exists
 	if _, err := os.Stat(absPath); err != nil {
 		if os.IsNotExist(err) {
@@ -112,7 +112,7 @@ func runValidate(cmd *cobra.Command, args []string) error {
 		}
 		return fmt.Errorf("failed to access repository: %w", err)
 	}
-	
+
 	// Set up progress reporter
 	var reporter ProgressReporter
 	if outputJSON || quiet {
@@ -123,13 +123,13 @@ func runValidate(cmd *cobra.Command, args []string) error {
 			verbose: verbose,
 		}
 	}
-	
+
 	// Create readers
 	callsReader := calls.NewXMLCallsReader(absPath)
 	smsReader := sms.NewXMLSMSReader(absPath)
 	attachmentReader := attachments.NewAttachmentManager(absPath)
 	contactsReader := contacts.NewContactsManager(absPath)
-	
+
 	// Create validator
 	validator := validation.NewRepositoryValidator(
 		absPath,
@@ -138,20 +138,20 @@ func runValidate(cmd *cobra.Command, args []string) error {
 		attachmentReader,
 		contactsReader,
 	)
-	
+
 	// Run validation with progress reporting
 	violations, err := validateWithProgress(validator, reporter)
 	if err != nil {
 		PrintError("Validation failed: %v", err)
 		os.Exit(2)
 	}
-	
+
 	// Create result
 	result := ValidationResult{
 		Valid:      len(violations) == 0,
 		Violations: violations,
 	}
-	
+
 	// Output results
 	if outputJSON {
 		if err := outputJSONResult(result); err != nil {
@@ -160,12 +160,12 @@ func runValidate(cmd *cobra.Command, args []string) error {
 	} else {
 		outputTextResult(result, absPath)
 	}
-	
+
 	// Set exit code
 	if !result.Valid {
 		os.Exit(1)
 	}
-	
+
 	return nil
 }
 
@@ -174,11 +174,11 @@ func resolveRepoRoot() string {
 	if repoRoot != "." {
 		return repoRoot
 	}
-	
+
 	if envRepo := os.Getenv("MB_REPO_ROOT"); envRepo != "" {
 		return envRepo
 	}
-	
+
 	return "."
 }
 
@@ -188,11 +188,11 @@ func validateWithProgress(validator validation.RepositoryValidator, reporter Pro
 	reporter.StartPhase("repository")
 	report, err := validator.ValidateRepository()
 	reporter.CompletePhase()
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return report.Violations, nil
 }
 
@@ -207,12 +207,12 @@ func outputTextResult(result ValidationResult, repoPath string) {
 		// In quiet mode, only show output if there are violations
 		return
 	}
-	
+
 	if !quiet {
 		fmt.Printf("\nValidation Report for: %s\n", repoPath)
 		fmt.Println(strings.Repeat("-", 60))
 	}
-	
+
 	if result.Valid {
 		if !quiet {
 			fmt.Println("✓ Repository is valid")
@@ -221,19 +221,19 @@ func outputTextResult(result ValidationResult, repoPath string) {
 		if !quiet {
 			fmt.Printf("✗ Found %d violation(s)\n\n", len(result.Violations))
 		}
-		
+
 		// Group violations by type
 		violationsByType := make(map[string][]validation.ValidationViolation)
 		for _, v := range result.Violations {
 			violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
 		}
-		
+
 		// Display violations by type
 		for vType, violations := range violationsByType {
 			if !quiet {
 				fmt.Printf("%s (%d):\n", vType, len(violations))
 			}
-			
+
 			for _, v := range violations {
 				fmt.Print("  ")
 				if v.File != "" {
@@ -241,7 +241,7 @@ func outputTextResult(result ValidationResult, repoPath string) {
 				}
 				fmt.Println(v.Message)
 			}
-			
+
 			if !quiet {
 				fmt.Println()
 			}

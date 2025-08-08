@@ -40,7 +40,7 @@ func TestContactsManager_Integration_WithTestData(t *testing.T) {
 
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
-	
+
 	err := copyFile(testDataPath, contactsPath)
 	if err != nil {
 		t.Fatalf("Failed to copy test data: %v", err)
@@ -126,7 +126,7 @@ func TestContactsManager_Integration_LargeContactList(t *testing.T) {
 		// Create unique contact names using index
 		contactName := fmt.Sprintf("Contact%04d", i)
 		phoneNumber := fmt.Sprintf("555%07d", i)
-		
+
 		yamlContent += "  - name: \"" + contactName + "\"\n"
 		yamlContent += "    numbers:\n"
 		yamlContent += "      - \"" + phoneNumber + "\"\n"
@@ -237,15 +237,15 @@ func TestContactsManager_Integration_PhoneNumberVariations(t *testing.T) {
 
 	// Test various input formats that should all resolve to the same contact
 	testNumbers := []string{
-		"5555551234",      // Normalized from +1-555-555-1234
-		"15555551234",     // With country code
-		"+15555551234",    // With + and country code
-		"(555) 555-1234",  // Formatted
-		"555-555-1234",    // Dashed
-		"555 555 1234",    // Spaced
-		"5555555678",      // Second number
-		"5559999",         // Last 7 digits of third number
-		"1551234567",      // Fourth number with country code
+		"5555551234",     // Normalized from +1-555-555-1234
+		"15555551234",    // With country code
+		"+15555551234",   // With + and country code
+		"(555) 555-1234", // Formatted
+		"555-555-1234",   // Dashed
+		"555 555 1234",   // Spaced
+		"5555555678",     // Second number
+		"5559999",        // Last 7 digits of third number
+		"1551234567",     // Fourth number with country code
 	}
 
 	for _, number := range testNumbers {

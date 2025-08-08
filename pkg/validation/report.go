@@ -23,13 +23,13 @@ const (
 type ReportFilterOptions struct {
 	// IncludeSeverities filters violations by severity level
 	IncludeSeverities []Severity
-	
+
 	// IncludeTypes filters violations by violation type
 	IncludeTypes []ViolationType
-	
+
 	// ExcludeFiles excludes violations from specific files (glob patterns supported)
 	ExcludeFiles []string
-	
+
 	// MaxViolations limits the number of violations shown per type
 	MaxViolations int
 }
@@ -38,19 +38,19 @@ type ReportFilterOptions struct {
 type ReportGenerator interface {
 	// GenerateReport creates a formatted validation report
 	GenerateReport(report *ValidationReport, format ReportFormat, options *ReportFilterOptions) (string, error)
-	
+
 	// GenerateSummary creates a brief summary of validation results
 	GenerateSummary(report *ValidationReport) (*ValidationSummary, error)
 }
 
 // ValidationSummary provides high-level statistics about validation results
 type ValidationSummary struct {
-	TotalViolations   int                         `yaml:"total_violations" json:"total_violations"`
-	ViolationsByType  map[ViolationType]int       `yaml:"violations_by_type" json:"violations_by_type"`
-	ViolationsBySeverity map[Severity]int         `yaml:"violations_by_severity" json:"violations_by_severity"`
-	Status            ValidationStatus            `yaml:"status" json:"status"`
-	Timestamp         time.Time                   `yaml:"timestamp" json:"timestamp"`
-	RepositoryPath    string                      `yaml:"repository_path" json:"repository_path"`
+	TotalViolations      int                   `yaml:"total_violations" json:"total_violations"`
+	ViolationsByType     map[ViolationType]int `yaml:"violations_by_type" json:"violations_by_type"`
+	ViolationsBySeverity map[Severity]int      `yaml:"violations_by_severity" json:"violations_by_severity"`
+	Status               ValidationStatus      `yaml:"status" json:"status"`
+	Timestamp            time.Time             `yaml:"timestamp" json:"timestamp"`
+	RepositoryPath       string                `yaml:"repository_path" json:"repository_path"`
 }
 
 // ReportGeneratorImpl implements ReportGenerator interface

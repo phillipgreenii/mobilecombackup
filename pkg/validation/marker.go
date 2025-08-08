@@ -22,7 +22,7 @@ type MarkerFileContent struct {
 type MarkerFileValidator interface {
 	// ValidateMarkerFile checks the marker file exists and has valid content
 	ValidateMarkerFile() ([]ValidationViolation, bool, error)
-	
+
 	// GetSuggestedFix returns the suggested content for a missing marker file
 	GetSuggestedFix() string
 }
@@ -46,7 +46,7 @@ func NewMarkerFileValidator(repositoryRoot string) MarkerFileValidator {
 func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, bool, error) {
 	var violations []ValidationViolation
 	markerPath := filepath.Join(v.repositoryRoot, ".mobilecombackup.yaml")
-	
+
 	// Check if file exists
 	file, err := os.Open(markerPath)
 	if err != nil {
@@ -64,13 +64,13 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 		return nil, false, fmt.Errorf("failed to open marker file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Read file content
 	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to read marker file: %w", err)
 	}
-	
+
 	// Validate YAML structure first
 	var rawData map[string]interface{}
 	if err := yaml.Unmarshal(content, &rawData); err != nil {
@@ -82,7 +82,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 		})
 		return violations, false, nil // Can't determine version support
 	}
-	
+
 	// Parse into structured content
 	var markerContent MarkerFileContent
 	if err := yaml.Unmarshal(content, &markerContent); err != nil {
@@ -94,7 +94,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 		})
 		return violations, false, nil
 	}
-	
+
 	// Validate required fields
 	if markerContent.RepositoryStructureVersion == "" {
 		violations = append(violations, ValidationViolation{
@@ -114,7 +114,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 		})
 		return violations, false, nil // Version not supported
 	}
-	
+
 	if markerContent.CreatedAt == "" {
 		violations = append(violations, ValidationViolation{
 			Type:     InvalidFormat,
@@ -133,7 +133,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 			})
 		}
 	}
-	
+
 	if markerContent.CreatedBy == "" {
 		violations = append(violations, ValidationViolation{
 			Type:     InvalidFormat,
@@ -142,7 +142,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 			Message:  "Missing required field: created_by",
 		})
 	}
-	
+
 	// Check for extra fields and log warnings
 	for key := range rawData {
 		switch key {
@@ -152,10 +152,10 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 			v.logger.Printf("Warning: unexpected field '%s' in marker file", key)
 		}
 	}
-	
+
 	// Return true for version supported if version is "1" or missing
 	versionSupported := markerContent.RepositoryStructureVersion == "" || markerContent.RepositoryStructureVersion == "1"
-	
+
 	return violations, versionSupported, nil
 }
 

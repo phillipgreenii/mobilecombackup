@@ -164,7 +164,7 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	// Use integration test scenario data
 	tempDir := t.TempDir()
 	callsDir := filepath.Join(tempDir, "calls")
-	
+
 	// Copy the scenario test data
 	err := copyFile("../../testdata/it/scenerio-00/to_process/00/calls-test.xml", filepath.Join(callsDir, "calls-2014.xml"))
 	if err != nil {

@@ -91,20 +91,20 @@ func (m *mockAttachmentReader) ValidateAttachmentStructure() error {
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with no attachments (empty repository)
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{},
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	violations := validator.ValidateAttachmentsStructure()
-	
+
 	// Empty repository should have no violations
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations for empty attachments repository, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Test with attachments present and valid structure
 	mockReader.attachments = []*attachments.Attachment{
 		{
@@ -114,24 +114,24 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 			Exists: true,
 		},
 	}
-	
+
 	violations = validator.ValidateAttachmentsStructure()
-	
+
 	// Should have no violations with valid structure
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations with valid structure, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Test with structure validation error
 	mockReader.structureError = fmt.Errorf("invalid directory structure")
-	
+
 	violations = validator.ValidateAttachmentsStructure()
-	
+
 	// Should have structure violation
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation with structure error, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Type != StructureViolation {
 		t.Errorf("Expected StructureViolation, got %s", violations[0].Type)
 	}
@@ -139,38 +139,38 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with list error (directory missing)
 	mockReader := &mockAttachmentReader{
 		listError: fmt.Errorf("directory not found"),
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	violations := validator.ValidateAttachmentsStructure()
-	
+
 	// Should have warning for missing directory
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for missing directory, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Severity != SeverityWarning {
 		t.Errorf("Expected warning severity for missing directory, got %s", violations[0].Severity)
 	}
-	
+
 	// Create attachments directory but keep list error
 	attachmentsDir := filepath.Join(tempDir, "attachments")
 	err := os.MkdirAll(attachmentsDir, 0755)
 	if err != nil {
 		t.Fatalf("Failed to create attachments directory: %v", err)
 	}
-	
+
 	violations = validator.ValidateAttachmentsStructure()
-	
+
 	// Should have error for list failure with existing directory
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for list error, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Severity != SeverityError {
 		t.Errorf("Expected error severity for list failure, got %s", violations[0].Severity)
 	}
@@ -178,7 +178,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
 			{
@@ -208,19 +208,19 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 			"errorhash999": fmt.Errorf("verification failed"),
 		},
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	violations := validator.ValidateAttachmentIntegrity()
-	
+
 	// Should have violations for missing and corrupted files
 	if len(violations) != 2 {
 		t.Errorf("Expected 2 violations, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Check for specific violation types
 	foundMissingFile := false
 	foundChecksumMismatch := false
-	
+
 	for _, violation := range violations {
 		switch violation.Type {
 		case MissingFile:
@@ -235,11 +235,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if !foundMissingFile {
 		t.Error("Expected MissingFile violation")
 	}
-	
+
 	if !foundChecksumMismatch {
 		t.Error("Expected ChecksumMismatch violation")
 	}
@@ -247,7 +247,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity_VerificationError(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
 			{
@@ -261,15 +261,15 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity_VerificationError(
 			"errorhash999": fmt.Errorf("verification failed"),
 		},
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	violations := validator.ValidateAttachmentIntegrity()
-	
+
 	// Should have violation for verification error
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for verification error, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Type != ChecksumMismatch {
 		t.Errorf("Expected ChecksumMismatch violation type, got %s", violations[0].Type)
 	}
@@ -277,13 +277,13 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity_VerificationError(
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	referencedHashes := map[string]bool{
-		"existinghash123":    true,
-		"missinghash456":     true,
-		"errorcheckhash789":  true,
+		"existinghash123":   true,
+		"missinghash456":    true,
+		"errorcheckhash789": true,
 	}
-	
+
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
 			{
@@ -309,10 +309,10 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 			},
 		},
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	violations := validator.ValidateAttachmentReferences(referencedHashes)
-	
+
 	// Should have violations for:
 	// 1. Missing referenced attachment
 	// 2. Error checking attachment
@@ -320,12 +320,12 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 	if len(violations) != 3 {
 		t.Errorf("Expected 3 violations, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Check for specific violation types
 	foundMissingRef := false
 	foundErrorCheck := false
 	foundOrphaned := false
-	
+
 	for _, violation := range violations {
 		switch violation.Type {
 		case MissingFile:
@@ -341,15 +341,15 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if !foundMissingRef {
 		t.Error("Expected missing referenced attachment violation")
 	}
-	
+
 	if !foundErrorCheck {
 		t.Error("Expected error checking attachment violation")
 	}
-	
+
 	if !foundOrphaned {
 		t.Error("Expected orphaned attachment violation")
 	}
@@ -357,11 +357,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 
 func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	referencedHashes := map[string]bool{
 		"referenced123": true,
 	}
-	
+
 	expectedOrphaned := []*attachments.Attachment{
 		{
 			Hash:   "orphaned456",
@@ -370,22 +370,22 @@ func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 			Exists: true,
 		},
 	}
-	
+
 	mockReader := &mockAttachmentReader{
 		orphanedAttachments: expectedOrphaned,
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
 	orphaned, err := validator.GetOrphanedAttachments(referencedHashes)
-	
+
 	if err != nil {
 		t.Fatalf("Failed to get orphaned attachments: %v", err)
 	}
-	
+
 	if len(orphaned) != 1 {
 		t.Errorf("Expected 1 orphaned attachment, got %d", len(orphaned))
 	}
-	
+
 	if len(orphaned) > 0 && orphaned[0].Hash != "orphaned456" {
 		t.Errorf("Expected orphaned hash 'orphaned456', got %s", orphaned[0].Hash)
 	}
@@ -393,35 +393,35 @@ func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 
 func TestAttachmentsValidatorImpl_ErrorHandling(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with list error for integrity check
 	mockReader := &mockAttachmentReader{
 		listError: fmt.Errorf("failed to list attachments"),
 	}
-	
+
 	validator := NewAttachmentsValidator(tempDir, mockReader)
-	
+
 	// Test integrity validation with list error
 	violations := validator.ValidateAttachmentIntegrity()
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for list error in integrity check, got %d", len(violations))
 	}
-	
+
 	// Reference validation doesn't use ListAttachments, so no error expected with empty references
 	violations = validator.ValidateAttachmentReferences(make(map[string]bool))
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations for empty reference check, got %d", len(violations))
 	}
-	
+
 	// Test with orphaned attachments error
 	mockReader.listError = nil
 	mockReader.orphanedError = fmt.Errorf("failed to find orphaned attachments")
-	
+
 	violations = validator.ValidateAttachmentReferences(make(map[string]bool))
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for orphaned attachments error, got %d", len(violations))
 	}
-	
+
 	// Test GetOrphanedAttachments with error
 	_, err := validator.GetOrphanedAttachments(make(map[string]bool))
 	if err == nil {

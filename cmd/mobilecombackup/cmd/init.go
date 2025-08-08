@@ -35,7 +35,7 @@ Also creates:
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	
+
 	// Local flags
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview actions without creating directories")
 }
@@ -75,23 +75,23 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to resolve repository path: %w", err)
 	}
-	
+
 	// Validate target directory
 	if err := validateTargetDirectory(absPath); err != nil {
 		return err
 	}
-	
+
 	// Initialize repository
 	result, err := initializeRepository(absPath, dryRun, quiet)
 	if err != nil {
 		return err
 	}
-	
+
 	// Display results
 	if !quiet {
 		displayInitResult(result)
 	}
-	
+
 	return nil
 }
 
@@ -104,17 +104,17 @@ func validateTargetDirectory(path string) error {
 		}
 		return fmt.Errorf("failed to check directory: %w", err)
 	}
-	
+
 	if !info.IsDir() {
 		return fmt.Errorf("path exists but is not a directory: %s", path)
 	}
-	
+
 	// Check if directory is empty
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("failed to read directory: %w", err)
 	}
-	
+
 	// Check for existing repository
 	for _, entry := range entries {
 		if entry.Name() == ".mobilecombackup.yaml" {
@@ -124,12 +124,12 @@ func validateTargetDirectory(path string) error {
 			return fmt.Errorf("directory appears to be a repository (found %s/ directory)", entry.Name())
 		}
 	}
-	
+
 	// Warn if directory is not empty
 	if len(entries) > 0 {
 		return fmt.Errorf("directory is not empty")
 	}
-	
+
 	return nil
 }
 
@@ -139,14 +139,14 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		DryRun:   dryRun,
 		Created:  []string{},
 	}
-	
+
 	// Directories to create
 	directories := []string{
 		"calls",
 		"sms",
 		"attachments",
 	}
-	
+
 	// Create root directory if it doesn't exist
 	if _, err := os.Stat(repoRoot); os.IsNotExist(err) {
 		if !dryRun {
@@ -156,7 +156,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		}
 		result.Created = append(result.Created, repoRoot)
 	}
-	
+
 	// Create subdirectories
 	for _, dir := range directories {
 		dirPath := filepath.Join(repoRoot, dir)
@@ -167,7 +167,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		}
 		result.Created = append(result.Created, dirPath)
 	}
-	
+
 	// Create marker file
 	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
 	markerContent := MarkerFileContent{
@@ -175,7 +175,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		CreatedAt:                  time.Now().UTC().Format(time.RFC3339),
 		CreatedBy:                  fmt.Sprintf("mobilecombackup v%s", version),
 	}
-	
+
 	if !dryRun {
 		data, err := yaml.Marshal(markerContent)
 		if err != nil {
@@ -186,7 +186,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		}
 	}
 	result.Created = append(result.Created, markerPath)
-	
+
 	// Create empty contacts.yaml
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	if !dryRun {
@@ -196,13 +196,13 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		}
 	}
 	result.Created = append(result.Created, contactsPath)
-	
+
 	// Create summary.yaml with zero counts
 	summaryPath := filepath.Join(repoRoot, "summary.yaml")
 	summaryContent := SummaryContent{}
 	summaryContent.Counts.Calls = 0
 	summaryContent.Counts.SMS = 0
-	
+
 	if !dryRun {
 		data, err := yaml.Marshal(summaryContent)
 		if err != nil {
@@ -213,7 +213,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		}
 	}
 	result.Created = append(result.Created, summaryPath)
-	
+
 	return result, nil
 }
 
@@ -222,45 +222,45 @@ func displayInitResult(result *InitResult) {
 		fmt.Println("DRY RUN: No files or directories were created")
 		fmt.Println()
 	}
-	
+
 	fmt.Printf("Initialized mobilecombackup repository in: %s\n", result.RepoRoot)
 	fmt.Println()
-	
+
 	// Display tree-style output
 	fmt.Println("Created structure:")
-	
+
 	// Convert absolute paths to relative paths and organize
 	tree := make(map[string]*node)
 	root := &node{name: filepath.Base(result.RepoRoot)}
 	tree[""] = root
-	
+
 	for _, created := range result.Created {
 		rel, _ := filepath.Rel(result.RepoRoot, created)
 		if rel == "." {
 			continue
 		}
-		
+
 		parts := strings.Split(rel, string(filepath.Separator))
 		parent := ""
-		
+
 		for i, part := range parts {
 			current := filepath.Join(parent, part)
-			
+
 			if _, exists := tree[current]; !exists {
 				tree[current] = &node{name: part}
-				
+
 				// Add to parent's children
 				if parentNode, ok := tree[parent]; ok {
 					parentNode.children = append(parentNode.children, current)
 				}
 			}
-			
+
 			if i < len(parts)-1 {
 				parent = current
 			}
 		}
 	}
-	
+
 	// Print tree - start with no prefix since we're at root
 	printTree("", root, tree, true, "", true)
 }
@@ -278,7 +278,7 @@ func printTree(indent string, node *node, tree map[string]*node, isLast bool, pa
 		}
 		fmt.Printf("%s%s%s\n", indent, connector, node.name)
 	}
-	
+
 	// Update indent for children
 	childIndent := indent
 	if !isRoot {
@@ -288,7 +288,7 @@ func printTree(indent string, node *node, tree map[string]*node, isLast bool, pa
 			childIndent += "│   "
 		}
 	}
-	
+
 	// Print children
 	for i, childPath := range node.children {
 		if child, ok := tree[childPath]; ok {

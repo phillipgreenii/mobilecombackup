@@ -18,8 +18,8 @@ func TestAttachmentManager_GetAttachmentPath(t *testing.T) {
 		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781", "attachments/3c/3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"},
 		{"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46", "attachments/26/26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46"},
 		{"3CEB5C413EE02895BF1F357A8C2CC2BEC824F4D8AAD13AEAB69303F341C8B781", "attachments/3c/3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"}, // Uppercase converted to lowercase
-		{"", ""},                  // Empty string
-		{"a", ""},                 // Too short
+		{"", ""},                    // Empty string
+		{"a", ""},                   // Too short
 		{"ab", "attachments/ab/ab"}, // Short but valid for path generation
 	}
 
@@ -36,14 +36,14 @@ func TestIsValidHash(t *testing.T) {
 		hash  string
 		valid bool
 	}{
-		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781", true},   // Valid lowercase (64 chars)
-		{"3CEB5C413EE02895BF1F357A8C2CC2BEC824F4D8AAD13AEAB69303F341C8B781", false},  // Uppercase not allowed
-		{"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46", true},   // Valid with numbers (64 chars)
-		{"", false},                                                               // Empty
-		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78", false},    // Too short (63 chars)
+		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781", true},  // Valid lowercase (64 chars)
+		{"3CEB5C413EE02895BF1F357A8C2CC2BEC824F4D8AAD13AEAB69303F341C8B781", false}, // Uppercase not allowed
+		{"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46", true},  // Valid with numbers (64 chars)
+		{"", false}, // Empty
+		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78", false},   // Too short (63 chars)
 		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b7812", false}, // Too long (65 chars)
-		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78g", false}, // Invalid character g
-		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78 ", false}, // Space character
+		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78g", false},  // Invalid character g
+		{"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b78 ", false},  // Space character
 	}
 
 	for _, test := range tests {

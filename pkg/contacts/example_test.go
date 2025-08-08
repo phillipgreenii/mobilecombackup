@@ -36,13 +36,13 @@ func ExampleContactsManager_GetContactByNumber() {
 
 	// All these formats will find the same contact if the number exists
 	testNumbers := []string{
-		"+15555551234",    // International format
-		"15555551234",     // With country code
-		"5555551234",      // 10 digits
-		"(555) 555-1234",  // Formatted
-		"555-555-1234",    // Dashed
-		"555.555.1234",    // Dotted
-		"555 555 1234",    // Spaced
+		"+15555551234",   // International format
+		"15555551234",    // With country code
+		"5555551234",     // 10 digits
+		"(555) 555-1234", // Formatted
+		"555-555-1234",   // Dashed
+		"555.555.1234",   // Dotted
+		"555 555 1234",   // Spaced
 	}
 
 	for _, number := range testNumbers {
@@ -157,11 +157,11 @@ func ExampleContactsManager_errorHandling() {
 	if err != nil {
 		// Handle different types of errors
 		fmt.Printf("Failed to load contacts: %v\n", err)
-		
+
 		// Still safe to use other methods, they'll return empty results
 		count := manager.GetContactsCount()
 		fmt.Printf("Contact count: %d\n", count) // Will be 0
-		
+
 		_, found := manager.GetContactByNumber("5555551234")
 		fmt.Printf("Number found: %v\n", found) // Will be false
 	}

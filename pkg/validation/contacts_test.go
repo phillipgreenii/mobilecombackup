@@ -11,13 +11,13 @@ import (
 
 // mockContactsReader implements ContactsReader for testing
 type mockContactsReader struct {
-	contacts          []*contacts.Contact
-	loadError         error
-	getAllError       error
-	loadCalled        bool
-	numberToContact   map[string]string
-	contactToNumbers  map[string][]string
-	contactExists     map[string]bool
+	contacts         []*contacts.Contact
+	loadError        error
+	getAllError      error
+	loadCalled       bool
+	numberToContact  map[string]string
+	contactToNumbers map[string][]string
+	contactExists    map[string]bool
 }
 
 func (m *mockContactsReader) LoadContacts() error {
@@ -25,12 +25,12 @@ func (m *mockContactsReader) LoadContacts() error {
 	if m.loadError != nil {
 		return m.loadError
 	}
-	
+
 	// Build lookup maps from contacts
 	m.numberToContact = make(map[string]string)
 	m.contactToNumbers = make(map[string][]string)
 	m.contactExists = make(map[string]bool)
-	
+
 	for _, contact := range m.contacts {
 		m.contactExists[contact.Name] = true
 		m.contactToNumbers[contact.Name] = contact.Numbers
@@ -38,7 +38,7 @@ func (m *mockContactsReader) LoadContacts() error {
 			m.numberToContact[number] = contact.Name
 		}
 	}
-	
+
 	return nil
 }
 
@@ -92,16 +92,16 @@ func (m *mockContactsReader) GetContactsCount() int {
 
 func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	mockReader := &mockContactsReader{}
 	validator := NewContactsValidator(tempDir, mockReader)
-	
+
 	// Test missing contacts.yaml
 	violations := validator.ValidateContactsStructure()
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for missing contacts.yaml, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 {
 		if violations[0].Type != MissingFile {
 			t.Errorf("Expected MissingFile violation, got %s", violations[0].Type)
@@ -110,27 +110,27 @@ func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {
 			t.Errorf("Expected warning severity for missing contacts.yaml, got %s", violations[0].Severity)
 		}
 	}
-	
+
 	// Create contacts.yaml file
 	contactsFile := filepath.Join(tempDir, "contacts.yaml")
 	err := os.WriteFile(contactsFile, []byte("contacts: []"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create contacts.yaml: %v", err)
 	}
-	
+
 	// Test with valid file
 	violations = validator.ValidateContactsStructure()
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations with valid contacts.yaml, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Test with load error
 	mockReader.loadError = fmt.Errorf("invalid YAML format")
 	violations = validator.ValidateContactsStructure()
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for load error, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Type != InvalidFormat {
 		t.Errorf("Expected InvalidFormat violation, got %s", violations[0].Type)
 	}
@@ -138,7 +138,7 @@ func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {
 
 func TestContactsValidatorImpl_ValidateContactsData(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with valid contacts data
 	validContacts := []*contacts.Contact{
 		{
@@ -150,14 +150,14 @@ func TestContactsValidatorImpl_ValidateContactsData(t *testing.T) {
 			Numbers: []string{"+15559876543"},
 		},
 	}
-	
+
 	mockReader := &mockContactsReader{
 		contacts: validContacts,
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
 	violations := validator.ValidateContactsData()
-	
+
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations with valid contacts data, got %d: %v", len(violations), violations)
 	}
@@ -165,7 +165,7 @@ func TestContactsValidatorImpl_ValidateContactsData(t *testing.T) {
 
 func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with various data problems
 	problematicContacts := []*contacts.Contact{
 		{
@@ -193,19 +193,19 @@ func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.
 			Numbers: []string{"+15559999999"},
 		},
 	}
-	
+
 	mockReader := &mockContactsReader{
 		contacts: problematicContacts,
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
 	violations := validator.ValidateContactsData()
-	
+
 	// Should have multiple violations
 	if len(violations) < 4 {
 		t.Errorf("Expected at least 4 violations, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Check for specific violation types
 	foundEmptyName := false
 	foundNoNumbers := false
@@ -213,7 +213,7 @@ func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.
 	foundInvalidFormat := false
 	foundDuplicateNumber := false
 	foundDuplicateName := false
-	
+
 	for _, violation := range violations {
 		switch violation.Message {
 		case "Contact name cannot be empty":
@@ -230,7 +230,7 @@ func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.
 			foundDuplicateName = true
 		}
 	}
-	
+
 	if !foundEmptyName {
 		t.Error("Expected empty name violation")
 	}
@@ -253,7 +253,7 @@ func TestContactsValidatorImpl_ValidateContactsData_ValidationErrors(t *testing.
 
 func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test contacts
 	testContacts := []*contacts.Contact{
 		{
@@ -265,13 +265,13 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 			Numbers: []string{"+15559876543"},
 		},
 	}
-	
+
 	mockReader := &mockContactsReader{
 		contacts: testContacts,
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
-	
+
 	// Referenced contacts from calls and SMS
 	callContacts := map[string]bool{
 		"John Doe":     true,
@@ -279,24 +279,24 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 		"":             true, // Empty (should be ignored)
 		"(Unknown)":    true, // Special value (should be ignored)
 	}
-	
+
 	smsContacts := map[string]bool{
-		"Jane Smith":   true,
-		"Bob Johnson":  true, // Not in contacts
-		"null":         true, // Special value (should be ignored)
+		"Jane Smith":  true,
+		"Bob Johnson": true, // Not in contacts
+		"null":        true, // Special value (should be ignored)
 	}
-	
+
 	violations := validator.ValidateContactReferences(callContacts, smsContacts)
-	
+
 	// Should have violations for missing contacts and orphaned contacts
 	if len(violations) < 2 {
 		t.Errorf("Expected at least 2 violations, got %d: %v", len(violations), violations)
 	}
-	
+
 	// Check for specific violations
 	foundMissingUnknownUser := false
 	foundMissingBobJohnson := false
-	
+
 	for _, violation := range violations {
 		switch violation.Message {
 		case "Contact 'Unknown User' referenced in calls/SMS but not found in contacts.yaml":
@@ -308,11 +308,11 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 			foundMissingBobJohnson = true
 		}
 	}
-	
+
 	if !foundMissingUnknownUser {
 		t.Error("Expected missing 'Unknown User' violation")
 	}
-	
+
 	if !foundMissingBobJohnson {
 		t.Error("Expected missing 'Bob Johnson' violation")
 	}
@@ -320,25 +320,25 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 
 func TestContactsValidatorImpl_ValidateContactReferences_EmptyContacts(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with no contacts loaded
 	mockReader := &mockContactsReader{
 		contacts: []*contacts.Contact{},
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
-	
+
 	callContacts := map[string]bool{
 		"Unknown User": true,
 	}
-	
+
 	violations := validator.ValidateContactReferences(callContacts, make(map[string]bool))
-	
+
 	// Should have warning (not error) when no contacts are available
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation with empty contacts, got %d", len(violations))
 	}
-	
+
 	if len(violations) > 0 && violations[0].Severity != SeverityWarning {
 		t.Errorf("Expected warning severity with empty contacts, got %s", violations[0].Severity)
 	}
@@ -346,7 +346,7 @@ func TestContactsValidatorImpl_ValidateContactReferences_EmptyContacts(t *testin
 
 func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test contacts with some unreferenced
 	testContacts := []*contacts.Contact{
 		{
@@ -358,20 +358,20 @@ func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *tes
 			Numbers: []string{"+15559999999"},
 		},
 	}
-	
+
 	mockReader := &mockContactsReader{
 		contacts: testContacts,
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
-	
+
 	// Only reference John Doe
 	callContacts := map[string]bool{
 		"John Doe": true,
 	}
-	
+
 	violations := validator.ValidateContactReferences(callContacts, make(map[string]bool))
-	
+
 	// Should have violation for orphaned contact
 	foundOrphanedContact := false
 	for _, violation := range violations {
@@ -382,7 +382,7 @@ func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *tes
 			}
 		}
 	}
-	
+
 	if !foundOrphanedContact {
 		t.Error("Expected orphaned contact violation")
 	}
@@ -390,30 +390,30 @@ func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *tes
 
 func TestContactsValidatorImpl_ErrorHandling(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Test with load error
 	mockReader := &mockContactsReader{
 		loadError: fmt.Errorf("failed to load contacts"),
 	}
-	
+
 	validator := NewContactsValidator(tempDir, mockReader)
-	
+
 	// Data validation should fail with load error
 	violations := validator.ValidateContactsData()
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for load error, got %d", len(violations))
 	}
-	
+
 	// Reference validation should not fail with load error (contacts are optional)
 	violations = validator.ValidateContactReferences(make(map[string]bool), make(map[string]bool))
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations for reference check with load error, got %d", len(violations))
 	}
-	
+
 	// Test with getAllContacts error
 	mockReader.loadError = nil
 	mockReader.getAllError = fmt.Errorf("failed to get all contacts")
-	
+
 	violations = validator.ValidateContactsData()
 	if len(violations) != 1 {
 		t.Errorf("Expected 1 violation for getAllContacts error, got %d", len(violations))
@@ -422,7 +422,7 @@ func TestContactsValidatorImpl_ErrorHandling(t *testing.T) {
 
 func TestContactsValidatorImpl_PhoneNumberValidation(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	testCases := []struct {
 		name           string
 		numbers        []string
@@ -449,7 +449,7 @@ func TestContactsValidatorImpl_PhoneNumberValidation(t *testing.T) {
 			expectWarnings: 1,
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockReader := &mockContactsReader{
@@ -460,17 +460,17 @@ func TestContactsValidatorImpl_PhoneNumberValidation(t *testing.T) {
 					},
 				},
 			}
-			
+
 			validator := NewContactsValidator(tempDir, mockReader)
 			violations := validator.ValidateContactsData()
-			
+
 			warningCount := 0
 			for _, violation := range violations {
 				if violation.Severity == SeverityWarning && violation.Message[:12] == "Phone number" {
 					warningCount++
 				}
 			}
-			
+
 			if warningCount != tc.expectWarnings {
 				t.Errorf("Expected %d phone format warnings, got %d: %v", tc.expectWarnings, warningCount, violations)
 			}

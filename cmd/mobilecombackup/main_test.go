@@ -12,7 +12,7 @@ func TestMainIntegration(t *testing.T) {
 	// Build the binary for testing
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
-	
+
 	// Build the binary
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -67,19 +67,19 @@ func TestMainIntegration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(binPath, tt.args...)
-			
+
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
 
 			err := cmd.Run()
-			
+
 			// Check exit code
 			exitCode := 0
 			if exitError, ok := err.(*exec.ExitError); ok {
 				exitCode = exitError.ExitCode()
 			}
-			
+
 			if exitCode != tt.wantExitCode {
 				t.Errorf("Exit code = %d, want %d", exitCode, tt.wantExitCode)
 			}
@@ -100,10 +100,10 @@ func TestMainIntegration(t *testing.T) {
 func TestVersionInjection(t *testing.T) {
 	// Build with version injection
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
-	cmd := exec.Command("go", "build", 
+	cmd := exec.Command("go", "build",
 		"-ldflags", "-X main.Version=1.2.3",
 		"-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to build binary with version: %v\nOutput: %s", err, output)
@@ -126,7 +126,7 @@ func TestHelpSubcommand(t *testing.T) {
 	// Build the binary
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to build binary: %v\nOutput: %s", err, output)
@@ -135,12 +135,12 @@ func TestHelpSubcommand(t *testing.T) {
 	// Test help subcommand - Cobra provides automatic help command
 	cmd = exec.Command(binPath, "help")
 	output, err = cmd.CombinedOutput()
-	
+
 	// Help command should succeed
 	if err != nil {
 		t.Fatalf("Help command failed: %v\nOutput: %s", err, output)
 	}
-	
+
 	// Should show help text
 	want := "Help about any command"
 	if !strings.Contains(string(output), want) {

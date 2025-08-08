@@ -12,10 +12,10 @@ import (
 type ContactsValidator interface {
 	// ValidateContactsStructure validates contacts.yaml file exists and is readable
 	ValidateContactsStructure() []ValidationViolation
-	
+
 	// ValidateContactsData validates contacts data integrity and format
 	ValidateContactsData() []ValidationViolation
-	
+
 	// ValidateContactReferences checks contact references in calls/SMS against contacts data
 	ValidateContactReferences(callContacts, smsContacts map[string]bool) []ValidationViolation
 }
@@ -37,7 +37,7 @@ func NewContactsValidator(repositoryRoot string, contactsReader contacts.Contact
 // ValidateContactsStructure validates contacts.yaml file exists and is readable
 func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Check if contacts.yaml exists
 	contactsFile := filepath.Join(v.repositoryRoot, "contacts.yaml")
 	if !fileExists(contactsFile) {
@@ -49,7 +49,7 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolatio
 		})
 		return violations
 	}
-	
+
 	// Try to load contacts to validate file structure
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
@@ -60,14 +60,14 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolatio
 			Message:  fmt.Sprintf("Failed to load contacts.yaml: %v", err),
 		})
 	}
-	
+
 	return violations
 }
 
 // ValidateContactsData validates contacts data integrity and format
 func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Load contacts first
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
@@ -79,7 +79,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// Get all contacts for validation
 	allContacts, err := v.contactsReader.GetAllContacts()
 	if err != nil {
@@ -91,15 +91,15 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 		})
 		return violations
 	}
-	
+
 	// Validate contact data integrity
 	seenNames := make(map[string]bool)
 	seenNumbers := make(map[string]string) // number -> contact name
 	phonePattern := regexp.MustCompile(`^\+?[\d\s\-\(\)\.]+$`)
-	
+
 	for i, contact := range allContacts {
 		contactContext := fmt.Sprintf("contact %d", i+1)
-		
+
 		// Validate contact name
 		if contact.Name == "" {
 			violations = append(violations, ValidationViolation{
@@ -110,7 +110,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 			})
 			// Continue processing to check phone numbers even for invalid names
 		}
-		
+
 		// Check for duplicate contact names
 		if seenNames[contact.Name] {
 			violations = append(violations, ValidationViolation{
@@ -121,7 +121,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 			})
 		}
 		seenNames[contact.Name] = true
-		
+
 		// Validate phone numbers
 		if len(contact.Numbers) == 0 {
 			violations = append(violations, ValidationViolation{
@@ -132,10 +132,10 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 			})
 			continue
 		}
-		
+
 		for j, number := range contact.Numbers {
 			numberContext := fmt.Sprintf("%s number %d", contactContext, j+1)
-			
+
 			// Validate phone number format
 			if number == "" {
 				violations = append(violations, ValidationViolation{
@@ -146,7 +146,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 				})
 				continue
 			}
-			
+
 			// Basic phone number format validation
 			if !phonePattern.MatchString(number) {
 				violations = append(violations, ValidationViolation{
@@ -156,19 +156,19 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 					Message:  fmt.Sprintf("Phone number '%s' has unusual format for contact '%s'", number, contact.Name),
 				})
 			}
-			
+
 			// Check for duplicate phone numbers across contacts
 			contactName := contact.Name
 			if contactName == "" {
 				contactName = fmt.Sprintf("(unnamed contact %d)", i+1)
 			}
-			
+
 			if existingContact, exists := seenNumbers[number]; exists {
 				violations = append(violations, ValidationViolation{
 					Type:     InvalidFormat,
 					Severity: SeverityError,
 					File:     numberContext,
-					Message:  fmt.Sprintf("Phone number '%s' assigned to multiple contacts: '%s' and '%s'", 
+					Message: fmt.Sprintf("Phone number '%s' assigned to multiple contacts: '%s' and '%s'",
 						number, existingContact, contactName),
 				})
 			} else {
@@ -176,14 +176,14 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 			}
 		}
 	}
-	
+
 	return violations
 }
 
 // ValidateContactReferences checks contact references in calls/SMS against contacts data
 func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsContacts map[string]bool) []ValidationViolation {
 	var violations []ValidationViolation
-	
+
 	// Load contacts first
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
@@ -191,7 +191,7 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 		// This is not necessarily an error if contacts.yaml doesn't exist
 		return violations
 	}
-	
+
 	// Combine all referenced contact names
 	allReferencedContacts := make(map[string]bool)
 	for contact := range callContacts {
@@ -200,14 +200,14 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 	for contact := range smsContacts {
 		allReferencedContacts[contact] = true
 	}
-	
+
 	// Check each referenced contact
 	for contactName := range allReferencedContacts {
 		// Skip empty contact names and special values
 		if contactName == "" || contactName == "(Unknown)" || contactName == "null" {
 			continue
 		}
-		
+
 		// Check if contact exists in contacts.yaml
 		if !v.contactsReader.ContactExists(contactName) {
 			// Determine severity based on whether we have any contacts loaded
@@ -216,7 +216,7 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 				// If we have contacts but this one is missing, it's more concerning
 				severity = SeverityError
 			}
-			
+
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile, // Using MissingFile for missing contact reference
 				Severity: severity,
@@ -225,7 +225,7 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 			})
 		}
 	}
-	
+
 	// Check for unused contacts (informational warning)
 	if v.contactsReader.GetContactsCount() > 0 {
 		allContacts, err := v.contactsReader.GetAllContacts()
@@ -242,6 +242,6 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 			}
 		}
 	}
-	
+
 	return violations
 }
