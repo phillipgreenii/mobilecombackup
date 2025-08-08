@@ -1,7 +1,7 @@
 # FEAT-008: Import Calls
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-08
 - **Priority**: high
 
 ## Overview
@@ -101,27 +101,27 @@ violations:
 - Implementation should handle large repositories efficiently
 
 ## Tasks
-- [ ] Design accumulator structure for new calls (in-memory or staging)
-- [ ] Implement repository loading for deduplication index
-- [ ] Extend coalescer to handle call entries
-- [ ] Implement call-specific validation rules (reuse FEAT-002 logic)
-- [ ] Add call hash calculation (exclude `readable_date` and `contact_name`)
-- [ ] Create rejection file writer for invalid calls with timestamp in filename
-- [ ] Implement progress reporting for large imports
+- [x] Design accumulator structure for new calls (in-memory or staging)
+- [x] Implement repository loading for deduplication index
+- [x] Extend coalescer to handle call entries
+- [x] Implement call-specific validation rules (reuse FEAT-002 logic)
+- [x] Add call hash calculation (exclude `readable_date` and `contact_name`)
+- [x] Create rejection file writer for invalid calls with timestamp in filename
+- [x] Implement progress reporting for large imports
 - [ ] Create single-write repository update mechanism:
-  - [ ] Merge existing and new entries
-  - [ ] Sort by timestamp
-  - [ ] Partition by year
-  - [ ] Write to repository atomically
-- [ ] Add call import to main command flow (functionality only, CLI in FEAT-010)
-- [ ] Write unit tests for accumulator operations
-- [ ] Write unit tests for call validation logic
-- [ ] Write unit tests for hash calculation with contact_name exclusion
-- [ ] Write integration test: Import calls into empty repository
-- [ ] Write integration test: Import calls with existing repository (duplicate detection)
-- [ ] Write integration test: Import calls with invalid entries (rejection handling)
+  - [x] Merge existing and new entries
+  - [x] Sort by timestamp
+  - [x] Partition by year
+  - [x] Write to repository atomically
+- [x] Add call import to main command flow (functionality only, CLI in FEAT-010)
+- [x] Write unit tests for accumulator operations
+- [x] Write unit tests for call validation logic
+- [x] Write unit tests for hash calculation with contact_name exclusion
+- [x] Write integration test: Import calls into empty repository
+- [x] Write integration test: Import calls with existing repository (duplicate detection)
+- [x] Write integration test: Import calls with invalid entries (rejection handling)
 - [ ] Write integration test: Import large dataset (performance test)
-- [ ] Write integration test: Import calls with same timestamp (order preservation)
+- [x] Write integration test: Import calls with same timestamp (order preservation)
 - [ ] Write integration test: Verify repository is updated only once
 - [ ] Update summary output to include call statistics
 
