@@ -132,18 +132,18 @@ func TestHelpSubcommand(t *testing.T) {
 		t.Fatalf("Failed to build binary: %v\nOutput: %s", err, output)
 	}
 
-	// Test help subcommand - currently no help subcommand, so this should error
+	// Test help subcommand - Cobra provides automatic help command
 	cmd = exec.Command(binPath, "help")
 	output, err = cmd.CombinedOutput()
 	
-	// We expect this to fail because "help" is treated as unknown command
-	if err == nil {
-		t.Fatalf("Expected help command to fail but it succeeded")
+	// Help command should succeed
+	if err != nil {
+		t.Fatalf("Help command failed: %v\nOutput: %s", err, output)
 	}
 	
-	// Should show unknown command error
-	want := `unknown command "help" for "mobilecombackup"`
+	// Should show help text
+	want := "Help about any command"
 	if !strings.Contains(string(output), want) {
-		t.Errorf("Help output doesn't contain expected error.\nWant substring: %q\nGot: %q", want, string(output))
+		t.Errorf("Help output doesn't contain expected text.\nWant substring: %q\nGot: %q", want, string(output))
 	}
 }

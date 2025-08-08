@@ -711,8 +711,48 @@ Version output format: `mobilecombackup version X.Y.Z`
 cmd/mobilecombackup/
 ├── main.go           # Entry point with version injection
 └── cmd/
-    └── root.go       # Root command definition and global flags
+    ├── root.go       # Root command definition and global flags
+    └── init.go       # Init subcommand implementation
 ```
+
+### Subcommands
+
+#### Init Command
+
+Initializes a new mobilecombackup repository with the required directory structure.
+
+**Usage:**
+```bash
+mobilecombackup init [flags]
+```
+
+**Flags:**
+- `--dry-run`: Preview actions without creating directories
+
+**Behavior:**
+1. Validates target directory (must be empty or non-existent)
+2. Creates directory structure:
+   - `calls/` - For call log XML files
+   - `sms/` - For SMS/MMS XML files
+   - `attachments/` - For extracted attachment files
+3. Creates metadata files:
+   - `.mobilecombackup.yaml` - Repository marker with version metadata
+   - `contacts.yaml` - Empty contacts file
+   - `summary.yaml` - Initial summary with zero counts
+4. Displays tree-style output of created structure
+
+**Marker File Format:**
+```yaml
+repository_structure_version: "1"
+created_at: "2024-01-15T10:30:00Z"  # RFC3339 format
+created_by: "mobilecombackup v0.1.0"
+```
+
+**Error Conditions:**
+- Directory already contains a repository (has .mobilecombackup.yaml)
+- Directory appears to be a repository (has calls/, sms/, or attachments/)
+- Directory is not empty
+- Path exists but is not a directory
 
 ### Helper Functions
 

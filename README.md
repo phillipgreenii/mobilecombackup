@@ -37,7 +37,9 @@ Usage:
   mobilecombackup [command]
 
 Available Commands:
+  completion  Generate the autocompletion script for the specified shell
   help        Help about any command
+  init        Initialize a new mobilecombackup repository
 
 Flags:
   -h, --help              help for mobilecombackup
@@ -51,8 +53,48 @@ Use "mobilecombackup [command] --help" for more information about a command.
 $ mobilecombackup --version
 mobilecombackup version 0.1.0
 
-# Global flags example (will be used by future subcommands)
+# Global flags example
 $ mobilecombackup --repo-root /path/to/repo --quiet [command]
+```
+
+### Init Command
+
+Initialize a new mobilecombackup repository with the required directory structure.
+
+```bash
+# Initialize in current directory
+$ mobilecombackup init
+
+# Initialize in specific directory
+$ mobilecombackup init --repo-root /path/to/new/repo
+
+# Preview without creating (dry run)
+$ mobilecombackup init --dry-run
+
+# Initialize quietly (suppress output)
+$ mobilecombackup init --quiet
+```
+
+The init command creates:
+- `calls/` - Directory for call log XML files
+- `sms/` - Directory for SMS/MMS XML files
+- `attachments/` - Directory for extracted attachment files
+- `.mobilecombackup.yaml` - Repository marker file with version metadata
+- `contacts.yaml` - Empty contacts file for future use
+- `summary.yaml` - Initial summary with zero counts
+
+Example output:
+```
+Initialized mobilecombackup repository in: /path/to/repo
+
+Created structure:
+repo
+├── calls
+├── sms
+├── attachments
+├── .mobilecombackup.yaml
+├── contacts.yaml
+└── summary.yaml
 ```
 
 ### Exit Codes

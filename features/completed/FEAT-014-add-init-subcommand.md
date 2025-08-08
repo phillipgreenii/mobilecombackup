@@ -1,7 +1,7 @@
 # FEAT-014: Add Init Subcommand
 
 ## Status
-- **Completed**: Not yet started
+- **Completed**: 2025-08-08
 - **Priority**: high (will be worked on next)
 
 ## Overview
@@ -122,33 +122,33 @@ type InitResult struct {
 - Tree-style output should show the created structure hierarchically
 
 ## Tasks
-- [ ] Add init subcommand to CLI parser
-- [ ] Implement directory validation logic
-  - [ ] Check if path exists and is empty
-  - [ ] Detect existing repository structure (.mobilecombackup.yaml file)
-  - [ ] Validate write permissions
-- [ ] Implement directory creation logic
-  - [ ] Create directories with 0750 permissions
-  - [ ] Create .mobilecombackup.yaml marker file with version, timestamp, and CLI version
-  - [ ] Create empty contacts.yaml
-  - [ ] Create summary.yaml with zero counts
-- [ ] Add --dry-run support
-- [ ] Add --quiet flag support
-- [ ] Implement tree-style output formatting
-- [ ] Write unit tests
-  - [ ] Test empty directory initialization
-  - [ ] Test .mobilecombackup.yaml file creation
-  - [ ] Test permission validation
-  - [ ] Test existing repository detection
-  - [ ] Test dry-run mode
-- [ ] Write integration tests
-  - [ ] End-to-end initialization test
-  - [ ] Test with various directory states
-  - [ ] Verify marker file content
-- [ ] Update documentation
-  - [ ] Add init command to README
-  - [ ] Update CLI help text
-  - [ ] Document .mobilecombackup.yaml file format
+- [x] Add init subcommand to CLI parser
+- [x] Implement directory validation logic
+  - [x] Check if path exists and is empty
+  - [x] Detect existing repository structure (.mobilecombackup.yaml file)
+  - [x] Validate write permissions
+- [x] Implement directory creation logic
+  - [x] Create directories with 0750 permissions
+  - [x] Create .mobilecombackup.yaml marker file with version, timestamp, and CLI version
+  - [x] Create empty contacts.yaml
+  - [x] Create summary.yaml with zero counts
+- [x] Add --dry-run support
+- [x] Add --quiet flag support
+- [x] Implement tree-style output formatting
+- [x] Write unit tests
+  - [x] Test empty directory initialization
+  - [x] Test .mobilecombackup.yaml file creation
+  - [x] Test permission validation
+  - [x] Test existing repository detection
+  - [x] Test dry-run mode
+- [x] Write integration tests
+  - [x] End-to-end initialization test
+  - [x] Test with various directory states
+  - [x] Verify marker file content
+- [x] Update documentation
+  - [x] Add init command to README
+  - [x] Update CLI help text
+  - [x] Document .mobilecombackup.yaml file format
 
 ## Testing
 ### Unit Tests
