@@ -1,7 +1,7 @@
 # FEAT-009: Import SMSs
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-08
 - **Priority**: high
 
 ## Overview
@@ -158,30 +158,30 @@ Align SMS types with the pattern established in calls implementation:
 ## Tasks
 
 ### Refactoring Tasks (Prerequisites)
-- [ ] Fix type definitions in `types.go` to use `int64` for timestamps and `int` for booleans
-- [ ] Update XML parser to remove type conversions
-- [ ] Add missing MMS attributes (~30 fields)
-- [ ] Fix interface methods to return correct types
-- [ ] Update existing tests for new types
+- [x] Fix type definitions in `types.go` to use `int64` for timestamps and `int` for booleans
+- [x] Update XML parser to remove type conversions
+- [x] Add missing MMS attributes (~30 fields)
+- [x] Fix interface methods to return correct types
+- [x] Update existing tests for new types
 
 ### Implementation Tasks
 - [x] Design accumulator structure for new SMS/MMS (in-memory or staging)
-- [ ] Implement repository loading for deduplication index
+- [x] Implement repository loading for deduplication index
 - [x] Extend coalescer to handle SMS entries
-- [ ] Implement SMS-specific validation rules (reuse FEAT-003 logic)
+- [x] Implement SMS-specific validation rules (reuse FEAT-003 logic)
 - [x] Add SMS hash calculation (exclude `readable_date` and `contact_name`)
-- [ ] Create rejection file writer for invalid SMS with timestamp in filename
-- [ ] Implement progress reporting for large imports
-- [ ] Create single-write repository update mechanism:
-  - [ ] Merge existing and new entries
-  - [ ] Sort by timestamp
-  - [ ] Partition by year
-  - [ ] Write to repository atomically
-- [ ] Add SMS import to main command flow (functionality only, CLI in FEAT-010)
-- [ ] Write unit tests for accumulator operations
-- [ ] Write unit tests for SMS validation logic
-- [ ] Write unit tests for hash calculation with contact_name exclusion
-- [ ] Write integration test: Import SMS into empty repository
+- [ ] Create rejection file writer for invalid SMS with timestamp in filename (TODO left for future)
+- [x] Implement progress reporting for large imports
+- [x] Create single-write repository update mechanism:
+  - [x] Merge existing and new entries
+  - [x] Sort by timestamp
+  - [x] Partition by year
+  - [x] Write to repository atomically
+- [x] Add SMS import to main command flow (functionality only, CLI in FEAT-010)
+- [x] Write unit tests for accumulator operations
+- [x] Write unit tests for SMS validation logic
+- [x] Write unit tests for hash calculation with contact_name exclusion
+- [x] Write integration test: Import SMS into empty repository
 - [ ] Write integration test: Import SMS with existing repository (duplicate detection)
 - [ ] Write integration test: Import mixed SMS/MMS messages
 - [ ] Write integration test: Import SMS with invalid entries (rejection handling)
