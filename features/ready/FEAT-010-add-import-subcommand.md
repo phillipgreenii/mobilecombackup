@@ -165,19 +165,29 @@ Time taken: 2.3s
 2. Determine repository location (flag > env > current directory)
 3. Validate repository structure using FEAT-007 validation
 4. If validation fails, exit with code 2
-5. Scan specified paths for backup files:
+5. Load repository for deduplication:
+   - Load existing calls using FEAT-002 reader
+   - Load existing SMS/MMS using FEAT-003 reader
+   - Build deduplication indices
+6. Scan specified paths for backup files:
    - Follow symlinks
    - Skip hidden directories
    - Match patterns: `calls*.xml`, `sms*.xml` (case-sensitive)
    - Skip files already in repository structure
-6. For each file found:
+7. For each file found:
    - Log start of processing (unless --quiet)
    - Determine type (calls/SMS) from filename
    - Process using FEAT-008 (calls) or FEAT-009 (SMS) logic
+   - Accumulate valid entries (not written to repository yet)
    - Report progress every 100 records
    - Continue to next file on errors
-7. Generate and display summary
-8. Exit with appropriate code
+8. Write/update repository (single operation):
+   - Merge existing and new entries
+   - Sort and partition by year
+   - Write all calls and SMS/MMS to repository
+   - Only write if not --dry-run
+9. Generate and display summary
+10. Exit with appropriate code
 
 ### Output Formats
 - **Default**: Human-readable progress and summary table
@@ -187,8 +197,10 @@ Time taken: 2.3s
 
 ### Error Handling
 - Repository validation failure: Exit immediately with code 2
+- Repository load failure: Exit immediately with code 2
 - File read errors: Log error, continue with next file
 - Processing errors: Create rejection files, continue processing
+- Repository write failure: Exit with code 2 after displaying what was processed
 - Track all errors for final summary
 
 ## Tasks
@@ -196,6 +208,9 @@ Time taken: 2.3s
 - [ ] Define command flags and help text using Cobra
 - [ ] Implement repository location resolution (flag > env > cwd)
 - [ ] Integrate repository validation from FEAT-007
+- [ ] Implement repository loading for deduplication:
+  - [ ] Load calls for building deduplication index
+  - [ ] Load SMS/MMS for building deduplication index
 - [ ] Implement file scanning logic:
   - [ ] Recursive directory walking with symlink support
   - [ ] Hidden directory filtering
@@ -204,6 +219,10 @@ Time taken: 2.3s
 - [ ] Create progress reporter interface for 100-record intervals
 - [ ] Integrate FEAT-008 call import functionality
 - [ ] Integrate FEAT-009 SMS import functionality
+- [ ] Implement single repository update:
+  - [ ] Coordinate final write of all accumulated data
+  - [ ] Ensure atomic update (no partial writes)
+  - [ ] Skip writing if --dry-run
 - [ ] Implement summary statistics collection and formatting
 - [ ] Add JSON output formatter
 - [ ] Implement dry-run mode (process without writing)

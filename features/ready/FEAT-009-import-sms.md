@@ -7,7 +7,13 @@
 ## Overview
 Import valid sms from SMS backups (`sms-*.xml`).  Invalid sms will be rejected, valid sms will be added to the repository if they aren't already in there.
 
-The import process loads the entire existing repository before processing any new files to ensure complete duplicate detection across all imports. MMS attachments remain in their base64 encoded form during import - extraction is handled separately by FEAT-012.
+The import process follows this flow:
+1. Validate the repository structure
+2. Load the existing repository for deduplication
+3. Process each file, accumulating valid messages
+4. Write/update the repository only once after all files are processed
+
+MMS attachments remain in their base64 encoded form during import - extraction is handled separately by FEAT-012.
 
 ## Background
 Daily backups contain many duplicates from previous days. Duplicates should not occur within the repository.
@@ -29,14 +35,30 @@ Daily backups contain many duplicates from previous days. Duplicates should not 
 - [ ] Maintain stability for entries with identical timestamps
 
 ## Design/Implementation Approach
+### Processing Flow
+1. **Validate Repository**: Use validation from FEAT-007 to ensure repository is valid
+2. **Load Repository**: Load existing SMS/MMS for deduplication checking using FEAT-003 reader
+3. **Process Files**: For each import file:
+   - Parse and validate each message entry
+   - Calculate hash (excluding `readable_date` and `contact_name`)
+   - Check against loaded repository for duplicates
+   - Accumulate non-duplicates for later writing
+   - Write invalid entries to rejection files
+4. **Write Repository**: After all files processed, perform a single repository update:
+   - Combine existing entries with new entries
+   - Sort by timestamp and partition by year
+   - Write to final repository location
+
 ### Deduplication Strategy
 - Use SHA-256 hash-based approach for detecting duplicates
 - Hash calculation excludes `readable_date` field (timezone-dependent) and `contact_name` (unreliable field that may change over time)
-- If SMS hash equals one already in repository, SMS will not be added
-- Otherwise, append new SMS to repository
-- Memory store using map[string][V] keyed by hash
-- Load entire existing repository before processing any new files
-- This ensures duplicates are detected even if validation logic changes between runs
+- Build deduplication index from existing repository
+- Check all new entries against this index before accepting them
+
+### Implementation Options
+- **Option A**: Keep everything in memory (simpler but requires more RAM)
+- **Option B**: Use temporary staging area (more complex but handles larger datasets)
+- The key requirement is that the repository is only written/modified once
 
 ### Validation Criteria
 SMS are validated using criteria from FEAT-003:
@@ -76,26 +98,37 @@ violations:
 ```
 
 ### Performance Considerations
-- Batch processing for large SMS imports
-- Progress reporting every 100 entries
-- Memory-efficient streaming for XML parsing
+- Initial repository load optimized for deduplication checking
+- Progress reporting every 100 entries during file processing
+- Streaming XML parsing for import files to handle large inputs
+- Single repository write operation at end to ensure consistency
 - Summary statistics displayed at completion
+- Implementation should handle large repositories efficiently
 
 ## Tasks
+- [ ] Design accumulator structure for new SMS/MMS (in-memory or staging)
+- [ ] Implement repository loading for deduplication index
 - [ ] Extend coalescer to handle SMS entries
 - [ ] Implement SMS-specific validation rules (reuse FEAT-003 logic)
 - [ ] Add SMS hash calculation (exclude `readable_date` and `contact_name`)
 - [ ] Create rejection file writer for invalid SMS with timestamp in filename
 - [ ] Implement progress reporting for large imports
+- [ ] Create single-write repository update mechanism:
+  - [ ] Merge existing and new entries
+  - [ ] Sort by timestamp
+  - [ ] Partition by year
+  - [ ] Write to repository atomically
 - [ ] Add SMS import to main command flow (functionality only, CLI in FEAT-010)
+- [ ] Write unit tests for accumulator operations
 - [ ] Write unit tests for SMS validation logic
 - [ ] Write unit tests for hash calculation with contact_name exclusion
 - [ ] Write integration test: Import SMS into empty repository
 - [ ] Write integration test: Import SMS with existing repository (duplicate detection)
 - [ ] Write integration test: Import mixed SMS/MMS messages
 - [ ] Write integration test: Import SMS with invalid entries (rejection handling)
-- [ ] Write integration test: Import large dataset (performance/memory test with 1000+ messages)
+- [ ] Write integration test: Import large dataset (performance test with 1000+ messages)
 - [ ] Write integration test: Import SMS with same timestamp (order preservation)
+- [ ] Write integration test: Verify repository is updated only once
 - [ ] Update summary output to include SMS statistics
 
 ## References

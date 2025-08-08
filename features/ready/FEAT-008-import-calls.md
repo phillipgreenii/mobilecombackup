@@ -7,7 +7,11 @@
 ## Overview
 Import valid calls from call backups (`calls-*.xml`).  Invalid calls will be rejected, valid calls will be added to the repository if they aren't already in there.
 
-The import process loads the entire existing repository before processing any new files to ensure complete duplicate detection across all imports.
+The import process follows this flow:
+1. Validate the repository structure
+2. Load the existing repository for deduplication
+3. Process each file, accumulating valid calls
+4. Write/update the repository only once after all files are processed
 
 ## Background
 Daily backups contain many duplicates from previous days. Duplicates should not occur within the repository.
@@ -26,12 +30,30 @@ Daily backups contain many duplicates from previous days. Duplicates should not 
 - [ ] Maintain stability for entries with identical timestamps
 
 ## Design/Implementation Approach
+### Processing Flow
+1. **Validate Repository**: Use validation from FEAT-007 to ensure repository is valid
+2. **Load Repository**: Load existing calls for deduplication checking using FEAT-002 reader
+3. **Process Files**: For each import file:
+   - Parse and validate each call entry
+   - Calculate hash (excluding `readable_date` and `contact_name`)
+   - Check against loaded repository for duplicates
+   - Accumulate non-duplicates for later writing
+   - Write invalid entries to rejection files
+4. **Write Repository**: After all files processed, perform a single repository update:
+   - Combine existing entries with new entries
+   - Sort by timestamp and partition by year
+   - Write to final repository location
+
 ### Deduplication Strategy
 - Use the same hash-based approach from FEAT-001
 - Hash calculation excludes `readable_date` field (timezone-dependent) and `contact_name` (unreliable field that may change over time)
-- Memory store using map[string][V] keyed by hash
-- Load entire existing repository before processing any new files
-- This ensures duplicates are detected even if validation logic changes between runs
+- Build deduplication index from existing repository
+- Check all new entries against this index before accepting them
+
+### Implementation Options
+- **Option A**: Keep everything in memory (simpler but requires more RAM)
+- **Option B**: Use temporary staging area (more complex but handles larger datasets)
+- The key requirement is that the repository is only written/modified once
 
 ### Validation Criteria
 Calls are validated using the same logic as FEAT-002:
@@ -71,25 +93,36 @@ violations:
 ```
 
 ### Performance Considerations
-- Batch processing for large call imports
-- Progress reporting every 100 entries
-- Memory-efficient streaming for XML parsing
+- Initial repository load optimized for deduplication checking
+- Progress reporting every 100 entries during file processing
+- Streaming XML parsing for import files to handle large inputs
+- Single repository write operation at end to ensure consistency
 - Summary statistics displayed at completion
+- Implementation should handle large repositories efficiently
 
 ## Tasks
+- [ ] Design accumulator structure for new calls (in-memory or staging)
+- [ ] Implement repository loading for deduplication index
 - [ ] Extend coalescer to handle call entries
 - [ ] Implement call-specific validation rules (reuse FEAT-002 logic)
 - [ ] Add call hash calculation (exclude `readable_date` and `contact_name`)
 - [ ] Create rejection file writer for invalid calls with timestamp in filename
 - [ ] Implement progress reporting for large imports
+- [ ] Create single-write repository update mechanism:
+  - [ ] Merge existing and new entries
+  - [ ] Sort by timestamp
+  - [ ] Partition by year
+  - [ ] Write to repository atomically
 - [ ] Add call import to main command flow (functionality only, CLI in FEAT-010)
+- [ ] Write unit tests for accumulator operations
 - [ ] Write unit tests for call validation logic
 - [ ] Write unit tests for hash calculation with contact_name exclusion
 - [ ] Write integration test: Import calls into empty repository
 - [ ] Write integration test: Import calls with existing repository (duplicate detection)
 - [ ] Write integration test: Import calls with invalid entries (rejection handling)
-- [ ] Write integration test: Import large dataset (performance/memory test)
+- [ ] Write integration test: Import large dataset (performance test)
 - [ ] Write integration test: Import calls with same timestamp (order preservation)
+- [ ] Write integration test: Verify repository is updated only once
 - [ ] Update summary output to include call statistics
 
 ## References
