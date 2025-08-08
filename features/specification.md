@@ -815,6 +815,114 @@ JSON output (`--output-json`):
 - With `--verbose` flag, shows detailed progress for each phase
 - Displays "Completed X validation" messages
 
+#### Import Command
+Imports mobile backup files into the repository with deduplication and validation.
+
+**Usage:**
+```bash
+mobilecombackup import [flags] [paths...]
+```
+
+**Arguments:**
+- `paths`: Files or directories to import (default: current directory)
+
+**Flags:**
+- `--dry-run`: Preview import without making changes
+- `--verbose`: Enable verbose output
+- `--json`: Output summary in JSON format
+- `--filter string`: Process only specific type: calls, sms
+- `--no-error-on-rejects`: Don't exit with error code if rejects found
+
+**Repository Resolution:**
+The repository location is determined by (in order of precedence):
+1. `--repo-root` flag
+2. `MB_REPO_ROOT` environment variable
+3. Current directory
+
+**Behavior:**
+1. Validates repository structure before import
+2. Loads existing repository data for deduplication
+3. Scans paths for backup files (`calls*.xml`, `sms*.xml`)
+   - Follows symlinks
+   - Skips hidden directories (starting with `.`)
+   - Excludes files already in repository structure
+4. Processes each file:
+   - Reports progress every 100 records
+   - Validates entries
+   - Detects duplicates via hash
+   - Accumulates valid entries
+5. Single repository write operation:
+   - Merges existing and new entries
+   - Sorts by timestamp
+   - Partitions by year
+   - Skips write if `--dry-run`
+6. Displays summary with statistics
+
+**Exit Codes:**
+- `0`: Success
+- `1`: Import completed with rejected entries (unless `--no-error-on-rejects`)
+- `2`: Import failed (validation error, I/O error)
+
+**Output Formats:**
+
+Default output:
+```
+Processing files...
+  Processing: backup-2024-01-15.xml (100 records)... (200 records)... done
+  Processing: calls-2024-02-01.xml (100 records)... done
+
+Import Summary:
+              Initial     Final     Delta     Duplicates    Rejected
+Calls Total        10        45        35             12           3
+  2023              5        15        10              3           1
+  2024              5        30        25              9           2
+SMS Total          23        78        55             20           5
+  2023             13        38        25              8           2
+  2024             10        40        30             12           3
+
+Files processed: 2
+Time taken: 2.3s
+```
+
+JSON output (`--json`):
+```json
+{
+  "files_processed": 2,
+  "duration_seconds": 2.3,
+  "total": {
+    "initial": 33,
+    "final": 123,
+    "added": 90,
+    "duplicates": 32,
+    "rejected": 8,
+    "errors": 0
+  },
+  "years": {
+    "2023": {"final": 53, "added": 35, "duplicates": 11, "rejected": 3},
+    "2024": {"final": 70, "added": 55, "duplicates": 21, "rejected": 5}
+  },
+  "rejection_files": []
+}
+```
+
+**Examples:**
+```bash
+# Import specific files
+mobilecombackup import --repo-root /path/to/repo backup1.xml backup2.xml
+
+# Scan directory for backup files
+mobilecombackup import --repo-root /path/to/repo /path/to/backups/
+
+# Preview import without changes
+mobilecombackup import --repo-root /path/to/repo --dry-run backup.xml
+
+# Import only call logs
+mobilecombackup import --repo-root /path/to/repo --filter calls backups/
+
+# Import with JSON output
+mobilecombackup import --repo-root /path/to/repo --json backups/
+```
+
 ### Helper Functions
 
 - `PrintError(format string, args ...interface{})`: Consistent error output to stderr
@@ -868,6 +976,25 @@ type Coalescer[T Entry] interface {
 - Files: `rejected/calls-[hash]-[timestamp]-rejects.xml`
 - Violations: `rejected/calls-[hash]-[timestamp]-violations.yaml`
 - Original XML structure preserved for re-import after correction
+
+#### SMS Import
+
+**MessageEntry Implementation:**
+- Wraps `Message` interface (SMS/MMS) to implement `Entry` interface
+- Hash calculation includes all fields except: readable_date, contact_name
+- Supports both SMS and MMS messages with polymorphic handling
+
+**Validation Rules:**
+- Required fields: date (>0), address (non-empty)
+- SMS: valid type (1=received, 2=sent)
+- MMS: valid msg_box (1=received, 2=sent)
+- MMS parts validated for content type and structure
+- Invalid entries marked for rejection (not yet written to files)
+
+**Type System:**
+- All timestamps stored as `int64` (epoch milliseconds)
+- Boolean fields stored as `int` (0 or 1) for XML compatibility
+- Consistent with calls implementation for uniformity
 
 #### Import Process
 
