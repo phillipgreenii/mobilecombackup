@@ -14,19 +14,24 @@ Users need a simple interface to process backup files and import them in the rep
 ### Functional Requirements
 - [ ] Parse command-line arguments (repo-root, file paths)
 - [ ] Support processing individual files
-- [ ] Support scanning directories for backup files
+- [ ] Support scanning directories for backup files (case-sensitive: calls*.xml, sms*.xml)
+- [ ] Skip files already in repository structure when scanning
 - [ ] Will validate the repo-root before starting the import
 - [ ] Display processing summary with statistics (totals and per-year breakdown)
-- [ ] Support `--dry-run` flag to preview without importing
+- [ ] Support `--dry-run` flag to preview without importing (processes files, deduplicates, generates statistics)
 - [ ] Support `--verbose` flag for detailed logging
+- [ ] Support `--quiet` flag to suppress progress, show only summary
+- [ ] Support `--json` flag for machine-readable output
+- [ ] Support `--filter` flag to process only calls or only SMS (values: calls, sms)
 - [ ] Use exit code 1 to represent the import completed, but rejects were found
-- [ ] Support `--no-error-on-rejects` to return exit code 0 if the import completed, but rejects were found.
-- [ ] Use exit code 2 to represent the import failed.
+- [ ] Support `--no-error-on-rejects` to return exit code 0 if the import completed, but rejects were found
+- [ ] Use exit code 2 to represent the import failed
 
 ### Non-Functional Requirements
 - [ ] Clear error messages
-- [ ] Progress indication for long operations (emit log at start of each file and after fixed record intervals)
+- [ ] Progress indication for long operations (emit log at start of each file and every 100 records)
 - [ ] Command-line argument `--repo-root` takes precedence over `MB_REPO_ROOT` environment variable
+- [ ] Directory scanning follows symlinks, skips hidden directories, no depth limit
 
 ### Usage Examples
 
@@ -87,18 +92,49 @@ mobilecombackup import
 ```
 
 ```
-usage: mobilecombackup [--help] SUBCOMMAND
-   Sub Commands:
-      import --repo-root $PATH_TO_REPO $backupfile1 ... $backupfilesdir1 ...
+Usage: mobilecombackup import [flags] [paths...]
+
+Import mobile backup files into the repository
+
+Arguments:
+  paths    Files or directories to import (default: current directory)
+
+Flags:
+      --repo-root string        Repository root directory (env: MB_REPO_ROOT)
+      --dry-run                 Preview import without making changes
+      --verbose                 Enable verbose output
+      --quiet                   Suppress progress output, show only summary
+      --json                    Output summary in JSON format
+      --filter string           Process only specific type: calls, sms
+      --no-error-on-rejects     Don't exit with error code if rejects found
+  -h, --help                    help for import
+
+Examples:
+  # Import specific files
+  mobilecombackup import --repo-root /path/to/repo backup1.xml backup2.xml
+  
+  # Scan directory for backup files
+  mobilecombackup import --repo-root /path/to/repo /path/to/backups/
+  
+  # Preview import without changes
+  mobilecombackup import --repo-root /path/to/repo --dry-run backup.xml
+  
+  # Import only call logs
+  mobilecombackup import --repo-root /path/to/repo --filter calls backups/
+
+Exit codes:
+  0 - Success
+  1 - Import completed with rejected entries
+  2 - Import failed
 ```
 
 ### Example Output Format
 
 ```
 Processing files...
-  Processing: backup-2024-01-15.xml
-  Processing: calls-2024-02-01.xml
-  Processing: sms-archive.xml
+  Processing: backup-2024-01-15.xml (100 records)... (200 records)... done
+  Processing: calls-2024-02-01.xml (100 records)... done
+  Processing: sms-archive.xml (100 records)... (200 records)... (300 records)... done
 
 Import Summary:
               Initial     Final     Delta     Duplicates    Rejected
@@ -108,10 +144,83 @@ Calls Total        10        45        35             12           3
 SMS Total          23        78        55             20           5
   2023             13        38        25              8           2
   2024             10        40        30             12           3
+
+Files processed: 3
+Rejected files created:
+  - rejected/calls-a1b2c3d4-20240115-143022-rejects.xml (3 entries)
+  - rejected/sms-e5f6g7h8-20240115-143025-rejects.xml (5 entries)
+
+Time taken: 2.3s
 ```
+
+## Design/Implementation Approach
+
+### Command Structure
+- Integrate with Cobra framework established in FEAT-006
+- Create `cmd/import.go` for the import subcommand
+- Reuse repository validation from FEAT-007
+
+### Processing Flow
+1. Parse and validate command-line arguments
+2. Determine repository location (flag > env > current directory)
+3. Validate repository structure using FEAT-007 validation
+4. If validation fails, exit with code 2
+5. Scan specified paths for backup files:
+   - Follow symlinks
+   - Skip hidden directories
+   - Match patterns: `calls*.xml`, `sms*.xml` (case-sensitive)
+   - Skip files already in repository structure
+6. For each file found:
+   - Log start of processing (unless --quiet)
+   - Determine type (calls/SMS) from filename
+   - Process using FEAT-008 (calls) or FEAT-009 (SMS) logic
+   - Report progress every 100 records
+   - Continue to next file on errors
+7. Generate and display summary
+8. Exit with appropriate code
+
+### Output Formats
+- **Default**: Human-readable progress and summary table
+- **Quiet**: Summary table only
+- **JSON**: Machine-readable JSON output with all statistics
+- **Verbose**: Detailed logging including duplicate details
+
+### Error Handling
+- Repository validation failure: Exit immediately with code 2
+- File read errors: Log error, continue with next file
+- Processing errors: Create rejection files, continue processing
+- Track all errors for final summary
+
+## Tasks
+- [ ] Create import command file (`cmd/mobilecombackup/cmd/import.go`)
+- [ ] Define command flags and help text using Cobra
+- [ ] Implement repository location resolution (flag > env > cwd)
+- [ ] Integrate repository validation from FEAT-007
+- [ ] Implement file scanning logic:
+  - [ ] Recursive directory walking with symlink support
+  - [ ] Hidden directory filtering
+  - [ ] Pattern matching for backup files
+  - [ ] Repository file exclusion
+- [ ] Create progress reporter interface for 100-record intervals
+- [ ] Integrate FEAT-008 call import functionality
+- [ ] Integrate FEAT-009 SMS import functionality
+- [ ] Implement summary statistics collection and formatting
+- [ ] Add JSON output formatter
+- [ ] Implement dry-run mode (process without writing)
+- [ ] Add filter flag logic (calls-only, sms-only)
+- [ ] Calculate and display processing time
+- [ ] Write unit tests for command parsing
+- [ ] Write unit tests for file scanning logic
+- [ ] Write integration test: Import with various flag combinations
+- [ ] Write integration test: Import with missing repository
+- [ ] Write integration test: Import with file errors
+- [ ] Write integration test: Dry-run verification
+- [ ] Update main.go to register import subcommand
 
 ## References
 - Pre-req: `FEAT-001: Repository Validation`
 - Pre-req: `FEAT-008: Import Calls`
 - Pre-req: `FEAT-009: Import SMS`
+- Related: `FEAT-006: Init subcommand`
+- Related: `FEAT-007: Validate subcommand`
 
