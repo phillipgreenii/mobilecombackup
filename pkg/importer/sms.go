@@ -30,6 +30,11 @@ func NewSMSImporter(options *ImportOptions) *SMSImporter {
 	}
 }
 
+// SetFilesToImport sets the files to import (for single file processing)
+func (si *SMSImporter) SetFilesToImport(files []string) {
+	si.options.Paths = files
+}
+
 // Import performs the SMS import operation
 func (si *SMSImporter) Import() (*ImportSummary, error) {
 	summary := &ImportSummary{
@@ -60,7 +65,7 @@ func (si *SMSImporter) Import() (*ImportSummary, error) {
 
 	// 3. Write to repository (single write)
 	if !si.options.DryRun {
-		if err := si.writeRepository(); err != nil {
+		if err := si.WriteRepository(); err != nil {
 			return nil, fmt.Errorf("failed to write repository: %w", err)
 		}
 	}
@@ -109,6 +114,11 @@ func (si *SMSImporter) LoadRepository() error {
 	}
 
 	return nil
+}
+
+// ImportFile imports a single SMS backup file
+func (si *SMSImporter) ImportFile(filePath string) (*YearStat, error) {
+	return si.processFile(filePath)
 }
 
 // processFile processes a single SMS backup file
@@ -226,8 +236,8 @@ func (si *SMSImporter) validateMessage(msg sms.Message) []string {
 	return violations
 }
 
-// writeRepository writes the coalesced messages to the repository
-func (si *SMSImporter) writeRepository() error {
+// WriteRepository writes the coalesced messages to the repository
+func (si *SMSImporter) WriteRepository() error {
 	// Get all entries from coalescer
 	entries := si.coalescer.GetAll()
 	
@@ -293,6 +303,11 @@ func (si *SMSImporter) writeViolationsFile(path string, violations []RejectedEnt
 	}
 
 	return nil
+}
+
+// GetSummary returns the coalescer summary
+func (si *SMSImporter) GetSummary() coalescer.Summary {
+	return si.coalescer.GetSummary()
 }
 
 // calculateFileHash calculates SHA-256 hash of a file

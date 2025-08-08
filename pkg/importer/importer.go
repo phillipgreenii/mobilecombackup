@@ -12,7 +12,7 @@ import (
 type Importer struct {
 	options       *ImportOptions
 	callsImporter *CallsImporter
-	// smsImporter will be added in FEAT-009
+	smsImporter   *SMSImporter
 }
 
 // NewImporter creates a new importer
@@ -28,9 +28,13 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
 	
+	// Create SMS importer
+	smsImporter := NewSMSImporter(options)
+	
 	return &Importer{
 		options:       options,
 		callsImporter: callsImporter,
+		smsImporter:   smsImporter,
 	}, nil
 }
 
@@ -50,6 +54,12 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 	if imp.options.Filter == "" || imp.options.Filter == "calls" {
 		if err := imp.callsImporter.LoadRepository(); err != nil {
 			return nil, fmt.Errorf("failed to load calls repository: %w", err)
+		}
+	}
+	
+	if imp.options.Filter == "" || imp.options.Filter == "sms" {
+		if err := imp.smsImporter.LoadRepository(); err != nil {
+			return nil, fmt.Errorf("failed to load SMS repository: %w", err)
 		}
 	}
 	
@@ -92,6 +102,12 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		if imp.options.Filter == "" || imp.options.Filter == "calls" {
 			if err := imp.callsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write calls repository: %w", err)
+			}
+		}
+		
+		if imp.options.Filter == "" || imp.options.Filter == "sms" {
+			if err := imp.smsImporter.WriteRepository(); err != nil {
+				return nil, fmt.Errorf("failed to write SMS repository: %w", err)
 			}
 		}
 	}
@@ -207,8 +223,11 @@ func (imp *Importer) processFile(path string) (*YearStat, error) {
 		return imp.callsImporter.ImportFile(path)
 	}
 	
-	// SMS will be handled in FEAT-009
-	return nil, fmt.Errorf("SMS import not yet implemented")
+	if strings.HasPrefix(name, "sms") {
+		return imp.smsImporter.ImportFile(path)
+	}
+	
+	return nil, fmt.Errorf("unknown file type: %s", name)
 }
 
 // updateSummary updates the summary with file statistics
@@ -225,11 +244,27 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 	if imp.options.Filter == "" || imp.options.Filter == "calls" {
 		// Get statistics from calls coalescer
 		coalSummary := imp.callsImporter.GetSummary()
-		summary.Total.Initial = coalSummary.Initial
-		summary.Total.Final = coalSummary.Final
+		summary.Total.Initial += coalSummary.Initial
+		summary.Total.Final += coalSummary.Final
 		
 		// Calculate per-year statistics
 		for _, entry := range imp.callsImporter.coalescer.GetAll() {
+			year := entry.Year()
+			if _, exists := summary.YearStats[year]; !exists {
+				summary.YearStats[year] = &YearStat{}
+			}
+			summary.YearStats[year].Final++
+		}
+	}
+	
+	if imp.options.Filter == "" || imp.options.Filter == "sms" {
+		// Get statistics from SMS coalescer
+		coalSummary := imp.smsImporter.GetSummary()
+		summary.Total.Initial += coalSummary.Initial
+		summary.Total.Final += coalSummary.Final
+		
+		// Calculate per-year statistics
+		for _, entry := range imp.smsImporter.coalescer.GetAll() {
 			year := entry.Year()
 			if _, exists := summary.YearStats[year]; !exists {
 				summary.YearStats[year] = &YearStat{}
