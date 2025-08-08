@@ -159,6 +159,11 @@ func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
 		return err
 	}
 	
+	// If no years found, return nil (empty repository)
+	if len(years) == 0 {
+		return nil
+	}
+	
 	for _, year := range years {
 		if err := r.StreamCallsForYear(year, func(call Call) error {
 			return callback(&call)

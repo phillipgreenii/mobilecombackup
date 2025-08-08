@@ -38,19 +38,30 @@ func NewCallsImporter(options *ImportOptions) (*CallsImporter, error) {
 
 // LoadRepository loads existing calls for deduplication
 func (ci *CallsImporter) LoadRepository() error {
-	reader := calls.NewXMLCallsReader(filepath.Join(ci.options.RepoRoot, "calls"))
+	reader := calls.NewXMLCallsReader(ci.options.RepoRoot)
 	
 	// Stream all existing calls into the coalescer
-	count := 0
+	var existingCalls []calls.CallEntry
 	err := reader.StreamCalls(func(call *calls.Call) error {
-		ci.coalescer.LoadExisting([]calls.CallEntry{{Call: call}})
-		count++
+		existingCalls = append(existingCalls, calls.CallEntry{Call: call})
 		return nil
 	})
 	
 	if err != nil {
-		return fmt.Errorf("failed to load existing calls: %w", err)
+		// Empty repository is OK
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to stream existing calls: %w", err)
+		}
 	}
+	
+	// Load all existing calls at once
+	if len(existingCalls) > 0 {
+		if err := ci.coalescer.LoadExisting(existingCalls); err != nil {
+			return fmt.Errorf("failed to load existing calls: %w", err)
+		}
+	}
+	
+	count := len(existingCalls)
 	
 	if ci.options.Verbose && !ci.options.Quiet {
 		fmt.Printf("Loaded %d existing calls from repository\n", count)
