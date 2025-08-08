@@ -105,12 +105,71 @@ violations:
 - Summary statistics displayed at completion
 - Implementation should handle large repositories efficiently
 
+## Required Refactoring
+
+### Core Issues Identified
+The existing SMS implementation has fundamental type inconsistencies that prevent it from working with the import architecture:
+
+1. **Type Mismatches**: 
+   - XML parsing converts timestamps to `time.Time` but structs expect `int64`
+   - Boolean fields ("0"/"1" in XML) are parsed as `bool` but structs define them as `int`
+   - These mismatches cause compilation errors
+
+2. **Missing MMS Fields**:
+   - Test data shows MMS messages have 59+ attributes
+   - Current implementation only handles ~30 attributes
+   - Missing fields like `sim_imsi`, `sub_id`, `creator`, `spam_report`, etc.
+
+3. **Interface Incompatibility**:
+   - Methods return wrong types for coalescer integration
+   - Hash calculation references fields with incorrect types
+
+### Refactoring Plan
+
+#### Phase 1: Type System Alignment
+Align SMS types with the pattern established in calls implementation:
+- Store all timestamps as `int64` (epoch milliseconds)
+- Store all boolean XML attributes as `int` (0 or 1)
+- Only convert to `time.Time` when needed for display/operations
+
+#### Phase 2: Fix XML Parsing
+- Remove `time.Unix()` conversions during parsing
+- Parse "0"/"1" strings to `int` not `bool`
+- Add parsing for all MMS attributes found in test data
+
+#### Phase 3: Update Methods
+- Fix `GetDate()` to return `int64` directly
+- Update hash calculation to use correct field types
+- Fix writer to handle `int64` timestamps
+
+#### Phase 4: Add Missing Functionality
+- Implement `ValidateSMSFile()` method
+- Add comprehensive validation rules
+- Ensure feature parity with calls implementation
+
+### Implementation Order
+1. Update `types.go` - Fix all struct definitions (breaking change)
+2. Update `xml_reader.go` - Remove type conversions
+3. Fix interface methods and coalescer
+4. Update writer and tests
+5. Add validation methods
+6. Integration testing with real data
+
 ## Tasks
-- [ ] Design accumulator structure for new SMS/MMS (in-memory or staging)
+
+### Refactoring Tasks (Prerequisites)
+- [ ] Fix type definitions in `types.go` to use `int64` for timestamps and `int` for booleans
+- [ ] Update XML parser to remove type conversions
+- [ ] Add missing MMS attributes (~30 fields)
+- [ ] Fix interface methods to return correct types
+- [ ] Update existing tests for new types
+
+### Implementation Tasks
+- [x] Design accumulator structure for new SMS/MMS (in-memory or staging)
 - [ ] Implement repository loading for deduplication index
-- [ ] Extend coalescer to handle SMS entries
+- [x] Extend coalescer to handle SMS entries
 - [ ] Implement SMS-specific validation rules (reuse FEAT-003 logic)
-- [ ] Add SMS hash calculation (exclude `readable_date` and `contact_name`)
+- [x] Add SMS hash calculation (exclude `readable_date` and `contact_name`)
 - [ ] Create rejection file writer for invalid SMS with timestamp in filename
 - [ ] Implement progress reporting for large imports
 - [ ] Create single-write repository update mechanism:
