@@ -10,6 +10,9 @@
       "go mod tidy"
     ],
     "scripts": {
+      "formatter": [
+              "go fmt ./..."
+      ],
       "builder": [
               "go build -v ./..."
       ],
