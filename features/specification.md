@@ -819,3 +819,75 @@ JSON output (`--output-json`):
 
 - `PrintError(format string, args ...interface{})`: Consistent error output to stderr
 
+## Import Functionality
+
+### Overview
+
+The import functionality provides the ability to import call and SMS backup files into the repository with automatic deduplication, validation, and rejection handling.
+
+### Architecture
+
+#### Coalescer System
+
+**Generic Coalescer Interface:**
+```go
+type Entry interface {
+    Hash() string         // Unique identifier for deduplication
+    Timestamp() time.Time // For sorting
+    Year() int           // For partitioning
+}
+
+type Coalescer[T Entry] interface {
+    LoadExisting(entries []T) error
+    Add(entry T) bool              // Returns true if added (not duplicate)
+    GetAll() []T                   // Returns sorted by timestamp
+    GetByYear(year int) []T
+    GetSummary() Summary
+    Reset()
+}
+```
+
+**Hash-Based Deduplication:**
+- SHA-256 hashes for content addressing
+- Excludes volatile fields (`readable_date`, `contact_name`)
+- O(1) duplicate detection using map[string]Entry
+
+#### Call Import
+
+**CallEntry Implementation:**
+- Wraps `Call` struct to implement `Entry` interface
+- Hash calculation includes: number, duration, date, type
+- Excludes: readable_date, contact_name (may change over time)
+
+**Validation Rules:**
+- Required fields: date (>0), number (non-empty), valid type (1-4)
+- Duration must be non-negative
+- Invalid entries written to rejection files
+
+**Rejection Handling:**
+- Files: `rejected/calls-[hash]-[timestamp]-rejects.xml`
+- Violations: `rejected/calls-[hash]-[timestamp]-violations.yaml`
+- Original XML structure preserved for re-import after correction
+
+#### Import Process
+
+1. **Repository Validation**: Ensure valid structure before import
+2. **Load Existing Data**: Build deduplication index from repository
+3. **Process Files**: 
+   - Stream XML parsing for memory efficiency
+   - Validate each entry
+   - Check for duplicates via hash
+   - Accumulate valid entries
+4. **Single Write Operation**:
+   - Merge existing and new entries
+   - Sort by timestamp (stable for same timestamps)
+   - Partition by year
+   - Write atomically to repository
+
+### Performance Characteristics
+
+- **Memory Efficiency**: Streaming XML parsing, progress every 100 records
+- **Thread Safety**: Concurrent-safe coalescer operations
+- **Single Write**: Repository updated only once after all processing
+- **Error Resilience**: Continue on individual failures, track statistics
+
