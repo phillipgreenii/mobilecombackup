@@ -12,7 +12,7 @@ const (
 
 // Message is the base interface for SMS and MMS
 type Message interface {
-	GetDate() time.Time
+	GetDate() int64 // Epoch milliseconds
 	GetAddress() string
 	GetType() MessageType
 	GetReadableDate() string
@@ -21,23 +21,25 @@ type Message interface {
 
 // SMS represents a simple text message
 type SMS struct {
-	Protocol      string
-	Address       string
-	Date          time.Time
-	Type          MessageType
-	Subject       string
-	Body          string
-	ServiceCenter string
-	Read          bool
-	Status        int
-	Locked        bool
-	DateSent      time.Time
-	ReadableDate  string
-	ContactName   string
+	Protocol      string      `xml:"protocol,attr"`
+	Address       string      `xml:"address,attr"`
+	Date          int64       `xml:"date,attr"` // Epoch milliseconds
+	Type          MessageType `xml:"type,attr"`
+	Subject       string      `xml:"subject,attr"`
+	Body          string      `xml:"body,attr"`
+	ServiceCenter string      `xml:"service_center,attr"`
+	Read          int         `xml:"read,attr"`
+	Status        int         `xml:"status,attr"`
+	Locked        int         `xml:"locked,attr"`
+	DateSent      int64       `xml:"date_sent,attr"`
+	ReadableDate  string      `xml:"readable_date,attr"`
+	ContactName   string      `xml:"contact_name,attr"`
+	Toa           string      `xml:"toa,attr"`
+	ScToa         string      `xml:"sc_toa,attr"`
 }
 
 // GetDate implements Message interface
-func (s SMS) GetDate() time.Time {
+func (s SMS) GetDate() int64 {
 	return s.Date
 }
 
@@ -61,55 +63,60 @@ func (s SMS) GetContactName() string {
 	return s.ContactName
 }
 
+// Timestamp returns the SMS timestamp as time.Time
+func (s *SMS) Timestamp() time.Time {
+	return time.Unix(s.Date/1000, (s.Date%1000)*int64(time.Millisecond))
+}
+
 // MMS represents a multimedia message
 type MMS struct {
-	Date         time.Time
-	MsgBox       int
-	Address      string // Primary address
-	MType        int
-	MId          string
-	ThreadId     string
-	TextOnly     bool
-	Sub          string
-	Parts        []MMSPart
-	Addresses    []MMSAddress
-	ReadableDate string
-	ContactName  string
-	CallbackSet  int
-	RetrSt       string
-	CtCls        string
-	SubCs        string
-	Read         bool
-	CtL          string
-	TrId         string
-	St           string
-	MCls         string
-	DTm          string
-	ReadStatus   string
-	CtT          string
-	RetrTxtCs    string
-	Deletable    bool
-	DRpt         int
-	DateSent     time.Time
-	Seen         bool
-	Reserved     int
-	V            int
-	Exp          string
-	Pri          int
-	Hidden       bool
-	MsgId        int
-	Rr           int
-	AppId        int
-	RespTxt      string
-	RptA         string
-	Locked       bool
-	RetrTxt      string
-	RespSt       int
-	MSize        int
+	Date         int64         `xml:"date,attr"` // Epoch milliseconds
+	MsgBox       int           `xml:"msg_box,attr"`
+	Address      string        `xml:"address,attr"` // Primary address
+	MType        int           `xml:"m_type,attr"`
+	MId          string        `xml:"m_id,attr"`
+	ThreadId     string        `xml:"thread_id,attr"`
+	TextOnly     int           `xml:"text_only,attr"`
+	Sub          string        `xml:"sub,attr"`
+	Parts        []MMSPart     `xml:"parts>part"`
+	Addresses    []MMSAddress  `xml:"addrs>addr"`
+	ReadableDate string        `xml:"readable_date,attr"`
+	ContactName  string        `xml:"contact_name,attr"`
+	CallbackSet  int           `xml:"callback_set,attr"`
+	RetrSt       int           `xml:"retr_st,attr"`
+	CtCls        string        `xml:"ct_cls,attr"`
+	SubCs        int           `xml:"sub_cs,attr"`
+	Read         int           `xml:"read,attr"`
+	CtL          string        `xml:"ct_l,attr"`
+	TrId         string        `xml:"tr_id,attr"`
+	St           int           `xml:"st,attr"`
+	MCls         string        `xml:"m_cls,attr"`
+	DTm          int64         `xml:"d_tm,attr"`
+	ReadStatus   int           `xml:"read_status,attr"`
+	CtT          string        `xml:"ct_t,attr"`
+	RetrTxtCs    int           `xml:"retr_txt_cs,attr"`
+	Deletable    int           `xml:"deletable,attr"`
+	DRpt         int           `xml:"d_rpt,attr"`
+	DateSent     int64         `xml:"date_sent,attr"`
+	Seen         int           `xml:"seen,attr"`
+	Reserved     int           `xml:"reserved,attr"`
+	V            int           `xml:"v,attr"`
+	Exp          int64         `xml:"exp,attr"`
+	Pri          int           `xml:"pri,attr"`
+	Hidden       int           `xml:"hidden,attr"`
+	MsgId        int           `xml:"msg_id,attr"`
+	Rr           int           `xml:"rr,attr"`
+	AppId        int           `xml:"app_id,attr"`
+	RespTxt      string        `xml:"resp_txt,attr"`
+	RptA         int           `xml:"rpt_a,attr"`
+	Locked       int           `xml:"locked,attr"`
+	RetrTxt      string        `xml:"retr_txt,attr"`
+	RespSt       int           `xml:"resp_st,attr"`
+	MSize        int           `xml:"m_size,attr"`
 }
 
 // GetDate implements Message interface
-func (m MMS) GetDate() time.Time {
+func (m MMS) GetDate() int64 {
 	return m.Date
 }
 
@@ -136,26 +143,31 @@ func (m MMS) GetContactName() string {
 	return m.ContactName
 }
 
+// Timestamp returns the MMS timestamp as time.Time
+func (m *MMS) Timestamp() time.Time {
+	return time.Unix(m.Date/1000, (m.Date%1000)*int64(time.Millisecond))
+}
+
 // MMSPart represents a content part of an MMS
 type MMSPart struct {
-	Seq           int
-	ContentType   string
-	Name          string
-	Charset       string
-	ContentDisp   string
-	Filename      string
-	ContentId     string
-	ContentLoc    string
-	CttS          string
-	CttT          string
-	Text          string
-	Data          string // Base64 encoded data
+	Seq           int    `xml:"seq,attr"`
+	ContentType   string `xml:"ct,attr"`
+	Name          string `xml:"name,attr"`
+	Charset       string `xml:"chset,attr"`
+	ContentDisp   string `xml:"cd,attr"`
+	Filename      string `xml:"fn,attr"`
+	ContentId     string `xml:"cid,attr"`
+	ContentLoc    string `xml:"cl,attr"`
+	CttS          int    `xml:"ctt_s,attr"`
+	CttT          int    `xml:"ctt_t,attr"`
+	Text          string `xml:"text,attr"`
+	Data          string `xml:"data,attr"` // Base64 encoded data
 	AttachmentRef string // Path reference if attachment extracted
 }
 
 // MMSAddress represents an address in an MMS
 type MMSAddress struct {
-	Address string
-	Type    int
-	Charset int
+	Address string `xml:"address,attr"`
+	Type    int    `xml:"type,attr"`
+	Charset int    `xml:"charset,attr"`
 }

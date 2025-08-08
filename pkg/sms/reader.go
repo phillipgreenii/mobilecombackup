@@ -5,8 +5,8 @@ type SMSReader interface {
 	// ReadMessages reads all messages from a specific year
 	ReadMessages(year int) ([]Message, error)
 
-	// StreamMessages streams messages for memory efficiency
-	StreamMessages(year int, callback func(Message) error) error
+	// StreamMessagesForYear streams messages for memory efficiency
+	StreamMessagesForYear(year int, callback func(Message) error) error
 
 	// GetAttachmentRefs returns all attachment references in a year
 	GetAttachmentRefs(year int) ([]string, error)

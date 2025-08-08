@@ -32,15 +32,15 @@ func (r *XMLSMSReader) getSMSFilePath(year int) string {
 // ReadMessages reads all messages from a specific year
 func (r *XMLSMSReader) ReadMessages(year int) ([]Message, error) {
 	var messages []Message
-	err := r.StreamMessages(year, func(msg Message) error {
+	err := r.StreamMessagesForYear(year, func(msg Message) error {
 		messages = append(messages, msg)
 		return nil
 	})
 	return messages, err
 }
 
-// StreamMessages streams messages for memory efficiency
-func (r *XMLSMSReader) StreamMessages(year int, callback func(Message) error) error {
+// StreamMessagesForYear streams messages for memory efficiency
+func (r *XMLSMSReader) StreamMessagesForYear(year int, callback func(Message) error) error {
 	filePath := r.getSMSFilePath(year)
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -432,6 +432,27 @@ func (r *XMLSMSReader) parseMMSAddress(decoder *xml.Decoder, startElement xml.St
 	}
 
 	return addr, nil
+}
+
+// StreamMessages streams all messages from the repository across all years
+func (r *XMLSMSReader) StreamMessages(callback func(Message) error) error {
+	years, err := r.GetAvailableYears()
+	if err != nil {
+		return err
+	}
+	
+	// If no years found, return nil (empty repository)
+	if len(years) == 0 {
+		return nil
+	}
+	
+	for _, year := range years {
+		if err := r.StreamMessagesForYear(year, callback); err != nil {
+			return err
+		}
+	}
+	
+	return nil
 }
 
 // GetAvailableYears returns list of years with SMS data
