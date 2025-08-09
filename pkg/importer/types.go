@@ -145,3 +145,17 @@ type RejectedEntry struct {
 	// Validation violations
 	Violations []string
 }
+
+// RejectionReason represents a single rejection for the rejection-reasons.yaml
+type RejectionReason struct {
+	File      string `yaml:"file"`
+	Type      string `yaml:"type"`
+	Timestamp string `yaml:"timestamp"`
+	Reason    string `yaml:"reason"`
+	Details   string `yaml:"details"`
+}
+
+// RejectionReasons represents the rejection-reasons.yaml structure
+type RejectionReasons struct {
+	Rejections []RejectionReason `yaml:"rejections"`
+}
