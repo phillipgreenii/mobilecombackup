@@ -1001,9 +1001,19 @@ type Coalescer[T Entry] interface {
 - Invalid entries written to rejection files
 
 **Rejection Handling:**
-- Files: `rejected/calls-[hash]-[timestamp]-rejects.xml`
-- Violations: `rejected/calls-[hash]-[timestamp]-violations.yaml`
+- Directory structure created only when rejections occur (lazy creation)
+- Thread-safe directory creation using sync.Once pattern
+- Mirrored repository structure:
+  ```
+  rejected/
+  ├── calls/
+  │   └── calls-[hash]-[timestamp].xml
+  └── sms/
+      └── sms-[hash]-[timestamp].xml
+  ```
 - Original XML structure preserved for re-import after correction
+- Files named with 8-character hash prefix and timestamp
+- Import summary displays "Rejected entries saved to: rejected/" when applicable
 
 #### SMS Import
 
