@@ -1,7 +1,7 @@
 # FEAT-018: Add info subcommand
 
 ## Status
-- **Completed**: 
+- **Completed**: 2025-08-09
 - **Priority**: medium
 
 ## Overview
@@ -115,19 +115,19 @@ Validation: OK
 ```
 
 ## Tasks
-- [ ] Create info.go in cmd/mobilecombackup/cmd/
-- [ ] Implement repository metadata reading from .mobilecombackup.yaml
-- [ ] Implement calls statistics gathering with date ranges
-- [ ] Implement SMS/MMS statistics gathering with separate counts and date ranges
-- [ ] Implement attachment statistics with type distribution
-- [ ] Implement orphaned attachment detection
-- [ ] Implement rejection/error counting
-- [ ] Implement basic validation status check
-- [ ] Add human-readable output formatting
-- [ ] Add JSON output support with --json flag
-- [ ] Write unit tests
-- [ ] Write integration tests
-- [ ] Update README with usage examples
+- [x] Create info.go in cmd/mobilecombackup/cmd/
+- [x] Implement repository metadata reading from .mobilecombackup.yaml
+- [x] Implement calls statistics gathering with date ranges
+- [x] Implement SMS/MMS statistics gathering with separate counts and date ranges
+- [x] Implement attachment statistics with type distribution
+- [x] Implement orphaned attachment detection
+- [x] Implement rejection/error counting
+- [x] Implement basic validation status check
+- [x] Add human-readable output formatting
+- [x] Add JSON output support with --json flag
+- [x] Write unit tests
+- [x] Write integration tests
+- [x] Update README with usage examples
 
 ## Testing
 ### Unit Tests
