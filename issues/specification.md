@@ -843,6 +843,123 @@ JSON output (`--output-json`):
 - With `--verbose` flag, shows detailed progress for each phase
 - Displays "Completed X validation" messages
 
+#### Info Command
+
+Shows comprehensive information about a mobilecombackup repository including statistics, metadata, and validation status.
+
+**Usage:**
+```bash
+mobilecombackup info [flags]
+```
+
+**Flags:**
+- `--json`: Output information in JSON format
+
+**Behavior:**
+1. Resolves repository root from (in order):
+   - `--repo-root` flag
+   - `MB_REPO_ROOT` environment variable 
+   - Current directory
+2. Reads repository metadata from `.mobilecombackup.yaml`
+3. Gathers comprehensive statistics:
+   - Call counts by year with earliest/latest date ranges
+   - SMS/MMS counts by year with type breakdown and date ranges
+   - Attachment counts with total size and MIME type distribution
+   - Orphaned attachment detection (unreferenced by messages)
+   - Contact counts
+   - Rejection file counts (from `rejected/` directory)
+   - Error counts from reader operations
+4. Performs basic validation status check
+5. Outputs results in selected format (text or JSON)
+
+**Exit Codes:**
+- `0`: Success
+- `2`: Runtime error (repository not found, I/O error)
+
+**Output Features:**
+- Human-readable formatting with thousands separators
+- Byte size formatting (B, KB, MB, GB)
+- Date ranges displayed as "Jan 2 - Dec 28" format
+- MIME types sorted by count (descending)
+- Graceful handling of missing components
+
+**Text Output Example:**
+```
+Repository: /home/user/backup
+Version: 1
+Created: 2024-01-15T10:30:00Z
+
+Calls:
+  2023: 1,234 calls (Jan 5 - Dec 28)
+  2024: 567 calls (Jan 2 - Jun 15)
+  Total: 1,801 calls
+
+Messages:
+  2023: 5,432 messages (4,321 SMS, 1,111 MMS) (Jan 1 - Dec 31)
+  2024: 2,345 messages (2,000 SMS, 345 MMS) (Jan 1 - Jun 20)
+  Total: 7,777 messages (6,321 SMS, 1,456 MMS)
+
+Attachments:
+  Count: 1,456
+  Total Size: 245.3 MB
+  Types:
+    image/jpeg: 1,200
+    image/png: 200
+    video/mp4: 56
+  Orphaned: 12
+
+Contacts: 123
+
+Validation: OK
+```
+
+**JSON Output:**
+```json
+{
+  "version": "1",
+  "created_at": "2024-01-15T10:30:00Z",
+  "calls": {
+    "2023": {
+      "count": 1234,
+      "earliest": "2023-01-05T12:30:00Z",
+      "latest": "2023-12-28T18:45:00Z"
+    }
+  },
+  "sms": {
+    "2023": {
+      "total_count": 5432,
+      "sms_count": 4321,
+      "mms_count": 1111,
+      "earliest": "2023-01-01T00:00:00Z",
+      "latest": "2023-12-31T23:59:00Z"
+    }
+  },
+  "attachments": {
+    "count": 1456,
+    "total_size": 257368064,
+    "orphaned_count": 12,
+    "by_type": {
+      "image/jpeg": 1200,
+      "image/png": 200,
+      "video/mp4": 56
+    }
+  },
+  "contacts": 123,
+  "validation_ok": true
+}
+```
+
+**MIME Type Detection:**
+- Based on file extensions in attachment paths
+- Supports: image/jpeg, image/png, image/gif, video/mp4, video/3gpp, audio/mp3, audio/amr
+- Default: application/octet-stream for unknown types
+
+**Performance Characteristics:**
+- Uses streaming APIs for memory efficiency
+- No modification of repository data (read-only operation)
+- Handles large repositories efficiently
+- Progress indication for operations taking >2 seconds
+
 #### Import Command
 Imports mobile backup files into the repository with deduplication and validation.
 

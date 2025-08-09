@@ -1,4 +1,10 @@
 #########
+# app
+#
+mobilecombackup
+!mobilecombackup/
+
+#########
 # VI
 #
 *.swp
@@ -58,4 +64,3 @@ cover/
 #
 # Temporary files for development
 tmp/
-mobilecombackup

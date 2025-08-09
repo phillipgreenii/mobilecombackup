@@ -84,9 +84,9 @@ type AttachmentInfo struct {
 
 // InfoMarkerFileContent represents the .mobilecombackup.yaml file structure
 type InfoMarkerFileContent struct {
-	RepositoryStructureVersion string `yaml:"repository_structure_version"`
-	CreatedAt                  string `yaml:"created_at"`
-	CreatedBy                  string `yaml:"created_by"`
+	RepositoryStructureVersion string `yaml:"repository_structure_version" json:"repository_structure_version"`
+	CreatedAt                  string `yaml:"created_at" json:"created_at"`
+	CreatedBy                  string `yaml:"created_by" json:"created_by"`
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
