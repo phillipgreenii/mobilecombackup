@@ -39,6 +39,7 @@ Usage:
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
+  info        Show repository information and statistics
   init        Initialize a new mobilecombackup repository
   validate    Validate a mobilecombackup repository
 
@@ -170,6 +171,102 @@ JSON output format:
       "Message": "Failed to load manifest"
     }
   ]
+}
+```
+
+### Info Command
+
+Show comprehensive information about a mobilecombackup repository including statistics, metadata, and validation status.
+
+```bash
+# Show information for current directory
+$ mobilecombackup info
+
+# Show information for specific repository
+$ mobilecombackup info --repo-root /path/to/repo
+
+# Use environment variable for repository
+$ MB_REPO_ROOT=/path/to/repo mobilecombackup info
+
+# JSON output for scripting
+$ mobilecombackup info --json
+
+# Quiet mode (no output for valid empty repository)
+$ mobilecombackup info --quiet
+```
+
+The info command displays:
+- Repository metadata (version, creation date)
+- Call statistics by year with date ranges
+- SMS/MMS statistics by year with type breakdown
+- Attachment statistics with type distribution and orphan detection
+- Contact count
+- Rejection and error counts
+- Basic validation status
+
+Example output:
+```
+Repository: /path/to/repo
+Version: 1
+Created: 2024-01-15T10:30:00Z
+
+Calls:
+  2023: 1,234 calls (Jan 5 - Dec 28)
+  2024: 567 calls (Jan 2 - Jun 15)
+  Total: 1,801 calls
+
+Messages:
+  2023: 5,432 messages (4,321 SMS, 1,111 MMS) (Jan 1 - Dec 31)
+  2024: 2,345 messages (2,000 SMS, 345 MMS) (Jan 1 - Jun 20)
+  Total: 7,777 messages
+
+Attachments:
+  Count: 1,456
+  Total Size: 245.3 MB
+  Types:
+    image/jpeg: 1,200
+    image/png: 200
+    video/mp4: 56
+  Orphaned: 12
+
+Contacts: 123
+
+Validation: OK
+```
+
+JSON output format:
+```json
+{
+  "version": "1",
+  "created_at": "2024-01-15T10:30:00Z",
+  "calls": {
+    "2023": {
+      "count": 1234,
+      "earliest": "2023-01-05T10:00:00Z",
+      "latest": "2023-12-28T15:30:00Z"
+    }
+  },
+  "sms": {
+    "2023": {
+      "total_count": 5432,
+      "sms_count": 4321,
+      "mms_count": 1111,
+      "earliest": "2023-01-01T00:00:00Z",
+      "latest": "2023-12-31T23:59:00Z"
+    }
+  },
+  "attachments": {
+    "count": 1456,
+    "total_size": 245300000,
+    "orphaned_count": 12,
+    "by_type": {
+      "image/jpeg": 1200,
+      "image/png": 200,
+      "video/mp4": 56
+    }
+  },
+  "contacts": 123,
+  "validation_ok": true
 }
 ```
 
