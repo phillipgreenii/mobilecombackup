@@ -6,16 +6,50 @@ import (
 
 // ImportSummary tracks statistics for an import operation
 type ImportSummary struct {
-	// Per-year statistics
-	YearStats map[int]*YearStat
-	// Total statistics across all years
-	Total *YearStat
+	// Statistics by entity type
+	Calls       *EntityStats
+	SMS         *EntityStats
+	Attachments *AttachmentStats
+	// Rejection statistics by type
+	Rejections map[string]*RejectionStats
 	// Files processed
 	FilesProcessed int
 	// Rejection files created
 	RejectionFiles []string
 	// Processing time
 	Duration time.Duration
+}
+
+// EntityStats tracks statistics for a specific entity type (calls or SMS)
+type EntityStats struct {
+	// Per-year statistics
+	YearStats map[int]*YearStat
+	// Total statistics across all years
+	Total *YearStat
+}
+
+// AttachmentStats tracks statistics for attachments
+type AttachmentStats struct {
+	// Total statistics
+	Total *AttachmentStat
+}
+
+// AttachmentStat tracks attachment statistics
+type AttachmentStat struct {
+	// Total attachment files
+	Total int
+	// New attachments added
+	New int
+	// Duplicate attachments
+	Duplicates int
+}
+
+// RejectionStats tracks rejection statistics by reason
+type RejectionStats struct {
+	// Count of rejections
+	Count int
+	// Rejection reason
+	Reason string
 }
 
 // YearStat tracks statistics for a specific year

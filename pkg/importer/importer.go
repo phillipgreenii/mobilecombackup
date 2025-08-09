@@ -42,8 +42,18 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 func (imp *Importer) Import() (*ImportSummary, error) {
 	startTime := time.Now()
 	summary := &ImportSummary{
-		YearStats: make(map[int]*YearStat),
-		Total:     &YearStat{},
+		Calls: &EntityStats{
+			YearStats: make(map[int]*YearStat),
+			Total:     &YearStat{},
+		},
+		SMS: &EntityStats{
+			YearStats: make(map[int]*YearStat),
+			Total:     &YearStat{},
+		},
+		Attachments: &AttachmentStats{
+			Total: &AttachmentStat{},
+		},
+		Rejections: make(map[string]*RejectionStats),
 	}
 	
 	// Load existing repository
@@ -85,8 +95,13 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 			continue
 		}
 		
-		// Update summary
-		imp.updateSummary(summary, stat)
+		// Update summary based on file type
+		name := filepath.Base(file)
+		if strings.HasPrefix(name, "calls") {
+			imp.updateCallsSummary(summary.Calls, stat)
+		} else if strings.HasPrefix(name, "sms") {
+			imp.updateSMSSummary(summary.SMS, stat)
+		}
 		
 		if imp.options.ProgressReporter != nil {
 			imp.options.ProgressReporter.EndFile(file, stat)
@@ -230,13 +245,22 @@ func (imp *Importer) processFile(path string) (*YearStat, error) {
 	return nil, fmt.Errorf("unknown file type: %s", name)
 }
 
-// updateSummary updates the summary with file statistics
-func (imp *Importer) updateSummary(summary *ImportSummary, stat *YearStat) {
+// updateCallsSummary updates the calls summary with file statistics
+func (imp *Importer) updateCallsSummary(stats *EntityStats, stat *YearStat) {
 	// Update total
-	summary.Total.Added += stat.Added
-	summary.Total.Duplicates += stat.Duplicates
-	summary.Total.Rejected += stat.Rejected
-	summary.Total.Errors += stat.Errors
+	stats.Total.Added += stat.Added
+	stats.Total.Duplicates += stat.Duplicates
+	stats.Total.Rejected += stat.Rejected
+	stats.Total.Errors += stat.Errors
+}
+
+// updateSMSSummary updates the SMS summary with file statistics
+func (imp *Importer) updateSMSSummary(stats *EntityStats, stat *YearStat) {
+	// Update total
+	stats.Total.Added += stat.Added
+	stats.Total.Duplicates += stat.Duplicates
+	stats.Total.Rejected += stat.Rejected
+	stats.Total.Errors += stat.Errors
 }
 
 // finalizeSummary calculates final statistics
@@ -244,32 +268,59 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 	if imp.options.Filter == "" || imp.options.Filter == "calls" {
 		// Get statistics from calls coalescer
 		coalSummary := imp.callsImporter.GetSummary()
-		summary.Total.Initial += coalSummary.Initial
-		summary.Total.Final += coalSummary.Final
+		summary.Calls.Total.Initial = coalSummary.Initial
+		summary.Calls.Total.Final = coalSummary.Final
 		
-		// Calculate per-year statistics
+		// Calculate per-year statistics for calls
 		for _, entry := range imp.callsImporter.coalescer.GetAll() {
 			year := entry.Year()
-			if _, exists := summary.YearStats[year]; !exists {
-				summary.YearStats[year] = &YearStat{}
+			if _, exists := summary.Calls.YearStats[year]; !exists {
+				summary.Calls.YearStats[year] = &YearStat{}
 			}
-			summary.YearStats[year].Final++
+			summary.Calls.YearStats[year].Final++
 		}
 	}
 	
 	if imp.options.Filter == "" || imp.options.Filter == "sms" {
 		// Get statistics from SMS coalescer
 		coalSummary := imp.smsImporter.GetSummary()
-		summary.Total.Initial += coalSummary.Initial
-		summary.Total.Final += coalSummary.Final
+		summary.SMS.Total.Initial = coalSummary.Initial
+		summary.SMS.Total.Final = coalSummary.Final
 		
-		// Calculate per-year statistics
+		// Calculate per-year statistics for SMS
 		for _, entry := range imp.smsImporter.coalescer.GetAll() {
 			year := entry.Year()
-			if _, exists := summary.YearStats[year]; !exists {
-				summary.YearStats[year] = &YearStat{}
+			if _, exists := summary.SMS.YearStats[year]; !exists {
+				summary.SMS.YearStats[year] = &YearStat{}
 			}
-			summary.YearStats[year].Final++
+			summary.SMS.YearStats[year].Final++
 		}
+		
+		// Get attachment statistics from SMS importer
+		attachStats := imp.smsImporter.GetAttachmentStats()
+		summary.Attachments.Total.Total = attachStats.Total
+		summary.Attachments.Total.New = attachStats.New
+		summary.Attachments.Total.Duplicates = attachStats.Duplicates
+	}
+	
+	// Collect rejection statistics
+	imp.collectRejectionStats(summary)
+}
+
+// collectRejectionStats collects rejection statistics from importers
+func (imp *Importer) collectRejectionStats(summary *ImportSummary) {
+	// TODO: Implement rejection tracking
+	// For now, initialize with zero counts
+	summary.Rejections["missing-timestamp"] = &RejectionStats{
+		Count:  0,
+		Reason: "missing-timestamp",
+	}
+	summary.Rejections["malformed-attachment"] = &RejectionStats{
+		Count:  0,
+		Reason: "malformed-attachment",
+	}
+	summary.Rejections["parse-error"] = &RejectionStats{
+		Count:  0,
+		Reason: "parse-error",
 	}
 }

@@ -35,44 +35,6 @@ func (si *SMSImporter) SetFilesToImport(files []string) {
 	si.options.Paths = files
 }
 
-// Import performs the SMS import operation
-func (si *SMSImporter) Import() (*ImportSummary, error) {
-	summary := &ImportSummary{
-		YearStats:      make(map[int]*YearStat),
-		Total:          &YearStat{},
-		RejectionFiles: []string{},
-	}
-
-	// 1. Load existing repository for deduplication
-	if err := si.LoadRepository(); err != nil {
-		return nil, fmt.Errorf("failed to load repository: %w", err)
-	}
-
-	// 2. Process each import file
-	for _, path := range si.options.Paths {
-		// TODO: Handle directories by walking them
-		fileStat, err := si.processFile(path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process file %s: %w", path, err)
-		}
-		summary.FilesProcessed++
-		// Aggregate file stats into total
-		summary.Total.Added += fileStat.Added
-		summary.Total.Duplicates += fileStat.Duplicates
-		summary.Total.Rejected += fileStat.Rejected
-		summary.Total.Errors += fileStat.Errors
-	}
-
-	// 3. Write to repository (single write)
-	if !si.options.DryRun {
-		if err := si.WriteRepository(); err != nil {
-			return nil, fmt.Errorf("failed to write repository: %w", err)
-		}
-	}
-
-	return summary, nil
-}
-
 // LoadRepository loads existing SMS/MMS from the repository for deduplication
 func (si *SMSImporter) LoadRepository() error {
 	reader := sms.NewXMLSMSReader(si.options.RepoRoot)
@@ -309,6 +271,17 @@ func (si *SMSImporter) writeViolationsFile(path string, violations []RejectedEnt
 // GetSummary returns the coalescer summary
 func (si *SMSImporter) GetSummary() coalescer.Summary {
 	return si.coalescer.GetSummary()
+}
+
+// GetAttachmentStats returns attachment statistics
+func (si *SMSImporter) GetAttachmentStats() *AttachmentStat {
+	// TODO: Implement actual attachment tracking
+	// For now, return empty stats
+	return &AttachmentStat{
+		Total:      0,
+		New:        0,
+		Duplicates: 0,
+	}
 }
 
 // calculateFileHash calculates SHA-256 hash of a file

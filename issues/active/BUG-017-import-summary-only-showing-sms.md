@@ -59,7 +59,7 @@ Potential root causes to investigate:
 - Summary data structure may not support multiple entity types
 
 ### Root Cause
-To be determined during investigation.
+The ImportSummary struct was aggregating all statistics into a single Total field instead of tracking statistics separately by entity type (calls, SMS, attachments). The displaySummary function was attempting to show separate statistics but the data structure didn't support this separation.
 
 ## Fix Approach
 1. Verify summary data structure supports all entity types (calls, SMS, attachments, rejections)
@@ -70,18 +70,18 @@ To be determined during investigation.
 6. Add rejection counts with breakdown by rejection reason
 
 ## Tasks
-- [ ] Reproduce the bug with test data containing calls, SMS, and attachments
-- [ ] Identify where summary is generated in import command
-- [ ] Check if summary data structure supports multiple entity types
-- [ ] Fix summary aggregation to merge instead of overwrite
-- [ ] Standardize terminology to use "entries" for both calls and SMS
-- [ ] Add new/duplicate tracking for each type and year
-- [ ] Add attachment statistics to summary
-- [ ] Add rejection counts with reason breakdown
-- [ ] Write unit tests for summary generation with all entity types
+- [x] Reproduce the bug with test data containing calls, SMS, and attachments
+- [x] Identify where summary is generated in import command
+- [x] Check if summary data structure supports multiple entity types
+- [x] Fix summary aggregation to merge instead of overwrite
+- [x] Standardize terminology to use "entries" for both calls and SMS
+- [x] Add new/duplicate tracking for each type and year
+- [ ] Add attachment statistics to summary (TODO: requires FEAT-012 implementation)
+- [ ] Add rejection counts with reason breakdown (TODO: requires rejection tracking)
+- [x] Write unit tests for summary generation with all entity types
 - [ ] Update integration tests for complete summary output
-- [ ] Add test for summary format consistency
-- [ ] Verify summary persistence between processing phases
+- [x] Add test for summary format consistency
+- [x] Verify summary persistence between processing phases
 
 ## Testing
 ### Regression Tests

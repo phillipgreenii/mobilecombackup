@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/importer"
 	"github.com/spf13/cobra"
 )
 
@@ -235,6 +237,170 @@ func TestImportCommandFlags(t *testing.T) {
 		flag := rootCmd.PersistentFlags().Lookup(flagName)
 		if flag == nil {
 			t.Errorf("Expected global flag %q not found", flagName)
+		}
+	}
+}
+
+func TestDisplaySummary(t *testing.T) {
+	// Create a test summary with all entity types
+	summary := &importer.ImportSummary{
+		Calls: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2014: {Final: 10, Added: 8, Duplicates: 2},
+				2015: {Final: 15, Added: 15, Duplicates: 0},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      25,
+				Added:      23,
+				Duplicates: 2,
+			},
+		},
+		SMS: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2014: {Final: 25, Added: 20, Duplicates: 5},
+				2015: {Final: 30, Added: 25, Duplicates: 5},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      55,
+				Added:      45,
+				Duplicates: 10,
+			},
+		},
+		Attachments: &importer.AttachmentStats{
+			Total: &importer.AttachmentStat{
+				Total:      12,
+				New:        10,
+				Duplicates: 2,
+			},
+		},
+		Rejections: map[string]*importer.RejectionStats{
+			"missing-timestamp": {Count: 1, Reason: "missing-timestamp"},
+			"malformed-attachment": {Count: 2, Reason: "malformed-attachment"},
+		},
+		FilesProcessed: 5,
+		Duration:       2 * time.Second,
+	}
+
+	// Capture output
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Save importFilter
+	oldFilter := importFilter
+	importFilter = ""
+	defer func() { importFilter = oldFilter }()
+
+	// Call displaySummary
+	displaySummary(summary, false)
+
+	// Restore stdout
+	w.Close()
+	os.Stdout = oldStdout
+
+	// Read captured output
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify all entity types are displayed
+	expectedStrings := []string{
+		"Import Summary:",
+		"Calls:",
+		"2014: 10 entries (8 new, 2 duplicates)",
+		"2015: 15 entries (15 new, 0 duplicates)",
+		"Total: 25 entries (23 new, 2 duplicates)",
+		"SMS:",
+		"2014: 25 entries (20 new, 5 duplicates)",
+		"2015: 30 entries (25 new, 5 duplicates)",
+		"Total: 55 entries (45 new, 10 duplicates)",
+		"Attachments:",
+		"Total: 12 files (10 new, 2 duplicates)",
+		"Rejections:",
+		"Files processed: 5",
+		"Time taken: 2.0s",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected output to contain %q, but it didn't.\nOutput:\n%s", expected, output)
+		}
+	}
+}
+
+func TestDisplayJSONSummary(t *testing.T) {
+	// Create a test summary
+	summary := &importer.ImportSummary{
+		Calls: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2014: {Final: 10, Added: 8, Duplicates: 2},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      10,
+				Added:      8,
+				Duplicates: 2,
+			},
+		},
+		SMS: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2014: {Final: 25, Added: 20, Duplicates: 5},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      25,
+				Added:      20,
+				Duplicates: 5,
+			},
+		},
+		Attachments: &importer.AttachmentStats{
+			Total: &importer.AttachmentStat{
+				Total:      5,
+				New:        4,
+				Duplicates: 1,
+			},
+		},
+		Rejections: map[string]*importer.RejectionStats{
+			"missing-timestamp": {Count: 1, Reason: "missing-timestamp"},
+		},
+		FilesProcessed: 2,
+		Duration:       1 * time.Second,
+	}
+
+	// Capture output
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Call displayJSONSummary
+	displayJSONSummary(summary)
+
+	// Restore stdout
+	w.Close()
+	os.Stdout = oldStdout
+
+	// Read captured output
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify JSON structure contains expected fields
+	expectedFields := []string{
+		`"files_processed": 2`,
+		`"calls"`,
+		`"sms"`,
+		`"attachments"`,
+		`"rejections"`,
+		`"total": 5`,
+		`"new": 4`,
+		`"duplicates": 1`,
+	}
+
+	for _, expected := range expectedFields {
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected JSON output to contain %q, but it didn't.\nOutput:\n%s", expected, output)
 		}
 	}
 }

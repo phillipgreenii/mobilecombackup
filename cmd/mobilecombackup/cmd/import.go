@@ -122,7 +122,8 @@ func runImport(cmd *cobra.Command, args []string) error {
 	}
 
 	// Determine exit code
-	if summary.Total.Rejected > 0 && !noErrorOnRejects {
+	totalRejected := summary.Calls.Total.Rejected + summary.SMS.Total.Rejected
+	if totalRejected > 0 && !noErrorOnRejects {
 		os.Exit(1)
 	}
 
@@ -176,42 +177,94 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 	}
 	
 	fmt.Println("\nImport Summary:")
-	fmt.Println("              Initial     Final     Delta     Duplicates    Rejected")
 	
-	// Display totals for each type
+	// Display calls statistics
 	if importFilter == "" || importFilter == "calls" {
-		fmt.Printf("Calls Total   %7d   %7d   %7d   %11d   %9d\n",
-			summary.Total.Initial, summary.Total.Final, 
-			summary.Total.Added, summary.Total.Duplicates, summary.Total.Rejected)
-	}
-	
-	if importFilter == "" || importFilter == "sms" {
-		fmt.Printf("SMS Total     %7d   %7d   %7d   %11d   %9d\n",
-			summary.Total.Initial, summary.Total.Final,
-			summary.Total.Added, summary.Total.Duplicates, summary.Total.Rejected)
-	}
-	
-	// Display per-year breakdown if available
-	if len(summary.YearStats) > 0 {
-		for year, stats := range summary.YearStats {
-			fmt.Printf("  %d        %7d   %7d   %7d   %11d   %9d\n",
-				year, stats.Initial, stats.Final,
-				stats.Added, stats.Duplicates, stats.Rejected)
+		fmt.Println("\nCalls:")
+		for year, stats := range summary.Calls.YearStats {
+			fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
+				year, stats.Final, stats.Added, stats.Duplicates)
+		}
+		if len(summary.Calls.YearStats) > 0 {
+			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
+				summary.Calls.Total.Final, summary.Calls.Total.Added, summary.Calls.Total.Duplicates)
 		}
 	}
 	
-	fmt.Printf("\nFiles processed: %d\n", summary.FilesProcessed)
+	// Display SMS statistics  
+	if importFilter == "" || importFilter == "sms" {
+		fmt.Println("SMS:")
+		for year, stats := range summary.SMS.YearStats {
+			fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
+				year, stats.Final, stats.Added, stats.Duplicates)
+		}
+		if len(summary.SMS.YearStats) > 0 {
+			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
+				summary.SMS.Total.Final, summary.SMS.Total.Added, summary.SMS.Total.Duplicates)
+		}
+	}
+	
+	// Display attachment statistics
+	if (importFilter == "" || importFilter == "sms") && summary.Attachments.Total.Total > 0 {
+		fmt.Println("Attachments:")
+		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
+			summary.Attachments.Total.Total, summary.Attachments.Total.New, 
+			summary.Attachments.Total.Duplicates)
+	}
+	
+	// Display rejection statistics
+	totalRejections := 0
+	for _, stats := range summary.Rejections {
+		totalRejections += stats.Count
+	}
+	
+	if totalRejections > 0 {
+		fmt.Println("Rejections:")
+		if importFilter == "" || importFilter == "calls" {
+			callsRej := 0
+			for _, stats := range summary.Rejections {
+				if stats.Count > 0 {
+					callsRej += stats.Count
+				}
+			}
+			if callsRej > 0 {
+				fmt.Printf("  Calls: %d", callsRej)
+				// Show breakdown by reason
+				first := true
+				for reason, stats := range summary.Rejections {
+					if stats.Count > 0 {
+						if first {
+							fmt.Printf(" (%s: %d", reason, stats.Count)
+							first = false
+						} else {
+							fmt.Printf(", %s: %d", reason, stats.Count)
+						}
+					}
+				}
+				if !first {
+					fmt.Println(")")
+				} else {
+					fmt.Println()
+				}
+			}
+		}
+		
+		if importFilter == "" || importFilter == "sms" {
+			// TODO: Track SMS-specific rejections separately
+			fmt.Printf("  SMS: 0\n")
+		}
+		
+		fmt.Printf("  Total: %d\n", totalRejections)
+	}
 	
 	// Display rejection files if any
 	if len(summary.RejectionFiles) > 0 {
-		fmt.Println("Rejected files created:")
-		for _, file := range summary.RejectionFiles {
-			fmt.Printf("  - %s\n", file)
-		}
+		fmt.Println("\nRejected entries saved to: rejected/")
 	}
 	
 	// Display timing
-	fmt.Printf("\nTime taken: %.1fs\n", summary.Duration.Seconds())
+	fmt.Printf("\nFiles processed: %d\n", summary.FilesProcessed)
+	fmt.Printf("Time taken: %.1fs\n", summary.Duration.Seconds())
 }
 
 // displayJSONSummary displays the import summary in JSON format
@@ -219,15 +272,34 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 	output := map[string]interface{}{
 		"files_processed": summary.FilesProcessed,
 		"duration_seconds": summary.Duration.Seconds(),
-		"total": map[string]interface{}{
-			"initial":    summary.Total.Initial,
-			"final":      summary.Total.Final,
-			"added":      summary.Total.Added,
-			"duplicates": summary.Total.Duplicates,
-			"rejected":   summary.Total.Rejected,
-			"errors":     summary.Total.Errors,
+		"calls": map[string]interface{}{
+			"total": map[string]interface{}{
+				"initial":    summary.Calls.Total.Initial,
+				"final":      summary.Calls.Total.Final,
+				"added":      summary.Calls.Total.Added,
+				"duplicates": summary.Calls.Total.Duplicates,
+				"rejected":   summary.Calls.Total.Rejected,
+				"errors":     summary.Calls.Total.Errors,
+			},
+			"years": summary.Calls.YearStats,
 		},
-		"years": summary.YearStats,
+		"sms": map[string]interface{}{
+			"total": map[string]interface{}{
+				"initial":    summary.SMS.Total.Initial,
+				"final":      summary.SMS.Total.Final,
+				"added":      summary.SMS.Total.Added,
+				"duplicates": summary.SMS.Total.Duplicates,
+				"rejected":   summary.SMS.Total.Rejected,
+				"errors":     summary.SMS.Total.Errors,
+			},
+			"years": summary.SMS.YearStats,
+		},
+		"attachments": map[string]interface{}{
+			"total":      summary.Attachments.Total.Total,
+			"new":        summary.Attachments.Total.New,
+			"duplicates": summary.Attachments.Total.Duplicates,
+		},
+		"rejections": summary.Rejections,
 		"rejection_files": summary.RejectionFiles,
 	}
 	
