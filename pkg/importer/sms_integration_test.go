@@ -42,7 +42,10 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer := NewSMSImporter(options)
+	importer, err := NewImporter(options)
+	if err != nil {
+		t.Fatalf("Failed to create importer: %v", err)
+	}
 
 	// Import the file
 	summary, err := importer.Import()
@@ -51,8 +54,8 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 	}
 
 	// Verify import summary
-	if summary.Total.Added != 2 {
-		t.Errorf("Expected 2 messages added, got %d", summary.Total.Added)
+	if summary.SMS.Total.Added != 2 {
+		t.Errorf("Expected 2 messages added, got %d", summary.SMS.Total.Added)
 	}
 
 	// Check if SMS file was created in repository

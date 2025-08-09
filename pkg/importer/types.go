@@ -20,6 +20,20 @@ type ImportSummary struct {
 	Duration time.Duration
 }
 
+// SummaryFile represents the repository summary written to summary.yaml
+type SummaryFile struct {
+	LastUpdated string    `yaml:"last_updated"`
+	Statistics  RepoStats `yaml:"statistics"`
+}
+
+// RepoStats contains repository-wide statistics
+type RepoStats struct {
+	TotalCalls       int   `yaml:"total_calls"`
+	TotalSMS         int   `yaml:"total_sms"`
+	TotalAttachments int   `yaml:"total_attachments"`
+	YearsCovered     []int `yaml:"years_covered"`
+}
+
 // EntityStats tracks statistics for a specific entity type (calls or SMS)
 type EntityStats struct {
 	// Per-year statistics

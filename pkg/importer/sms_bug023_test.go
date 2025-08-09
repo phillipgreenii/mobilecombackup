@@ -39,10 +39,13 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer := NewSMSImporter(options)
+	importer, err := NewImporter(options)
+	if err != nil {
+		t.Fatalf("Failed to create importer: %v", err)
+	}
 
 	// Import the file
-	_, err := importer.Import()
+	_, err = importer.Import()
 	if err != nil {
 		t.Fatalf("Import failed: %v", err)
 	}

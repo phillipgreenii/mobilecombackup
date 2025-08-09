@@ -130,6 +130,16 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 	// Update final statistics
 	imp.finalizeSummary(summary)
 	
+	// Generate summary.yaml file (only in non-dry-run mode)
+	if !imp.options.DryRun {
+		if err := generateSummaryFile(imp.options.RepoRoot); err != nil {
+			// Log error but don't fail the import
+			if !imp.options.Quiet {
+				fmt.Printf("Warning: Failed to generate summary.yaml: %v\n", err)
+			}
+		}
+	}
+	
 	summary.Duration = time.Since(startTime)
 	return summary, nil
 }

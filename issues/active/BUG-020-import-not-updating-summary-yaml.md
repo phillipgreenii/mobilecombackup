@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-08
-- **Fixed**: 
+- **Fixed**: 2025-08-09
 - **Priority**: high
 - **Severity**: major
 
@@ -57,12 +57,12 @@ The import command successfully processes all data and updates the repository bu
 5. Skip summary generation in dry-run mode
 
 ## Tasks
-- [ ] Define SummaryFile struct in importer package
-- [ ] Create summary generation function that counts entities from repository
-- [ ] Implement year detection from existing year files
-- [ ] Add summary writing at end of Import() method
-- [ ] Handle dry-run mode (skip writing)
-- [ ] Write unit tests for summary generation
+- [x] Define SummaryFile struct in importer package
+- [x] Create summary generation function that counts entities from repository
+- [x] Implement year detection from existing year files
+- [x] Add summary writing at end of Import() method
+- [x] Handle dry-run mode (skip writing)
+- [x] Write unit tests for summary generation
 - [ ] Write integration tests verifying summary.yaml creation
 - [ ] Update README with summary.yaml documentation
 
