@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 	
 	"gopkg.in/yaml.v3"
@@ -14,21 +16,52 @@ import (
 // XMLRejectionWriter writes rejected entries to XML files
 type XMLRejectionWriter struct {
 	repoRoot string
+	dirOnce  sync.Once
+	dirErr   error
 }
 
 // NewXMLRejectionWriter creates a new XML rejection writer
 func NewXMLRejectionWriter(repoRoot string) *XMLRejectionWriter {
-	// Ensure rejected directory exists
-	rejectedDir := filepath.Join(repoRoot, "rejected")
-	os.MkdirAll(rejectedDir, 0755)
-	
+	// Don't create directory here - only create it when needed
 	return &XMLRejectionWriter{
 		repoRoot: repoRoot,
 	}
 }
 
+// ensureRejectedDirectory creates the rejected directory structure on first use
+func (w *XMLRejectionWriter) ensureRejectedDirectory() error {
+	w.dirOnce.Do(func() {
+		// Create main rejected directory
+		rejectedDir := filepath.Join(w.repoRoot, "rejected")
+		if err := os.MkdirAll(rejectedDir, 0755); err != nil {
+			w.dirErr = fmt.Errorf("failed to create rejected directory: %w", err)
+			return
+		}
+		
+		// Create subdirectories for calls and sms
+		for _, subdir := range []string{"calls", "sms"} {
+			path := filepath.Join(rejectedDir, subdir)
+			if err := os.MkdirAll(path, 0755); err != nil {
+				w.dirErr = fmt.Errorf("failed to create rejected/%s directory: %w", subdir, err)
+				return
+			}
+		}
+	})
+	return w.dirErr
+}
+
 // WriteRejections writes rejected entries to a file
 func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []RejectedEntry) (string, error) {
+	// Only create directories if we have rejections to write
+	if len(rejections) == 0 {
+		return "", nil
+	}
+	
+	// Ensure rejected directory exists
+	if err := w.ensureRejectedDirectory(); err != nil {
+		return "", err
+	}
+	
 	// Calculate hash of original file
 	hash, err := w.hashFile(originalFile)
 	if err != nil {
@@ -43,20 +76,26 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 	ext := filepath.Ext(baseName)
 	nameNoExt := baseName[:len(baseName)-len(ext)]
 	
+	// Determine type subdirectory
+	var typeDir string
+	if strings.Contains(nameNoExt, "call") {
+		typeDir = "calls"
+	} else if strings.Contains(nameNoExt, "sms") {
+		typeDir = "sms"
+	} else {
+		typeDir = "" // Root rejected directory
+	}
+	
 	// Create rejection file name
 	rejectedDir := filepath.Join(w.repoRoot, "rejected")
-	rejectFile := fmt.Sprintf("%s-%s-%s-rejects.xml", nameNoExt, hash[:8], timestamp)
+	if typeDir != "" {
+		rejectedDir = filepath.Join(rejectedDir, typeDir)
+	}
+	rejectFile := fmt.Sprintf("%s-%s-%s.xml", nameNoExt, hash[:8], timestamp)
 	rejectPath := filepath.Join(rejectedDir, rejectFile)
 	
 	// Write XML rejection file
-	if err := w.writeXMLRejections(rejectPath, rejections, nameNoExt); err != nil {
-		return "", err
-	}
-	
-	// Write violations YAML file
-	violationsFile := fmt.Sprintf("%s-%s-%s-violations.yaml", nameNoExt, hash[:8], timestamp)
-	violationsPath := filepath.Join(rejectedDir, violationsFile)
-	if err := w.writeViolations(violationsPath, rejections); err != nil {
+	if err := w.writeXMLRejections(rejectPath, rejections, typeDir); err != nil {
 		return "", err
 	}
 	
@@ -80,7 +119,7 @@ func (w *XMLRejectionWriter) hashFile(filename string) (string, error) {
 }
 
 // writeXMLRejections writes rejected entries as XML
-func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []RejectedEntry, rootElement string) error {
+func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []RejectedEntry, entryType string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create rejection file: %w", err)
@@ -91,9 +130,14 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
 	
 	// Determine root element name based on type
-	rootName := rootElement + "es" // calls -> callses, sms -> smses
-	if rootElement == "sms" {
+	var rootName string
+	switch entryType {
+	case "calls":
+		rootName = "calls"
+	case "sms":
 		rootName = "smses"
+	default:
+		rootName = "entries" // Generic fallback
 	}
 	
 	// Write opening tag
