@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-08
-- **Fixed**: 
+- **Fixed**: 2025-08-09
 - **Priority**: high
 - **Severity**: major
 
@@ -76,13 +76,13 @@ The manifest generation functionality was not implemented in the import command.
 5. Replace entire manifest on each import (no merging)
 
 ## Tasks
-- [ ] Define Go structs for files.yaml (FileManifest, FileEntry)
-- [ ] Implement repository walker to collect all files
-- [ ] Implement SHA-256 checksum calculation
-- [ ] Create manifest writer using yaml.v3
-- [ ] Integrate manifest generation at end of import workflow
+- [x] Define Go structs for files.yaml (FileManifest, FileEntry)
+- [x] Implement repository walker to collect all files
+- [x] Implement SHA-256 checksum calculation
+- [x] Create manifest writer using yaml.v3
+- [x] Integrate manifest generation at end of import workflow
 - [ ] Add manifest generation to import summary stats
-- [ ] Write unit tests for manifest generation
+- [x] Write unit tests for manifest generation
 - [ ] Write integration tests for import with manifest
 - [ ] Update validation command to verify files.yaml correctness
 

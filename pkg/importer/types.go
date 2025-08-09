@@ -34,6 +34,22 @@ type RepoStats struct {
 	YearsCovered     []int `yaml:"years_covered"`
 }
 
+// FileManifest represents the files.yaml manifest
+type FileManifest struct {
+	Version   string      `yaml:"version"`
+	Generated string      `yaml:"generated"`
+	Generator string      `yaml:"generator"`
+	Files     []FileEntry `yaml:"files"`
+}
+
+// FileEntry represents a single file in the manifest
+type FileEntry struct {
+	Name     string `yaml:"name"`
+	Size     int64  `yaml:"size"`
+	Checksum string `yaml:"checksum"`
+	Modified string `yaml:"modified"`
+}
+
 // EntityStats tracks statistics for a specific entity type (calls or SMS)
 type EntityStats struct {
 	// Per-year statistics

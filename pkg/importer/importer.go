@@ -138,6 +138,14 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 				fmt.Printf("Warning: Failed to generate summary.yaml: %v\n", err)
 			}
 		}
+		
+		// Generate files.yaml manifest
+		if err := generateManifestFile(imp.options.RepoRoot, "dev"); err != nil {
+			// Log error but don't fail the import
+			if !imp.options.Quiet {
+				fmt.Printf("Warning: Failed to generate files.yaml: %v\n", err)
+			}
+		}
 	}
 	
 	summary.Duration = time.Since(startTime)
