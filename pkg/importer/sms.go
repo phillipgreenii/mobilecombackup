@@ -262,7 +262,8 @@ func (si *SMSImporter) WriteRepository() error {
 		}
 
 		// Create writer for this year
-		writer, err := sms.NewXMLSMSWriter(si.options.RepoRoot)
+		smsDir := filepath.Join(si.options.RepoRoot, "sms")
+		writer, err := sms.NewXMLSMSWriter(smsDir)
 		if err != nil {
 			return fmt.Errorf("failed to create writer: %w", err)
 		}

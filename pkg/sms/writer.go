@@ -66,8 +66,12 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 		switch m := msg.(type) {
 		case *SMS:
 			smsMessages = append(smsMessages, m)
+		case SMS:
+			smsMessages = append(smsMessages, &m)
 		case *MMS:
 			mmsMessages = append(mmsMessages, m)
+		case MMS:
+			mmsMessages = append(mmsMessages, &m)
 		}
 	}
 	
