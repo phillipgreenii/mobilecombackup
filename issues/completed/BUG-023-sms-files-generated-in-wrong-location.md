@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-08
-- **Fixed**: 
+- **Fixed**: 2025-08-09 (fixed as part of BUG-016)
 - **Priority**: high
 - **Severity**: major
 
@@ -44,23 +44,30 @@ repository/
 
 ## Root Cause Analysis
 ### Investigation Notes
-Likely an issue with path construction in the SMS writer or import command.
+This bug was discovered to be the same root cause as BUG-016. The SMS writer was being initialized with the repository root path instead of the SMS subdirectory path.
 
 ### Root Cause
-To be determined during investigation. Probably missing path join with "sms" subdirectory.
+In `pkg/importer/sms.go` line 265, the SMS writer was being created with:
+```go
+writer, err := sms.NewXMLSMSWriter(si.options.RepoRoot)
+```
+
+This caused files to be written to the repository root instead of the sms/ subdirectory.
 
 ## Fix Approach
-1. Locate where SMS file paths are constructed
-2. Ensure proper path joining with sms/ subdirectory
-3. Verify directory is created before writing files
+Fixed as part of BUG-016 by updating the SMS writer initialization to:
+```go
+smsDir := filepath.Join(si.options.RepoRoot, "sms")
+writer, err := sms.NewXMLSMSWriter(smsDir)
+```
 
 ## Tasks
-- [ ] Identify SMS file path construction code
-- [ ] Fix path to include sms/ subdirectory
-- [ ] Ensure sms/ directory exists before writing
-- [ ] Add tests for correct file placement
-- [ ] Test with multiple year files
-- [ ] Update integration tests
+- [x] Identify SMS file path construction code (found in pkg/importer/sms.go)
+- [x] Fix path to include sms/ subdirectory (fixed in BUG-016)
+- [x] Ensure sms/ directory exists before writing (writer creates it)
+- [x] Add tests for correct file placement (TestSMSImporter_BUG023_FilesInCorrectDirectory)
+- [x] Test with multiple year files (covered by existing tests)
+- [x] Update integration tests (TestSMSImporter_BUG016_MessagesNotWritten)
 
 ## Testing
 ### Regression Tests
@@ -79,9 +86,9 @@ To be determined during investigation. Probably missing path join with "sms" sub
 Users can manually move the files from root to sms/ directory after import.
 
 ## Related Issues
-- FEAT-009: Import SMS functionality (where the bug exists)
+- BUG-016: Imported SMS missing inner elements (fixed both issues with same change)
+- FEAT-009: Import SMS functionality (where the bug existed)
 - FEAT-010: Add Import subcommand
-- Calls import works correctly, so can reference that implementation
 
 ## Notes
-This is a critical bug that breaks the expected repository structure. The fix should be straightforward - likely just needs proper path construction.
+This bug was fixed as part of BUG-016. The same code change that fixed SMS messages not being written also fixed the incorrect file location issue. Both bugs had the same root cause - incorrect SMS writer initialization.
