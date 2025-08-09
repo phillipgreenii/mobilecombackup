@@ -1,4 +1,4 @@
-Using the defined issue workflow, create a new feature: $ARGUMENTS. 
+Use agent product-doc-sync. Using the defined issue workflow, create a new feature: $ARGUMENTS. 
 
 1. Find the highest issue number across all FEAT-XXX and BUG-XXX files in the issues/ directory
 2. Use the next sequential number for the new feature

@@ -1,1 +1,1 @@
-Review issue $ARGUMENTS. Ask any questions you may have about the issue.  Make any suggestions you have for improvements.
+Use agent spec-review-engineer to review issue $ARGUMENTS. Ask any questions about the issue.  Make any suggestions for improvements. The goal is to ensure the issue is complete in terms of product readiness.  It is ok if there are open implementation questions, those will be completed later.
