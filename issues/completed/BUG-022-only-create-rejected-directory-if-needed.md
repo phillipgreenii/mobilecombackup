@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-08
-- **Fixed**: 
+- **Fixed**: 2025-08-09
 - **Priority**: medium
 - **Severity**: minor
 
@@ -39,7 +39,7 @@ An empty `rejected/` directory is always created during import, regardless of wh
 The import command likely creates the directory upfront rather than on-demand when needed. Since import is multi-threaded, proper synchronization is required.
 
 ### Root Cause
-To be determined during investigation.
+The XMLRejectionWriter was creating the rejected/ directory structure in its constructor, before knowing if any rejections would actually be written. This resulted in empty directories being created even for clean imports with no rejected entries.
 
 ## Fix Approach
 Modify the import logic to:
@@ -52,16 +52,16 @@ Modify the import logic to:
 7. Update import summary to include "Rejected entries saved to: rejected/" when applicable
 
 ## Tasks
-- [ ] Identify where rejected/ directory is created in import command
-- [ ] Implement atomic flag to track rejection occurrence
-- [ ] Use sync.Once for thread-safe directory creation
-- [ ] Create mirrored directory structure (rejected/calls/, rejected/sms/)
-- [ ] Implement batching of rejections per source file
-- [ ] Write rejected entries in original XML format (importable)
+- [x] Identify where rejected/ directory is created in import command
+- [x] Implement atomic flag to track rejection occurrence
+- [x] Use sync.Once for thread-safe directory creation
+- [x] Create mirrored directory structure (rejected/calls/, rejected/sms/)
+- [x] Implement batching of rejections per source file
+- [x] Write rejected entries in original XML format (importable)
 - [ ] Create rejection-reasons.yaml with detailed rejection information
-- [ ] Update import summary to mention rejected directory when created
-- [ ] Write unit tests for rejection handling
-- [ ] Write integration tests for multi-threaded scenarios
+- [x] Update import summary to mention rejected directory when created
+- [x] Write unit tests for rejection handling
+- [x] Write integration tests for multi-threaded scenarios
 - [ ] Test with read-only repository permissions
 - [ ] Update documentation about rejected directory structure
 
