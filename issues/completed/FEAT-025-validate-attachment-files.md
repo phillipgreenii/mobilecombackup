@@ -1,7 +1,7 @@
 # FEAT-025: Add Format Validation to Attachment Files
 
 ## Status
-- **Completed**: Not yet started
+- **Completed**: 2025-08-10
 - **Priority**: medium
 
 ## Overview
@@ -99,16 +99,16 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
   - Use existing violation reporting mechanism
 
 ## Tasks
-- [ ] Add `detectFileFormat()` function in `pkg/validation/attachments.go`
-- [ ] Add `FormatMismatch` and `UnknownFormat` to ViolationType constants
-- [ ] Modify `AttachmentsValidatorImpl` struct to include `smsReader` field
-- [ ] Update `NewAttachmentsValidator()` to accept SMSReader parameter
-- [ ] Add `getAttachmentMimeTypes()` method to retrieve MIME types from SMS/MMS
-- [ ] Extend `ValidateAttachmentIntegrity()` to include format checking after hash verification
-- [ ] Update repository validator to pass SMSReader to AttachmentsValidator
-- [ ] Write unit tests for format detection function
-- [ ] Update existing attachment validator tests to include format validation
-- [ ] Update validate command to create SMSReader for attachment validation
+- [x] Add `detectFileFormat()` function in `pkg/validation/attachments.go`
+- [x] Add `FormatMismatch` and `UnknownFormat` to ViolationType constants
+- [x] Modify `AttachmentsValidatorImpl` struct to include `smsReader` field
+- [x] Update `NewAttachmentsValidator()` to accept SMSReader parameter
+- [x] Add `getAttachmentMimeTypes()` method to retrieve MIME types from SMS/MMS
+- [x] Extend `ValidateAttachmentIntegrity()` to include format checking after hash verification
+- [x] Update repository validator to pass SMSReader to AttachmentsValidator
+- [x] Write unit tests for format detection function
+- [x] Update existing attachment validator tests to include format validation
+- [x] Update validate command to create SMSReader for attachment validation
 
 ## Testing
 ### Unit Tests
