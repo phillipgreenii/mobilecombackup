@@ -156,19 +156,22 @@ func (m *MMS) Timestamp() time.Time {
 
 // MMSPart represents a content part of an MMS
 type MMSPart struct {
-	Seq           int    `xml:"seq,attr"`
-	ContentType   string `xml:"ct,attr"`
-	Name          string `xml:"name,attr"`
-	Charset       string `xml:"chset,attr"`
-	ContentDisp   string `xml:"cd,attr"`
-	Filename      string `xml:"fn,attr"`
-	ContentId     string `xml:"cid,attr"`
-	ContentLoc    string `xml:"cl,attr"`
-	CttS          int    `xml:"ctt_s,attr"`
-	CttT          int    `xml:"ctt_t,attr"`
-	Text          string `xml:"text,attr"`
-	Data          string `xml:"data,attr"` // Base64 encoded data
-	AttachmentRef string // Path reference if attachment extracted
+	Seq             int    `xml:"seq,attr"`
+	ContentType     string `xml:"ct,attr"`
+	Name            string `xml:"name,attr"`
+	Charset         string `xml:"chset,attr"`
+	ContentDisp     string `xml:"cd,attr"`
+	Filename        string `xml:"fn,attr"`
+	ContentId       string `xml:"cid,attr"`
+	ContentLoc      string `xml:"cl,attr"`
+	CttS            int    `xml:"ctt_s,attr"`
+	CttT            int    `xml:"ctt_t,attr"`
+	Text            string `xml:"text,attr"`
+	Data            string `xml:"data,attr"`           // Base64 encoded data
+	Path            string `xml:"path,attr"`           // Repository-relative path to extracted attachment
+	OriginalSize    int64  `xml:"original_size,attr"`  // Size of decoded attachment in bytes  
+	ExtractionDate  string `xml:"extraction_date,attr"` // When attachment was extracted (ISO8601)
+	AttachmentRef   string // Internal field for tracking, not serialized
 }
 
 // MMSAddress represents an address in an MMS

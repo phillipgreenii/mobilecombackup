@@ -15,10 +15,13 @@ import (
 
 // SMSImporter handles SMS/MMS import operations
 type SMSImporter struct {
-	options         *ImportOptions
-	coalescer       coalescer.Coalescer[sms.MessageEntry]
-	smsWriter       *sms.XMLSMSWriter
-	contactsManager *contacts.ContactsManager
+	options              *ImportOptions
+	coalescer            coalescer.Coalescer[sms.MessageEntry]
+	smsWriter            *sms.XMLSMSWriter
+	contactsManager      *contacts.ContactsManager
+	attachmentExtractor  *sms.AttachmentExtractor
+	attachmentStats      *sms.AttachmentExtractionStats
+	contentTypeConfig    sms.ContentTypeConfig
 	// TODO: Implement rejection writer
 	// rejectWriter *XMLRejectionWriter
 }
@@ -27,9 +30,12 @@ type SMSImporter struct {
 // NewSMSImporter creates a new SMS importer
 func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) *SMSImporter {
 	return &SMSImporter{
-		options:         options,
-		coalescer:       coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager: contactsManager,
+		options:              options,
+		coalescer:            coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager:      contactsManager,
+		attachmentExtractor:  sms.NewAttachmentExtractor(options.RepoRoot),
+		attachmentStats:      sms.NewAttachmentExtractionStats(),
+		contentTypeConfig:    sms.GetDefaultContentTypeConfig(),
 	}
 }
 
@@ -126,6 +132,20 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 			// TODO: Write rejection to file
 			// Need to implement XMLRejectionWriter for SMS
 			return nil
+		}
+
+		// Extract attachments from MMS (after validation, before deduplication)
+		if mmsMsg, ok := msg.(*sms.MMS); ok {
+			extractionSummary, err := si.attachmentExtractor.ExtractAttachmentsFromMMS(mmsMsg, si.contentTypeConfig)
+			if err != nil {
+				// Reject the entire message if attachment extraction fails
+				summary.Rejected++
+				// TODO: Write rejection with reason "attachment-extraction-error"
+				return nil
+			}
+			
+			// Update overall attachment statistics
+			si.attachmentStats.AddMMSExtractionSummary(extractionSummary)
 		}
 
 		// Extract contact information for valid messages
@@ -281,12 +301,10 @@ func (si *SMSImporter) GetSummary() coalescer.Summary {
 
 // GetAttachmentStats returns attachment statistics
 func (si *SMSImporter) GetAttachmentStats() *AttachmentStat {
-	// TODO: Implement actual attachment tracking
-	// For now, return empty stats
 	return &AttachmentStat{
-		Total:      0,
-		New:        0,
-		Duplicates: 0,
+		Total:      si.attachmentStats.ExtractedCount + si.attachmentStats.ReferencedCount,
+		New:        si.attachmentStats.ExtractedCount,
+		Duplicates: si.attachmentStats.ReferencedCount,
 	}
 }
 

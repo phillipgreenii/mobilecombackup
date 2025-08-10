@@ -47,8 +47,11 @@ func (m MessageEntry) Hash() string {
 			fmt.Fprintf(h, "part%d_ct:%s|", i, part.ContentType)
 			fmt.Fprintf(h, "part%d_name:%s|", i, part.Name)
 			fmt.Fprintf(h, "part%d_text:%s|", i, part.Text)
-			// Don't include actual data content in hash (too large)
-			if part.Data != "" {
+			
+			// Include attachment path if extracted, otherwise indicate presence of data
+			if part.Path != "" {
+				fmt.Fprintf(h, "part%d_path:%s|", i, part.Path)
+			} else if part.Data != "" {
 				fmt.Fprintf(h, "part%d_has_data:true|", i)
 			}
 		}
