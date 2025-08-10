@@ -582,3 +582,118 @@ func TestDetectFileFormat(t *testing.T) {
 		t.Error("Expected error for file too small, got nil")
 	}
 }
+
+func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a test PNG file
+	pngHash := "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+	pngPath := filepath.Join("attachments", "ab", pngHash)
+	pngFullPath := filepath.Join(tempDir, pngPath)
+	
+	// Create directory structure
+	if err := os.MkdirAll(filepath.Dir(pngFullPath), 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	
+	// Write PNG data
+	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D}
+	if err := os.WriteFile(pngFullPath, pngData, 0644); err != nil {
+		t.Fatalf("Failed to write PNG file: %v", err)
+	}
+
+	// Mock attachment reader that verifies successfully
+	mockReader := &mockAttachmentReader{
+		attachments: []*attachments.Attachment{
+			{Hash: pngHash, Path: pngPath, Exists: true, Size: int64(len(pngData))},
+		},
+		verifyResults: map[string]bool{pngHash: true},
+	}
+
+	// Mock SMS reader with MMS that declares the attachment as JPEG (mismatch)
+	mms := &sms.MMS{
+		Parts: []sms.MMSPart{
+			{
+				ContentType:   "image/jpeg", // Declares as JPEG but file is PNG
+				AttachmentRef: pngHash,
+			},
+		},
+	}
+	
+	mockSMSReader := &mockSMSReader{
+		messages: map[int][]sms.Message{
+			2023: {mms},
+		},
+		allAttachmentRefs: make(map[string]bool),
+	}
+
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	violations := validator.ValidateAttachmentIntegrity()
+
+	// Should have one format mismatch violation
+	found := false
+	for _, v := range violations {
+		if v.Type == FormatMismatch {
+			found = true
+			if v.Expected != "image/jpeg" {
+				t.Errorf("Expected 'image/jpeg', got: %s", v.Expected)
+			}
+			if v.Actual != "image/png" {
+				t.Errorf("Expected 'image/png', got: %s", v.Actual)
+			}
+		}
+	}
+	
+	if !found {
+		t.Error("Expected format mismatch violation not found")
+	}
+}
+
+func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a test file with unknown format
+	unknownHash := "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+	unknownPath := filepath.Join("attachments", "fe", unknownHash)
+	unknownFullPath := filepath.Join(tempDir, unknownPath)
+	
+	// Create directory structure
+	if err := os.MkdirAll(filepath.Dir(unknownFullPath), 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	
+	// Write unknown format data
+	unknownData := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	if err := os.WriteFile(unknownFullPath, unknownData, 0644); err != nil {
+		t.Fatalf("Failed to write unknown file: %v", err)
+	}
+
+	// Mock attachment reader that verifies successfully
+	mockReader := &mockAttachmentReader{
+		attachments: []*attachments.Attachment{
+			{Hash: unknownHash, Path: unknownPath, Exists: true, Size: int64(len(unknownData))},
+		},
+		verifyResults: map[string]bool{unknownHash: true},
+	}
+
+	// Mock SMS reader with no MMS data
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	violations := validator.ValidateAttachmentIntegrity()
+
+	// Should have one unknown format violation
+	found := false
+	for _, v := range violations {
+		if v.Type == UnknownFormat {
+			found = true
+		}
+	}
+	
+	if !found {
+		t.Error("Expected unknown format violation not found")
+	}
+}
