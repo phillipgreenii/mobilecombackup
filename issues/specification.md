@@ -20,7 +20,10 @@ To remedy this, this code will focus on doing two things.
    - Any specified unprocessed backup file
 2. Entry Transformation
    - Validate entries and extract contact names from contact_name attributes
-   - Extract Images
+   - **Extract Attachments (FEAT-012)**: Extract user-attached content from MMS parts
+     - Filter by content type (extract images/videos/audio/documents, skip system files)
+     - Store in hash-based structure: `attachments/[first-2-chars]/[full-hash]`
+     - Update MMS parts with path references and metadata
    - Remove Duplicates (excluding contact_name from hash calculation)
 3. Order Entries
    - Sort by Timestamp (UTC)
@@ -108,6 +111,10 @@ SMS and MMS messages are stored as XML, schema is as follows:
               - `ctt_s`, `ctt_t`: content type start/type (typically "null")
               - `text`: text content or SMIL layout XML
               - `data`: base64-encoded binary data for attachments (images, etc.)
+              - **FEAT-012 Enhanced Fields (after attachment extraction):**
+                - `path`: repository-relative path to extracted attachment file
+                - `original_size`: size of decoded attachment in bytes
+                - `extraction_date`: ISO8601 timestamp when attachment was extracted
         - `addrs`: recipient addresses (for group MMS)
           - `addr`: individual address
             - attributes:
@@ -278,6 +285,20 @@ attachments/
 └── b2/
     └── b28fe7c6ab
 ```
+
+**Attachment Extraction Process (FEAT-012):**
+- Only user-attached content is extracted (images, videos, audio, documents)
+- System-generated content (SMIL, text, vCards) remains inline in MMS XML
+- Base64-encoded data is decoded and stored with SHA-256 hash-based naming
+- Files are deduplicated - multiple messages can reference the same attachment
+- MMS parts are updated with `path`, `original_size`, and `extraction_date` fields
+- Extraction occurs during SMS import after validation but before deduplication
+
+**Supported File Types:**
+- **Images**: JPEG, PNG, GIF, BMP, WebP
+- **Videos**: MP4, 3GPP, QuickTime, AVI
+- **Audio**: MPEG, MP4, AMR, WAV
+- **Documents**: PDF, Word, Excel, PowerPoint (Office formats)
 
 ## Important Notes
 
@@ -537,6 +558,8 @@ const (
     StructureViolation ViolationType = "structure_violation"
     MissingMarkerFile  ViolationType = "missing_marker_file"
     UnsupportedVersion ViolationType = "unsupported_version"
+    FormatMismatch     ViolationType = "format_mismatch"     // FEAT-025: File content doesn't match expected MIME type
+    UnknownFormat      ViolationType = "unknown_format"      // FEAT-025: Unrecognized file format
 )
 
 type Severity string
@@ -619,6 +642,10 @@ type PerformanceOptions struct {
 - Early termination on critical errors or unsupported versions
 - Context-aware cancellation support
 - Fixable violations with suggested fix content
+- **Format Validation (FEAT-025)**: Magic byte detection for PNG, JPEG, GIF, MP4, PDF formats
+  - Verifies file content matches expected MIME type from SMS/MMS metadata
+  - Always-on validation with minimal performance overhead (&lt;5%)
+  - Rejects unknown file formats to ensure repository integrity
 
 #### Phone Number Normalization
 - Removes all non-digit characters
@@ -1220,6 +1247,61 @@ type Coalescer[T Entry] interface {
    - Partition by year
    - Write atomically to repository
    - Save contacts.yaml with extracted names in unprocessed section
+
+#### Attachment Extraction (FEAT-012)
+
+The AttachmentExtractor module handles extraction of user-attached content from MMS messages during the SMS import process.
+
+**Integration Point:**
+- Attachment extraction occurs after validation but before deduplication
+- Only user-attached content is extracted (images, videos, audio, documents)
+- System-generated content (SMIL, text, vCards) is left inline
+
+**Content Type Filtering:**
+```go
+// Extractable content types
+ExtractableTypes: []string{
+    // Images
+    "image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp",
+    // Videos  
+    "video/mp4", "video/3gpp", "video/quicktime", "video/avi",
+    // Audio
+    "audio/mpeg", "audio/mp4", "audio/amr", "audio/wav",
+    // Documents
+    "application/pdf", "application/msword", 
+    "application/vnd.openxmlformats-*",
+}
+
+// Skipped content types (left inline)
+SkippedTypes: []string{
+    "application/smil",           // SMIL presentation layouts
+    "text/plain",                 // Message body text
+    "text/x-vCard",              // Contact cards
+    "application/vnd.wap.*",     // WAP protocol containers
+}
+```
+
+**Extraction Process:**
+1. Parse MMS parts for `data` attributes containing base64-encoded content
+2. Filter by content type (extract only user content, skip system content)
+3. Skip files smaller than 1KB (likely metadata)
+4. Decode base64 data and calculate SHA-256 hash
+5. Store in `attachments/[first-2-chars]/[full-hash]` structure
+6. Update MMS part with path reference and metadata
+7. Handle deduplication (reference existing files, extract only new ones)
+
+**Enhanced MMSPart Structure:**
+After extraction, MMS parts are updated with new fields:
+- `path`: Repository-relative path to extracted file
+- `original_size`: Size of decoded attachment in bytes
+- `extraction_date`: ISO8601 timestamp when extracted
+- `data` attribute is removed after successful extraction
+
+**Error Handling:**
+- Base64 decode failures: Reject entire SMS with reason "malformed-attachment"
+- File write failures: Reject entire SMS with reason "attachment-write-error"
+- Invalid/unknown content types: Skip extraction, leave data inline
+- Transaction semantics: If any user attachment fails, reject entire SMS
 
 ### Performance Characteristics
 

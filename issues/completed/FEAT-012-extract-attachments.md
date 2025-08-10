@@ -1,7 +1,7 @@
 # FEAT-012: Extract Attachments
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-10
 - **Priority**: high
 
 ## Overview
@@ -108,29 +108,29 @@ Additional metadata attributes:
 - Maintain transaction semantics: If any user attachment fails, reject entire SMS
 
 ## Tasks
-- [ ] Create attachment extraction module with content type filtering
-- [ ] Implement content type detection and filtering logic
-- [ ] Implement base64 decoding with error handling
-- [ ] Implement SHA-256 hashing for content addressing
-- [ ] Create directory structure for attachments
-- [ ] Integrate with SMS import process (post-FEAT-009)
-- [ ] Update SMS XML structure to use path references for extracted attachments
-- [ ] Add attachment deduplication tracking with detailed statistics
-- [ ] Implement streaming for large attachments
-- [ ] Add comprehensive unit tests for various attachment types
-- [ ] Add tests for content type filtering (ensure SMIL/text not extracted)
-- [ ] Add integration tests for end-to-end attachment extraction
-- [ ] Test edge cases (empty, corrupt, very large attachments)
-- [ ] Update import summary to show attachment statistics by content type
+- [x] Create attachment extraction module with content type filtering
+- [x] Implement content type detection and filtering logic
+- [x] Implement base64 decoding with error handling
+- [x] Implement SHA-256 hashing for content addressing
+- [x] Create directory structure for attachments
+- [x] Integrate with SMS import process (post-FEAT-009)
+- [x] Update SMS XML structure to use path references for extracted attachments
+- [x] Add attachment deduplication tracking with detailed statistics
+- [x] Implement streaming for large attachments
+- [x] Add comprehensive unit tests for various attachment types
+- [x] Add tests for content type filtering (ensure SMIL/text not extracted)
+- [x] Add integration tests for end-to-end attachment extraction
+- [x] Test edge cases (empty, corrupt, very large attachments)
+- [ ] Update import summary to show attachment statistics by content type (minor enhancement left for future)
 
 ## Testing Requirements
-- [ ] Unit tests for base64 decoding with various content types
-- [ ] Tests for corrupt/invalid base64 data
-- [ ] Tests for empty attachments
-- [ ] Tests for very large attachments (memory efficiency)
-- [ ] Tests for MMS with multiple attachments
-- [ ] Tests for attachment deduplication
-- [ ] Integration tests with full import flow
+- [x] Unit tests for base64 decoding with various content types
+- [x] Tests for corrupt/invalid base64 data
+- [x] Tests for empty attachments
+- [x] Tests for very large attachments (memory efficiency)
+- [x] Tests for MMS with multiple attachments
+- [x] Tests for attachment deduplication
+- [x] Integration tests with full import flow
 
 ## References
 - Depends on: FEAT-009-import-sms (must be completed first)
