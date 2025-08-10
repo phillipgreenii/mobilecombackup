@@ -15,15 +15,19 @@ To remedy this, this code will focus on doing two things.
 ### Expected Flow
 
 1. Load Files
-   - Read Exisiting Repository
+   - Read Existing Repository
+   - Load contacts.yaml including any existing unprocessed entries
    - Any specified unprocessed backup file
 2. Entry Transformation
+   - Validate entries and extract contact names from contact_name attributes
    - Extract Images
-   - Remove Duplicates
+   - Remove Duplicates (excluding contact_name from hash calculation)
 3. Order Entries
    - Sort by Timestamp (UTC)
    - Partition by Year
 4. Overwrite Repository
+   - Write processed entries to repository
+   - Save contacts.yaml with extracted contact names in unprocessed section
 
 ## File / Directory Schemas
 
@@ -133,7 +137,7 @@ repository/
 
 #### contacts.yaml
 
-`contacts.yaml` contains mapping from number to contact name.
+`contacts.yaml` contains mapping from number to contact name, plus an optional unprocessed section for contact names extracted during import.
 
 ```yaml
 contacts:
@@ -144,7 +148,19 @@ contacts:
     numbers:
       - "8888888888"
       - "9999999999"
+
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5559876543: Jane Smith"
 ```
+
+**Unprocessed Section:**
+- Contains contact names extracted from imported messages
+- Format: "phone: name" strings for easy manual editing
+- Multiple names per phone number are preserved for user review
+- Phone numbers are normalized before storage
+- Requires manual review and promotion to main contacts section
 
 #### files.yaml
 
@@ -287,7 +303,7 @@ The phone number (`number` for calls, `address` for SMS/MMS) should be used as t
 ### Hash Algorithm
 SHA-256 will be used consistently for:
 - Attachment content hashing and storage
-- Entry deduplication (excluding `readable_date` and after attachment extraction)
+- Entry deduplication (excluding `readable_date`, `contact_name` and after attachment extraction)
 
 ## Reader Interfaces
 
@@ -418,12 +434,47 @@ type ContactsReader interface {
 - Special handling for `<unknown>` contact designation
 - Duplicate number detection and validation
 - Graceful handling of missing contacts.yaml files
+- Unprocessed contact extraction and storage during import
+- Atomic file operations for data integrity
+- Support for multiple name variations per phone number
+
+### ContactsWriter Interface
+
+The ContactsWriter provides functionality for writing contact information to the repository:
+
+```go
+type ContactsWriter interface {
+	// SaveContacts writes the current state to contacts.yaml
+	SaveContacts(path string) error
+
+	// AddUnprocessedContact adds a contact to the unprocessed section
+	AddUnprocessedContact(phone, name string)
+
+	// GetUnprocessedContacts returns all unprocessed contacts
+	GetUnprocessedContacts() map[string][]string
+}
+```
+
+**Key Features:**
+- Contact name extraction during import process
+- Unprocessed section management for manual review workflow
+- Phone number normalization for consistent storage
+- Atomic file operations to prevent data loss
+- Preservation of existing processed contacts and unprocessed entries
+- Support for multiple name variations per phone number
+- Integration with SMS, MMS, and call import processes
 
 #### Contact Structure
 ```go
 type Contact struct {
     Name    string   `yaml:"name"`
     Numbers []string `yaml:"numbers"`
+}
+
+// ContactsData represents the YAML structure of contacts.yaml
+type ContactsData struct {
+    Contacts    []*Contact `yaml:"contacts"`
+    Unprocessed []string   `yaml:"unprocessed,omitempty"`
 }
 ```
 
@@ -1154,17 +1205,21 @@ type Coalescer[T Entry] interface {
 #### Import Process
 
 1. **Repository Validation**: Ensure valid structure before import
-2. **Load Existing Data**: Build deduplication index from repository
+2. **Load Existing Data**: 
+   - Build deduplication index from repository
+   - Load contacts.yaml including existing unprocessed entries
 3. **Process Files**: 
    - Stream XML parsing for memory efficiency
    - Validate each entry
-   - Check for duplicates via hash
+   - Extract contact names after validation but before deduplication
+   - Check for duplicates via hash (excluding contact_name)
    - Accumulate valid entries
 4. **Single Write Operation**:
    - Merge existing and new entries
    - Sort by timestamp (stable for same timestamps)
    - Partition by year
    - Write atomically to repository
+   - Save contacts.yaml with extracted names in unprocessed section
 
 ### Performance Characteristics
 
@@ -1172,4 +1227,92 @@ type Coalescer[T Entry] interface {
 - **Thread Safety**: Concurrent-safe coalescer operations
 - **Single Write**: Repository updated only once after all processing
 - **Error Resilience**: Continue on individual failures, track statistics
+
+## Manual Review Workflow for Extracted Contacts
+
+After importing messages with contact names, users should follow this workflow to review and organize extracted contacts:
+
+### 1. Review Extracted Contacts
+After running import, check `contacts.yaml` for the `unprocessed` section:
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5551234567: J. Doe"
+  - "5559876543: Jane Smith"
+```
+
+### 2. Identify Duplicate Variations
+Look for the same phone number with different name variations:
+- Multiple entries for `5551234567` suggest the same person with different name formats
+- Decide which name is the canonical/preferred version
+
+### 3. Manual Editing Process
+Edit `contacts.yaml` to promote names from `unprocessed` to the main `contacts` section:
+
+**Before:**
+```yaml
+contacts:
+  - name: "Existing Contact"
+    numbers: ["5550000000"]
+
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5559876543: Jane Smith"
+```
+
+**After manual review:**
+```yaml
+contacts:
+  - name: "Existing Contact"
+    numbers: ["5550000000"]
+  - name: "John Doe"  # Promoted from unprocessed
+    numbers: ["5551234567"]
+  - name: "Jane Smith"  # Promoted from unprocessed
+    numbers: ["5559876543"]
+
+unprocessed:
+  # Removed processed entries, keep any that need further review
+```
+
+### 4. Best Practices
+- **Consolidate variations**: Choose one canonical name per person
+- **Verify phone numbers**: Ensure numbers are correct before promoting
+- **Keep context**: Use message timestamps to help identify contacts
+- **Incremental review**: Process a few contacts at a time to avoid overwhelm
+- **Backup first**: Keep a backup of contacts.yaml before major edits
+
+### 5. Common Scenarios
+
+**Scenario 1: Same person, multiple name formats**
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5551234567: J. Doe"
+```
+**Resolution**: Choose "John Doe" as canonical, remove duplicates
+
+**Scenario 2: Unknown contacts**
+```yaml
+unprocessed:
+  - "5559999999: Unknown"
+  - "5558888888: Mom"
+```
+**Resolution**: Keep "Mom", research or skip "Unknown"
+
+**Scenario 3: Business vs personal**
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Acme Corp"
+```
+**Resolution**: Determine if John works at Acme, choose appropriate name
+
+### 6. Future Import Behavior
+- Subsequent imports will add new unprocessed entries
+- Existing processed contacts remain in main section
+- New variations of existing numbers will still appear in unprocessed
+- Manual review process repeats for new entries only
 
