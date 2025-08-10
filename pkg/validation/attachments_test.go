@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
 // mockAttachmentReader implements AttachmentReader for testing
@@ -89,6 +90,7 @@ func (m *mockAttachmentReader) ValidateAttachmentStructure() error {
 	return m.structureError
 }
 
+
 func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -97,7 +99,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 		attachments: []*attachments.Attachment{},
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	violations := validator.ValidateAttachmentsStructure()
 
 	// Empty repository should have no violations
@@ -145,7 +151,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(
 		listError: fmt.Errorf("directory not found"),
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	violations := validator.ValidateAttachmentsStructure()
 
 	// Should have warning for missing directory
@@ -209,7 +219,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 		},
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have violations for missing and corrupted files
@@ -262,7 +276,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity_VerificationError(
 		},
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have violation for verification error
@@ -310,7 +328,11 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 		},
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	violations := validator.ValidateAttachmentReferences(referencedHashes)
 
 	// Should have violations for:
@@ -375,7 +397,11 @@ func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 		orphanedAttachments: expectedOrphaned,
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 	orphaned, err := validator.GetOrphanedAttachments(referencedHashes)
 
 	if err != nil {
@@ -399,7 +425,11 @@ func TestAttachmentsValidatorImpl_ErrorHandling(t *testing.T) {
 		listError: fmt.Errorf("failed to list attachments"),
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader)
+	mockSMSReader := &mockSMSReader{
+		messages:          make(map[int][]sms.Message),
+		allAttachmentRefs: make(map[string]bool),
+	}
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
 
 	// Test integrity validation with list error
 	violations := validator.ValidateAttachmentIntegrity()
@@ -426,5 +456,129 @@ func TestAttachmentsValidatorImpl_ErrorHandling(t *testing.T) {
 	_, err := validator.GetOrphanedAttachments(make(map[string]bool))
 	if err == nil {
 		t.Error("Expected error from GetOrphanedAttachments")
+	}
+}
+
+func TestDetectFileFormat(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Test PNG detection
+	pngFile := filepath.Join(tempDir, "test.png")
+	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52} // PNG header
+	if err := os.WriteFile(pngFile, pngData, 0644); err != nil {
+		t.Fatalf("Failed to write PNG test file: %v", err)
+	}
+
+	format, err := DetectFileFormat(pngFile)
+	if err != nil {
+		t.Errorf("Expected no error for PNG file, got: %v", err)
+	}
+	if format != "image/png" {
+		t.Errorf("Expected 'image/png', got: %s", format)
+	}
+
+	// Test JPEG detection
+	jpegFile := filepath.Join(tempDir, "test.jpg")
+	jpegData := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46} // JPEG header
+	if err := os.WriteFile(jpegFile, jpegData, 0644); err != nil {
+		t.Fatalf("Failed to write JPEG test file: %v", err)
+	}
+
+	format, err = DetectFileFormat(jpegFile)
+	if err != nil {
+		t.Errorf("Expected no error for JPEG file, got: %v", err)
+	}
+	if format != "image/jpeg" {
+		t.Errorf("Expected 'image/jpeg', got: %s", format)
+	}
+
+	// Test GIF detection
+	gifFile := filepath.Join(tempDir, "test.gif")
+	gifData := []byte{0x47, 0x49, 0x46, 0x38, 0x39, 0x61} // GIF89a header
+	if err := os.WriteFile(gifFile, gifData, 0644); err != nil {
+		t.Fatalf("Failed to write GIF test file: %v", err)
+	}
+
+	format, err = DetectFileFormat(gifFile)
+	if err != nil {
+		t.Errorf("Expected no error for GIF file, got: %v", err)
+	}
+	if format != "image/gif" {
+		t.Errorf("Expected 'image/gif', got: %s", format)
+	}
+
+	// Test MP4 detection
+	mp4File := filepath.Join(tempDir, "test.mp4")
+	mp4Data := []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x31} // MP4 header with ftyp at offset 4
+	if err := os.WriteFile(mp4File, mp4Data, 0644); err != nil {
+		t.Fatalf("Failed to write MP4 test file: %v", err)
+	}
+
+	format, err = DetectFileFormat(mp4File)
+	if err != nil {
+		t.Errorf("Expected no error for MP4 file, got: %v", err)
+	}
+	if format != "video/mp4" {
+		t.Errorf("Expected 'video/mp4', got: %s", format)
+	}
+
+	// Test PDF detection
+	pdfFile := filepath.Join(tempDir, "test.pdf")
+	pdfData := []byte{0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34} // %PDF-1.4 header
+	if err := os.WriteFile(pdfFile, pdfData, 0644); err != nil {
+		t.Fatalf("Failed to write PDF test file: %v", err)
+	}
+
+	format, err = DetectFileFormat(pdfFile)
+	if err != nil {
+		t.Errorf("Expected no error for PDF file, got: %v", err)
+	}
+	if format != "application/pdf" {
+		t.Errorf("Expected 'application/pdf', got: %s", format)
+	}
+
+	// Test unknown format
+	unknownFile := filepath.Join(tempDir, "test.unknown")
+	unknownData := []byte{0x01, 0x02, 0x03, 0x04, 0x05} // Unknown format
+	if err := os.WriteFile(unknownFile, unknownData, 0644); err != nil {
+		t.Fatalf("Failed to write unknown test file: %v", err)
+	}
+
+	_, err = DetectFileFormat(unknownFile)
+	if err == nil {
+		t.Error("Expected error for unknown file format, got nil")
+	}
+	if err != nil && err.Error() != "unknown file format" {
+		t.Errorf("Expected 'unknown file format' error, got: %v", err)
+	}
+
+	// Test file not found
+	nonExistentFile := filepath.Join(tempDir, "nonexistent.txt")
+	_, err = DetectFileFormat(nonExistentFile)
+	if err == nil {
+		t.Error("Expected error for non-existent file, got nil")
+	}
+
+	// Test empty file
+	emptyFile := filepath.Join(tempDir, "empty.txt")
+	if err := os.WriteFile(emptyFile, []byte{}, 0644); err != nil {
+		t.Fatalf("Failed to write empty test file: %v", err)
+	}
+
+	_, err = DetectFileFormat(emptyFile)
+	if err == nil {
+		t.Error("Expected error for empty file, got nil")
+	}
+
+	// Test file too small for signature
+	smallFile := filepath.Join(tempDir, "small.txt")
+	smallData := []byte{0x89} // Too small for PNG signature
+	if err := os.WriteFile(smallFile, smallData, 0644); err != nil {
+		t.Fatalf("Failed to write small test file: %v", err)
+	}
+
+	_, err = DetectFileFormat(smallFile)
+	if err == nil {
+		t.Error("Expected error for file too small, got nil")
 	}
 }

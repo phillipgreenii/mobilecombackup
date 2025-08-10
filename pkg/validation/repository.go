@@ -55,7 +55,7 @@ func NewRepositoryValidator(
 		checksumValidator:    NewChecksumValidator(repositoryRoot),
 		callsValidator:       NewCallsValidator(repositoryRoot, callsReader),
 		smsValidator:         NewSMSValidator(repositoryRoot, smsReader),
-		attachmentsValidator: NewAttachmentsValidator(repositoryRoot, attachmentReader),
+		attachmentsValidator: NewAttachmentsValidator(repositoryRoot, attachmentReader, smsReader),
 		contactsValidator:    NewContactsValidator(repositoryRoot, contactsReader),
 	}
 }

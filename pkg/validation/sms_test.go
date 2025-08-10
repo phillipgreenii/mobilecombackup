@@ -27,7 +27,7 @@ func (m *mockSMSReader) ReadMessages(year int) ([]sms.Message, error) {
 	return nil, fmt.Errorf("no messages for year %d", year)
 }
 
-func (m *mockSMSReader) StreamMessages(year int, callback func(sms.Message) error) error {
+func (m *mockSMSReader) StreamMessagesForYear(year int, callback func(sms.Message) error) error {
 	if messageList, exists := m.messages[year]; exists {
 		for _, message := range messageList {
 			if err := callback(message); err != nil {

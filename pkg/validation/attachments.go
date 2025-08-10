@@ -2,9 +2,12 @@ package validation
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
 // AttachmentsValidator validates attachments directory and files using AttachmentReader
@@ -26,13 +29,15 @@ type AttachmentsValidator interface {
 type AttachmentsValidatorImpl struct {
 	repositoryRoot   string
 	attachmentReader attachments.AttachmentReader
+	smsReader        sms.SMSReader
 }
 
 // NewAttachmentsValidator creates a new attachments validator
-func NewAttachmentsValidator(repositoryRoot string, attachmentReader attachments.AttachmentReader) AttachmentsValidator {
+func NewAttachmentsValidator(repositoryRoot string, attachmentReader attachments.AttachmentReader, smsReader sms.SMSReader) AttachmentsValidator {
 	return &AttachmentsValidatorImpl{
 		repositoryRoot:   repositoryRoot,
 		attachmentReader: attachmentReader,
+		smsReader:        smsReader,
 	}
 }
 
@@ -85,7 +90,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 	return violations
 }
 
-// ValidateAttachmentIntegrity verifies attachment content matches hashes
+// ValidateAttachmentIntegrity verifies attachment content matches hashes and validates file formats
 func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationViolation {
 	var violations []ValidationViolation
 
@@ -99,6 +104,19 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 			Message:  fmt.Sprintf("Failed to list attachments for integrity check: %v", err),
 		})
 		return violations
+	}
+
+	// Get MIME type mappings from SMS/MMS data
+	attachmentMimeTypes, err := v.getAttachmentMimeTypes()
+	if err != nil {
+		violations = append(violations, ValidationViolation{
+			Type:     StructureViolation,
+			Severity: SeverityError,
+			File:     "attachments/",
+			Message:  fmt.Sprintf("Failed to get attachment MIME types: %v", err),
+		})
+		// Continue with validation but without format checking
+		attachmentMimeTypes = make(map[string]string)
 	}
 
 	// Verify each attachment's integrity
@@ -135,7 +153,39 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 				Expected: attachment.Hash,
 				Actual:   "content hash mismatch",
 			})
+			continue // Skip format validation for corrupted files
 		}
+
+		// Perform format validation - validate that file content matches expected MIME type
+		attachmentPath := filepath.Join(v.repositoryRoot, attachment.Path)
+		detectedFormat, err := DetectFileFormat(attachmentPath)
+		if err != nil {
+			// Unknown format - this is an error
+			violations = append(violations, ValidationViolation{
+				Type:     UnknownFormat,
+				Severity: SeverityError,
+				File:     attachment.Path,
+				Message:  fmt.Sprintf("Unknown or unrecognized file format for attachment %s: %v", attachment.Hash, err),
+			})
+			continue
+		}
+
+		// Check if we have expected MIME type from SMS/MMS data
+		if expectedMimeType, exists := attachmentMimeTypes[attachment.Hash]; exists {
+			// Compare detected format with expected MIME type
+			if detectedFormat != expectedMimeType {
+				violations = append(violations, ValidationViolation{
+					Type:     FormatMismatch,
+					Severity: SeverityError,
+					File:     attachment.Path,
+					Message:  fmt.Sprintf("File format mismatch for attachment %s", attachment.Hash),
+					Expected: expectedMimeType,
+					Actual:   detectedFormat,
+				})
+			}
+		}
+		// Note: If no expected MIME type is available from SMS data, we only verify 
+		// that the format is recognized (not unknown), but don't enforce a specific type
 	}
 
 	return violations
@@ -205,4 +255,104 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 // GetOrphanedAttachments returns attachments not referenced by any messages
 func (v *AttachmentsValidatorImpl) GetOrphanedAttachments(referencedHashes map[string]bool) ([]*attachments.Attachment, error) {
 	return v.attachmentReader.FindOrphanedAttachments(referencedHashes)
+}
+
+// formatSignature represents a file format magic byte signature
+type formatSignature struct {
+	mimeType string
+	magic    []byte
+	offset   int
+}
+
+// formatSignatures contains known file format magic bytes
+var formatSignatures = []formatSignature{
+	{"image/png", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, 0},
+	{"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, 0},
+	{"image/gif", []byte{0x47, 0x49, 0x46, 0x38}, 0}, // GIF87a or GIF89a (partial)
+	{"video/mp4", []byte{0x66, 0x74, 0x79, 0x70}, 4}, // 'ftyp' at offset 4
+	{"application/pdf", []byte{0x25, 0x50, 0x44, 0x46}, 0}, // '%PDF'
+}
+
+// DetectFileFormat reads the file header and detects the MIME type based on magic bytes
+func DetectFileFormat(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// Read first 512 bytes for format detection
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("failed to read file header: %w", err)
+	}
+	
+	// Truncate buffer to actual bytes read
+	buffer = buffer[:n]
+
+	// Check against known format signatures
+	for _, sig := range formatSignatures {
+		// Check if we have enough bytes
+		if len(buffer) < sig.offset+len(sig.magic) {
+			continue
+		}
+		
+		// Check if magic bytes match at the expected offset
+		match := true
+		for i, b := range sig.magic {
+			if buffer[sig.offset+i] != b {
+				match = false
+				break
+			}
+		}
+		
+		if match {
+			return sig.mimeType, nil
+		}
+	}
+
+	// No known format detected
+	return "", fmt.Errorf("unknown file format")
+}
+
+// getAttachmentMimeTypes retrieves MIME type information from SMS/MMS messages
+// Returns a map of attachment hash -> MIME type
+func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, error) {
+	mimeTypes := make(map[string]string)
+	
+	// Skip if no SMS reader available
+	if v.smsReader == nil {
+		return mimeTypes, nil
+	}
+	
+	// Get all available years with SMS data
+	years, err := v.smsReader.GetAvailableYears()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get available SMS years: %w", err)
+	}
+	
+	// Process each year to extract attachment MIME types
+	for _, year := range years {
+		err := v.smsReader.StreamMessagesForYear(year, func(message sms.Message) error {
+			// Only process MMS messages which can have attachments
+			if mms, ok := message.(*sms.MMS); ok {
+				// Process each part of the MMS
+				for _, part := range mms.Parts {
+					// Check if this part has an attachment reference (hash)
+					if part.AttachmentRef != "" && part.ContentType != "" {
+						// Store the MIME type for this attachment hash
+						mimeTypes[part.AttachmentRef] = part.ContentType
+					}
+				}
+			}
+			return nil
+		})
+		
+		if err != nil {
+			return nil, fmt.Errorf("failed to stream messages for year %d: %w", year, err)
+		}
+	}
+	
+	return mimeTypes, nil
 }

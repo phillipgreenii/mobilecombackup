@@ -57,6 +57,8 @@ const (
 	StructureViolation ViolationType = "structure_violation"
 	MissingMarkerFile  ViolationType = "missing_marker_file"
 	UnsupportedVersion ViolationType = "unsupported_version"
+	FormatMismatch     ViolationType = "format_mismatch"
+	UnknownFormat      ViolationType = "unknown_format"
 )
 
 // Severity indicates the importance of a validation issue
