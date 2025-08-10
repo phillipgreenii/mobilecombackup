@@ -1,7 +1,7 @@
 # FEAT-024: Extract Contact Names to Unprocessed Section
 
 ## Status
-- **Completed**: 
+- **Completed**: 2025-01-08
 - **Priority**: medium
 
 ## Overview
@@ -12,21 +12,21 @@ When importing SMS/MMS backups, messages often contain contact_name attributes t
 
 ## Requirements
 ### Functional Requirements
-- [ ] Extract contact_name from SMS/MMS messages during import phase
-- [ ] Store extracted names in ContactsManager's unprocessed section
-- [ ] Support both SMS (single address) and MMS (multiple addresses) extraction
-- [ ] Handle phone number normalization for consistent storage
-- [ ] Process extraction after validation and deduplication
-- [ ] Create ContactsWriter interface for saving contacts.yaml
-- [ ] Preserve existing unprocessed entries when loading contacts.yaml
-- [ ] Support multiple names for the same phone number
-- [ ] Handle corrupted or missing contacts.yaml gracefully
+- [x] Extract contact_name from SMS/MMS messages during import phase
+- [x] Store extracted names in ContactsManager's unprocessed section
+- [x] Support both SMS (single address) and MMS (multiple addresses) extraction
+- [x] Handle phone number normalization for consistent storage
+- [x] Process extraction after validation and deduplication
+- [x] Create ContactsWriter interface for saving contacts.yaml
+- [x] Preserve existing unprocessed entries when loading contacts.yaml
+- [x] Support multiple names for the same phone number
+- [x] Handle corrupted or missing contacts.yaml gracefully
 
 ### Non-Functional Requirements
-- [ ] Minimal performance impact - load contacts once at start, save once at end
-- [ ] Clear YAML format for manual review
-- [ ] Preserve all existing contact data
-- [ ] Atomic file operations to prevent data loss
+- [x] Minimal performance impact - load contacts once at start, save once at end
+- [x] Clear YAML format for manual review
+- [x] Preserve all existing contact data
+- [x] Atomic file operations to prevent data loss
 
 ## Design
 ### Approach
@@ -100,17 +100,17 @@ unprocessed:
 - Handle missing/corrupted contacts.yaml gracefully (start with empty)
 
 ## Tasks
-- [ ] Add unprocessed field to ContactsManager struct
-- [ ] Implement AddUnprocessedContact method with phone normalization
-- [ ] Implement GetUnprocessedContacts method
-- [ ] Update ContactsManager Load to parse unprocessed section
-- [ ] Implement ContactsWriter interface and SaveContacts method
-- [ ] Add contact extraction to SMS import processor
-- [ ] Add contact extraction to MMS import processor (handle multiple addresses)
-- [ ] Integrate contact saving into main import command
-- [ ] Write unit tests for unprocessed contact management
-- [ ] Write integration tests for full import→extract→save flow
-- [ ] Update documentation with manual review workflow
+- [x] Add unprocessed field to ContactsManager struct
+- [x] Implement AddUnprocessedContact method with phone normalization
+- [x] Implement GetUnprocessedContacts method
+- [x] Update ContactsManager Load to parse unprocessed section
+- [x] Implement ContactsWriter interface and SaveContacts method
+- [x] Add contact extraction to SMS import processor
+- [x] Add contact extraction to MMS import processor (handle multiple addresses)
+- [x] Integrate contact saving into main import command
+- [x] Write unit tests for unprocessed contact management
+- [x] Write integration tests for full import→extract→save flow
+- [x] Update documentation with manual review workflow
 
 ## Testing
 ### Unit Tests
@@ -203,3 +203,91 @@ unprocessed:
 - Multiple names for the same phone number are preserved for user review
 - Simple "phone: name" format makes manual editing easy
 - Future enhancement could add a dedicated command to promote unprocessed entries to main contacts
+
+## Manual Review Workflow
+
+After importing messages with contact names, users should follow this workflow to review and organize extracted contacts:
+
+### 1. Review Extracted Contacts
+After running import, check `contacts.yaml` for the `unprocessed` section:
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5551234567: J. Doe"
+  - "5559876543: Jane Smith"
+```
+
+### 2. Identify Duplicate Variations
+Look for the same phone number with different name variations:
+- Multiple entries for `5551234567` suggest the same person with different name formats
+- Decide which name is the canonical/preferred version
+
+### 3. Manual Editing Process
+Edit `contacts.yaml` to promote names from `unprocessed` to the main `contacts` section:
+
+**Before:**
+```yaml
+contacts:
+  - name: "Existing Contact"
+    numbers: ["5550000000"]
+
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5559876543: Jane Smith"
+```
+
+**After manual review:**
+```yaml
+contacts:
+  - name: "Existing Contact"
+    numbers: ["5550000000"]
+  - name: "John Doe"  # Promoted from unprocessed
+    numbers: ["5551234567"]
+  - name: "Jane Smith"  # Promoted from unprocessed
+    numbers: ["5559876543"]
+
+unprocessed:
+  # Removed processed entries, keep any that need further review
+```
+
+### 4. Best Practices
+- **Consolidate variations**: Choose one canonical name per person
+- **Verify phone numbers**: Ensure numbers are correct before promoting
+- **Keep context**: Use message timestamps to help identify contacts
+- **Incremental review**: Process a few contacts at a time to avoid overwhelm
+- **Backup first**: Keep a backup of contacts.yaml before major edits
+
+### 5. Common Scenarios
+
+**Scenario 1: Same person, multiple name formats**
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Johnny"
+  - "5551234567: J. Doe"
+```
+**Resolution**: Choose "John Doe" as canonical, remove duplicates
+
+**Scenario 2: Unknown contacts**
+```yaml
+unprocessed:
+  - "5559999999: Unknown"
+  - "5558888888: Mom"
+```
+**Resolution**: Keep "Mom", research or skip "Unknown"
+
+**Scenario 3: Business vs personal**
+```yaml
+unprocessed:
+  - "5551234567: John Doe"
+  - "5551234567: Acme Corp"
+```
+**Resolution**: Determine if John works at Acme, choose appropriate name
+
+### 6. Future Import Behavior
+- Subsequent imports will add new unprocessed entries
+- Existing processed contacts remain in main section
+- New variations of existing numbers will still appear in unprocessed
+- Manual review process repeats for new entries only
