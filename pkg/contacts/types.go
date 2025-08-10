@@ -8,7 +8,8 @@ type Contact struct {
 
 // ContactsData represents the YAML structure of contacts.yaml
 type ContactsData struct {
-	Contacts []*Contact `yaml:"contacts"`
+	Contacts    []*Contact `yaml:"contacts"`
+	Unprocessed []string   `yaml:"unprocessed,omitempty"`
 }
 
 // ContactsReader reads contact information from repository
@@ -33,4 +34,10 @@ type ContactsReader interface {
 
 	// GetContactsCount returns total number of contacts
 	GetContactsCount() int
+}
+
+// ContactsWriter handles writing contact information to repository
+type ContactsWriter interface {
+	// SaveContacts writes the current state to contacts.yaml
+	SaveContacts(path string) error
 }

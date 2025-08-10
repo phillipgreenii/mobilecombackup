@@ -15,6 +15,7 @@ type ContactsManager struct {
 	repoPath     string
 	contacts     map[string]*Contact // name -> Contact
 	numberToName map[string]string   // normalized number -> name
+	unprocessed  map[string][]string // normalized number -> names
 	loaded       bool
 }
 
@@ -24,6 +25,7 @@ func NewContactsManager(repoPath string) *ContactsManager {
 		repoPath:     repoPath,
 		contacts:     make(map[string]*Contact),
 		numberToName: make(map[string]string),
+		unprocessed:  make(map[string][]string),
 		loaded:       false,
 	}
 }
@@ -52,6 +54,7 @@ func (cm *ContactsManager) LoadContacts() error {
 	// Clear existing data
 	cm.contacts = make(map[string]*Contact)
 	cm.numberToName = make(map[string]string)
+	cm.unprocessed = make(map[string][]string)
 
 	// Build lookup maps
 	duplicateNumbers := make(map[string][]string) // normalized number -> contact names
@@ -98,6 +101,25 @@ func (cm *ContactsManager) LoadContacts() error {
 			errors = append(errors, fmt.Sprintf("number %s assigned to multiple contacts: %v", number, nameList))
 		}
 		return fmt.Errorf("duplicate phone numbers found: %s", strings.Join(errors, "; "))
+	}
+
+	// Parse unprocessed section
+	for _, entry := range contactsData.Unprocessed {
+		// Parse "phone: name" format
+		parts := strings.SplitN(entry, ":", 2)
+		if len(parts) != 2 {
+			continue // Skip malformed entries
+		}
+		
+		phone := strings.TrimSpace(parts[0])
+		name := strings.TrimSpace(parts[1])
+		
+		if phone != "" && name != "" {
+			normalized := normalizePhoneNumber(phone)
+			if normalized != "" {
+				cm.unprocessed[normalized] = append(cm.unprocessed[normalized], name)
+			}
+		}
 	}
 
 	cm.loaded = true
@@ -192,4 +214,87 @@ func (cm *ContactsManager) GetContactsCount() int {
 	}
 
 	return len(cm.contacts)
+}
+
+// AddUnprocessedContact adds a contact to the unprocessed section
+func (cm *ContactsManager) AddUnprocessedContact(phone, name string) {
+	if phone == "" || name == "" {
+		return // Skip empty values
+	}
+
+	normalized := normalizePhoneNumber(phone)
+	if normalized == "" {
+		return // Skip invalid phone numbers
+	}
+
+	// Check if this exact combination already exists
+	existingNames := cm.unprocessed[normalized]
+	for _, existingName := range existingNames {
+		if existingName == name {
+			return // Duplicate, skip
+		}
+	}
+
+	// Add the new name
+	cm.unprocessed[normalized] = append(cm.unprocessed[normalized], name)
+}
+
+// GetUnprocessedContacts returns all unprocessed contacts
+func (cm *ContactsManager) GetUnprocessedContacts() map[string][]string {
+	// Return a deep copy to prevent modification
+	result := make(map[string][]string)
+	for phone, names := range cm.unprocessed {
+		// Copy the slice
+		namesCopy := make([]string, len(names))
+		copy(namesCopy, names)
+		result[phone] = namesCopy
+	}
+	return result
+}
+
+// SaveContacts writes the current state to contacts.yaml
+func (cm *ContactsManager) SaveContacts(path string) error {
+	// Prepare data structure for YAML
+	contactsData := ContactsData{
+		Contacts: make([]*Contact, 0, len(cm.contacts)),
+	}
+
+	// Add all contacts
+	for _, contact := range cm.contacts {
+		// Create a copy to avoid modifying original
+		contactCopy := &Contact{
+			Name:    contact.Name,
+			Numbers: make([]string, len(contact.Numbers)),
+		}
+		copy(contactCopy.Numbers, contact.Numbers)
+		contactsData.Contacts = append(contactsData.Contacts, contactCopy)
+	}
+
+	// Add unprocessed entries in "phone: name" format
+	for phone, names := range cm.unprocessed {
+		for _, name := range names {
+			entry := fmt.Sprintf("%s: %s", phone, name)
+			contactsData.Unprocessed = append(contactsData.Unprocessed, entry)
+		}
+	}
+
+	// Marshal to YAML
+	yamlData, err := yaml.Marshal(&contactsData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal contacts to YAML: %w", err)
+	}
+
+	// Write to temp file first for atomic operation
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, yamlData, 0644); err != nil {
+		return fmt.Errorf("failed to write temp contacts file: %w", err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tempPath, path); err != nil {
+		os.Remove(tempPath) // Clean up temp file
+		return fmt.Errorf("failed to rename temp contacts file: %w", err)
+	}
+
+	return nil
 }
