@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
@@ -31,7 +32,9 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 		RepoRoot: repoRoot,
 		Paths:    []string{testFile},
 	}
-	importer := NewSMSImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	importer := NewSMSImporter(options, contactsManager)
 	
 	// Load repository (should be empty)
 	if err := importer.LoadRepository(); err != nil {
@@ -97,7 +100,9 @@ func TestSMSImporter_MessageValidation(t *testing.T) {
 		RepoRoot: tempDir,
 		Paths:    []string{},
 	}
-	importer := NewSMSImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	importer := NewSMSImporter(options, contactsManager)
 	
 	tests := []struct {
 		name       string

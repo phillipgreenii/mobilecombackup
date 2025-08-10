@@ -6,13 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
 // Importer handles the overall import process
 type Importer struct {
-	options       *ImportOptions
-	callsImporter *CallsImporter
-	smsImporter   *SMSImporter
+	options         *ImportOptions
+	callsImporter   *CallsImporter
+	smsImporter     *SMSImporter
+	contactsManager *contacts.ContactsManager
 }
 
 // NewImporter creates a new importer
@@ -22,19 +25,23 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 		return nil, fmt.Errorf("invalid repository: %w", err)
 	}
 	
+	// Create contacts manager
+	contactsManager := contacts.NewContactsManager(options.RepoRoot)
+	
 	// Create calls importer
-	callsImporter, err := NewCallsImporter(options)
+	callsImporter, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
 	
 	// Create SMS importer
-	smsImporter := NewSMSImporter(options)
+	smsImporter := NewSMSImporter(options, contactsManager)
 	
 	return &Importer{
-		options:       options,
-		callsImporter: callsImporter,
-		smsImporter:   smsImporter,
+		options:         options,
+		callsImporter:   callsImporter,
+		smsImporter:     smsImporter,
+		contactsManager: contactsManager,
 	}, nil
 }
 
@@ -59,6 +66,11 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 	// Load existing repository
 	if !imp.options.Quiet {
 		fmt.Println("Loading existing repository...")
+	}
+	
+	// Load contacts.yaml
+	if err := imp.contactsManager.LoadContacts(); err != nil {
+		return nil, fmt.Errorf("failed to load contacts: %w", err)
 	}
 	
 	if imp.options.Filter == "" || imp.options.Filter == "calls" {
@@ -124,6 +136,12 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 			if err := imp.smsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write SMS repository: %w", err)
 			}
+		}
+		
+		// Save contacts.yaml with any extracted contact names
+		contactsPath := filepath.Join(imp.options.RepoRoot, "contacts.yaml")
+		if err := imp.contactsManager.SaveContacts(contactsPath); err != nil {
+			return nil, fmt.Errorf("failed to save contacts: %w", err)
 		}
 	}
 	

@@ -9,30 +9,33 @@ import (
 	
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
+	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
 // CallsImporter handles importing call backup files
 type CallsImporter struct {
-	options     *ImportOptions
-	coalescer   coalescer.Coalescer[calls.CallEntry]
-	writer      *calls.XMLCallsWriter
-	validator   *CallValidator
-	rejWriter   RejectionWriter
+	options         *ImportOptions
+	coalescer       coalescer.Coalescer[calls.CallEntry]
+	writer          *calls.XMLCallsWriter
+	validator       *CallValidator
+	rejWriter       RejectionWriter
+	contactsManager *contacts.ContactsManager
 }
 
 // NewCallsImporter creates a new calls importer
-func NewCallsImporter(options *ImportOptions) (*CallsImporter, error) {
+func NewCallsImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) (*CallsImporter, error) {
 	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
 	}
 	
 	return &CallsImporter{
-		options:   options,
-		coalescer: calls.NewCallCoalescer(),
-		writer:    writer,
-		validator: NewCallValidator(),
-		rejWriter: NewXMLRejectionWriter(options.RepoRoot),
+		options:         options,
+		coalescer:       calls.NewCallCoalescer(),
+		writer:          writer,
+		validator:       NewCallValidator(),
+		rejWriter:       NewXMLRejectionWriter(options.RepoRoot),
+		contactsManager: contactsManager,
 	}, nil
 }
 
@@ -128,6 +131,9 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 			stat.Rejected++
 			continue
 		}
+		
+		// Extract contact information for valid calls
+		ci.extractContact(call)
 		
 		// Add to coalescer (checks for duplicates)
 		entry := calls.CallEntry{Call: call}
@@ -227,4 +233,16 @@ func (v *CallValidator) Validate(call *calls.Call) []string {
 	}
 	
 	return violations
+}
+
+// extractContact extracts contact information from a call record
+func (ci *CallsImporter) extractContact(call *calls.Call) {
+	if ci.contactsManager == nil {
+		return
+	}
+
+	// Extract contact name if both number and contact name are present
+	if call.Number != "" && call.ContactName != "" {
+		ci.contactsManager.AddUnprocessedContact(call.Number, call.ContactName)
+	}
 }

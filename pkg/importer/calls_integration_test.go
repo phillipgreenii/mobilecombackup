@@ -6,6 +6,7 @@ import (
 	"testing"
 	
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
+	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
 func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
@@ -32,7 +33,10 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
 		DryRun:   false,
 	}
 	
-	importer, err := NewCallsImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	
+	importer, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -121,7 +125,10 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
 		DryRun:   false,
 	}
 	
-	importer, err := NewCallsImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	
+	importer, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -189,7 +196,10 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 		DryRun:   false,
 	}
 	
-	importer, err := NewCallsImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	
+	importer, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -280,7 +290,10 @@ func TestCallsImporter_OrderPreservation(t *testing.T) {
 		DryRun:   false,
 	}
 	
-	importer, err := NewCallsImporter(options)
+	// Create contacts manager for test
+	contactsManager := contacts.NewContactsManager(repoRoot)
+	
+	importer, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}

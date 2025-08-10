@@ -9,24 +9,27 @@ import (
 	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
+	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
 // SMSImporter handles SMS/MMS import operations
 type SMSImporter struct {
-	options     *ImportOptions
-	coalescer   coalescer.Coalescer[sms.MessageEntry]
-	smsWriter   *sms.XMLSMSWriter
+	options         *ImportOptions
+	coalescer       coalescer.Coalescer[sms.MessageEntry]
+	smsWriter       *sms.XMLSMSWriter
+	contactsManager *contacts.ContactsManager
 	// TODO: Implement rejection writer
 	// rejectWriter *XMLRejectionWriter
 }
 
 
 // NewSMSImporter creates a new SMS importer
-func NewSMSImporter(options *ImportOptions) *SMSImporter {
+func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) *SMSImporter {
 	return &SMSImporter{
-		options:   options,
-		coalescer: coalescer.NewCoalescer[sms.MessageEntry](),
+		options:         options,
+		coalescer:       coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager: contactsManager,
 	}
 }
 
@@ -124,6 +127,9 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 			// Need to implement XMLRejectionWriter for SMS
 			return nil
 		}
+
+		// Extract contact information for valid messages
+		si.extractContacts(msg)
 
 		// Create entry and check for duplicates
 		entry := sms.NewMessageEntry(msg)
@@ -298,4 +304,42 @@ func calculateFileHash(filePath string) (string, error) {
 	}
 	
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// extractContacts extracts contact names from SMS/MMS messages
+func (si *SMSImporter) extractContacts(msg sms.Message) {
+	if si.contactsManager == nil {
+		return
+	}
+
+	// Extract from SMS
+	if smsMsg, ok := msg.(sms.SMS); ok {
+		si.extractSMSContact(smsMsg)
+		return
+	}
+
+	// Extract from MMS (both primary address and additional addresses)
+	if mmsMsg, ok := msg.(sms.MMS); ok {
+		si.extractMMSContacts(mmsMsg)
+		return
+	}
+}
+
+// extractSMSContact extracts contact from SMS message
+func (si *SMSImporter) extractSMSContact(smsMsg sms.SMS) {
+	// Extract primary address contact
+	if smsMsg.Address != "" && smsMsg.ContactName != "" {
+		si.contactsManager.AddUnprocessedContact(smsMsg.Address, smsMsg.ContactName)
+	}
+}
+
+// extractMMSContacts extracts contacts from MMS message
+func (si *SMSImporter) extractMMSContacts(mmsMsg sms.MMS) {
+	// Extract primary address contact
+	if mmsMsg.Address != "" && mmsMsg.ContactName != "" {
+		si.contactsManager.AddUnprocessedContact(mmsMsg.Address, mmsMsg.ContactName)
+	}
+
+	// Note: MMSAddress does not contain ContactName fields,
+	// so additional addresses cannot be processed for contact extraction
 }
