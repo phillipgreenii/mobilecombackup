@@ -33,7 +33,7 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 		Paths:    []string{testFile},
 	}
 	// Create contacts manager for test
-	contactsManager := contacts.NewContactsManager(repoRoot)
+	contactsManager := contacts.NewContactsManager(tempDir)
 	importer := NewSMSImporter(options, contactsManager)
 	
 	// Load repository (should be empty)
@@ -101,7 +101,7 @@ func TestSMSImporter_MessageValidation(t *testing.T) {
 		Paths:    []string{},
 	}
 	// Create contacts manager for test
-	contactsManager := contacts.NewContactsManager(repoRoot)
+	contactsManager := contacts.NewContactsManager(tempDir)
 	importer := NewSMSImporter(options, contactsManager)
 	
 	tests := []struct {
