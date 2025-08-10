@@ -1,144 +1,157 @@
-# FEAT-025: Validate Attachment Files
+# FEAT-025: Add Format Validation to Attachment Files
 
 ## Status
 - **Completed**: Not yet started
 - **Priority**: medium
 
 ## Overview
-Add validation capabilities to verify that attachment files referenced in SMS/MMS messages actually exist in the repository, have correct content hashes, and match their expected file formats. This feature ensures data integrity and helps identify corrupted, missing, or misidentified attachments.
+Extend the existing AttachmentsValidator to verify that attachment files match their expected file formats by checking magic bytes. This enhancement adds format validation to the current file validation process, ensuring that file content matches declared MIME types and rejecting unknown file formats.
 
 ## Background
-During SMS/MMS import, attachments are extracted and stored using their content hash. However, there's currently no way to verify that:
-1. Referenced attachment files actually exist in the repository
-2. The file content matches the expected hash (no corruption)
-3. All attachments in the repository are referenced by at least one message
-4. File content matches the declared MIME type (e.g., PNG files have PNG headers)
+The existing AttachmentsValidator currently validates file placement, naming, and hash verification. However, it does not verify that file content matches the expected format based on MIME types declared in SMS/MMS messages. This can lead to situations where:
+- A file declared as image/png actually contains JPEG data
+- Corrupted files with invalid headers pass validation
+- Unknown or potentially dangerous file formats are accepted
 
-This feature was identified during FEAT-012 planning as a separate concern from attachment extraction.
+This feature extends the existing validation framework to add magic byte checking for file format verification.
 
 ## Requirements
 ### Functional Requirements
-- [ ] Validate all attachment references in SMS/MMS messages point to existing files
-- [ ] Verify file content matches the hash in the filename
-- [ ] Verify file format matches declared MIME type by checking file headers/magic bytes
-- [ ] Report missing attachments with context (which messages reference them)
-- [ ] Report corrupted attachments (hash mismatch)
+- [ ] Extend AttachmentsValidator to check file format using magic bytes
+- [ ] Verify file format matches declared MIME type from SMS/MMS metadata
 - [ ] Report format mismatches (e.g., JPEG data with PNG MIME type)
-- [ ] Optionally check for orphaned attachments (files not referenced by any message)
-- [ ] Support both full validation and quick validation modes
+- [ ] Reject unknown or unrecognized file formats during validation
+- [ ] Add format validation to existing file validation process (always enabled)
+- [ ] Support common mobile backup formats (PNG, JPEG, GIF, MP4, PDF)
+- [ ] Provide clear error messages indicating expected vs actual format
 
 ### Non-Functional Requirements
-- [ ] Performance: Process 10,000+ attachments in under 60 seconds
-- [ ] Memory efficiency: Stream processing to handle large repositories
-- [ ] Clear error reporting with actionable information
+- [ ] Performance: Minimal overhead to existing validation (< 5% slower)
+- [ ] Memory efficiency: Read only file headers for format detection
+- [ ] Clear error reporting with file path, expected format, and detected format
+- [ ] Integrate seamlessly with existing validation framework
 
 ## Design
 ### Approach
-Extend the existing validate subcommand to include attachment file validation. Use the AttachmentReader for file operations and SMSReader to get attachment references.
+Extend the existing AttachmentsValidator implementation to include magic byte checking during the file validation process. This leverages the existing validation framework and adds format checking as an additional validation step.
 
 ### API/Interface
 ```go
-// Add to existing validation types
-type AttachmentValidation struct {
-    Missing         []MissingAttachment
-    Corrupted       []CorruptedAttachment
-    FormatMismatch  []FormatMismatchAttachment
-    Orphaned        []OrphanedAttachment  // Optional check
+// Extend existing AttachmentsValidatorImpl to include format checking
+type AttachmentsValidatorImpl struct {
+    repositoryRoot   string
+    attachmentReader attachments.AttachmentReader
+    smsReader        sms.SMSReader  // Add to get MIME type information
 }
 
-type MissingAttachment struct {
-    Hash         string
-    ReferencedBy []MessageReference  // Which messages reference this
-}
-
-type CorruptedAttachment struct {
-    Path         string
-    ExpectedHash string
-    ActualHash   string
-    Error        string
-}
-
-type FormatMismatchAttachment struct {
-    Path         string
-    DeclaredType string  // MIME type from SMS/MMS
-    ActualType   string  // Detected from file content
-    Error        string
-}
-
-type MessageReference struct {
-    Year    int
-    Type    string  // "SMS" or "MMS"
-    ID      string  // Message ID or unique identifier
-}
-
-// Validation modes
-type ValidationMode int
+// Add new violation types to existing ViolationType enum
 const (
-    QuickValidation ValidationMode = iota  // Check existence only
-    FullValidation                         // Check existence, hash, and format
+    // ... existing types ...
+    FormatMismatch ViolationType = "format_mismatch"
+    UnknownFormat  ViolationType = "unknown_format"
 )
+
+// Extend ValidateAttachmentIntegrity to include format checking
+// The method will now also verify file formats match expected MIME types
+
+// Add helper function to detect file format
+func detectFileFormat(filePath string) (mimeType string, err error) {
+    // Read first 512 bytes for format detection
+    // Return detected MIME type or error
+}
+
+// Known format signatures
+var formatSignatures = []struct {
+    mimeType  string
+    magic     []byte
+    offset    int
+}{
+    {"image/png", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, 0},
+    {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, 0},
+    {"image/gif", []byte{0x47, 0x49, 0x46, 0x38}, 0},
+    {"video/mp4", []byte{0x66, 0x74, 0x79, 0x70}, 4}, // 'ftyp' at offset 4
+    {"application/pdf", []byte{0x25, 0x50, 0x44, 0x46}, 0}, // '%PDF'
+}
+
+// Add method to get MIME types for attachments from SMS/MMS data
+func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, error) {
+    // Returns map of hash -> MIME type from SMS/MMS messages
+}
 ```
 
 ### Implementation Notes
-- Use streaming to handle large numbers of attachments
-- Calculate hashes only in full validation mode
-- Cross-reference with SMS reader to find which messages use each attachment
-- Report results in both human-readable and JSON formats
-- File format detection using magic bytes:
-  - PNG: `89 50 4E 47 0D 0A 1A 0A`
-  - JPEG: `FF D8 FF`
-  - GIF: `47 49 46 38`
-  - MP4: `00 00 00 XX 66 74 79 70` (where XX is box size)
-  - PDF: `25 50 44 46`
+- Integrate format checking into existing `ValidateAttachmentIntegrity()` method
+- Add format check in the loop after hash verification (line 105-139)
+- Read only first 512 bytes of files for efficient format detection
+- Cross-reference with SMS/MMS data to get expected MIME types
+- Add violations using existing ValidationViolation structure
+- Format validation is always enabled (no CLI flags needed)
+- Reject files with unknown formats as validation failures
+- File format detection patterns:
+  - PNG: Check for exact signature at offset 0
+  - JPEG: Check for FFD8FF at offset 0
+  - GIF: Check for GIF87a or GIF89a at offset 0
+  - MP4: Check for 'ftyp' at offset 4-7
+  - PDF: Check for %PDF at offset 0
+- Integration points:
+  - Modify `NewAttachmentsValidator` to accept SMSReader parameter
+  - Add format detection after line 137 in `ValidateAttachmentIntegrity`
+  - Use existing violation reporting mechanism
 
 ## Tasks
-- [ ] Define validation types and interfaces
-- [ ] Implement attachment reference collection from SMS/MMS messages
-- [ ] Add quick validation mode (existence check only)
-- [ ] Add full validation mode (existence + hash verification)
-- [ ] Implement file format detection using magic bytes
-- [ ] Add format validation against declared MIME types
-- [ ] Implement orphaned attachment detection (optional flag)
-- [ ] Add validation to existing validate subcommand
-- [ ] Write comprehensive tests
-- [ ] Update documentation and validate command help
+- [ ] Add `detectFileFormat()` function in `pkg/validation/attachments.go`
+- [ ] Add `FormatMismatch` and `UnknownFormat` to ViolationType constants
+- [ ] Modify `AttachmentsValidatorImpl` struct to include `smsReader` field
+- [ ] Update `NewAttachmentsValidator()` to accept SMSReader parameter
+- [ ] Add `getAttachmentMimeTypes()` method to retrieve MIME types from SMS/MMS
+- [ ] Extend `ValidateAttachmentIntegrity()` to include format checking after hash verification
+- [ ] Update repository validator to pass SMSReader to AttachmentsValidator
+- [ ] Write unit tests for format detection function
+- [ ] Update existing attachment validator tests to include format validation
+- [ ] Update validate command to create SMSReader for attachment validation
 
 ## Testing
 ### Unit Tests
-- Validate with missing attachments
-- Validate with corrupted attachments (wrong hash)
-- Validate with format mismatches (PNG data with JPEG MIME type)
-- Validate with orphaned attachments
-- Test both quick and full validation modes
-- Test with empty attachment directory
-- Test file format detection for common types
+- Test format detection for all supported types (PNG, JPEG, GIF, MP4, PDF)
+- Test format mismatch detection (PNG data with JPEG MIME type)
+- Test unknown format rejection
+- Test corrupted file headers
+- Test integration with existing validation violations
+- Test performance impact on large repositories
+- Test edge cases in magic byte detection
 
 ### Integration Tests
-- Full repository validation with mixed issues
-- Performance test with 1000+ attachments
-- Test JSON output format
+- Full repository validation including format checking
+- Test with real SMS/MMS data containing various attachment types
+- Verify format violations appear in validation results
+- Performance test showing minimal overhead
+- Test JSON output includes new violation types
 
 ### Edge Cases
-- Attachment referenced multiple times
-- Very large attachment files (100MB+)
-- Permission errors reading files
-- Symbolic links in attachment directory
-- Files with misleading extensions (e.g., .png file containing JPEG data)
-- Corrupted file headers
-- Unknown/unsupported file formats
+- Files too small to contain valid headers
+- Truncated files with partial headers
+- Files with valid headers but corrupted content
+- Multiple valid format signatures (e.g., TIFF can start like JPEG)
+- Zero-byte files
+- Files with read permissions but corrupted filesystem metadata
+- Attachment referenced by multiple messages with different MIME types
 
 ## Risks and Mitigations
-- **Risk**: Hash calculation for large files may be slow
-  - **Mitigation**: Implement quick mode that skips hash verification; show progress
-- **Risk**: Memory usage with many attachments
-  - **Mitigation**: Use streaming; process in batches if needed
+- **Risk**: Format detection may slow down validation
+  - **Mitigation**: Read only first 512 bytes; cache results if needed
+- **Risk**: False positives in format detection
+  - **Mitigation**: Use conservative detection; handle ambiguous cases
+- **Risk**: Breaking existing validation behavior
+  - **Mitigation**: Add format checking as additional step, preserve existing checks
 
 ## References
 - Related features: FEAT-012 (attachment extraction), FEAT-004 (attachment reader)
-- Depends on: FEAT-003 (SMS reader for getting references)
-- Code locations: pkg/attachments/, cmd/mobilecombackup/cmd/validate.go
+- Depends on: FEAT-003 (SMS reader for MIME types), existing AttachmentsValidator
+- Code locations: pkg/attachments/validator.go, pkg/attachments/format.go
+- Extends: Current attachment validation framework
 
 ## Notes
-- Consider adding a --fix flag in future to remove orphaned attachments
-- Hash verification is important for detecting disk corruption
-- Quick mode useful for routine checks; full mode for thorough validation
+- Format validation is always enabled - no configuration needed
+- Unknown formats are rejected to ensure repository integrity
+- This enhances existing validation without changing the validation API
+- Future enhancement: Support additional formats as needed
