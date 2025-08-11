@@ -13,15 +13,15 @@ A command-line tool for processing mobile phone backup files (Call and SMS logs 
 git clone https://github.com/phillipgreen/mobilecombackup.git
 cd mobilecombackup
 
-# Build the binary
-go build -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
+# Build with automatic version injection (recommended)
+devbox run build-cli
 
-# Build with version information
-VERSION=$(git describe --tags --always --dirty)
+# Or build manually with version information
+VERSION=$(bash scripts/build-version.sh)
 go build -ldflags "-X main.Version=$VERSION" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
 
-# Or use the devbox script
-devbox run build-cli
+# Basic build without version (for development only)
+go build -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
 ```
 
 ## Usage
@@ -341,6 +341,35 @@ go test -v -covermode=set ./...
 # Run specific package tests
 go test -v ./cmd/mobilecombackup/cmd/...
 ```
+
+## Versioning
+
+This project uses a git tag-based versioning system with fallback to a VERSION file. Version information is automatically injected during builds.
+
+### Version Formats
+
+- **Development builds**: `2.0.0-dev-g1234567` (base version + git hash)
+- **Release builds**: `2.0.0` (clean semantic version from git tags)
+
+### Check Version
+
+```bash
+# Check the version of built binary
+$ mobilecombackup --version
+mobilecombackup version 2.0.0-dev-g1234567
+
+# Validate version file format
+$ devbox run validate-version
+```
+
+### Version Sources (Priority Order)
+
+1. **Git tags**: For release builds (e.g., `v2.0.0` → `2.0.0`)
+2. **VERSION file + git hash**: For development builds
+3. **VERSION file only**: When git is unavailable
+4. **Fallback**: `dev` when no version source available
+
+The version extraction automatically handles all scenarios, ensuring builds always have meaningful version information.
 
 ## Architecture
 
