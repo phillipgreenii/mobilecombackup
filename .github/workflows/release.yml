@@ -21,7 +21,10 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
       - name: Go Release Binaries
         uses: wangyoucao577/go-release-action@v1.22
         with:
@@ -29,7 +32,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           overwrite: true
-          pre_command: export CGO_ENABLED=0
+          pre_command: devbox run ci && export CGO_ENABLED=0
           # Where to run `go build .`
           project_path: cmd/mobilecombackup
           binary_name: mobilecombackup
