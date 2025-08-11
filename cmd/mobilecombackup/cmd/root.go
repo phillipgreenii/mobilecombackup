@@ -15,7 +15,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "mobilecombackup",
-	Short: "A tool for processing mobile phone backup files",
+	Short: "mobilecombackup processes call logs and SMS/MMS messages",
 	Long: `mobilecombackup processes call logs and SMS/MMS messages from 
 mobile phone backup files, removing duplicates and organizing by year.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

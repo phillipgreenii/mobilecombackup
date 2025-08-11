@@ -251,15 +251,17 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 			} else {
 				allViolations = append(allViolations, violations...)
 			}
-		case err := <-errorCh:
-			if err != nil {
+		case err, ok := <-errorCh:
+			if !ok {
+				errorCh = nil
+			} else if err != nil {
 				return nil, err
 			}
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
 
-		if violationsCh == nil {
+		if violationsCh == nil && errorCh == nil {
 			break
 		}
 	}

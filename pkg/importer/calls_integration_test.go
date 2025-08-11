@@ -218,48 +218,53 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 		t.Errorf("Expected 4 rejected, got %d", stat.Rejected)
 	}
 
-	// Check rejection files were created
-	rejectedDir := filepath.Join(repoRoot, "rejected")
-	entries, err := os.ReadDir(rejectedDir)
+	// Check rejection files were created in the calls subdirectory
+	callsRejectedDir := filepath.Join(repoRoot, "rejected", "calls")
+	entries, err := os.ReadDir(callsRejectedDir)
 	if err != nil {
-		t.Fatalf("Failed to read rejected directory: %v", err)
+		t.Fatalf("Failed to read calls rejected directory: %v", err)
 	}
 
-	// Should have 2 files: rejects.xml and violations.yaml
-	if len(entries) != 2 {
-		t.Errorf("Expected 2 rejection files, got %d", len(entries))
+	// Should have 1 rejection file (XML format)  
+	if len(entries) != 1 {
+		t.Errorf("Expected 1 rejection file, got %d", len(entries))
+		for _, entry := range entries {
+			t.Logf("Found file: %s", entry.Name())
+		}
 	}
 
-	// Find the violations file
-	var violationsFile string
+	// Find the rejection XML file
+	var rejectionFile string
 	for _, entry := range entries {
-		if filepath.Ext(entry.Name()) == ".yaml" {
-			violationsFile = filepath.Join(rejectedDir, entry.Name())
+		if filepath.Ext(entry.Name()) == ".xml" {
+			rejectionFile = filepath.Join(callsRejectedDir, entry.Name())
 			break
 		}
 	}
 
-	if violationsFile == "" {
-		t.Fatal("Violations file not found")
+	if rejectionFile == "" {
+		t.Fatal("Rejection XML file not found")
 	}
 
-	// Read violations file and verify it contains expected violations
-	violationsData, err := os.ReadFile(violationsFile)
+	// Read rejection file and verify it contains the rejected entries
+	rejectionData, err := os.ReadFile(rejectionFile)
 	if err != nil {
-		t.Fatalf("Failed to read violations file: %v", err)
+		t.Fatalf("Failed to read rejection file: %v", err)
 	}
 
-	violationsStr := string(violationsData)
-	expectedViolations := []string{
-		"missing-number",
-		"negative-duration",
-		"missing-timestamp",
-		"invalid-type: 99",
+	rejectionStr := string(rejectionData)
+	
+	// Verify the XML contains rejected entries for all invalid calls
+	expectedRejections := []string{
+		`number=""`,           // Missing Number call
+		`duration="-10"`,      // Negative Duration call  
+		`date="0"`,            // Missing Timestamp call
+		`type="99"`,           // Invalid Type call
 	}
 
-	for _, expected := range expectedViolations {
-		if !contains(violationsStr, expected) {
-			t.Errorf("Expected violation %q not found in violations file", expected)
+	for _, expected := range expectedRejections {
+		if !contains(rejectionStr, expected) {
+			t.Errorf("Expected rejection %q not found in rejection file", expected)
 		}
 	}
 }

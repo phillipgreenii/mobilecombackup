@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func initRootCmd() {
@@ -66,9 +69,23 @@ func TestRootCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset command for each test
-			rootCmd.ResetCommands()
-			rootCmd.ResetFlags()
+			// Completely recreate command for each test to avoid interference
+			rootCmd = &cobra.Command{
+				Use:   "mobilecombackup",
+				Short: "mobilecombackup processes call logs and SMS/MMS messages",
+				Long: `mobilecombackup processes call logs and SMS/MMS messages from 
+mobile phone backup files, removing duplicates and organizing by year.`,
+				RunE: func(cmd *cobra.Command, args []string) error {
+					// If args provided without a valid subcommand, show error
+					if len(args) > 0 {
+						return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+					}
+					// Show help when no subcommand provided
+					return cmd.Help()
+				},
+				SilenceErrors: false,
+				SilenceUsage:  false,
+			}
 			initRootCmd() // Re-initialize flags
 
 			// Set test version

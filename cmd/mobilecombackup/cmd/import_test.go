@@ -53,7 +53,7 @@ func TestImportCommand(t *testing.T) {
 			// Reset cobra command
 			rootCmd = &cobra.Command{
 				Use:   "mobilecombackup",
-				Short: "A tool for processing mobile phone backup files",
+				Short: "mobilecombackup processes call logs and SMS/MMS messages",
 			}
 			// Re-register commands manually
 			rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress non-error output")
