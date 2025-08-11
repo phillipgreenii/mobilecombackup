@@ -1122,6 +1122,34 @@ The `scripts/build-version.sh` script handles all edge cases:
 - **Verify GitHub Actions** trigger correctly on tag pushes
 - **Keep -dev suffix** in VERSION file during development (removed only in git tags)
 
+### Version Update Checklist
+
+#### Starting New Version Development
+- [ ] Update VERSION file with new base version (e.g., `2.1.0-dev`)
+- [ ] Commit VERSION file update with clear message
+- [ ] Verify development builds show new version format
+- [ ] Test `devbox run validate-version` passes
+
+#### Preparing for Release
+- [ ] Ensure all planned features/fixes are complete
+- [ ] Run full test suite and verify all tests pass
+- [ ] Update CHANGELOG.md or release notes
+- [ ] Verify VERSION file contains correct base version
+- [ ] Test build and version extraction locally
+
+#### Creating Release
+- [ ] Create git tag with `v` prefix: `git tag v2.1.0`
+- [ ] Verify tag-based build shows clean version (no -dev suffix)
+- [ ] Push tag to trigger GitHub Actions release: `git push origin v2.1.0`
+- [ ] Monitor GitHub Actions release build completion
+- [ ] Verify release artifacts are created correctly
+
+#### Post-Release
+- [ ] Update VERSION file for next development cycle (e.g., `2.2.0-dev`)
+- [ ] Commit VERSION file update
+- [ ] Verify development builds resume with new -dev version format
+- [ ] Update project documentation if needed
+
 ### Troubleshooting
 - **Version not updating**: Check git tag creation and push to remote
 - **CI version issues**: Ensure `fetch-depth: 0` in GitHub Actions checkout
