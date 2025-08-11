@@ -301,7 +301,33 @@ devbox run linter
 
 # build CLI with version information
 devbox run build-cli
+
+# run complete CI pipeline (formatting, tests, linting, build)
+devbox run ci
 ```
+
+### Continuous Integration
+
+The project uses a comprehensive CI pipeline that runs formatting, testing, linting, and building:
+
+```bash
+# Run the complete CI pipeline locally
+devbox run ci
+
+# This executes:
+# 1. devbox run formatter (go fmt ./...)
+# 2. devbox run tests (go test -v -covermode=set ./...)  
+# 3. devbox run linter (golangci-lint run)
+# 4. devbox run build-cli (versioned binary build)
+```
+
+The same CI pipeline runs automatically on:
+- Pull requests to main branch
+- Pushes to main branch  
+- Manual workflow dispatch
+- Release builds (tags)
+
+All CI workflows use devbox to ensure consistency between local development and CI environments, with Go 1.24 and the same tool versions.
 
 ### Running Tests
 
