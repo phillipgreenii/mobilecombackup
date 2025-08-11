@@ -1,7 +1,7 @@
 # FEAT-026: Update CI to Use Devbox
 
 ## Status
-- **Completed**: Not started
+- **Completed**: 2025-08-11
 - **Priority**: high
 
 ## Overview
@@ -54,12 +54,12 @@ The `ci` script in devbox.json should include all current CI steps:
 - No parallel old/new CI configuration needed - direct migration
 
 ## Tasks
-- [ ] Add `ci` script to devbox.json with formatter, tests, linter, and build-cli steps
-- [ ] Update test.yml workflow to use devbox-install-action and remove direct Go setup
-- [ ] Update release.yml workflow to use devbox-install-action and remove direct Go setup
-- [ ] Remove direct dependency installations from both workflows
-- [ ] Test both CI workflows with the new configuration
-- [ ] Update README.md and documentation with new CI approach
+- [x] Add `ci` script to devbox.json with formatter, tests, linter, and build-cli steps
+- [x] Update test.yml workflow to use devbox-install-action and remove direct Go setup
+- [x] Update release.yml workflow to use devbox-install-action and remove direct Go setup
+- [x] Remove direct dependency installations from both workflows
+- [x] Test both CI workflows with the new configuration
+- [x] Update README.md and documentation with new CI approach
 
 ## Testing
 ### Integration Tests

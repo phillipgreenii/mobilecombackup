@@ -1464,3 +1464,78 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 This auto-commit behavior ensures a clear development history while reducing manual overhead in the issue implementation workflow.
 
+## Continuous Integration with Devbox (FEAT-026)
+
+### Overview
+
+The project uses devbox for continuous integration to ensure consistency between local development and CI environments. All CI workflows use the same tool versions and configurations as local development.
+
+### CI Pipeline
+
+The CI pipeline is defined as a single devbox script that executes all quality checks in sequence:
+
+```json
+{
+  "scripts": {
+    "ci": [
+      "devbox run formatter",
+      "devbox run tests", 
+      "devbox run linter",
+      "devbox run build-cli"
+    ]
+  }
+}
+```
+
+### GitHub Actions Integration
+
+Both CI workflows use the `jetify-com/devbox-install-action@v0.11.0` instead of direct tool installation:
+
+#### Test Workflow (.github/workflows/test.yml)
+- Triggers on: pushes to main, pull requests to main, manual dispatch
+- Single job that runs `devbox run ci`
+- Replaces separate lint and test jobs with unified CI pipeline
+
+#### Release Workflow (.github/workflows/release.yml) 
+- Triggers on: tag pushes, manual dispatch
+- Runs CI pipeline before building release binaries via `pre_command: devbox run ci`
+- Uses same Go 1.24 version as local development
+
+### Benefits
+
+**Environment Consistency:**
+- Same Go version (1.24) in local development and CI
+- Same golangci-lint version and configuration
+- Same build and test commands
+- No version drift between environments
+
+**Simplified Maintenance:**
+- Tool versions managed in single location (devbox.json)
+- No need to update multiple workflow files when dependencies change
+- Reduced CI configuration complexity
+
+**Developer Experience:**
+- `devbox run ci` provides local CI simulation
+- Developers can verify changes before pushing
+- Consistent failure modes between local and CI environments
+
+### Pipeline Steps
+
+1. **Formatting** (`go fmt ./...`): Ensures consistent code style
+2. **Testing** (`go test -v -covermode=set ./...`): Runs full test suite with coverage
+3. **Linting** (`golangci-lint run`): Static analysis and code quality checks
+4. **Building** (`go build` with version injection): Validates compilation
+
+### Migration Details
+
+**Previous Approach:**
+- Direct Go installation using `actions/setup-go@v2` with Go 1.16.x
+- Separate golangci-lint action installation
+- Different tool versions between local development and CI
+
+**Current Approach:**
+- Unified devbox environment using `jetify-com/devbox-install-action@v0.11.0`
+- Go 1.24 (significant version upgrade from 1.16.x)
+- All tools and versions consistent with local development environment
+- Single `devbox run ci` command for complete pipeline execution
+
