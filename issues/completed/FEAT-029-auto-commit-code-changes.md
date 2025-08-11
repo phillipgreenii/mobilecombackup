@@ -1,7 +1,7 @@
 # FEAT-029: Auto-commit Code Changes in Claude Commands and Agents
 
 ## Status
-- **Completed**: Not started
+- **Completed**: 2025-08-11
 - **Priority**: medium
 
 ## Overview
@@ -84,12 +84,12 @@ This is primarily a **behavioral change**, not a technical implementation:
 4. **Error handling** - if commit fails and agent unsure why, stop and ask user
 
 ## Tasks
-- [ ] Update agent prompts to commit after completing tasks
-- [ ] Implement simple git status comparison for file detection
-- [ ] Update implement-issue command to instruct agents to commit
-- [ ] Update create-feature and create-bug commands for auto-commit
-- [ ] Test that agents consistently commit when they should
-- [ ] Update documentation in CLAUDE.md about expected auto-commit behavior
+- [x] Update agent prompts to commit after completing tasks
+- [x] Implement simple git status comparison for file detection
+- [x] Update implement-issue command to instruct agents to commit
+- [x] Update create-feature and create-bug commands for auto-commit
+- [x] Test that agents consistently commit when they should
+- [x] Update documentation in CLAUDE.md about expected auto-commit behavior
 
 ### Command Inventory
 **Commands that should auto-commit:**
@@ -137,5 +137,31 @@ This is primarily a **behavioral change**, not a technical implementation:
 - Commit conventions: CLAUDE.md Git Workflow section
 - Related: FEAT-028 (run tests and linter during development)
 
+## Implementation Summary
+Successfully implemented auto-commit behavior across all Claude commands and agents:
+
+### Changes Made:
+1. **Agent Updates**:
+   - Updated `spec-implementation-engineer.md` with auto-commit instructions after each TodoWrite task
+   - Updated `product-doc-sync.md` with auto-commit instructions for documentation updates
+   - Added detailed file detection strategy using git status comparison
+   - Specified commit message format with issue references
+
+2. **Command Updates**:
+   - Updated `/implement-issue` command to instruct agents to auto-commit after each task
+   - Updated `/create-feature` command to auto-commit created feature documents
+   - Updated `/create-bug` command to auto-commit created bug documents
+
+3. **Documentation**:
+   - Added comprehensive auto-commit section to CLAUDE.md
+   - Documented when auto-commit occurs, file detection strategy, and commit message format
+   - Updated slash command descriptions to highlight auto-commit behavior
+
+### Key Features:
+- **Smart File Detection**: Uses git status comparison to stage only modified files
+- **Standard Commit Format**: Consistent messages with issue references and Claude Code attribution
+- **Verification First**: Auto-commit only occurs after successful tests/build/lint verification
+- **Error Handling**: Agents stop and ask for help if commits fail unexpectedly
+
 ## Notes
-If agents need specific permissions for git operations, the implementation should clearly document what configuration changes are required. Consider creating a dedicated command for testing auto-commit behavior.
+Auto-commit is now configured and ready to use. Agents will automatically commit their changes after completing tasks, streamlining the development workflow and maintaining a clear commit history.
