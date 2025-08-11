@@ -1612,3 +1612,86 @@ The build system follows this priority order:
 
 This versioning scheme provides consistency, automation, and clear upgrade paths while minimizing maintenance overhead.
 
+## SonarQube Cloud Integration (FEAT-030)
+
+### Overview
+
+The project integrates with SonarQube Cloud for automated code quality analysis, providing continuous monitoring of code quality metrics, test coverage, and security vulnerabilities. This integration complements the existing CI pipeline and development practices.
+
+### Key Features
+
+**Automated Analysis:**
+- Quality Gate enforcement to prevent merging substandard code
+- Real-time coverage tracking with historical trends
+- Security vulnerability detection and reporting
+- Code smell identification for maintainability improvements
+- Duplication analysis and technical debt tracking
+
+**Seamless Integration:**
+- Runs automatically on pull requests and main branch commits
+- Integrates with existing devbox-based CI pipeline
+- Dynamic version extraction using FEAT-031 versioning system
+- Coverage reports generated using standard Go tooling
+
+### Configuration Files
+
+#### SonarQube Properties (`sonar-project.properties`)
+- **Organization**: `phillipgreenii`
+- **Project Key**: `phillipgreenii_mobilecombackup`
+- **Dynamic Version**: Uses base version from FEAT-031 (e.g., `2.0.0` without `-dev` suffix)
+- **Go-specific Settings**: Configured for Go project structure and testing patterns
+- **Coverage Integration**: Uses `coverage.out` from `go test -coverprofile` command
+
+#### GitHub Actions Integration
+- Extended existing CI workflow with SonarQube analysis step
+- Uses `SonarSource/sonarqube-scan-action@v2` for analysis
+- Requires `SONAR_TOKEN` repository secret for authentication
+- Coverage generation via `devbox run go test -coverprofile=coverage.out`
+
+### Quality Metrics and Badges
+
+**README.md Badges:**
+- Quality Gate Status: Overall project health indicator
+- Coverage: Test coverage percentage with trending
+- Maintainability Rating: Code maintainability assessment
+
+**Analysis Exclusions:**
+- Test files (`**/*_test.go`): Excluded from source analysis, included in test analysis
+- Test data (`**/testdata/**`): Excluded from all analysis
+- Vendor dependencies (`**/vendor/**`): Excluded from all analysis
+- Temporary files (`**/tmp/**`): Excluded from all analysis
+
+### Integration Benefits
+
+**Code Quality Assurance:**
+- Prevents regression in code quality through quality gates
+- Identifies maintainability issues before they accumulate
+- Tracks technical debt and provides remediation guidance
+
+**Coverage Monitoring:**
+- Monitors test coverage trends over time
+- Identifies untested code paths and components
+- Integrates with existing comprehensive test suite
+
+**Security Analysis:**
+- Scans for common Go security vulnerabilities
+- Provides security hotspot identification
+- Complements existing linting and static analysis
+
+**Team Collaboration:**
+- Centralized quality metrics accessible to all team members
+- Historical tracking for project health assessment
+- Integration with pull request workflows for quality discussions
+
+### CI Pipeline Integration
+
+The SonarQube analysis integrates seamlessly with the existing CI pipeline:
+
+1. **Code Formatting**: `devbox run formatter` (existing)
+2. **Test Execution**: `devbox run go test -coverprofile=coverage.out` (enhanced for coverage)
+3. **Linting**: `devbox run linter` (existing)  
+4. **CLI Build**: `devbox run build-cli` (existing)
+5. **SonarQube Analysis**: Runs after successful completion of all previous steps
+
+This integration maintains the established quality workflow while adding comprehensive code quality analysis and historical tracking capabilities.
+
