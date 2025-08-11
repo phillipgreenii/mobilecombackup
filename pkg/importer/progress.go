@@ -47,7 +47,7 @@ func (r *ConsoleProgressReporter) EndFile(filename string, summary *YearStat) {
 	}
 	fmt.Printf(" done")
 	if r.verbose && summary != nil {
-		fmt.Printf(" [Added: %d, Duplicates: %d, Rejected: %d]", 
+		fmt.Printf(" [Added: %d, Duplicates: %d, Rejected: %d]",
 			summary.Added, summary.Duplicates, summary.Rejected)
 	}
 	fmt.Println()

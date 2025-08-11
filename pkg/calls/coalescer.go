@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"time"
-	
+
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 )
 
@@ -17,13 +17,13 @@ type CallEntry struct {
 // Excludes readable_date and contact_name fields as per requirement
 func (c CallEntry) Hash() string {
 	h := sha256.New()
-	
+
 	// Include all fields except readable_date and contact_name
 	fmt.Fprintf(h, "number:%s|", c.Number)
 	fmt.Fprintf(h, "duration:%d|", c.Duration)
 	fmt.Fprintf(h, "date:%d|", c.Date)
 	fmt.Fprintf(h, "type:%d|", c.Type)
-	
+
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 

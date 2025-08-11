@@ -473,7 +473,7 @@ func TestContactsManager_AddUnprocessedContact_Duplicates(t *testing.T) {
 
 	// Add the same contact multiple times
 	manager.AddUnprocessedContact("5551234567", "John Doe")
-	manager.AddUnprocessedContact("5551234567", "John Doe") // Exact duplicate
+	manager.AddUnprocessedContact("5551234567", "John Doe")   // Exact duplicate
 	manager.AddUnprocessedContact("+15551234567", "John Doe") // Different format, same number and name
 
 	unprocessed := manager.GetUnprocessedContacts()

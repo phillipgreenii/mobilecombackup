@@ -74,7 +74,7 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 	// BUG-016: This is where the bug manifests - no messages are written
 	if len(messages) != 2 {
 		t.Errorf("Expected 2 messages in repository, got %d", len(messages))
-		
+
 		// Read the actual file content to debug
 		content, _ := os.ReadFile(smsRepoFile)
 		t.Logf("Actual file content:\n%s", string(content))

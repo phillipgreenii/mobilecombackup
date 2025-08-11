@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
@@ -28,7 +28,7 @@ func NewCallsImporter(options *ImportOptions, contactsManager *contacts.Contacts
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
 	}
-	
+
 	return &CallsImporter{
 		options:         options,
 		coalescer:       calls.NewCallCoalescer(),
@@ -42,34 +42,34 @@ func NewCallsImporter(options *ImportOptions, contactsManager *contacts.Contacts
 // LoadRepository loads existing calls for deduplication
 func (ci *CallsImporter) LoadRepository() error {
 	reader := calls.NewXMLCallsReader(ci.options.RepoRoot)
-	
+
 	// Stream all existing calls into the coalescer
 	var existingCalls []calls.CallEntry
 	err := reader.StreamCalls(func(call *calls.Call) error {
 		existingCalls = append(existingCalls, calls.CallEntry{Call: call})
 		return nil
 	})
-	
+
 	if err != nil {
 		// Empty repository is OK
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("failed to stream existing calls: %w", err)
 		}
 	}
-	
+
 	// Load all existing calls at once
 	if len(existingCalls) > 0 {
 		if err := ci.coalescer.LoadExisting(existingCalls); err != nil {
 			return fmt.Errorf("failed to load existing calls: %w", err)
 		}
 	}
-	
+
 	count := len(existingCalls)
-	
+
 	if ci.options.Verbose && !ci.options.Quiet {
 		fmt.Printf("Loaded %d existing calls from repository\n", count)
 	}
-	
+
 	return nil
 }
 
@@ -80,10 +80,10 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Parse the XML file
 	decoder := xml.NewDecoder(file)
-	
+
 	// Find the root element
 	var root struct {
 		XMLName xml.Name
@@ -98,14 +98,14 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 			ContactName  string `xml:"contact_name,attr"`
 		} `xml:"call"`
 	}
-	
+
 	if err := decoder.Decode(&root); err != nil {
 		return nil, fmt.Errorf("failed to parse XML: %w", err)
 	}
-	
+
 	stat := &YearStat{}
 	var rejections []RejectedEntry
-	
+
 	// Process each call
 	for i, xmlCall := range root.Calls {
 		// Convert to Call struct
@@ -117,7 +117,7 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 			ReadableDate: xmlCall.ReadableDate,
 			ContactName:  xmlCall.ContactName,
 		}
-		
+
 		// Validate the call
 		violations := ci.validator.Validate(call)
 		if len(violations) > 0 {
@@ -131,10 +131,10 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 			stat.Rejected++
 			continue
 		}
-		
+
 		// Extract contact information for valid calls
 		ci.extractContact(call)
-		
+
 		// Add to coalescer (checks for duplicates)
 		entry := calls.CallEntry{Call: call}
 		if ci.coalescer.Add(entry) {
@@ -142,13 +142,13 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 		} else {
 			stat.Duplicates++
 		}
-		
+
 		// Report progress every 100 entries
 		if (i+1)%100 == 0 && ci.options.ProgressReporter != nil {
 			ci.options.ProgressReporter.UpdateProgress(i+1, len(root.Calls))
 		}
 	}
-	
+
 	// Write rejections if any
 	if len(rejections) > 0 && !ci.options.DryRun {
 		rejFile, err := ci.rejWriter.WriteRejections(filename, rejections)
@@ -161,7 +161,7 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 			fmt.Printf("Created rejection file: %s\n", rejFile)
 		}
 	}
-	
+
 	return stat, nil
 }
 
@@ -170,17 +170,17 @@ func (ci *CallsImporter) WriteRepository() error {
 	if ci.options.DryRun {
 		return nil
 	}
-	
+
 	// Get all calls sorted by timestamp
 	allEntries := ci.coalescer.GetAll()
-	
+
 	// Group by year
 	callsByYear := make(map[int][]*calls.Call)
 	for _, entry := range allEntries {
 		year := entry.Year()
 		callsByYear[year] = append(callsByYear[year], entry.Call)
 	}
-	
+
 	// Write each year
 	for year, yearCalls := range callsByYear {
 		filename := fmt.Sprintf("calls-%d.xml", year)
@@ -188,7 +188,7 @@ func (ci *CallsImporter) WriteRepository() error {
 			return fmt.Errorf("failed to write calls for year %d: %w", year, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -208,17 +208,17 @@ func NewCallValidator() *CallValidator {
 // Validate checks if a call is valid
 func (v *CallValidator) Validate(call *calls.Call) []string {
 	var violations []string
-	
+
 	// Required: valid timestamp
 	if call.Date <= 0 {
 		violations = append(violations, "missing-timestamp")
 	}
-	
+
 	// Required: phone number
 	if strings.TrimSpace(call.Number) == "" {
 		violations = append(violations, "missing-number")
 	}
-	
+
 	// Required: valid call type
 	switch call.Type {
 	case calls.Incoming, calls.Outgoing, calls.Missed, calls.Voicemail:
@@ -226,12 +226,12 @@ func (v *CallValidator) Validate(call *calls.Call) []string {
 	default:
 		violations = append(violations, fmt.Sprintf("invalid-type: %d", call.Type))
 	}
-	
+
 	// Duration should be non-negative
 	if call.Duration < 0 {
 		violations = append(violations, "negative-duration")
 	}
-	
+
 	return violations
 }
 

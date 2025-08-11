@@ -73,7 +73,7 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 		{"MP4 video", "video/mp4", true},
 		{"PDF document", "application/pdf", true},
 		{"JPEG with charset", "image/jpeg; charset=utf-8", true},
-		
+
 		// Should not extract
 		{"SMIL presentation", "application/smil", false},
 		{"Plain text", "text/plain", false},
@@ -187,7 +187,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Duplicate(t *testing.T) {
 	if result2.Action != "referenced" {
 		t.Errorf("Expected second action 'referenced', got %q", result2.Action)
 	}
-	
+
 	if result2.Hash != expectedHash {
 		t.Errorf("Hash mismatch: expected %s, got %s", expectedHash, result2.Hash)
 	}
@@ -495,7 +495,7 @@ func TestGetDefaultContentTypeConfig(t *testing.T) {
 	expectedExtractable := []string{
 		"image/jpeg", "image/png", "video/mp4", "audio/mpeg", "application/pdf",
 	}
-	
+
 	for _, expected := range expectedExtractable {
 		found := false
 		for _, extractable := range config.ExtractableTypes {
@@ -513,7 +513,7 @@ func TestGetDefaultContentTypeConfig(t *testing.T) {
 	expectedSkipped := []string{
 		"application/smil", "text/plain", "text/x-vCard",
 	}
-	
+
 	for _, expected := range expectedSkipped {
 		found := false
 		for _, skipped := range config.SkippedTypes {

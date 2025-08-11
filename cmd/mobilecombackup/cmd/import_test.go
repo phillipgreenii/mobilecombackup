@@ -28,33 +28,33 @@ func TestImportCommand(t *testing.T) {
 		errContains string
 	}{
 		{
-			name: "no repository and no args",
-			args: []string{"mobilecombackup", "import"},
-			wantErr: true,
+			name:        "no repository and no args",
+			args:        []string{"mobilecombackup", "import"},
+			wantErr:     true,
 			errContains: "no repository specified",
 		},
 		{
-			name: "valid repository from flag",
-			args: []string{"mobilecombackup", "import", "--repo-root", "test-repo"},
-			wantErr: true, // Will fail on non-existent repo
+			name:        "valid repository from flag",
+			args:        []string{"mobilecombackup", "import", "--repo-root", "test-repo"},
+			wantErr:     true, // Will fail on non-existent repo
 			errContains: "invalid repository",
 		},
 		{
-			name: "valid repository from env",
-			args: []string{"mobilecombackup", "import"},
-			env: map[string]string{"MB_REPO_ROOT": "test-repo"},
-			wantErr: true, // Will fail on non-existent repo
+			name:        "valid repository from env",
+			args:        []string{"mobilecombackup", "import"},
+			env:         map[string]string{"MB_REPO_ROOT": "test-repo"},
+			wantErr:     true, // Will fail on non-existent repo
 			errContains: "invalid repository",
 		},
 		{
-			name: "invalid filter value",
-			args: []string{"mobilecombackup", "import", "--repo-root", ".", "--filter", "invalid"},
-			wantErr: true,
+			name:        "invalid filter value",
+			args:        []string{"mobilecombackup", "import", "--repo-root", ".", "--filter", "invalid"},
+			wantErr:     true,
 			errContains: "invalid filter value",
 		},
 		{
-			name: "help flag",
-			args: []string{"mobilecombackup", "import", "--help"},
+			name:    "help flag",
+			args:    []string{"mobilecombackup", "import", "--help"},
 			wantErr: false,
 		},
 	}
@@ -173,7 +173,7 @@ func TestConsoleProgressReporter(t *testing.T) {
 	os.Stdout = w
 
 	reporter.UpdateProgress(100, 0)
-	reporter.UpdateProgress(50, 0)  // Should not output
+	reporter.UpdateProgress(50, 0) // Should not output
 	reporter.UpdateProgress(200, 0)
 
 	w.Close()
@@ -213,7 +213,7 @@ func TestImportCommandFlags(t *testing.T) {
 	// Check flags exist
 	expectedFlags := []string{
 		"dry-run",
-		"verbose", 
+		"verbose",
 		"json",
 		"filter",
 		"no-error-on-rejects",
@@ -276,7 +276,7 @@ func TestDisplaySummary(t *testing.T) {
 			},
 		},
 		Rejections: map[string]*importer.RejectionStats{
-			"missing-timestamp": {Count: 1, Reason: "missing-timestamp"},
+			"missing-timestamp":    {Count: 1, Reason: "missing-timestamp"},
 			"malformed-attachment": {Count: 2, Reason: "malformed-attachment"},
 		},
 		FilesProcessed: 5,

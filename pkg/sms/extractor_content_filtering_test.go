@@ -289,7 +289,7 @@ func TestContentTypeFiltering_MixedMMSParts(t *testing.T) {
 
 	// Verify specific part behaviors
 	parts := mms.Parts
-	
+
 	// SMIL part should be unchanged
 	if parts[0].Data == "" {
 		t.Errorf("Expected SMIL part data to be preserved")

@@ -90,7 +90,6 @@ func (m *mockAttachmentReader) ValidateAttachmentStructure() error {
 	return m.structureError
 }
 
-
 func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -590,12 +589,12 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 	pngHash := "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 	pngPath := filepath.Join("attachments", "ab", pngHash)
 	pngFullPath := filepath.Join(tempDir, pngPath)
-	
+
 	// Create directory structure
 	if err := os.MkdirAll(filepath.Dir(pngFullPath), 0755); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
-	
+
 	// Write PNG data
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D}
 	if err := os.WriteFile(pngFullPath, pngData, 0644); err != nil {
@@ -619,7 +618,7 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 			},
 		},
 	}
-	
+
 	mockSMSReader := &mockSMSReader{
 		messages: map[int][]sms.Message{
 			2023: {mms},
@@ -643,7 +642,7 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if !found {
 		t.Error("Expected format mismatch violation not found")
 	}
@@ -656,12 +655,12 @@ func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
 	unknownHash := "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
 	unknownPath := filepath.Join("attachments", "fe", unknownHash)
 	unknownFullPath := filepath.Join(tempDir, unknownPath)
-	
+
 	// Create directory structure
 	if err := os.MkdirAll(filepath.Dir(unknownFullPath), 0755); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
-	
+
 	// Write unknown format data
 	unknownData := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 	if err := os.WriteFile(unknownFullPath, unknownData, 0644); err != nil {
@@ -692,7 +691,7 @@ func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
 			found = true
 		}
 	}
-	
+
 	if !found {
 		t.Error("Expected unknown format violation not found")
 	}

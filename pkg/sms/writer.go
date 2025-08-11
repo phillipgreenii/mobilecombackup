@@ -19,7 +19,7 @@ func NewXMLSMSWriter(repoPath string) (*XMLSMSWriter, error) {
 	if err := os.MkdirAll(repoPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create sms directory: %w", err)
 	}
-	
+
 	return &XMLSMSWriter{
 		repoPath: repoPath,
 	}, nil
@@ -32,7 +32,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 	for _, msg := range messages {
 		t := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
 		readableDate := t.In(loc).Format("Jan 2, 2006 3:04:05 PM")
-		
+
 		// Set readable_date based on message type
 		switch m := msg.(type) {
 		case *SMS:
@@ -41,7 +41,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 			m.ReadableDate = readableDate
 		}
 	}
-	
+
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
 	file, err := os.Create(filepath)
@@ -49,19 +49,19 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Write XML header
 	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
-	
+
 	// Create encoder with proper formatting
 	encoder := xml.NewEncoder(file)
 	encoder.Indent("", "  ")
-	
+
 	// Create root element
 	// We need to convert messages to their concrete types for XML marshaling
 	var smsMessages []*SMS
 	var mmsMessages []*MMS
-	
+
 	for _, msg := range messages {
 		switch m := msg.(type) {
 		case *SMS:
@@ -74,7 +74,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 			mmsMessages = append(mmsMessages, &m)
 		}
 	}
-	
+
 	// For now, we'll handle SMS and MMS separately
 	// In the actual implementation, they're mixed in the same file
 	root := struct {
@@ -87,14 +87,14 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 		SMS:   smsMessages,
 		MMS:   mmsMessages,
 	}
-	
+
 	// Encode the document
 	if err := encoder.Encode(root); err != nil {
 		return fmt.Errorf("failed to encode XML: %w", err)
 	}
-	
+
 	// Add final newline
 	file.WriteString("\n")
-	
+
 	return nil
 }

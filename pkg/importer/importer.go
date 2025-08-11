@@ -24,19 +24,19 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 	if err := validateRepository(options.RepoRoot); err != nil {
 		return nil, fmt.Errorf("invalid repository: %w", err)
 	}
-	
+
 	// Create contacts manager
 	contactsManager := contacts.NewContactsManager(options.RepoRoot)
-	
+
 	// Create calls importer
 	callsImporter, err := NewCallsImporter(options, contactsManager)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
-	
+
 	// Create SMS importer
 	smsImporter := NewSMSImporter(options, contactsManager)
-	
+
 	return &Importer{
 		options:         options,
 		callsImporter:   callsImporter,
@@ -62,43 +62,43 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		},
 		Rejections: make(map[string]*RejectionStats),
 	}
-	
+
 	// Load existing repository
 	if !imp.options.Quiet {
 		fmt.Println("Loading existing repository...")
 	}
-	
+
 	// Load contacts.yaml
 	if err := imp.contactsManager.LoadContacts(); err != nil {
 		return nil, fmt.Errorf("failed to load contacts: %w", err)
 	}
-	
+
 	if imp.options.Filter == "" || imp.options.Filter == "calls" {
 		if err := imp.callsImporter.LoadRepository(); err != nil {
 			return nil, fmt.Errorf("failed to load calls repository: %w", err)
 		}
 	}
-	
+
 	if imp.options.Filter == "" || imp.options.Filter == "sms" {
 		if err := imp.smsImporter.LoadRepository(); err != nil {
 			return nil, fmt.Errorf("failed to load SMS repository: %w", err)
 		}
 	}
-	
+
 	// Find files to import
 	files, err := imp.findFiles()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find files: %w", err)
 	}
-	
+
 	summary.FilesProcessed = len(files)
-	
+
 	// Process each file
 	for i, file := range files {
 		if imp.options.ProgressReporter != nil {
 			imp.options.ProgressReporter.StartFile(file, len(files), i+1)
 		}
-		
+
 		stat, err := imp.processFile(file)
 		if err != nil {
 			if !imp.options.Quiet {
@@ -106,7 +106,7 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 			}
 			continue
 		}
-		
+
 		// Update summary based on file type
 		name := filepath.Base(file)
 		if strings.HasPrefix(name, "calls") {
@@ -114,40 +114,40 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		} else if strings.HasPrefix(name, "sms") {
 			imp.updateSMSSummary(summary.SMS, stat)
 		}
-		
+
 		if imp.options.ProgressReporter != nil {
 			imp.options.ProgressReporter.EndFile(file, stat)
 		}
 	}
-	
+
 	// Write repository (single write operation)
 	if !imp.options.DryRun {
 		if !imp.options.Quiet {
 			fmt.Println("\nWriting repository...")
 		}
-		
+
 		if imp.options.Filter == "" || imp.options.Filter == "calls" {
 			if err := imp.callsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write calls repository: %w", err)
 			}
 		}
-		
+
 		if imp.options.Filter == "" || imp.options.Filter == "sms" {
 			if err := imp.smsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write SMS repository: %w", err)
 			}
 		}
-		
+
 		// Save contacts.yaml with any extracted contact names
 		contactsPath := filepath.Join(imp.options.RepoRoot, "contacts.yaml")
 		if err := imp.contactsManager.SaveContacts(contactsPath); err != nil {
 			return nil, fmt.Errorf("failed to save contacts: %w", err)
 		}
 	}
-	
+
 	// Update final statistics
 	imp.finalizeSummary(summary)
-	
+
 	// Generate summary.yaml file (only in non-dry-run mode)
 	if !imp.options.DryRun {
 		if err := generateSummaryFile(imp.options.RepoRoot); err != nil {
@@ -156,7 +156,7 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 				fmt.Printf("Warning: Failed to generate summary.yaml: %v\n", err)
 			}
 		}
-		
+
 		// Generate files.yaml manifest
 		if err := generateManifestFile(imp.options.RepoRoot, "dev"); err != nil {
 			// Log error but don't fail the import
@@ -165,7 +165,7 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 			}
 		}
 	}
-	
+
 	summary.Duration = time.Since(startTime)
 	return summary, nil
 }
@@ -180,11 +180,11 @@ func validateRepository(repoRoot string) error {
 		}
 		return err
 	}
-	
+
 	if !info.IsDir() {
 		return fmt.Errorf("repository path is not a directory: %s", repoRoot)
 	}
-	
+
 	// TODO: Use validation from FEAT-007 when available
 	return nil
 }
@@ -192,13 +192,13 @@ func validateRepository(repoRoot string) error {
 // findFiles finds all files to import based on options
 func (imp *Importer) findFiles() ([]string, error) {
 	var files []string
-	
+
 	for _, path := range imp.options.Paths {
 		info, err := os.Stat(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to stat %s: %w", path, err)
 		}
-		
+
 		if info.IsDir() {
 			// Scan directory for backup files
 			dirFiles, err := imp.scanDirectory(path)
@@ -213,19 +213,19 @@ func (imp *Importer) findFiles() ([]string, error) {
 			}
 		}
 	}
-	
+
 	return files, nil
 }
 
 // scanDirectory recursively scans a directory for backup files
 func (imp *Importer) scanDirectory(dir string) ([]string, error) {
 	var files []string
-	
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if info.IsDir() {
 			// Skip hidden directories
 			if strings.HasPrefix(info.Name(), ".") && path != dir {
@@ -233,26 +233,26 @@ func (imp *Importer) scanDirectory(dir string) ([]string, error) {
 			}
 			return nil
 		}
-		
+
 		if imp.shouldProcessFile(path) {
 			files = append(files, path)
 		}
-		
+
 		return nil
 	})
-	
+
 	return files, err
 }
 
 // shouldProcessFile checks if a file should be processed
 func (imp *Importer) shouldProcessFile(path string) bool {
 	name := filepath.Base(path)
-	
+
 	// Skip files already in repository structure
 	if strings.Contains(path, "/calls/") || strings.Contains(path, "/sms/") {
 		return false
 	}
-	
+
 	// Check filter
 	switch imp.options.Filter {
 	case "calls":
@@ -261,23 +261,23 @@ func (imp *Importer) shouldProcessFile(path string) bool {
 		return strings.HasPrefix(name, "sms") && strings.HasSuffix(name, ".xml")
 	default:
 		// Process both
-		return (strings.HasPrefix(name, "calls") || strings.HasPrefix(name, "sms")) && 
-		       strings.HasSuffix(name, ".xml")
+		return (strings.HasPrefix(name, "calls") || strings.HasPrefix(name, "sms")) &&
+			strings.HasSuffix(name, ".xml")
 	}
 }
 
 // processFile processes a single file
 func (imp *Importer) processFile(path string) (*YearStat, error) {
 	name := filepath.Base(path)
-	
+
 	if strings.HasPrefix(name, "calls") {
 		return imp.callsImporter.ImportFile(path)
 	}
-	
+
 	if strings.HasPrefix(name, "sms") {
 		return imp.smsImporter.ImportFile(path)
 	}
-	
+
 	return nil, fmt.Errorf("unknown file type: %s", name)
 }
 
@@ -306,7 +306,7 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 		coalSummary := imp.callsImporter.GetSummary()
 		summary.Calls.Total.Initial = coalSummary.Initial
 		summary.Calls.Total.Final = coalSummary.Final
-		
+
 		// Calculate per-year statistics for calls
 		for _, entry := range imp.callsImporter.coalescer.GetAll() {
 			year := entry.Year()
@@ -316,13 +316,13 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 			summary.Calls.YearStats[year].Final++
 		}
 	}
-	
+
 	if imp.options.Filter == "" || imp.options.Filter == "sms" {
 		// Get statistics from SMS coalescer
 		coalSummary := imp.smsImporter.GetSummary()
 		summary.SMS.Total.Initial = coalSummary.Initial
 		summary.SMS.Total.Final = coalSummary.Final
-		
+
 		// Calculate per-year statistics for SMS
 		for _, entry := range imp.smsImporter.coalescer.GetAll() {
 			year := entry.Year()
@@ -331,14 +331,14 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 			}
 			summary.SMS.YearStats[year].Final++
 		}
-		
+
 		// Get attachment statistics from SMS importer
 		attachStats := imp.smsImporter.GetAttachmentStats()
 		summary.Attachments.Total.Total = attachStats.Total
 		summary.Attachments.Total.New = attachStats.New
 		summary.Attachments.Total.Duplicates = attachStats.Duplicates
 	}
-	
+
 	// Collect rejection statistics
 	imp.collectRejectionStats(summary)
 }

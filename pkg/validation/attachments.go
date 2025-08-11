@@ -184,7 +184,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 				})
 			}
 		}
-		// Note: If no expected MIME type is available from SMS data, we only verify 
+		// Note: If no expected MIME type is available from SMS data, we only verify
 		// that the format is recognized (not unknown), but don't enforce a specific type
 	}
 
@@ -268,8 +268,8 @@ type formatSignature struct {
 var formatSignatures = []formatSignature{
 	{"image/png", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, 0},
 	{"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, 0},
-	{"image/gif", []byte{0x47, 0x49, 0x46, 0x38}, 0}, // GIF87a or GIF89a (partial)
-	{"video/mp4", []byte{0x66, 0x74, 0x79, 0x70}, 4}, // 'ftyp' at offset 4
+	{"image/gif", []byte{0x47, 0x49, 0x46, 0x38}, 0},       // GIF87a or GIF89a (partial)
+	{"video/mp4", []byte{0x66, 0x74, 0x79, 0x70}, 4},       // 'ftyp' at offset 4
 	{"application/pdf", []byte{0x25, 0x50, 0x44, 0x46}, 0}, // '%PDF'
 }
 
@@ -287,7 +287,7 @@ func DetectFileFormat(filePath string) (string, error) {
 	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("failed to read file header: %w", err)
 	}
-	
+
 	// Truncate buffer to actual bytes read
 	buffer = buffer[:n]
 
@@ -297,7 +297,7 @@ func DetectFileFormat(filePath string) (string, error) {
 		if len(buffer) < sig.offset+len(sig.magic) {
 			continue
 		}
-		
+
 		// Check if magic bytes match at the expected offset
 		match := true
 		for i, b := range sig.magic {
@@ -306,7 +306,7 @@ func DetectFileFormat(filePath string) (string, error) {
 				break
 			}
 		}
-		
+
 		if match {
 			return sig.mimeType, nil
 		}
@@ -320,18 +320,18 @@ func DetectFileFormat(filePath string) (string, error) {
 // Returns a map of attachment hash -> MIME type
 func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, error) {
 	mimeTypes := make(map[string]string)
-	
+
 	// Skip if no SMS reader available
 	if v.smsReader == nil {
 		return mimeTypes, nil
 	}
-	
+
 	// Get all available years with SMS data
 	years, err := v.smsReader.GetAvailableYears()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available SMS years: %w", err)
 	}
-	
+
 	// Process each year to extract attachment MIME types
 	for _, year := range years {
 		err := v.smsReader.StreamMessagesForYear(year, func(message sms.Message) error {
@@ -348,11 +348,11 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
 			}
 			return nil
 		})
-		
+
 		if err != nil {
 			return nil, fmt.Errorf("failed to stream messages for year %d: %w", year, err)
 		}
 	}
-	
+
 	return mimeTypes, nil
 }

@@ -43,7 +43,7 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 			// Audio
 			"audio/mpeg", "audio/mp4", "audio/amr", "audio/wav",
 			// Documents
-			"application/pdf", "application/msword", 
+			"application/pdf", "application/msword",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			"application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -62,21 +62,21 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, config ContentTypeConfig) bool {
 	// Normalize content type (remove parameters like charset)
 	contentType = strings.ToLower(strings.Split(contentType, ";")[0])
-	
+
 	// Check if explicitly skipped
 	for _, skipped := range config.SkippedTypes {
 		if contentType == strings.ToLower(skipped) {
 			return false
 		}
 	}
-	
+
 	// Check if explicitly extractable
 	for _, extractable := range config.ExtractableTypes {
 		if contentType == strings.ToLower(extractable) {
 			return true
 		}
 	}
-	
+
 	// Default: don't extract unknown types
 	return false
 }
@@ -91,16 +91,16 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 			UpdatePart: false,
 		}, nil
 	}
-	
+
 	// Skip if content type should not be extracted
 	if !ae.shouldExtractContentType(part.ContentType, config) {
 		return &AttachmentExtractionResult{
-			Action:     "skipped", 
+			Action:     "skipped",
 			Reason:     "content-type-filtered",
 			UpdatePart: false,
 		}, nil
 	}
-	
+
 	// Skip small files (likely metadata)
 	if len(part.Data) < 1024 { // Less than 1KB when base64 encoded
 		return &AttachmentExtractionResult{
@@ -109,26 +109,26 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 			UpdatePart: false,
 		}, nil
 	}
-	
+
 	// Decode base64 data
 	decodedData, err := base64.StdEncoding.DecodeString(part.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
 	}
-	
+
 	// Calculate SHA-256 hash
 	hasher := sha256.New()
 	hasher.Write(decodedData)
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
-	
+
 	// Check if attachment already exists
 	exists, err := ae.attachmentManager.AttachmentExists(hash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
 	}
-	
+
 	attachmentPath := ae.attachmentManager.GetAttachmentPath(hash)
-	
+
 	if exists {
 		// Attachment already exists, just reference it
 		return &AttachmentExtractionResult{
@@ -140,20 +140,20 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 			ExtractionDate: time.Now().UTC(),
 		}, nil
 	}
-	
+
 	// Write attachment to disk
 	fullPath := filepath.Join(ae.repoRoot, attachmentPath)
-	
+
 	// Create directory if needed
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0750); err != nil {
 		return nil, fmt.Errorf("failed to create attachment directory: %w", err)
 	}
-	
+
 	// Write file
 	if err := os.WriteFile(fullPath, decodedData, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write attachment file: %w", err)
 	}
-	
+
 	return &AttachmentExtractionResult{
 		Action:         "extracted",
 		Hash:           hash,
@@ -180,7 +180,7 @@ func UpdatePartWithExtraction(part *MMSPart, result *AttachmentExtractionResult)
 	if !result.UpdatePart {
 		return
 	}
-	
+
 	// Remove base64 data and replace with path reference
 	part.Data = ""
 	part.Path = result.Path
@@ -189,74 +189,74 @@ func UpdatePartWithExtraction(part *MMSPart, result *AttachmentExtractionResult)
 	part.AttachmentRef = result.Path // Also set internal tracking field
 }
 
-// ExtractAttachmentsFromMMS processes all parts of an MMS message for attachment extraction  
+// ExtractAttachmentsFromMMS processes all parts of an MMS message for attachment extraction
 func (ae *AttachmentExtractor) ExtractAttachmentsFromMMS(mms *MMS, config ContentTypeConfig) (*MMSExtractionSummary, error) {
 	summary := &MMSExtractionSummary{
-		MessageDate:    mms.GetDate(),
-		TotalParts:     len(mms.Parts),
-		Results:        make([]*AttachmentExtractionResult, 0),
+		MessageDate: mms.GetDate(),
+		TotalParts:  len(mms.Parts),
+		Results:     make([]*AttachmentExtractionResult, 0),
 	}
-	
+
 	for i := range mms.Parts {
 		result, err := ae.ExtractAttachmentFromPart(&mms.Parts[i], config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract attachment from part %d: %w", i, err)
 		}
-		
+
 		// Update the part if needed
 		UpdatePartWithExtraction(&mms.Parts[i], result)
-		
+
 		summary.Results = append(summary.Results, result)
-		
+
 		// Update counters
 		switch result.Action {
 		case "extracted":
 			summary.ExtractedCount++
 			summary.TotalExtractedSize += result.OriginalSize
-		case "referenced": 
+		case "referenced":
 			summary.ReferencedCount++
 			summary.TotalReferencedSize += result.OriginalSize
 		case "skipped":
 			summary.SkippedCount++
 		}
 	}
-	
+
 	return summary, nil
 }
 
 // MMSExtractionSummary summarizes attachment extraction from a single MMS
 type MMSExtractionSummary struct {
-	MessageDate          int64                        // Message timestamp
-	TotalParts           int                          // Total number of parts processed
-	ExtractedCount       int                          // Number of new attachments extracted
-	ReferencedCount      int                          // Number of existing attachments referenced
-	SkippedCount         int                          // Number of parts skipped
-	TotalExtractedSize   int64                        // Total bytes of new attachments
-	TotalReferencedSize  int64                        // Total bytes of referenced attachments
-	Results              []*AttachmentExtractionResult // Detailed results per part
+	MessageDate         int64                         // Message timestamp
+	TotalParts          int                           // Total number of parts processed
+	ExtractedCount      int                           // Number of new attachments extracted
+	ReferencedCount     int                           // Number of existing attachments referenced
+	SkippedCount        int                           // Number of parts skipped
+	TotalExtractedSize  int64                         // Total bytes of new attachments
+	TotalReferencedSize int64                         // Total bytes of referenced attachments
+	Results             []*AttachmentExtractionResult // Detailed results per part
 }
 
 // AttachmentExtractionStats provides overall extraction statistics
 type AttachmentExtractionStats struct {
-	TotalMessages        int                             // Total messages processed
-	MessagesWithParts    int                             // Messages that had parts
-	TotalParts           int                             // Total parts processed
-	ExtractedCount       int                             // New attachments extracted
-	ReferencedCount      int                             // Existing attachments referenced
-	SkippedCount         int                             // Parts skipped
-	TotalExtractedSize   int64                           // Total bytes extracted
-	TotalReferencedSize  int64                           // Total bytes referenced
-	ContentTypeStats     map[string]*ContentTypeStats    // Stats by content type
-	ErrorCount           int                             // Number of extraction errors
+	TotalMessages       int                          // Total messages processed
+	MessagesWithParts   int                          // Messages that had parts
+	TotalParts          int                          // Total parts processed
+	ExtractedCount      int                          // New attachments extracted
+	ReferencedCount     int                          // Existing attachments referenced
+	SkippedCount        int                          // Parts skipped
+	TotalExtractedSize  int64                        // Total bytes extracted
+	TotalReferencedSize int64                        // Total bytes referenced
+	ContentTypeStats    map[string]*ContentTypeStats // Stats by content type
+	ErrorCount          int                          // Number of extraction errors
 }
 
 // ContentTypeStats provides statistics for a specific content type
 type ContentTypeStats struct {
-	ContentType      string // The content type
-	ExtractedCount   int    // New attachments of this type
-	ReferencedCount  int    // Referenced attachments of this type
-	SkippedCount     int    // Skipped parts of this type
-	TotalSize        int64  // Total bytes for this type
+	ContentType     string // The content type
+	ExtractedCount  int    // New attachments of this type
+	ReferencedCount int    // Referenced attachments of this type
+	SkippedCount    int    // Skipped parts of this type
+	TotalSize       int64  // Total bytes for this type
 }
 
 // AddMMSExtractionSummary incorporates an MMS extraction summary into overall stats
@@ -265,7 +265,7 @@ func (stats *AttachmentExtractionStats) AddMMSExtractionSummary(summary *MMSExtr
 	if summary.TotalParts > 0 {
 		stats.MessagesWithParts++
 	}
-	
+
 	stats.TotalParts += summary.TotalParts
 	stats.ExtractedCount += summary.ExtractedCount
 	stats.ReferencedCount += summary.ReferencedCount

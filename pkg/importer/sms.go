@@ -15,27 +15,26 @@ import (
 
 // SMSImporter handles SMS/MMS import operations
 type SMSImporter struct {
-	options              *ImportOptions
-	coalescer            coalescer.Coalescer[sms.MessageEntry]
-	smsWriter            *sms.XMLSMSWriter
-	contactsManager      *contacts.ContactsManager
-	attachmentExtractor  *sms.AttachmentExtractor
-	attachmentStats      *sms.AttachmentExtractionStats
-	contentTypeConfig    sms.ContentTypeConfig
+	options             *ImportOptions
+	coalescer           coalescer.Coalescer[sms.MessageEntry]
+	smsWriter           *sms.XMLSMSWriter
+	contactsManager     *contacts.ContactsManager
+	attachmentExtractor *sms.AttachmentExtractor
+	attachmentStats     *sms.AttachmentExtractionStats
+	contentTypeConfig   sms.ContentTypeConfig
 	// TODO: Implement rejection writer
 	// rejectWriter *XMLRejectionWriter
 }
 
-
 // NewSMSImporter creates a new SMS importer
 func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) *SMSImporter {
 	return &SMSImporter{
-		options:              options,
-		coalescer:            coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager:      contactsManager,
-		attachmentExtractor:  sms.NewAttachmentExtractor(options.RepoRoot),
-		attachmentStats:      sms.NewAttachmentExtractionStats(),
-		contentTypeConfig:    sms.GetDefaultContentTypeConfig(),
+		options:             options,
+		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager:     contactsManager,
+		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot),
+		attachmentStats:     sms.NewAttachmentExtractionStats(),
+		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
 	}
 }
 
@@ -47,7 +46,7 @@ func (si *SMSImporter) SetFilesToImport(files []string) {
 // LoadRepository loads existing SMS/MMS from the repository for deduplication
 func (si *SMSImporter) LoadRepository() error {
 	reader := sms.NewXMLSMSReader(si.options.RepoRoot)
-	
+
 	// Get all available years
 	years, err := reader.GetAvailableYears()
 	if err != nil {
@@ -63,18 +62,18 @@ func (si *SMSImporter) LoadRepository() error {
 			si.coalescer.Add(entry)
 			yearCount++
 			totalLoaded++
-			
+
 			// Report progress every 100 messages
 			if totalLoaded%100 == 0 && si.options.ProgressReporter != nil {
 				si.options.ProgressReporter.UpdateProgress(totalLoaded, 0)
 			}
-			
+
 			return nil
 		})
 		if err != nil {
 			return fmt.Errorf("failed to load messages from year %d: %w", year, err)
 		}
-		
+
 		if !si.options.Quiet && si.options.Verbose {
 			fmt.Printf("Loaded %d messages from %d\n", yearCount, year)
 		}
@@ -104,11 +103,11 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 	// Create rejection writer for this file
 	timestamp := time.Now().Format("20060102-150405")
-	_ = filepath.Join(si.options.RepoRoot, "rejected", 
+	_ = filepath.Join(si.options.RepoRoot, "rejected",
 		fmt.Sprintf("sms-%s-%s-rejects.xml", fileHash[:8], timestamp))
 	_ = filepath.Join(si.options.RepoRoot, "rejected",
 		fmt.Sprintf("sms-%s-%s-violations.yaml", fileHash[:8], timestamp))
-	
+
 	// TODO: Create rejection writer
 	// si.rejectWriter = NewXMLRejectionWriter(rejectPath)
 	// defer si.rejectWriter.Close()
@@ -124,7 +123,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	lineNumber := 0
 	err = reader.StreamMessagesFromReader(file, func(msg sms.Message) error {
 		lineNumber++
-		
+
 		// Validate message
 		violations := si.validateMessage(msg)
 		if len(violations) > 0 {
@@ -143,7 +142,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 				// TODO: Write rejection with reason "attachment-extraction-error"
 				return nil
 			}
-			
+
 			// Update overall attachment statistics
 			si.attachmentStats.AddMMSExtractionSummary(extractionSummary)
 		}
@@ -207,7 +206,7 @@ func (si *SMSImporter) validateMessage(msg sms.Message) []string {
 		if mmsMsg.MsgBox != 1 && mmsMsg.MsgBox != 2 {
 			violations = append(violations, "invalid-msg-box")
 		}
-		
+
 		// Validate parts
 		for i, part := range mmsMsg.Parts {
 			if part.ContentType == "" {
@@ -228,7 +227,7 @@ func (si *SMSImporter) validateMessage(msg sms.Message) []string {
 func (si *SMSImporter) WriteRepository() error {
 	// Get all entries from coalescer
 	entries := si.coalescer.GetAll()
-	
+
 	// Sort by timestamp
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Timestamp().Before(entries[j].Timestamp())
@@ -320,7 +319,7 @@ func calculateFileHash(filePath string) (string, error) {
 	if _, err := hasher.Write([]byte(filePath)); err != nil {
 		return "", err
 	}
-	
+
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 

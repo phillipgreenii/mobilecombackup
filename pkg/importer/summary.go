@@ -103,25 +103,25 @@ func calculateRepositoryStats(repoRoot string) (*RepoStats, error) {
 // countAttachmentFiles counts all files in the attachments directory
 func countAttachmentFiles(attachmentsDir string) (int, error) {
 	count := 0
-	
+
 	err := filepath.Walk(attachmentsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Skip directories
 		if info.IsDir() {
 			return nil
 		}
-		
+
 		// Skip non-attachment files (like .gitkeep)
 		if filepath.Base(path) == ".gitkeep" {
 			return nil
 		}
-		
+
 		count++
 		return nil
 	})
-	
+
 	return count, err
 }

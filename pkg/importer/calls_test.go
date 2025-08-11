@@ -3,13 +3,13 @@ package importer
 import (
 	"reflect"
 	"testing"
-	
+
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 )
 
 func TestCallValidator_Validate(t *testing.T) {
 	validator := NewCallValidator()
-	
+
 	tests := []struct {
 		name       string
 		call       *calls.Call
@@ -141,11 +141,11 @@ func TestCallValidator_Validate(t *testing.T) {
 			violations: nil,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			violations := validator.Validate(tt.call)
-			
+
 			if !reflect.DeepEqual(violations, tt.violations) {
 				t.Errorf("Expected violations %v, got %v", tt.violations, violations)
 			}
@@ -155,20 +155,20 @@ func TestCallValidator_Validate(t *testing.T) {
 
 func TestCallValidator_PhoneNumberFormats(t *testing.T) {
 	validator := NewCallValidator()
-	
+
 	// Test various phone number formats that should be valid
 	validNumbers := []string{
-		"1234567",           // Short number
-		"5551234567",        // 10-digit US
-		"15551234567",       // 11-digit US
-		"+15551234567",      // International format
-		"+441234567890",     // UK number
-		"911",               // Emergency
-		"*67",               // Special code
-		"#31#",              // Special code with hash
-		"+86138000138000",   // China mobile
+		"1234567",         // Short number
+		"5551234567",      // 10-digit US
+		"15551234567",     // 11-digit US
+		"+15551234567",    // International format
+		"+441234567890",   // UK number
+		"911",             // Emergency
+		"*67",             // Special code
+		"#31#",            // Special code with hash
+		"+86138000138000", // China mobile
 	}
-	
+
 	for _, number := range validNumbers {
 		call := &calls.Call{
 			Number:   number,
@@ -176,7 +176,7 @@ func TestCallValidator_PhoneNumberFormats(t *testing.T) {
 			Date:     1609459200000,
 			Type:     calls.Incoming,
 		}
-		
+
 		violations := validator.Validate(call)
 		if len(violations) > 0 {
 			t.Errorf("Phone number %q should be valid, got violations: %v", number, violations)

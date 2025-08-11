@@ -47,22 +47,22 @@ func init() {
 
 // RepositoryInfo contains all repository information
 type RepositoryInfo struct {
-	Version      string                    `json:"version"`
-	CreatedAt    time.Time                 `json:"created_at,omitempty"`
-	Calls        map[string]YearInfo       `json:"calls"`        // year -> info
-	SMS          map[string]MessageInfo    `json:"sms"`          // year -> info  
-	Attachments  AttachmentInfo            `json:"attachments"`
-	Contacts     int                       `json:"contacts"`
-	Rejections   map[string]int            `json:"rejections,omitempty"`    // component -> count
-	Errors       map[string]int            `json:"errors,omitempty"`        // component -> count
-	ValidationOK bool                      `json:"validation_ok"`
+	Version      string                 `json:"version"`
+	CreatedAt    time.Time              `json:"created_at,omitempty"`
+	Calls        map[string]YearInfo    `json:"calls"` // year -> info
+	SMS          map[string]MessageInfo `json:"sms"`   // year -> info
+	Attachments  AttachmentInfo         `json:"attachments"`
+	Contacts     int                    `json:"contacts"`
+	Rejections   map[string]int         `json:"rejections,omitempty"` // component -> count
+	Errors       map[string]int         `json:"errors,omitempty"`     // component -> count
+	ValidationOK bool                   `json:"validation_ok"`
 }
 
 // YearInfo contains year-specific statistics
 type YearInfo struct {
-	Count     int       `json:"count"`
-	Earliest  time.Time `json:"earliest,omitempty"`
-	Latest    time.Time `json:"latest,omitempty"`
+	Count    int       `json:"count"`
+	Earliest time.Time `json:"earliest,omitempty"`
+	Latest   time.Time `json:"latest,omitempty"`
 }
 
 // MessageInfo contains message statistics
@@ -76,10 +76,10 @@ type MessageInfo struct {
 
 // AttachmentInfo contains attachment statistics
 type AttachmentInfo struct {
-	Count         int              `json:"count"`
-	TotalSize     int64            `json:"total_size"`
-	OrphanedCount int              `json:"orphaned_count"`
-	ByType        map[string]int   `json:"by_type"` // mime type -> count
+	Count         int            `json:"count"`
+	TotalSize     int64          `json:"total_size"`
+	OrphanedCount int            `json:"orphaned_count"`
+	ByType        map[string]int `json:"by_type"` // mime type -> count
 }
 
 // InfoMarkerFileContent represents the .mobilecombackup.yaml file structure
@@ -180,7 +180,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 
 func readRepositoryMetadata(repoPath string, info *RepositoryInfo) error {
 	markerPath := filepath.Join(repoPath, ".mobilecombackup.yaml")
-	
+
 	data, err := os.ReadFile(markerPath)
 	if err != nil {
 		return err
@@ -264,7 +264,7 @@ func gatherSMSStats(reader sms.SMSReader, info *RepositoryInfo) error {
 		var earliest, latest time.Time
 		err = reader.StreamMessagesForYear(year, func(msg sms.Message) error {
 			timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
-			
+
 			if earliest.IsZero() || timestamp.Before(earliest) {
 				earliest = timestamp
 			}
@@ -312,7 +312,7 @@ func gatherAttachmentStats(attachmentReader attachments.AttachmentReader, smsRea
 	// Calculate total size and type distribution
 	for _, attachment := range attachmentList {
 		attachmentInfo.TotalSize += attachment.Size
-		
+
 		// Determine type from file extension or content inspection
 		mimeType := determineMimeType(attachment.Path)
 		attachmentInfo.ByType[mimeType]++
@@ -352,7 +352,7 @@ func gatherContactsStats(reader contacts.ContactsReader, info *RepositoryInfo) e
 
 func countRejections(repoPath string, info *RepositoryInfo) {
 	rejectedDir := filepath.Join(repoPath, "rejected")
-	
+
 	// Check if rejected directory exists
 	if _, err := os.Stat(rejectedDir); os.IsNotExist(err) {
 		return
@@ -457,8 +457,8 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 			totalMessages += msgInfo.TotalCount
 			totalSMS += msgInfo.SMSCount
 			totalMMS += msgInfo.MMSCount
-			fmt.Printf("  %s: %s messages (%s SMS, %s MMS)", 
-				year, 
+			fmt.Printf("  %s: %s messages (%s SMS, %s MMS)",
+				year,
 				formatNumber(msgInfo.TotalCount),
 				formatNumber(msgInfo.SMSCount),
 				formatNumber(msgInfo.MMSCount))
@@ -469,9 +469,9 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 			}
 			fmt.Println()
 		}
-		fmt.Printf("  Total: %s messages (%s SMS, %s MMS)\n", 
-			formatNumber(totalMessages), 
-			formatNumber(totalSMS), 
+		fmt.Printf("  Total: %s messages (%s SMS, %s MMS)\n",
+			formatNumber(totalMessages),
+			formatNumber(totalSMS),
 			formatNumber(totalMMS))
 		fmt.Println()
 	}
@@ -481,7 +481,7 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Count: %s\n", formatNumber(info.Attachments.Count))
 		fmt.Printf("  Total Size: %s\n", formatBytes(info.Attachments.TotalSize))
-		
+
 		if len(info.Attachments.ByType) > 0 {
 			fmt.Println("  Types:")
 			// Sort types by count (descending)
@@ -492,13 +492,13 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 			sort.Slice(types, func(i, j int) bool {
 				return info.Attachments.ByType[types[i]] > info.Attachments.ByType[types[j]]
 			})
-			
+
 			for _, mimeType := range types {
 				count := info.Attachments.ByType[mimeType]
 				fmt.Printf("    %s: %s\n", mimeType, formatNumber(count))
 			}
 		}
-		
+
 		if info.Attachments.OrphanedCount > 0 {
 			fmt.Printf("  Orphaned: %s\n", formatNumber(info.Attachments.OrphanedCount))
 		}
@@ -555,7 +555,7 @@ func addCommas(s string) string {
 	if n <= 3 {
 		return s
 	}
-	
+
 	var result strings.Builder
 	for i, r := range s {
 		if i > 0 && (n-i)%3 == 0 {

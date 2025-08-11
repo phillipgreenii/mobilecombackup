@@ -45,19 +45,19 @@ type RejectedEntry struct {
 type Coalescer[T Entry] interface {
 	// LoadExisting loads entries from the repository for deduplication
 	LoadExisting(entries []T) error
-	
+
 	// Add attempts to add an entry, returns true if added (not duplicate)
 	Add(entry T) bool
-	
+
 	// GetAll returns all entries (existing + new) sorted by timestamp
 	GetAll() []T
-	
+
 	// GetByYear returns entries for a specific year, sorted by timestamp
 	GetByYear(year int) []T
-	
+
 	// GetSummary returns statistics about the coalescing operation
 	GetSummary() Summary
-	
+
 	// Reset clears all entries and statistics
 	Reset()
 }

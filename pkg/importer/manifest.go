@@ -130,7 +130,7 @@ func generateManifestChecksum(manifestPath string) error {
 
 	checksumPath := manifestPath + ".sha256"
 	content := fmt.Sprintf("%s  %s\n", checksum, filepath.Base(manifestPath))
-	
+
 	if err := os.WriteFile(checksumPath, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write checksum file: %w", err)
 	}
@@ -141,7 +141,7 @@ func generateManifestChecksum(manifestPath string) error {
 // verifyManifest verifies that all files in the manifest exist and have correct checksums
 func verifyManifest(repoRoot string) error {
 	manifestPath := filepath.Join(repoRoot, "files.yaml")
-	
+
 	// Read manifest
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
@@ -156,7 +156,7 @@ func verifyManifest(repoRoot string) error {
 	// Verify each file
 	for _, entry := range manifest.Files {
 		filePath := filepath.Join(repoRoot, entry.Name)
-		
+
 		// Check file exists
 		info, err := os.Stat(filePath)
 		if err != nil {
@@ -165,7 +165,7 @@ func verifyManifest(repoRoot string) error {
 
 		// Check size
 		if info.Size() != entry.Size {
-			return fmt.Errorf("file %s size mismatch: expected %d, got %d", 
+			return fmt.Errorf("file %s size mismatch: expected %d, got %d",
 				entry.Name, entry.Size, info.Size())
 		}
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -37,7 +37,7 @@ func (w *XMLRejectionWriter) ensureRejectedDirectory() error {
 			w.dirErr = fmt.Errorf("failed to create rejected directory: %w", err)
 			return
 		}
-		
+
 		// Create subdirectories for calls and sms
 		for _, subdir := range []string{"calls", "sms"} {
 			path := filepath.Join(rejectedDir, subdir)
@@ -56,26 +56,26 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 	if len(rejections) == 0 {
 		return "", nil
 	}
-	
+
 	// Ensure rejected directory exists
 	if err := w.ensureRejectedDirectory(); err != nil {
 		return "", err
 	}
-	
+
 	// Calculate hash of original file
 	hash, err := w.hashFile(originalFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to hash original file: %w", err)
 	}
-	
+
 	// Generate timestamp
 	timestamp := time.Now().Format("20060102-150405")
-	
+
 	// Extract base name without extension
 	baseName := filepath.Base(originalFile)
 	ext := filepath.Ext(baseName)
 	nameNoExt := baseName[:len(baseName)-len(ext)]
-	
+
 	// Determine type subdirectory
 	var typeDir string
 	if strings.Contains(nameNoExt, "call") {
@@ -85,7 +85,7 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 	} else {
 		typeDir = "" // Root rejected directory
 	}
-	
+
 	// Create rejection file name
 	rejectedDir := filepath.Join(w.repoRoot, "rejected")
 	if typeDir != "" {
@@ -93,12 +93,12 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 	}
 	rejectFile := fmt.Sprintf("%s-%s-%s.xml", nameNoExt, hash[:8], timestamp)
 	rejectPath := filepath.Join(rejectedDir, rejectFile)
-	
+
 	// Write XML rejection file
 	if err := w.writeXMLRejections(rejectPath, rejections, typeDir); err != nil {
 		return "", err
 	}
-	
+
 	return rejectPath, nil
 }
 
@@ -109,12 +109,12 @@ func (w *XMLRejectionWriter) hashFile(filename string) (string, error) {
 		return "", err
 	}
 	defer file.Close()
-	
+
 	h := sha256.New()
 	if _, err := io.Copy(h, file); err != nil {
 		return "", err
 	}
-	
+
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
@@ -125,10 +125,10 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 		return fmt.Errorf("failed to create rejection file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Write XML header
 	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
-	
+
 	// Determine root element name based on type
 	var rootName string
 	switch entryType {
@@ -139,18 +139,18 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 	default:
 		rootName = "entries" // Generic fallback
 	}
-	
+
 	// Write opening tag
 	fmt.Fprintf(file, "<%s count=\"%d\">\n", rootName, len(rejections))
-	
+
 	// Write each rejected entry
 	for _, rej := range rejections {
 		file.WriteString("  " + rej.Data + "\n")
 	}
-	
+
 	// Write closing tag
 	fmt.Fprintf(file, "</%s>\n", rootName)
-	
+
 	return nil
 }
 
@@ -160,11 +160,11 @@ func (w *XMLRejectionWriter) writeViolations(filename string, rejections []Rejec
 		Line       int      `yaml:"line"`
 		Violations []string `yaml:"violations"`
 	}
-	
+
 	type violationsFile struct {
 		Violations []violationEntry `yaml:"violations"`
 	}
-	
+
 	var vf violationsFile
 	for _, rej := range rejections {
 		vf.Violations = append(vf.Violations, violationEntry{
@@ -172,18 +172,18 @@ func (w *XMLRejectionWriter) writeViolations(filename string, rejections []Rejec
 			Violations: rej.Violations,
 		})
 	}
-	
+
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create violations file: %w", err)
 	}
 	defer file.Close()
-	
+
 	encoder := yaml.NewEncoder(file)
 	encoder.SetIndent(2)
 	if err := encoder.Encode(vf); err != nil {
 		return fmt.Errorf("failed to write violations YAML: %w", err)
 	}
-	
+
 	return nil
 }

@@ -49,19 +49,19 @@ func TestInfoCommandIntegration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// Create temporary directory for this test
 			tempDir := t.TempDir()
-			
+
 			// Set up test repository if needed
 			if !strings.Contains(test.name, "non-existent") {
 				repoPath := filepath.Join(tempDir, "repo")
 				setupTestRepository(t, repoPath)
-				
+
 				// Update args to use the test repository
 				for i, arg := range test.args {
 					if arg == "test-repo" {
 						test.args[i] = repoPath
 					}
 				}
-				
+
 				// If no repo-root specified, change to the repo directory
 				if !containsRepoRootFlag(test.args) {
 					oldWd, err := os.Getwd()
@@ -69,7 +69,7 @@ func TestInfoCommandIntegration(t *testing.T) {
 						t.Fatalf("Failed to get working directory: %v", err)
 					}
 					defer os.Chdir(oldWd)
-					
+
 					if err := os.Chdir(repoPath); err != nil {
 						t.Fatalf("Failed to change to test directory: %v", err)
 					}
@@ -124,22 +124,22 @@ func TestInfoCommandIntegration(t *testing.T) {
 func TestInfoCommandWithData(t *testing.T) {
 	// Build test binary
 	testBin := buildTestBinary(t)
-	
+
 	// Create test repository with actual data
 	tempDir := t.TempDir()
 	repoPath := filepath.Join(tempDir, "repo")
 	setupTestRepositoryWithData(t, repoPath)
-	
+
 	// Test text output
 	cmd := exec.Command(testBin, "info", "--repo-root", repoPath)
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
-	
+
 	outputStr := string(output)
-	
+
 	// Verify key elements are present
 	checks := []string{
 		"Repository:",
@@ -150,35 +150,35 @@ func TestInfoCommandWithData(t *testing.T) {
 		"Total:",
 		"Validation: OK",
 	}
-	
+
 	for _, check := range checks {
 		if !strings.Contains(outputStr, check) {
 			t.Errorf("Expected '%s' in output, got:\n%s", check, outputStr)
 		}
 	}
-	
+
 	// Test JSON output
 	cmd = exec.Command(testBin, "info", "--repo-root", repoPath, "--json")
 	output, err = cmd.CombinedOutput()
-	
+
 	if err != nil {
 		t.Fatalf("JSON command failed: %v\nOutput: %s", err, output)
 	}
-	
+
 	var info RepositoryInfo
 	if err := json.Unmarshal(output, &info); err != nil {
 		t.Fatalf("Failed to parse JSON output: %v\nOutput: %s", err, output)
 	}
-	
+
 	// Verify JSON structure
 	if info.Version == "" {
 		t.Error("Expected version in JSON output")
 	}
-	
+
 	if len(info.Calls) == 0 {
 		t.Error("Expected calls data in JSON output")
 	}
-	
+
 	if !info.ValidationOK {
 		t.Error("Expected validation OK in JSON output")
 	}
@@ -187,22 +187,22 @@ func TestInfoCommandWithData(t *testing.T) {
 func TestInfoCommandEnvironmentVariable(t *testing.T) {
 	// Build test binary
 	testBin := buildTestBinary(t)
-	
+
 	// Create test repository
 	tempDir := t.TempDir()
 	repoPath := filepath.Join(tempDir, "repo")
 	setupTestRepository(t, repoPath)
-	
+
 	// Set environment variable
 	cmd := exec.Command(testBin, "info")
 	cmd.Env = append(os.Environ(), "MB_REPO_ROOT="+repoPath)
-	
+
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		t.Fatalf("Command with env var failed: %v\nOutput: %s", err, output)
 	}
-	
+
 	outputStr := string(output)
 	if !strings.Contains(outputStr, "Repository:") {
 		t.Error("Expected repository information when using environment variable")
@@ -211,7 +211,7 @@ func TestInfoCommandEnvironmentVariable(t *testing.T) {
 
 func setupTestRepository(t *testing.T, repoPath string) {
 	t.Helper()
-	
+
 	// Create directory structure
 	dirs := []string{
 		repoPath,
@@ -219,13 +219,13 @@ func setupTestRepository(t *testing.T, repoPath string) {
 		filepath.Join(repoPath, "sms"),
 		filepath.Join(repoPath, "attachments"),
 	}
-	
+
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
-	
+
 	// Create marker file
 	markerContent := `repository_structure_version: "1"
 created_at: "2024-01-15T10:30:00Z"
@@ -235,7 +235,7 @@ created_by: "mobilecombackup v1.0.0"
 	if err := os.WriteFile(markerPath, []byte(markerContent), 0644); err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
-	
+
 	// Create empty contacts file
 	contactsPath := filepath.Join(repoPath, "contacts.yaml")
 	contactsContent := "contacts: []\n"
@@ -246,33 +246,33 @@ created_by: "mobilecombackup v1.0.0"
 
 func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 	t.Helper()
-	
+
 	// First create the basic structure
 	setupTestRepository(t, repoPath)
-	
+
 	// Create test calls data
 	callsContent := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="2">
   <call number="555-1234" duration="120" date="1388534400000" type="2" readable_date="Jan 1, 2014 12:00:00 AM" contact_name="John Doe" />
   <call number="555-5678" duration="60" date="1420070400000" type="1" readable_date="Jan 1, 2015 12:00:00 AM" contact_name="Jane Smith" />
 </calls>`
-	
+
 	callsPath := filepath.Join(repoPath, "calls", "calls-2014.xml")
 	if err := os.WriteFile(callsPath, []byte(callsContent), 0644); err != nil {
 		t.Fatalf("Failed to create calls file: %v", err)
 	}
-	
+
 	// Create another calls file for 2015
 	calls2015Content := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="1">
   <call number="555-9999" duration="90" date="1451606400000" type="1" readable_date="Jan 1, 2016 12:00:00 AM" contact_name="Bob Wilson" />
 </calls>`
-	
+
 	calls2015Path := filepath.Join(repoPath, "calls", "calls-2015.xml")
 	if err := os.WriteFile(calls2015Path, []byte(calls2015Content), 0644); err != nil {
 		t.Fatalf("Failed to create 2015 calls file: %v", err)
 	}
-	
+
 	// Create test SMS data
 	smsContent := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <smses count="2">
@@ -283,12 +283,12 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
     </parts>
   </mms>
 </smses>`
-	
+
 	smsPath := filepath.Join(repoPath, "sms", "sms-2014.xml")
 	if err := os.WriteFile(smsPath, []byte(smsContent), 0644); err != nil {
 		t.Fatalf("Failed to create SMS file: %v", err)
 	}
-	
+
 	// Create test contacts data
 	contactsContent := `contacts:
   - name: "John Doe"
@@ -304,14 +304,14 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 
 func buildTestBinary(t *testing.T) string {
 	t.Helper()
-	
+
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	
+
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("Failed to build test binary: %v", err)
 	}
-	
+
 	return testBin
 }
 

@@ -153,15 +153,15 @@ func TestCallEntry_Hash(t *testing.T) {
 			sameHash: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			entry1 := CallEntry{Call: tt.call1}
 			entry2 := CallEntry{Call: tt.call2}
-			
+
 			hash1 := entry1.Hash()
 			hash2 := entry2.Hash()
-			
+
 			if tt.sameHash && hash1 != hash2 {
 				t.Errorf("Expected same hash, got different: %s != %s", hash1, hash2)
 			}
@@ -176,10 +176,10 @@ func TestCallEntry_Timestamp(t *testing.T) {
 	call := &Call{
 		Date: 1609459200000, // 2021-01-01 00:00:00 UTC in milliseconds
 	}
-	
+
 	entry := CallEntry{Call: call}
 	ts := entry.Timestamp()
-	
+
 	expected := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	if !ts.Equal(expected) {
 		t.Errorf("Expected timestamp %v, got %v", expected, ts)
@@ -208,12 +208,12 @@ func TestCallEntry_Year(t *testing.T) {
 			expected: 2022,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			call := &Call{Date: tt.date}
 			entry := CallEntry{Call: call}
-			
+
 			year := entry.Year()
 			if year != tt.expected {
 				t.Errorf("Expected year %d, got %d", tt.expected, year)
@@ -232,21 +232,21 @@ func TestCallEntry_HashConsistency(t *testing.T) {
 		ReadableDate: "Jan 1, 2021 12:00:00 AM",
 		ContactName:  "John Doe",
 	}
-	
+
 	entry := CallEntry{Call: call}
-	
+
 	hash1 := entry.Hash()
 	hash2 := entry.Hash()
-	
+
 	if hash1 != hash2 {
 		t.Errorf("Hash not consistent: %s != %s", hash1, hash2)
 	}
-	
+
 	// Verify hash format (should be 64 character hex string)
 	if len(hash1) != 64 {
 		t.Errorf("Hash length should be 64, got %d", len(hash1))
 	}
-	
+
 	// Verify it's valid hex
 	for _, c := range hash1 {
 		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {

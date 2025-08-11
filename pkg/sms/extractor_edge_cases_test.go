@@ -75,7 +75,7 @@ func TestEdgeCase_CorruptBase64(t *testing.T) {
 			}
 
 			result, err := extractor.ExtractAttachmentFromPart(part, config)
-			
+
 			// Some invalid base64 may be skipped due to size, others may fail to decode
 			if err == nil {
 				// If no error, it should have been skipped for another reason
@@ -140,12 +140,12 @@ func TestEdgeCase_ReadOnlyDirectory(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	
+
 	// Make attachments directory read-only
 	attachmentsDir := filepath.Join(tempDir, "attachments")
 	os.MkdirAll(attachmentsDir, 0755)
 	os.Chmod(attachmentsDir, 0444) // Read-only
-	
+
 	// Restore permissions after test
 	defer os.Chmod(attachmentsDir, 0755)
 
@@ -163,8 +163,8 @@ func TestEdgeCase_ReadOnlyDirectory(t *testing.T) {
 	}
 
 	// The error could be at directory creation or file checking stage
-	if !strings.Contains(err.Error(), "failed to create attachment directory") && 
-	   !strings.Contains(err.Error(), "failed to check attachment existence") {
+	if !strings.Contains(err.Error(), "failed to create attachment directory") &&
+		!strings.Contains(err.Error(), "failed to check attachment existence") {
 		t.Errorf("Expected permission-related error, got: %v", err)
 	}
 }
@@ -195,7 +195,7 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 	attachmentPath := filepath.Join(tempDir, result.Path)
 	subDir := filepath.Dir(attachmentPath)
 	os.Chmod(subDir, 0444) // Read-only
-	
+
 	// Restore permissions after test
 	defer os.Chmod(subDir, 0755)
 
@@ -212,8 +212,8 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 
 	// The error could be at different stages depending on where permission is denied
 	if !strings.Contains(err.Error(), "failed to write attachment file") &&
-	   !strings.Contains(err.Error(), "failed to create attachment directory") &&
-	   !strings.Contains(err.Error(), "failed to check attachment existence") {
+		!strings.Contains(err.Error(), "failed to create attachment directory") &&
+		!strings.Contains(err.Error(), "failed to check attachment existence") {
 		t.Errorf("Expected permission-related error, got: %v", err)
 	}
 }
@@ -400,7 +400,7 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 		t.Error("Expected at least one extraction")
 	}
 	if extractedCount+referencedCount != 10 {
-		t.Errorf("Expected 10 total results, got %d extracted + %d referenced", 
+		t.Errorf("Expected 10 total results, got %d extracted + %d referenced",
 			extractedCount, referencedCount)
 	}
 }

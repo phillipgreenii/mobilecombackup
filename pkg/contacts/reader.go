@@ -110,10 +110,10 @@ func (cm *ContactsManager) LoadContacts() error {
 		if len(parts) != 2 {
 			continue // Skip malformed entries
 		}
-		
+
 		phone := strings.TrimSpace(parts[0])
 		name := strings.TrimSpace(parts[1])
-		
+
 		if phone != "" && name != "" {
 			normalized := normalizePhoneNumber(phone)
 			if normalized != "" {

@@ -39,13 +39,13 @@ func TestImportIntegration(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		setupFunc      func(t *testing.T) (repoPath string, importPath string)
-		args           []string
-		wantExitCode   int
-		wantInOutput   []string
+		name            string
+		setupFunc       func(t *testing.T) (repoPath string, importPath string)
+		args            []string
+		wantExitCode    int
+		wantInOutput    []string
 		wantNotInOutput []string
-		checkFunc      func(t *testing.T, repoPath string)
+		checkFunc       func(t *testing.T, repoPath string)
 	}{
 		{
 			name: "import into empty repository",
@@ -53,17 +53,17 @@ func TestImportIntegration(t *testing.T) {
 				// Create empty repository
 				repoPath := t.TempDir()
 				initRepo(t, repoPath)
-				
+
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
 				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
-				
+
 				return repoPath, importPath
 			},
-			args: []string{"--quiet"},
+			args:         []string{"--quiet"},
 			wantExitCode: 0,
 			checkFunc: func(t *testing.T, repoPath string) {
 				// Check that files were created
@@ -79,17 +79,17 @@ func TestImportIntegration(t *testing.T) {
 				// Create empty repository
 				repoPath := t.TempDir()
 				initRepo(t, repoPath)
-				
+
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
 				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
-				
+
 				return repoPath, importPath
 			},
-			args: []string{"--filter", "calls", "--quiet"},
+			args:         []string{"--filter", "calls", "--quiet"},
 			wantExitCode: 0,
 			checkFunc: func(t *testing.T, repoPath string) {
 				// Check that only calls were imported
@@ -103,15 +103,15 @@ func TestImportIntegration(t *testing.T) {
 				// Create empty repository
 				repoPath := t.TempDir()
 				initRepo(t, repoPath)
-				
+
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
-				
+
 				return repoPath, importPath
 			},
-			args: []string{"--dry-run"},
+			args:         []string{"--dry-run"},
 			wantExitCode: 0,
 			wantInOutput: []string{"DRY RUN", "Files processed: 1"},
 			checkFunc: func(t *testing.T, repoPath string) {
@@ -125,15 +125,15 @@ func TestImportIntegration(t *testing.T) {
 				// Create empty repository
 				repoPath := t.TempDir()
 				initRepo(t, repoPath)
-				
+
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
-				
+
 				return repoPath, importPath
 			},
-			args: []string{"--json"},
+			args:         []string{"--json"},
 			wantExitCode: 0,
 			checkFunc: func(t *testing.T, repoPath string) {
 				// JSON output is checked in test body
@@ -147,7 +147,7 @@ func TestImportIntegration(t *testing.T) {
 				importPath := t.TempDir()
 				return repoPath, importPath
 			},
-			args: []string{},
+			args:         []string{},
 			wantExitCode: 2,
 			wantInOutput: []string{"invalid repository"},
 		},
@@ -157,19 +157,19 @@ func TestImportIntegration(t *testing.T) {
 				// Create repository
 				repoPath := t.TempDir()
 				initRepo(t, repoPath)
-				
+
 				// Set environment variable
 				os.Setenv("MB_REPO_ROOT", repoPath)
 				t.Cleanup(func() { os.Unsetenv("MB_REPO_ROOT") })
-				
+
 				// Create import directory
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
-				
+
 				return "", importPath // Empty repo path to test env var
 			},
-			args: []string{"--quiet"},
+			args:         []string{"--quiet"},
 			wantExitCode: 0,
 		},
 	}
@@ -177,7 +177,7 @@ func TestImportIntegration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repoPath, importPath := tt.setupFunc(t)
-			
+
 			// Build command arguments
 			args := []string{"import"}
 			if repoPath != "" {
@@ -187,21 +187,21 @@ func TestImportIntegration(t *testing.T) {
 			if importPath != "" {
 				args = append(args, importPath)
 			}
-			
+
 			// Execute command
 			cmd := exec.Command(testBinPath, args...)
 			output, err := cmd.CombinedOutput()
-			
+
 			// Check exit code
 			exitCode := 0
 			if exitErr, ok := err.(*exec.ExitError); ok {
 				exitCode = exitErr.ExitCode()
 			}
-			
+
 			if exitCode != tt.wantExitCode {
 				t.Errorf("Exit code = %d, want %d\nOutput: %s", exitCode, tt.wantExitCode, output)
 			}
-			
+
 			// Check output content
 			outputStr := string(output)
 			for _, want := range tt.wantInOutput {
@@ -209,20 +209,20 @@ func TestImportIntegration(t *testing.T) {
 					t.Errorf("Output missing %q\nGot: %s", want, outputStr)
 				}
 			}
-			
+
 			for _, notWant := range tt.wantNotInOutput {
 				if strings.Contains(outputStr, notWant) {
 					t.Errorf("Output should not contain %q\nGot: %s", notWant, outputStr)
 				}
 			}
-			
+
 			// Check JSON output if applicable
 			if tt.name == "json output mode" && exitCode == 0 {
 				var result map[string]interface{}
 				if err := json.Unmarshal(output, &result); err != nil {
 					t.Errorf("Failed to parse JSON output: %v\nOutput: %s", err, output)
 				}
-				
+
 				// Verify expected fields
 				if _, ok := result["files_processed"]; !ok {
 					t.Error("JSON missing 'files_processed' field")
@@ -231,7 +231,7 @@ func TestImportIntegration(t *testing.T) {
 					t.Error("JSON missing 'total' field")
 				}
 			}
-			
+
 			// Run additional checks
 			if tt.checkFunc != nil && repoPath != "" {
 				tt.checkFunc(t, repoPath)
@@ -249,52 +249,52 @@ func TestImportScanningLogic(t *testing.T) {
 	testDir := t.TempDir()
 	repoPath := filepath.Join(testDir, "repo")
 	initRepo(t, repoPath)
-	
+
 	importDir := filepath.Join(testDir, "import")
-	
+
 	// Create directory structure with various files
 	createTestFile(t, filepath.Join(importDir, "calls-1.xml"), "<calls></calls>")
 	createTestFile(t, filepath.Join(importDir, "sms-1.xml"), "<sms></sms>")
-	createTestFile(t, filepath.Join(importDir, "other.xml"), "<other></other>") // Should be ignored
+	createTestFile(t, filepath.Join(importDir, "other.xml"), "<other></other>")              // Should be ignored
 	createTestFile(t, filepath.Join(importDir, ".hidden", "calls-2.xml"), "<calls></calls>") // In hidden dir
 	createTestFile(t, filepath.Join(importDir, "subdir", "calls-3.xml"), "<calls></calls>")
 	createTestFile(t, filepath.Join(importDir, "subdir", "sms-2.xml"), "<sms></sms>")
-	
+
 	// Also create files that should be excluded (already in repo structure)
 	os.MkdirAll(filepath.Join(importDir, "calls"), 0755)
 	createTestFile(t, filepath.Join(importDir, "calls", "calls-2020.xml"), "<calls></calls>")
-	
+
 	// Run import with verbose to see what files are processed
 	cmd := exec.Command(testBinPath, "import", "--repo-root", repoPath, "--verbose", importDir)
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		t.Fatalf("Import failed: %v\nOutput: %s", err, output)
 	}
-	
+
 	outputStr := string(output)
-	
+
 	// Check that correct files were processed
 	expectedFiles := []string{
 		"calls-1.xml",
-		"sms-1.xml", 
+		"sms-1.xml",
 		"calls-3.xml",
 		"sms-2.xml",
 	}
-	
+
 	for _, file := range expectedFiles {
 		if !strings.Contains(outputStr, file) {
 			t.Errorf("Expected file %s to be processed", file)
 		}
 	}
-	
+
 	// Check that these files were NOT processed
 	unexpectedFiles := []string{
-		"other.xml",          // Wrong pattern
-		".hidden/calls-2.xml", // Hidden directory
+		"other.xml",            // Wrong pattern
+		".hidden/calls-2.xml",  // Hidden directory
 		"calls/calls-2020.xml", // In repository structure
 	}
-	
+
 	for _, file := range unexpectedFiles {
 		if strings.Contains(outputStr, file) {
 			t.Errorf("File %s should not have been processed", file)
@@ -317,16 +317,16 @@ func copyTestFile(t *testing.T, src, dst string) {
 	if err != nil {
 		t.Fatalf("Failed to resolve source path: %v", err)
 	}
-	
+
 	data, err := os.ReadFile(srcAbs)
 	if err != nil {
 		t.Fatalf("Failed to read test file %s: %v", src, err)
 	}
-	
+
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
-	
+
 	if err := os.WriteFile(dst, data, 0644); err != nil {
 		t.Fatalf("Failed to write test file: %v", err)
 	}
@@ -336,7 +336,7 @@ func createTestFile(t *testing.T, path, content string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
-	
+
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

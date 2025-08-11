@@ -16,7 +16,7 @@ const (
 type Call struct {
 	Number       string   `xml:"number,attr"`
 	Duration     int      `xml:"duration,attr"`
-	Date         int64    `xml:"date,attr"`  // Epoch milliseconds
+	Date         int64    `xml:"date,attr"` // Epoch milliseconds
 	Type         CallType `xml:"type,attr"`
 	ReadableDate string   `xml:"readable_date,attr"`
 	ContactName  string   `xml:"contact_name,attr"`

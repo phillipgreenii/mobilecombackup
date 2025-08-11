@@ -27,7 +27,7 @@ func NewCoalescer[T Entry]() Coalescer[T] {
 func (c *genericCoalescer[T]) LoadExisting(entries []T) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	for _, entry := range entries {
 		hash := entry.Hash()
 		if _, exists := c.entries[hash]; !exists {
@@ -35,7 +35,7 @@ func (c *genericCoalescer[T]) LoadExisting(entries []T) error {
 			c.initialCount++
 		}
 	}
-	
+
 	return nil
 }
 
@@ -43,13 +43,13 @@ func (c *genericCoalescer[T]) LoadExisting(entries []T) error {
 func (c *genericCoalescer[T]) Add(entry T) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	hash := entry.Hash()
 	if _, exists := c.entries[hash]; exists {
 		c.duplicates++
 		return false
 	}
-	
+
 	c.entries[hash] = entry
 	return true
 }
@@ -58,17 +58,17 @@ func (c *genericCoalescer[T]) Add(entry T) bool {
 func (c *genericCoalescer[T]) GetAll() []T {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	result := make([]T, 0, len(c.entries))
 	for _, entry := range c.entries {
 		result = append(result, entry)
 	}
-	
+
 	// Sort by timestamp, maintaining stable order for same timestamps
 	sort.SliceStable(result, func(i, j int) bool {
 		return result[i].Timestamp().Before(result[j].Timestamp())
 	})
-	
+
 	return result
 }
 
@@ -76,19 +76,19 @@ func (c *genericCoalescer[T]) GetAll() []T {
 func (c *genericCoalescer[T]) GetByYear(year int) []T {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	result := make([]T, 0)
 	for _, entry := range c.entries {
 		if entry.Year() == year {
 			result = append(result, entry)
 		}
 	}
-	
+
 	// Sort by timestamp, maintaining stable order for same timestamps
 	sort.SliceStable(result, func(i, j int) bool {
 		return result[i].Timestamp().Before(result[j].Timestamp())
 	})
-	
+
 	return result
 }
 
@@ -96,10 +96,10 @@ func (c *genericCoalescer[T]) GetByYear(year int) []T {
 func (c *genericCoalescer[T]) GetSummary() Summary {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	total := len(c.entries)
 	added := total - c.initialCount
-	
+
 	return Summary{
 		Initial:    c.initialCount,
 		Final:      total,
@@ -114,7 +114,7 @@ func (c *genericCoalescer[T]) GetSummary() Summary {
 func (c *genericCoalescer[T]) Reset() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.entries = make(map[string]T)
 	c.initialCount = 0
 	c.duplicates = 0

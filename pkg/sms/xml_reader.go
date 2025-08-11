@@ -682,18 +682,18 @@ func (r *XMLSMSReader) StreamMessages(callback func(Message) error) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// If no years found, return nil (empty repository)
 	if len(years) == 0 {
 		return nil
 	}
-	
+
 	for _, year := range years {
 		if err := r.StreamMessagesForYear(year, callback); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 

@@ -260,7 +260,7 @@ func TestOutputTextInfoFormatting(t *testing.T) {
 func TestInfoMarkerFileContentUnmarshaling(t *testing.T) {
 	var marker InfoMarkerFileContent
 	err := json.Unmarshal([]byte(`{"repository_structure_version":"1","created_at":"2024-01-15T10:30:00Z","created_by":"mobilecombackup v1.0.0"}`), &marker)
-	
+
 	// For JSON test
 	if err != nil {
 		t.Fatalf("Failed to unmarshal marker file content: %v", err)

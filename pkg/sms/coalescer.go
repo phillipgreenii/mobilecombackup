@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"time"
-	
+
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 )
 
@@ -17,12 +17,12 @@ type MessageEntry struct {
 // Excludes readable_date and contact_name fields as per requirement
 func (m MessageEntry) Hash() string {
 	h := sha256.New()
-	
+
 	// Common fields for both SMS and MMS
 	fmt.Fprintf(h, "address:%s|", m.GetAddress())
 	fmt.Fprintf(h, "date:%d|", m.GetDate())
 	fmt.Fprintf(h, "type:%d|", m.GetType())
-	
+
 	// Type-specific fields
 	switch msg := m.Message.(type) {
 	case *SMS:
@@ -35,7 +35,7 @@ func (m MessageEntry) Hash() string {
 		fmt.Fprintf(h, "status:%d|", msg.Status)
 		fmt.Fprintf(h, "locked:%d|", msg.Locked)
 		fmt.Fprintf(h, "date_sent:%d|", msg.DateSent)
-		
+
 	case *MMS:
 		fmt.Fprintf(h, "msgtype:mms|")
 		fmt.Fprintf(h, "msg_box:%d|", msg.MsgBox)
@@ -47,7 +47,7 @@ func (m MessageEntry) Hash() string {
 			fmt.Fprintf(h, "part%d_ct:%s|", i, part.ContentType)
 			fmt.Fprintf(h, "part%d_name:%s|", i, part.Name)
 			fmt.Fprintf(h, "part%d_text:%s|", i, part.Text)
-			
+
 			// Include attachment path if extracted, otherwise indicate presence of data
 			if part.Path != "" {
 				fmt.Fprintf(h, "part%d_path:%s|", i, part.Path)
@@ -62,7 +62,7 @@ func (m MessageEntry) Hash() string {
 			fmt.Fprintf(h, "addr%d_charset:%d|", i, addr.Charset)
 		}
 	}
-	
+
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 

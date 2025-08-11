@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	importDryRun         bool
-	importVerbose        bool
-	importJSON           bool
-	importFilter         string
-	noErrorOnRejects     bool
+	importDryRun     bool
+	importVerbose    bool
+	importJSON       bool
+	importFilter     string
+	noErrorOnRejects bool
 )
 
 // importCmd represents the import command
@@ -63,7 +63,7 @@ func init() {
 func runImport(cmd *cobra.Command, args []string) error {
 	// Determine repository root
 	resolvedRepoRoot := resolveImportRepoRoot()
-	
+
 	// Get paths to import
 	paths := args
 	if len(paths) == 0 {
@@ -136,12 +136,12 @@ func resolveImportRepoRoot() string {
 	if repoRoot != "." {
 		return repoRoot
 	}
-	
+
 	// Environment variable is second priority
 	if envRoot := os.Getenv("MB_REPO_ROOT"); envRoot != "" {
 		return envRoot
 	}
-	
+
 	// Default to current directory
 	return "."
 }
@@ -175,9 +175,9 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 	if dryRun {
 		fmt.Println("\nDRY RUN: No changes were made to the repository")
 	}
-	
+
 	fmt.Println("\nImport Summary:")
-	
+
 	// Display calls statistics
 	if importFilter == "" || importFilter == "calls" {
 		fmt.Println("\nCalls:")
@@ -190,8 +190,8 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 				summary.Calls.Total.Final, summary.Calls.Total.Added, summary.Calls.Total.Duplicates)
 		}
 	}
-	
-	// Display SMS statistics  
+
+	// Display SMS statistics
 	if importFilter == "" || importFilter == "sms" {
 		fmt.Println("SMS:")
 		for year, stats := range summary.SMS.YearStats {
@@ -203,21 +203,21 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 				summary.SMS.Total.Final, summary.SMS.Total.Added, summary.SMS.Total.Duplicates)
 		}
 	}
-	
+
 	// Display attachment statistics
 	if (importFilter == "" || importFilter == "sms") && summary.Attachments.Total.Total > 0 {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
-			summary.Attachments.Total.Total, summary.Attachments.Total.New, 
+			summary.Attachments.Total.Total, summary.Attachments.Total.New,
 			summary.Attachments.Total.Duplicates)
 	}
-	
+
 	// Display rejection statistics
 	totalRejections := 0
 	for _, stats := range summary.Rejections {
 		totalRejections += stats.Count
 	}
-	
+
 	if totalRejections > 0 {
 		fmt.Println("Rejections:")
 		if importFilter == "" || importFilter == "calls" {
@@ -248,20 +248,20 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 				}
 			}
 		}
-		
+
 		if importFilter == "" || importFilter == "sms" {
 			// TODO: Track SMS-specific rejections separately
 			fmt.Printf("  SMS: 0\n")
 		}
-		
+
 		fmt.Printf("  Total: %d\n", totalRejections)
 	}
-	
+
 	// Display rejection files if any
 	if len(summary.RejectionFiles) > 0 {
 		fmt.Println("\nRejected entries saved to: rejected/")
 	}
-	
+
 	// Display timing
 	fmt.Printf("\nFiles processed: %d\n", summary.FilesProcessed)
 	fmt.Printf("Time taken: %.1fs\n", summary.Duration.Seconds())
@@ -270,7 +270,7 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 // displayJSONSummary displays the import summary in JSON format
 func displayJSONSummary(summary *importer.ImportSummary) {
 	output := map[string]interface{}{
-		"files_processed": summary.FilesProcessed,
+		"files_processed":  summary.FilesProcessed,
 		"duration_seconds": summary.Duration.Seconds(),
 		"calls": map[string]interface{}{
 			"total": map[string]interface{}{
@@ -299,10 +299,10 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 			"new":        summary.Attachments.Total.New,
 			"duplicates": summary.Attachments.Total.Duplicates,
 		},
-		"rejections": summary.Rejections,
+		"rejections":      summary.Rejections,
 		"rejection_files": summary.RejectionFiles,
 	}
-	
+
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(output); err != nil {

@@ -15,7 +15,7 @@ import (
 
 func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create test MMS with attachments
 	mms := &MMS{
 		Date:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC).Unix() * 1000,
@@ -82,11 +82,11 @@ func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 
 	// Verify attachment manager can read the file
 	attachmentManager := attachments.NewAttachmentManager(tempDir)
-	
+
 	// Extract hash from path
 	pathParts := strings.Split(extractedPart.Path, "/")
 	hash := pathParts[len(pathParts)-1]
-	
+
 	exists, err := attachmentManager.AttachmentExists(hash)
 	if err != nil {
 		t.Fatalf("Failed to check attachment existence: %v", err)
@@ -124,7 +124,7 @@ func TestAttachmentExtraction_XMLSerialization(t *testing.T) {
 	// Extract attachments
 	extractor := NewAttachmentExtractor(t.TempDir())
 	config := GetDefaultContentTypeConfig()
-	
+
 	_, err := extractor.ExtractAttachmentsFromMMS(mms, config)
 	if err != nil {
 		t.Fatalf("Attachment extraction failed: %v", err)
@@ -217,7 +217,7 @@ func TestAttachmentExtraction_MultipleMessagesDuplicateAttachments(t *testing.T)
 
 	// Both messages should have the same attachment path
 	if mms1.Parts[0].Path != mms2.Parts[0].Path {
-		t.Errorf("Expected same attachment path, got %s vs %s", 
+		t.Errorf("Expected same attachment path, got %s vs %s",
 			mms1.Parts[0].Path, mms2.Parts[0].Path)
 	}
 
@@ -285,7 +285,7 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 				if !subEntry.IsDir() && len(subEntry.Name()) == 64 {
 					// This looks like an attachment file
 					if !strings.HasPrefix(subEntry.Name(), entry.Name()) {
-						t.Errorf("Attachment %s in wrong subdirectory %s", 
+						t.Errorf("Attachment %s in wrong subdirectory %s",
 							subEntry.Name(), entry.Name())
 					}
 					foundAttachments++

@@ -70,55 +70,55 @@ func (s *SMS) Timestamp() time.Time {
 
 // MMS represents a multimedia message
 type MMS struct {
-	Date         int64         `xml:"date,attr"` // Epoch milliseconds
-	MsgBox       int           `xml:"msg_box,attr"`
-	Address      string        `xml:"address,attr"` // Primary address
-	MType        int           `xml:"m_type,attr"`
-	MId          string        `xml:"m_id,attr"`
-	ThreadId     string        `xml:"thread_id,attr"`
-	TextOnly     int           `xml:"text_only,attr"`
-	Sub          string        `xml:"sub,attr"`
-	Parts        []MMSPart     `xml:"parts>part"`
-	Addresses    []MMSAddress  `xml:"addrs>addr"`
-	ReadableDate string        `xml:"readable_date,attr"`
-	ContactName  string        `xml:"contact_name,attr"`
-	CallbackSet  int           `xml:"callback_set,attr"`
-	RetrSt       int           `xml:"retr_st,attr"`
-	CtCls        string        `xml:"ct_cls,attr"`
-	SubCs        int           `xml:"sub_cs,attr"`
-	Read         int           `xml:"read,attr"`
-	CtL          string        `xml:"ct_l,attr"`
-	TrId         string        `xml:"tr_id,attr"`
-	St           int           `xml:"st,attr"`
-	MCls         string        `xml:"m_cls,attr"`
-	DTm          int64         `xml:"d_tm,attr"`
-	ReadStatus   int           `xml:"read_status,attr"`
-	CtT          string        `xml:"ct_t,attr"`
-	RetrTxtCs    int           `xml:"retr_txt_cs,attr"`
-	Deletable    int           `xml:"deletable,attr"`
-	DRpt         int           `xml:"d_rpt,attr"`
-	DateSent     int64         `xml:"date_sent,attr"`
-	Seen         int           `xml:"seen,attr"`
-	Reserved     int           `xml:"reserved,attr"`
-	V            int           `xml:"v,attr"`
-	Exp          int64         `xml:"exp,attr"`
-	Pri          int           `xml:"pri,attr"`
-	Hidden       int           `xml:"hidden,attr"`
-	MsgId        int           `xml:"msg_id,attr"`
-	Rr           int           `xml:"rr,attr"`
-	AppId        int           `xml:"app_id,attr"`
-	RespTxt      string        `xml:"resp_txt,attr"`
-	RptA         int           `xml:"rpt_a,attr"`
-	Locked       int           `xml:"locked,attr"`
-	RetrTxt      string        `xml:"retr_txt,attr"`
-	RespSt       int           `xml:"resp_st,attr"`
-	MSize        int           `xml:"m_size,attr"`
-	SimImsi      string        `xml:"sim_imsi,attr"`
-	Creator      string        `xml:"creator,attr"`
-	SubId        int           `xml:"sub_id,attr"`
-	SimSlot      int           `xml:"sim_slot,attr"`
-	SpamReport   int           `xml:"spam_report,attr"`
-	SafeMessage  int           `xml:"safe_message,attr"`
+	Date         int64        `xml:"date,attr"` // Epoch milliseconds
+	MsgBox       int          `xml:"msg_box,attr"`
+	Address      string       `xml:"address,attr"` // Primary address
+	MType        int          `xml:"m_type,attr"`
+	MId          string       `xml:"m_id,attr"`
+	ThreadId     string       `xml:"thread_id,attr"`
+	TextOnly     int          `xml:"text_only,attr"`
+	Sub          string       `xml:"sub,attr"`
+	Parts        []MMSPart    `xml:"parts>part"`
+	Addresses    []MMSAddress `xml:"addrs>addr"`
+	ReadableDate string       `xml:"readable_date,attr"`
+	ContactName  string       `xml:"contact_name,attr"`
+	CallbackSet  int          `xml:"callback_set,attr"`
+	RetrSt       int          `xml:"retr_st,attr"`
+	CtCls        string       `xml:"ct_cls,attr"`
+	SubCs        int          `xml:"sub_cs,attr"`
+	Read         int          `xml:"read,attr"`
+	CtL          string       `xml:"ct_l,attr"`
+	TrId         string       `xml:"tr_id,attr"`
+	St           int          `xml:"st,attr"`
+	MCls         string       `xml:"m_cls,attr"`
+	DTm          int64        `xml:"d_tm,attr"`
+	ReadStatus   int          `xml:"read_status,attr"`
+	CtT          string       `xml:"ct_t,attr"`
+	RetrTxtCs    int          `xml:"retr_txt_cs,attr"`
+	Deletable    int          `xml:"deletable,attr"`
+	DRpt         int          `xml:"d_rpt,attr"`
+	DateSent     int64        `xml:"date_sent,attr"`
+	Seen         int          `xml:"seen,attr"`
+	Reserved     int          `xml:"reserved,attr"`
+	V            int          `xml:"v,attr"`
+	Exp          int64        `xml:"exp,attr"`
+	Pri          int          `xml:"pri,attr"`
+	Hidden       int          `xml:"hidden,attr"`
+	MsgId        int          `xml:"msg_id,attr"`
+	Rr           int          `xml:"rr,attr"`
+	AppId        int          `xml:"app_id,attr"`
+	RespTxt      string       `xml:"resp_txt,attr"`
+	RptA         int          `xml:"rpt_a,attr"`
+	Locked       int          `xml:"locked,attr"`
+	RetrTxt      string       `xml:"retr_txt,attr"`
+	RespSt       int          `xml:"resp_st,attr"`
+	MSize        int          `xml:"m_size,attr"`
+	SimImsi      string       `xml:"sim_imsi,attr"`
+	Creator      string       `xml:"creator,attr"`
+	SubId        int          `xml:"sub_id,attr"`
+	SimSlot      int          `xml:"sim_slot,attr"`
+	SpamReport   int          `xml:"spam_report,attr"`
+	SafeMessage  int          `xml:"safe_message,attr"`
 }
 
 // GetDate implements Message interface
@@ -156,22 +156,22 @@ func (m *MMS) Timestamp() time.Time {
 
 // MMSPart represents a content part of an MMS
 type MMSPart struct {
-	Seq             int    `xml:"seq,attr"`
-	ContentType     string `xml:"ct,attr"`
-	Name            string `xml:"name,attr"`
-	Charset         string `xml:"chset,attr"`
-	ContentDisp     string `xml:"cd,attr"`
-	Filename        string `xml:"fn,attr"`
-	ContentId       string `xml:"cid,attr"`
-	ContentLoc      string `xml:"cl,attr"`
-	CttS            int    `xml:"ctt_s,attr"`
-	CttT            int    `xml:"ctt_t,attr"`
-	Text            string `xml:"text,attr"`
-	Data            string `xml:"data,attr"`           // Base64 encoded data
-	Path            string `xml:"path,attr"`           // Repository-relative path to extracted attachment
-	OriginalSize    int64  `xml:"original_size,attr"`  // Size of decoded attachment in bytes  
-	ExtractionDate  string `xml:"extraction_date,attr"` // When attachment was extracted (ISO8601)
-	AttachmentRef   string // Internal field for tracking, not serialized
+	Seq            int    `xml:"seq,attr"`
+	ContentType    string `xml:"ct,attr"`
+	Name           string `xml:"name,attr"`
+	Charset        string `xml:"chset,attr"`
+	ContentDisp    string `xml:"cd,attr"`
+	Filename       string `xml:"fn,attr"`
+	ContentId      string `xml:"cid,attr"`
+	ContentLoc     string `xml:"cl,attr"`
+	CttS           int    `xml:"ctt_s,attr"`
+	CttT           int    `xml:"ctt_t,attr"`
+	Text           string `xml:"text,attr"`
+	Data           string `xml:"data,attr"`            // Base64 encoded data
+	Path           string `xml:"path,attr"`            // Repository-relative path to extracted attachment
+	OriginalSize   int64  `xml:"original_size,attr"`   // Size of decoded attachment in bytes
+	ExtractionDate string `xml:"extraction_date,attr"` // When attachment was extracted (ISO8601)
+	AttachmentRef  string // Internal field for tracking, not serialized
 }
 
 // MMSAddress represents an address in an MMS

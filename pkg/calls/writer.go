@@ -19,7 +19,7 @@ func NewXMLCallsWriter(repoPath string) (*XMLCallsWriter, error) {
 	if err := os.MkdirAll(repoPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create calls directory: %w", err)
 	}
-	
+
 	return &XMLCallsWriter{
 		repoPath: repoPath,
 	}, nil
@@ -33,7 +33,7 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 		t := time.Unix(call.Date/1000, (call.Date%1000)*int64(time.Millisecond))
 		call.ReadableDate = t.In(loc).Format("Jan 2, 2006 3:04:05 PM")
 	}
-	
+
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
 	file, err := os.Create(filepath)
@@ -41,14 +41,14 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Write XML header
 	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
-	
+
 	// Create encoder with proper formatting
 	encoder := xml.NewEncoder(file)
 	encoder.Indent("", "  ")
-	
+
 	// Create root element
 	root := struct {
 		XMLName xml.Name `xml:"calls"`
@@ -58,14 +58,14 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 		Count: len(calls),
 		Calls: calls,
 	}
-	
+
 	// Encode the document
 	if err := encoder.Encode(root); err != nil {
 		return fmt.Errorf("failed to encode XML: %w", err)
 	}
-	
+
 	// Add final newline
 	file.WriteString("\n")
-	
+
 	return nil
 }
