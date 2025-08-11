@@ -16,7 +16,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for version detection with git history
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.11.0
+      - name: Extract version
+        id: version
+        run: |
+          # Extract base version and build dev version string for CI builds
+          BASE_VERSION=$(cat VERSION | sed 's/-dev$//')
+          GIT_HASH=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "unknown")
+          if [ "$GIT_HASH" != "unknown" ]; then
+            DEV_VERSION="${BASE_VERSION}-dev-g${GIT_HASH}"
+          else
+            DEV_VERSION="${BASE_VERSION}-dev"
+          fi
+          # For SonarQube, use base version only (clean semantic version)
+          echo "dev_version=$DEV_VERSION" >> $GITHUB_OUTPUT
+          echo "sonar_version=$BASE_VERSION" >> $GITHUB_OUTPUT
       - name: Run CI pipeline
         run: devbox run ci

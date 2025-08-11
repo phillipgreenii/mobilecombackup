@@ -3,7 +3,7 @@ name: "go: build versioned binaries"
 on:
   push:
     tags:
-      - '*'
+      - 'v*'  # Trigger on tags starting with 'v' (v2.0.0 format)
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -23,8 +23,22 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for version detection and git tag access
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.11.0
+      - name: Extract version for SonarQube (if applicable)
+        id: version
+        run: |
+          # For tagged releases, use tag version (remove v prefix)
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            # Fallback to VERSION file base version for manual workflow_dispatch
+            BASE_VERSION=$(cat VERSION | sed 's/-dev$//')
+            echo "version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          fi
       - name: Go Release Binaries
         uses: wangyoucao577/go-release-action@v1.22
         with:
@@ -37,3 +51,5 @@ jobs:
           project_path: cmd/mobilecombackup
           binary_name: mobilecombackup
           asset_name: "${{ matrix.goos }}_${{ matrix.goarch }}"
+          # Use devbox build-cli for version injection (will use git tag for release)
+          build_command: cd ../.. && devbox run build-cli && mv mobilecombackup cmd/mobilecombackup/
