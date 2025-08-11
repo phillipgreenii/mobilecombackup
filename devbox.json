@@ -27,6 +27,12 @@
       ],
       "build-cli": [
               "sh -c 'VERSION=$(git describe --tags --always --dirty) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
+      ],
+      "ci": [
+              "devbox run formatter",
+              "devbox run tests",
+              "devbox run linter",
+              "devbox run build-cli"
       ]
     }
   }
