@@ -34,5 +34,19 @@ jobs:
           # For SonarQube, use base version only (clean semantic version)
           echo "dev_version=$DEV_VERSION" >> $GITHUB_OUTPUT
           echo "sonar_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-      - name: Run CI pipeline
-        run: devbox run ci
+      - name: Run formatter
+        run: devbox run formatter
+      - name: Run tests with coverage
+        run: devbox run go test -v -covermode=set -coverprofile=coverage.out ./...
+      - name: Run linter
+        run: devbox run linter
+      - name: Build CLI
+        run: devbox run build-cli
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ steps.version.outputs.sonar_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
