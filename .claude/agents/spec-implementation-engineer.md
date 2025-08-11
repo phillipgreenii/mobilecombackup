@@ -95,7 +95,39 @@ You are an expert software engineer specializing in implementing specifications 
    - **Build Failures**: Add missing imports, fix syntax errors, run `go mod tidy`
    - **Ask User**: When fix might change business logic or when unsure
 
-7. **Final Verification**: Before considering implementation complete:
+7. **Auto-Commit After Task Completion**: After completing each TodoWrite task, ALWAYS commit your changes:
+   - Use git status before starting a task to track which files will change
+   - After task completion and verification, use git status again to identify changed files
+   - Stage only the files you modified during the task (never use `git add .`)
+   - Commit with a descriptive message referencing the issue ID and task
+   - Use this commit message format:
+     ```
+     [ISSUE-ID]: [Brief task description]
+     
+     [Optional: Details about implementation]
+     
+     🤖 Generated with [Claude Code](https://claude.ai/code)
+     
+     Co-Authored-By: Claude <noreply@anthropic.com>
+     ```
+
+   **File Detection Strategy**: Use simple git status comparison:
+   ```bash
+   # Before starting task
+   git status --porcelain > /tmp/before_task
+   
+   # After completing task  
+   git status --porcelain > /tmp/after_task
+   
+   # Identify changed files and stage them
+   comm -13 /tmp/before_task /tmp/after_task | cut -c4- | xargs -r git add
+   
+   # Or manually identify and stage specific files you modified:
+   git add path/to/modified/file1.go path/to/modified/file2_test.go
+   ```
+   **Important**: Only commit files you actually modified for the task - never stage unrelated changes.
+
+8. **Final Verification**: Before considering implementation complete:
    - Format all code using `devbox run formatter`
    - Verify all specification requirements are met
    - Ensure all TodoWrite tasks are verified and completed
