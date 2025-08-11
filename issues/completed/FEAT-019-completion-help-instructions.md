@@ -1,7 +1,7 @@
 # FEAT-019: Include shell completion setup instructions in help
 
 ## Status
-- **Completed**: 
+- **Completed**: 2025-08-11
 - **Priority**: low
 
 ## Overview
