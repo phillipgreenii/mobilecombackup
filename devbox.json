@@ -28,6 +28,9 @@
       "build-cli": [
               "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
       ],
+      "validate-version": [
+              "bash scripts/validate-version.sh"
+      ],
       "ci": [
               "devbox run formatter",
               "devbox run tests",
