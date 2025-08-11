@@ -344,6 +344,11 @@ The project integrates with SonarQube Cloud for automated code quality analysis:
 
 Quality metrics are automatically updated on every push and pull request. View the [SonarCloud dashboard](https://sonarcloud.io/project/overview?id=phillipgreenii_mobilecombackup) for detailed analysis reports.
 
+**Setup Requirements:**
+- SonarCloud project configured with organization key `phillipgreenii`
+- GitHub repository secret `SONAR_TOKEN` configured for authentication
+- Automatic Analysis disabled in SonarCloud project settings (to avoid conflicts with CI analysis)
+
 ### Running Tests
 
 ```bash

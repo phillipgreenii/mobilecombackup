@@ -91,6 +91,7 @@ sonar.go.coverage.reportPaths=coverage.out
 - [x] Create sonar-project.properties configuration file
 - [ ] Set up SonarQube Cloud project with organization key "phillipgreenii"
 - [ ] Configure GitHub repository secrets (SONAR_TOKEN)
+- [ ] Disable Automatic Analysis in SonarCloud project settings (required for CI analysis)
 - [x] Update GitHub Actions workflow to include SonarQube analysis
 - [x] Configure coverage report generation and upload
 - [ ] Set up quality gate with appropriate Go project thresholds
