@@ -47,7 +47,8 @@ The project already has strong development practices with devbox, comprehensive 
 sonar.organization=phillipgreenii
 sonar.projectKey=phillipgreenii_mobilecombackup
 sonar.projectName=Mobile Communication Backup Tool
-sonar.projectVersion=1.0
+# sonar.projectVersion will be set dynamically via GitHub Actions
+# See FEAT-031 for dynamic version extraction implementation
 
 # Go-specific settings
 sonar.sources=.
@@ -68,7 +69,10 @@ sonar.go.coverage.reportPaths=coverage.out
     devbox run go test -v -covermode=set -coverprofile=coverage.out ./...
 
 - name: SonarQube Scan
-  uses: SonarSource/sonarqube-quality-gate-action@master
+  uses: SonarSource/sonarqube-scan-action@v2
+  with:
+    args: >
+      -Dsonar.projectVersion=${{ steps.version.outputs.sonar_version }}
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -80,6 +84,8 @@ sonar.go.coverage.reportPaths=coverage.out
 - Configure exclusions to avoid analyzing test data and vendor dependencies
 - Use GitHub Actions secrets for SonarQube authentication
 - Ensure analysis runs on pull requests and main branch commits
+- Use dynamic version extraction from FEAT-031 (base version without -dev suffix for SonarQube)
+- Version passed via command-line argument rather than properties file for flexibility
 
 ## Tasks
 - [ ] Create sonar-project.properties configuration file
