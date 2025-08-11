@@ -332,6 +332,18 @@ The same CI pipeline runs automatically on:
 
 All CI workflows use devbox to ensure consistency between local development and CI environments, with Go 1.24 and the same tool versions.
 
+### Code Quality Analysis
+
+The project integrates with SonarQube Cloud for automated code quality analysis:
+
+- **Quality Gate**: Ensures code meets maintainability and reliability standards
+- **Coverage Tracking**: Monitors test coverage trends and identifies untested code  
+- **Security Analysis**: Scans for potential security vulnerabilities
+- **Code Smells Detection**: Identifies maintainability issues and technical debt
+- **Duplication Analysis**: Tracks code duplication across the codebase
+
+Quality metrics are automatically updated on every push and pull request. View the [SonarCloud dashboard](https://sonarcloud.io/project/overview?id=phillipgreenii_mobilecombackup) for detailed analysis reports.
+
 ### Running Tests
 
 ```bash
