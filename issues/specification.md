@@ -1146,6 +1146,57 @@ mobilecombackup import --repo-root /path/to/repo --filter calls backups/
 mobilecombackup import --repo-root /path/to/repo --json backups/
 ```
 
+#### Completion Command
+
+Generates shell completion scripts for mobilecombackup to enable tab-completion for commands, flags, and arguments.
+
+**Usage:**
+```bash
+mobilecombackup completion [bash|zsh|fish|powershell]
+```
+
+**Supported Shells:**
+- **bash**: Requires bash-completion package
+- **zsh**: Requires compinit to be loaded
+- **fish**: Built-in completion support
+- **powershell**: Built-in completion support
+
+**Setup Instructions:**
+
+The completion command provides comprehensive setup instructions for each shell including:
+- Temporary setup (current session only)
+- Permanent setup (persistent across sessions)
+- OS-specific notes and requirements
+- Troubleshooting tips for common issues
+
+**Behavior:**
+1. Validates shell argument (must be one of: bash, zsh, fish, powershell)
+2. Generates appropriate completion script for the specified shell
+3. Outputs script to stdout for piping or redirection
+4. Returns error for invalid shell arguments
+
+**Examples:**
+```bash
+# View setup instructions
+mobilecombackup completion --help
+
+# Generate bash completion script
+mobilecombackup completion bash > mobilecombackup-completion.bash
+
+# Install fish completion directly
+mobilecombackup completion fish > ~/.config/fish/completions/mobilecombackup.fish
+
+# Load zsh completion temporarily
+source <(mobilecombackup completion zsh)
+```
+
+**Help Text Features:**
+- Complete setup instructions for all supported shells
+- Both temporary and permanent installation methods
+- Verification steps to confirm completion is working
+- Troubleshooting section with common solutions
+- OS-specific notes (Linux, macOS, Windows)
+
 ### Helper Functions
 
 - `PrintError(format string, args ...interface{})`: Consistent error output to stderr
