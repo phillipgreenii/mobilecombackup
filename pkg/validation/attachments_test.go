@@ -188,6 +188,21 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(
 func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 	tempDir := t.TempDir()
 
+	// Create test attachment files
+	validHashPath := filepath.Join(tempDir, "attachments", "va", "validhash123")
+	corruptedHashPath := filepath.Join(tempDir, "attachments", "co", "corruptedhash789")
+	
+	// Create directory structure
+	_ = os.MkdirAll(filepath.Dir(validHashPath), 0755)
+	_ = os.MkdirAll(filepath.Dir(corruptedHashPath), 0755)
+	
+	// Create valid attachment file with PNG signature for format recognition
+	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+	_ = os.WriteFile(validHashPath, pngData, 0644)
+	
+	// Create corrupted attachment file 
+	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0644)
+
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
 			{
@@ -595,8 +610,8 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
-	// Write PNG data
-	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D}
+	// Write PNG signature (first 8 bytes are sufficient for format detection)
+	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
 	if err := os.WriteFile(pngFullPath, pngData, 0644); err != nil {
 		t.Fatalf("Failed to write PNG file: %v", err)
 	}
@@ -620,6 +635,7 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 	}
 
 	mockSMSReader := &mockSMSReader{
+		availableYears: []int{2023}, // Must provide available years
 		messages: map[int][]sms.Message{
 			2023: {mms},
 		},

@@ -30,7 +30,7 @@ func generateSummaryFile(repoRoot string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create summary file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	encoder := yaml.NewEncoder(file)
 	encoder.SetIndent(2)

@@ -17,7 +17,6 @@ import (
 type SMSImporter struct {
 	options             *ImportOptions
 	coalescer           coalescer.Coalescer[sms.MessageEntry]
-	smsWriter           *sms.XMLSMSWriter
 	contactsManager     *contacts.ContactsManager
 	attachmentExtractor *sms.AttachmentExtractor
 	attachmentStats     *sms.AttachmentExtractionStats
@@ -117,7 +116,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := sms.NewXMLSMSReader("")
 	lineNumber := 0
@@ -172,10 +171,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 		return summary, err
 	}
 
-	// Write violations file if there were rejections
-	if summary.Rejected > 0 && !si.options.DryRun {
-		// TODO: Write violations file
-	}
+	// Note: Violation file writing is handled by rejection writer when rejections occur
 
 	return summary, nil
 }
@@ -212,11 +208,7 @@ func (si *SMSImporter) validateMessage(msg sms.Message) []string {
 			if part.ContentType == "" {
 				violations = append(violations, fmt.Sprintf("part-%d-missing-content-type", i))
 			}
-			// Check for malformed attachment data
-			if part.Data != "" && part.Data != "null" {
-				// Try to decode base64
-				// This would be done in attachment extraction phase
-			}
+			// Note: Attachment data validation is performed during extraction phase
 		}
 	}
 
@@ -267,31 +259,6 @@ func (si *SMSImporter) WriteRepository() error {
 	return nil
 }
 
-// writeViolationsFile writes the violations YAML file
-func (si *SMSImporter) writeViolationsFile(path string, violations []RejectedEntry) error {
-	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("failed to create violations file: %w", err)
-	}
-	defer file.Close()
-
-	// Write YAML format
-	fmt.Fprintln(file, "violations:")
-	for _, v := range violations {
-		fmt.Fprintf(file, "  - line: %d\n", v.Line)
-		fmt.Fprintln(file, "    violations:")
-		for _, violation := range v.Violations {
-			fmt.Fprintf(file, "      - %s\n", violation)
-		}
-	}
-
-	return nil
-}
 
 // GetSummary returns the coalescer summary
 func (si *SMSImporter) GetSummary() coalescer.Summary {
@@ -313,7 +280,7 @@ func calculateFileHash(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hasher := sha256.New()
 	if _, err := hasher.Write([]byte(filePath)); err != nil {

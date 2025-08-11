@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // XMLRejectionWriter writes rejected entries to XML files
@@ -108,7 +106,7 @@ func (w *XMLRejectionWriter) hashFile(filename string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, file); err != nil {
@@ -124,10 +122,10 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 	if err != nil {
 		return fmt.Errorf("failed to create rejection file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Write XML header
-	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
+	_, _ = file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
 
 	// Determine root element name based on type
 	var rootName string
@@ -141,49 +139,16 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 	}
 
 	// Write opening tag
-	fmt.Fprintf(file, "<%s count=\"%d\">\n", rootName, len(rejections))
+	_, _ = fmt.Fprintf(file, "<%s count=\"%d\">\n", rootName, len(rejections))
 
 	// Write each rejected entry
 	for _, rej := range rejections {
-		file.WriteString("  " + rej.Data + "\n")
+		_, _ = file.WriteString("  " + rej.Data + "\n")
 	}
 
 	// Write closing tag
-	fmt.Fprintf(file, "</%s>\n", rootName)
+	_, _ = fmt.Fprintf(file, "</%s>\n", rootName)
 
 	return nil
 }
 
-// writeViolations writes violation details as YAML
-func (w *XMLRejectionWriter) writeViolations(filename string, rejections []RejectedEntry) error {
-	type violationEntry struct {
-		Line       int      `yaml:"line"`
-		Violations []string `yaml:"violations"`
-	}
-
-	type violationsFile struct {
-		Violations []violationEntry `yaml:"violations"`
-	}
-
-	var vf violationsFile
-	for _, rej := range rejections {
-		vf.Violations = append(vf.Violations, violationEntry{
-			Line:       rej.Line,
-			Violations: rej.Violations,
-		})
-	}
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("failed to create violations file: %w", err)
-	}
-	defer file.Close()
-
-	encoder := yaml.NewEncoder(file)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(vf); err != nil {
-		return fmt.Errorf("failed to write violations YAML: %w", err)
-	}
-
-	return nil
-}

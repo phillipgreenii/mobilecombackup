@@ -46,15 +46,15 @@ func TestResolveRepoRoot(t *testing.T) {
 			originalEnv := os.Getenv("MB_REPO_ROOT")
 			defer func() {
 				repoRoot = originalRepoRoot
-				os.Setenv("MB_REPO_ROOT", originalEnv)
+				_ = os.Setenv("MB_REPO_ROOT", originalEnv)
 			}()
 
 			// Set test values
 			repoRoot = tt.cliFlag
 			if tt.envVar != "" {
-				os.Setenv("MB_REPO_ROOT", tt.envVar)
+				_ = os.Setenv("MB_REPO_ROOT", tt.envVar)
 			} else {
-				os.Unsetenv("MB_REPO_ROOT")
+				_ = os.Unsetenv("MB_REPO_ROOT")
 			}
 
 			// Test
@@ -77,11 +77,11 @@ func TestProgressReporter(t *testing.T) {
 		reporter.UpdateProgress(5, 10)
 		reporter.CompletePhase()
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		output := buf.String()
 
 		if !strings.Contains(output, "Validating test phase...") {
@@ -105,11 +105,11 @@ func TestProgressReporter(t *testing.T) {
 		reporter.UpdateProgress(5, 10)
 		reporter.CompletePhase()
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		output := buf.String()
 
 		if output != "" {
@@ -279,11 +279,11 @@ func TestValidationResultTextOutput(t *testing.T) {
 
 			outputTextResult(tt.result, tt.repoPath)
 
-			w.Close()
+			_ = w.Close()
 			os.Stdout = old
 
 			var buf bytes.Buffer
-			io.Copy(&buf, r)
+			_, _ = io.Copy(&buf, r)
 			output := buf.String()
 
 			// Check expected strings
@@ -325,9 +325,9 @@ func TestValidateWithProgress(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create basic repository structure
-	os.MkdirAll(filepath.Join(tempDir, "calls"), 0755)
-	os.MkdirAll(filepath.Join(tempDir, "sms"), 0755)
-	os.MkdirAll(filepath.Join(tempDir, "attachments"), 0755)
+	_ = os.MkdirAll(filepath.Join(tempDir, "calls"), 0755)
+	_ = os.MkdirAll(filepath.Join(tempDir, "sms"), 0755)
+	_ = os.MkdirAll(filepath.Join(tempDir, "attachments"), 0755)
 
 	// Create marker file with valid content
 	markerContent := `repository_structure_version: "1"
@@ -340,8 +340,8 @@ created_by: "test"
 	}
 
 	// Create empty contacts and summary files
-	os.WriteFile(filepath.Join(tempDir, "contacts.yaml"), []byte("contacts: []\n"), 0644)
-	os.WriteFile(filepath.Join(tempDir, "summary.yaml"), []byte("counts:\n  calls: 0\n  sms: 0\n"), 0644)
+	_ = os.WriteFile(filepath.Join(tempDir, "contacts.yaml"), []byte("contacts: []\n"), 0644)
+	_ = os.WriteFile(filepath.Join(tempDir, "summary.yaml"), []byte("counts:\n  calls: 0\n  sms: 0\n"), 0644)
 
 	// TODO: This test would be more complete with mocked readers
 	// For now, we're just testing that the function doesn't panic

@@ -292,7 +292,7 @@ func (cm *ContactsManager) SaveContacts(path string) error {
 
 	// Atomic rename
 	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath) // Clean up temp file
+		_ = os.Remove(tempPath) // Clean up temp file
 		return fmt.Errorf("failed to rename temp contacts file: %w", err)
 	}
 

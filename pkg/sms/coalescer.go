@@ -19,47 +19,47 @@ func (m MessageEntry) Hash() string {
 	h := sha256.New()
 
 	// Common fields for both SMS and MMS
-	fmt.Fprintf(h, "address:%s|", m.GetAddress())
-	fmt.Fprintf(h, "date:%d|", m.GetDate())
-	fmt.Fprintf(h, "type:%d|", m.GetType())
+	_, _ = fmt.Fprintf(h, "address:%s|", m.GetAddress())
+	_, _ = fmt.Fprintf(h, "date:%d|", m.GetDate())
+	_, _ = fmt.Fprintf(h, "type:%d|", m.GetType())
 
 	// Type-specific fields
 	switch msg := m.Message.(type) {
 	case *SMS:
-		fmt.Fprintf(h, "msgtype:sms|")
-		fmt.Fprintf(h, "body:%s|", msg.Body)
-		fmt.Fprintf(h, "protocol:%s|", msg.Protocol)
-		fmt.Fprintf(h, "subject:%s|", msg.Subject)
-		fmt.Fprintf(h, "service_center:%s|", msg.ServiceCenter)
-		fmt.Fprintf(h, "read:%d|", msg.Read)
-		fmt.Fprintf(h, "status:%d|", msg.Status)
-		fmt.Fprintf(h, "locked:%d|", msg.Locked)
-		fmt.Fprintf(h, "date_sent:%d|", msg.DateSent)
+		_, _ = fmt.Fprintf(h, "msgtype:sms|")
+		_, _ = fmt.Fprintf(h, "body:%s|", msg.Body)
+		_, _ = fmt.Fprintf(h, "protocol:%s|", msg.Protocol)
+		_, _ = fmt.Fprintf(h, "subject:%s|", msg.Subject)
+		_, _ = fmt.Fprintf(h, "service_center:%s|", msg.ServiceCenter)
+		_, _ = fmt.Fprintf(h, "read:%d|", msg.Read)
+		_, _ = fmt.Fprintf(h, "status:%d|", msg.Status)
+		_, _ = fmt.Fprintf(h, "locked:%d|", msg.Locked)
+		_, _ = fmt.Fprintf(h, "date_sent:%d|", msg.DateSent)
 
 	case *MMS:
-		fmt.Fprintf(h, "msgtype:mms|")
-		fmt.Fprintf(h, "msg_box:%d|", msg.MsgBox)
-		fmt.Fprintf(h, "m_id:%s|", msg.MId)
-		fmt.Fprintf(h, "m_type:%d|", msg.MType)
+		_, _ = fmt.Fprintf(h, "msgtype:mms|")
+		_, _ = fmt.Fprintf(h, "msg_box:%d|", msg.MsgBox)
+		_, _ = fmt.Fprintf(h, "m_id:%s|", msg.MId)
+		_, _ = fmt.Fprintf(h, "m_type:%d|", msg.MType)
 		// Include parts in hash for MMS uniqueness
 		for i, part := range msg.Parts {
-			fmt.Fprintf(h, "part%d_seq:%d|", i, part.Seq)
-			fmt.Fprintf(h, "part%d_ct:%s|", i, part.ContentType)
-			fmt.Fprintf(h, "part%d_name:%s|", i, part.Name)
-			fmt.Fprintf(h, "part%d_text:%s|", i, part.Text)
+			_, _ = fmt.Fprintf(h, "part%d_seq:%d|", i, part.Seq)
+			_, _ = fmt.Fprintf(h, "part%d_ct:%s|", i, part.ContentType)
+			_, _ = fmt.Fprintf(h, "part%d_name:%s|", i, part.Name)
+			_, _ = fmt.Fprintf(h, "part%d_text:%s|", i, part.Text)
 
 			// Include attachment path if extracted, otherwise indicate presence of data
 			if part.Path != "" {
-				fmt.Fprintf(h, "part%d_path:%s|", i, part.Path)
+				_, _ = fmt.Fprintf(h, "part%d_path:%s|", i, part.Path)
 			} else if part.Data != "" {
-				fmt.Fprintf(h, "part%d_has_data:true|", i)
+				_, _ = fmt.Fprintf(h, "part%d_has_data:true|", i)
 			}
 		}
 		// Include addresses for group messages
 		for i, addr := range msg.Addresses {
-			fmt.Fprintf(h, "addr%d_address:%s|", i, addr.Address)
-			fmt.Fprintf(h, "addr%d_type:%d|", i, addr.Type)
-			fmt.Fprintf(h, "addr%d_charset:%d|", i, addr.Charset)
+			_, _ = fmt.Fprintf(h, "addr%d_address:%s|", i, addr.Address)
+			_, _ = fmt.Fprintf(h, "addr%d_type:%d|", i, addr.Type)
+			_, _ = fmt.Fprintf(h, "addr%d_charset:%d|", i, addr.Charset)
 		}
 	}
 

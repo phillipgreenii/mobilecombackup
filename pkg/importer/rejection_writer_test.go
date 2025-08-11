@@ -156,7 +156,7 @@ func TestXMLRejectionWriter_ConcurrentWrites(t *testing.T) {
 
 	go func() {
 		testFile := filepath.Join(tempDir, "calls-1.xml")
-		os.WriteFile(testFile, []byte("test"), 0644)
+		_ = os.WriteFile(testFile, []byte("test"), 0644)
 		rejections := []RejectedEntry{{Line: 1, Data: "<call />", Violations: []string{"test"}}}
 		_, err := writer.WriteRejections(testFile, rejections)
 		if err != nil {
@@ -167,7 +167,7 @@ func TestXMLRejectionWriter_ConcurrentWrites(t *testing.T) {
 
 	go func() {
 		testFile := filepath.Join(tempDir, "sms-1.xml")
-		os.WriteFile(testFile, []byte("test"), 0644)
+		_ = os.WriteFile(testFile, []byte("test"), 0644)
 		rejections := []RejectedEntry{{Line: 1, Data: "<sms />", Violations: []string{"test"}}}
 		_, err := writer.WriteRejections(testFile, rejections)
 		if err != nil {

@@ -279,7 +279,7 @@ func DetectFileFormat(filePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read first 512 bytes for format detection
 	buffer := make([]byte, 512)

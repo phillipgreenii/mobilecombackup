@@ -58,9 +58,9 @@ func TestValidateCommandIntegration(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				// Create directories but no marker file
-				os.MkdirAll(filepath.Join(dir, "calls"), 0755)
-				os.MkdirAll(filepath.Join(dir, "sms"), 0755)
-				os.MkdirAll(filepath.Join(dir, "attachments"), 0755)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0755)
+				_ = os.MkdirAll(filepath.Join(dir, "sms"), 0755)
+				_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0755)
 				return dir
 			},
 			wantExitCode: 1,
@@ -83,7 +83,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 			args: []string{"validate", "--quiet"},
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				os.MkdirAll(filepath.Join(dir, "calls"), 0755)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0755)
 				return dir
 			},
 			wantExitCode: 1,
@@ -117,7 +117,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 			args: []string{"validate", "--output-json"},
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				os.MkdirAll(filepath.Join(dir, "calls"), 0755)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0755)
 				return dir
 			},
 			wantExitCode: 1,
@@ -235,7 +235,7 @@ func TestValidateJSONSchema(t *testing.T) {
 
 	// Create repository with violation
 	repoRoot := t.TempDir()
-	os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755)
+	_ = os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755)
 
 	// Run validate with JSON output
 	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot, "--output-json")
@@ -301,7 +301,7 @@ func TestValidatePerformance(t *testing.T) {
 		content += "\n</calls>"
 
 		filename := filepath.Join(repoRoot, "calls", fmt.Sprintf("calls-%d.xml", year))
-		os.WriteFile(filename, []byte(content), 0644)
+		_ = os.WriteFile(filename, []byte(content), 0644)
 	}
 
 	// Time the validation
@@ -331,16 +331,16 @@ func createValidRepository(t *testing.T) string {
 	dir := t.TempDir()
 
 	// Create directories
-	os.MkdirAll(filepath.Join(dir, "calls"), 0755)
-	os.MkdirAll(filepath.Join(dir, "sms"), 0755)
-	os.MkdirAll(filepath.Join(dir, "attachments"), 0755)
+	_ = os.MkdirAll(filepath.Join(dir, "calls"), 0755)
+	_ = os.MkdirAll(filepath.Join(dir, "sms"), 0755)
+	_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0755)
 
 	// Create marker file
 	markerContent := `repository_structure_version: "1"
 created_at: "2024-01-01T10:00:00Z"
 created_by: "test"
 `
-	os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	_ = os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
 
 	// Note: In reality, a valid repository would need files.yaml with all files listed,
 	// proper checksums, etc. For integration tests, we're focusing on command behavior

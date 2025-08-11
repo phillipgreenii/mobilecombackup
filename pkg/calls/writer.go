@@ -40,10 +40,10 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Write XML header
-	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
+	_, _ = file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
 
 	// Create encoder with proper formatting
 	encoder := xml.NewEncoder(file)
@@ -65,7 +65,7 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 	}
 
 	// Add final newline
-	file.WriteString("\n")
+	_, _ = file.WriteString("\n")
 
 	return nil
 }

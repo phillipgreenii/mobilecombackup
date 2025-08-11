@@ -48,10 +48,10 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Write XML header
-	file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
+	_, _ = file.WriteString(`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>` + "\n")
 
 	// Create encoder with proper formatting
 	encoder := xml.NewEncoder(file)
@@ -94,7 +94,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 	}
 
 	// Add final newline
-	file.WriteString("\n")
+	_, _ = file.WriteString("\n")
 
 	return nil
 }

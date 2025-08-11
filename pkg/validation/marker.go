@@ -63,7 +63,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 		}
 		return nil, false, fmt.Errorf("failed to open marker file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read file content
 	content, err := io.ReadAll(file)

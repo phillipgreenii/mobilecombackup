@@ -261,7 +261,7 @@ func TestImportScanningLogic(t *testing.T) {
 	createTestFile(t, filepath.Join(importDir, "subdir", "sms-2.xml"), "<sms></sms>")
 
 	// Also create files that should be excluded (already in repo structure)
-	os.MkdirAll(filepath.Join(importDir, "calls"), 0755)
+	_ = os.MkdirAll(filepath.Join(importDir, "calls"), 0755)
 	createTestFile(t, filepath.Join(importDir, "calls", "calls-2020.xml"), "<calls></calls>")
 
 	// Run import with verbose to see what files are processed

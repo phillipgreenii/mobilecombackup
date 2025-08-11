@@ -143,11 +143,11 @@ func TestEdgeCase_ReadOnlyDirectory(t *testing.T) {
 
 	// Make attachments directory read-only
 	attachmentsDir := filepath.Join(tempDir, "attachments")
-	os.MkdirAll(attachmentsDir, 0755)
-	os.Chmod(attachmentsDir, 0444) // Read-only
+	_ = os.MkdirAll(attachmentsDir, 0755)
+	_ = os.Chmod(attachmentsDir, 0444) // Read-only
 
 	// Restore permissions after test
-	defer os.Chmod(attachmentsDir, 0755)
+	defer func() { _ = os.Chmod(attachmentsDir, 0755) }()
 
 	extractor := NewAttachmentExtractor(tempDir)
 	config := GetDefaultContentTypeConfig()
@@ -194,10 +194,10 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 	// Now make the attachment subdirectory read-only
 	attachmentPath := filepath.Join(tempDir, result.Path)
 	subDir := filepath.Dir(attachmentPath)
-	os.Chmod(subDir, 0444) // Read-only
+	_ = os.Chmod(subDir, 0444) // Read-only
 
 	// Restore permissions after test
-	defer os.Chmod(subDir, 0755)
+	defer func() { _ = os.Chmod(subDir, 0755) }()
 
 	// Try to extract a different attachment to the same subdirectory
 	newPart := &MMSPart{
@@ -380,9 +380,10 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 		}
 
 		result := results[i]
-		if result.Action == "extracted" {
+		switch result.Action {
+		case "extracted":
 			extractedCount++
-		} else if result.Action == "referenced" {
+		case "referenced":
 			referencedCount++
 		}
 

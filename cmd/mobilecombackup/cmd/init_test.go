@@ -34,7 +34,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml"))
-				f.Close()
+				_ = f.Close()
 				return dir
 			},
 			wantError: "already contains a mobilecombackup repository",
@@ -43,7 +43,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with calls subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				os.Mkdir(filepath.Join(dir, "calls"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "calls"), 0755)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -52,7 +52,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with sms subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				os.Mkdir(filepath.Join(dir, "sms"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "sms"), 0755)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -61,7 +61,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with attachments subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				os.Mkdir(filepath.Join(dir, "attachments"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "attachments"), 0755)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -71,7 +71,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				f, _ := os.Create(filepath.Join(dir, "some-file.txt"))
-				f.Close()
+				_ = f.Close()
 				return dir
 			},
 			wantError: "directory is not empty",
@@ -82,7 +82,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 				dir := t.TempDir()
 				path := filepath.Join(dir, "file.txt")
 				f, _ := os.Create(path)
-				f.Close()
+				_ = f.Close()
 				return path
 			},
 			wantError: "not a directory",
@@ -249,7 +249,7 @@ func TestInitializeRepositoryPermissions(t *testing.T) {
 	// Create a directory without write permission
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "no-write")
-	os.Mkdir(repoRoot, 0555) // read+execute only
+	_ = os.Mkdir(repoRoot, 0555) // read+execute only
 
 	_, err := initializeRepository(repoRoot, false, true)
 	if err == nil {

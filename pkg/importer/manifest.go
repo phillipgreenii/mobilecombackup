@@ -35,7 +35,7 @@ func generateManifestFile(repoRoot string, version string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create manifest file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	encoder := yaml.NewEncoder(file)
 	encoder.SetIndent(2)
@@ -111,7 +111,7 @@ func calculateFileChecksum(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {

@@ -100,7 +100,7 @@ func TestInitCommandIntegration(t *testing.T) {
 				dir := t.TempDir()
 				// Create marker file to simulate existing repo
 				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml"))
-				f.Close()
+				_ = f.Close()
 				return dir
 			},
 			wantError: true,
@@ -114,7 +114,7 @@ func TestInitCommandIntegration(t *testing.T) {
 				dir := t.TempDir()
 				// Create a file to make it non-empty
 				f, _ := os.Create(filepath.Join(dir, "existing.txt"))
-				f.Close()
+				_ = f.Close()
 				return dir
 			},
 			wantError: true,
@@ -181,7 +181,7 @@ func TestInitCommandTreeOutput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(oldDir)
+	defer func() { _ = os.Chdir(oldDir) }()
 
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")

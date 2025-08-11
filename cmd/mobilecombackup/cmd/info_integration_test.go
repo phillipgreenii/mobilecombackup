@@ -68,7 +68,7 @@ func TestInfoCommandIntegration(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Failed to get working directory: %v", err)
 					}
-					defer os.Chdir(oldWd)
+					defer func() { _ = os.Chdir(oldWd) }()
 
 					if err := os.Chdir(repoPath); err != nil {
 						t.Fatalf("Failed to change to test directory: %v", err)
