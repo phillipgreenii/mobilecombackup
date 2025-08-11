@@ -1539,3 +1539,76 @@ Both CI workflows use the `jetify-com/devbox-install-action@v0.11.0` instead of 
 - All tools and versions consistent with local development environment
 - Single `devbox run ci` command for complete pipeline execution
 
+## Consistent Versioning Scheme (FEAT-031)
+
+### Overview
+
+The project uses a git tag-based versioning system with VERSION file fallback, providing a single source of truth for version information across CLI, SonarQube, and GitHub Actions.
+
+### Version Formats
+
+- **Development builds**: `2.0.0-dev-g1234567` (VERSION file base + git hash)
+- **Release builds**: `2.0.0` (clean semantic version from git tags)
+- **VERSION file content**: `2.0.0-dev` (base version with -dev suffix)
+- **Git tag format**: `v2.0.0` (with "v" prefix following Go conventions)
+
+### Version Extraction Logic
+
+The build system follows this priority order:
+
+1. **Git tags** (release builds): Use `git describe --tags --exact-match` for tagged commits
+2. **VERSION file + git hash** (development builds): Combine base version with git commit hash
+3. **VERSION file only** (fallback): When git is unavailable or in CI shallow clones
+4. **Hardcoded fallback**: `"dev"` when neither git nor VERSION file available
+
+### Implementation Components
+
+#### Version Extraction Script (`scripts/build-version.sh`)
+- Handles all version extraction scenarios with proper edge case handling
+- Supports git tag-based releases and development builds
+- Graceful fallbacks for missing git or VERSION file
+- Used by devbox build-cli command for consistent version injection
+
+#### Build System Integration
+- **devbox.json**: `build-cli` command uses version extraction script
+- **GitHub Actions**: Updated workflows with proper git history access (`fetch-depth: 0`)
+- **SonarQube Integration**: Dynamic version passing via command-line arguments
+
+#### Validation and Documentation
+- **Version Validation Script** (`scripts/validate-version.sh`): Verifies VERSION file format
+- **Comprehensive Documentation**: Developer workflow, troubleshooting, and checklists
+- **User Documentation**: README.md updated with versioning section
+
+### Benefits
+
+**Single Source of Truth:**
+- VERSION file provides base version for all scenarios
+- Git tags override for clean release versions
+- No version duplication across configuration files
+
+**Automated Integration:**
+- GitHub Actions automatically extract and use appropriate versions
+- SonarQube receives clean semantic versions for project tracking
+- CLI binaries always have meaningful version information
+
+**Developer Experience:**
+- Simple `devbox run build-cli` for version-aware builds
+- `devbox run validate-version` for version file verification
+- Clear checklists for version update workflows
+- Automatic handling of all edge cases and fallbacks
+
+### Versioning Workflow
+
+#### Development Phase
+1. VERSION file contains base version with `-dev` suffix (e.g., `2.1.0-dev`)
+2. Builds show format: `2.1.0-dev-g1234567` (base + git hash)
+3. SonarQube uses base version: `2.1.0` (clean semantic version)
+
+#### Release Phase
+1. Create git tag: `git tag v2.1.0`
+2. Tagged builds show clean version: `2.1.0`
+3. GitHub Actions triggered automatically
+4. Update VERSION file for next development cycle: `2.2.0-dev`
+
+This versioning scheme provides consistency, automation, and clear upgrade paths while minimizing maintenance overhead.
+
