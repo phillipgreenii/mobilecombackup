@@ -151,4 +151,3 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 
 	return nil
 }
-

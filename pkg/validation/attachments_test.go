@@ -191,16 +191,16 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 	// Create test attachment files
 	validHashPath := filepath.Join(tempDir, "attachments", "va", "validhash123")
 	corruptedHashPath := filepath.Join(tempDir, "attachments", "co", "corruptedhash789")
-	
+
 	// Create directory structure
 	_ = os.MkdirAll(filepath.Dir(validHashPath), 0755)
 	_ = os.MkdirAll(filepath.Dir(corruptedHashPath), 0755)
-	
+
 	// Create valid attachment file with PNG signature for format recognition
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
 	_ = os.WriteFile(validHashPath, pngData, 0644)
-	
-	// Create corrupted attachment file 
+
+	// Create corrupted attachment file
 	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0644)
 
 	mockReader := &mockAttachmentReader{

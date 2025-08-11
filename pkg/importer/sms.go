@@ -259,7 +259,6 @@ func (si *SMSImporter) WriteRepository() error {
 	return nil
 }
 
-
 // GetSummary returns the coalescer summary
 func (si *SMSImporter) GetSummary() coalescer.Summary {
 	return si.coalescer.GetSummary()

@@ -225,7 +225,7 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 		t.Fatalf("Failed to read calls rejected directory: %v", err)
 	}
 
-	// Should have 1 rejection file (XML format)  
+	// Should have 1 rejection file (XML format)
 	if len(entries) != 1 {
 		t.Errorf("Expected 1 rejection file, got %d", len(entries))
 		for _, entry := range entries {
@@ -253,13 +253,13 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 	}
 
 	rejectionStr := string(rejectionData)
-	
+
 	// Verify the XML contains rejected entries for all invalid calls
 	expectedRejections := []string{
-		`number=""`,           // Missing Number call
-		`duration="-10"`,      // Negative Duration call  
-		`date="0"`,            // Missing Timestamp call
-		`type="99"`,           // Invalid Type call
+		`number=""`,      // Missing Number call
+		`duration="-10"`, // Negative Duration call
+		`date="0"`,       // Missing Timestamp call
+		`type="99"`,      // Invalid Type call
 	}
 
 	for _, expected := range expectedRejections {
