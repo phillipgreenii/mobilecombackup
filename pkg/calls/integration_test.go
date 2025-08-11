@@ -60,23 +60,24 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 	// Test some specific calls from the test data
 	// First call should be a missed call
 	firstCall := calls[0]
-	if firstCall.Type != MissedCall {
+	if firstCall.Type != Missed {
 		t.Errorf("Expected first call to be missed call, got type %d", firstCall.Type)
 	}
 
 	// Test that dates are properly converted
 	for i, call := range calls {
-		if call.Date.IsZero() {
+		if call.Date == 0 {
 			t.Errorf("Call %d has zero date", i)
 		}
-		if call.Date.Year() < 2014 || call.Date.Year() > 2015 {
-			t.Errorf("Call %d has unexpected year %d", i, call.Date.Year())
+		timestamp := call.Timestamp()
+		if timestamp.Year() < 2014 || timestamp.Year() > 2015 {
+			t.Errorf("Call %d has unexpected year %d", i, timestamp.Year())
 		}
 	}
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamCalls(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(2014, func(call Call) error {
 		streamedCount++
 		return nil
 	})
@@ -119,7 +120,7 @@ func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
 
 	// Test streaming for memory efficiency
 	var streamedCalls []Call
-	err = reader.StreamCalls(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(2014, func(call Call) error {
 		streamedCalls = append(streamedCalls, call)
 		return nil
 	})
@@ -135,11 +136,11 @@ func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
 	var incomingCount, outgoingCount, missedCount int
 	for _, call := range streamedCalls {
 		switch call.Type {
-		case IncomingCall:
+		case Incoming:
 			incomingCount++
-		case OutgoingCall:
+		case Outgoing:
 			outgoingCount++
-		case MissedCall:
+		case Missed:
 			missedCount++
 		}
 
@@ -206,13 +207,14 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	// Check year distribution in the scenario data
 	var year2014Count, year2015Count int
 	for _, call := range calls {
-		switch call.Date.Year() {
+		timestamp := call.Timestamp()
+		switch timestamp.Year() {
 		case 2014:
 			year2014Count++
 		case 2015:
 			year2015Count++
 		default:
-			t.Errorf("Unexpected year %d in call data", call.Date.Year())
+			t.Errorf("Unexpected year %d in call data", timestamp.Year())
 		}
 	}
 

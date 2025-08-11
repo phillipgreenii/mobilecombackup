@@ -73,14 +73,14 @@ func (m *mockSMSReader) ValidateSMSFile(year int) error {
 
 // mockSMS implements sms.Message interface for testing
 type mockSMS struct {
-	date         time.Time
+	date         int64
 	address      string
 	messageType  sms.MessageType
 	readableDate string
 	contactName  string
 }
 
-func (m mockSMS) GetDate() time.Time       { return m.date }
+func (m mockSMS) GetDate() int64           { return m.date }
 func (m mockSMS) GetAddress() string       { return m.address }
 func (m mockSMS) GetType() sms.MessageType { return m.messageType }
 func (m mockSMS) GetReadableDate() string  { return m.readableDate }
@@ -156,14 +156,14 @@ func TestSMSValidatorImpl_ValidateSMSContent(t *testing.T) {
 		messages: map[int][]sms.Message{
 			2015: {
 				mockSMS{
-					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC),
+					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC).UnixMilli(),
 					address:      "+15551234567",
 					messageType:  sms.ReceivedMessage,
 					readableDate: "2015-06-15 14:30:00",
 					contactName:  "John Doe",
 				},
 				mockSMS{
-					date:         time.Date(2016, 2, 10, 9, 15, 0, 0, time.UTC), // Wrong year!
+					date:         time.Date(2016, 2, 10, 9, 15, 0, 0, time.UTC).UnixMilli(), // Wrong year!
 					address:      "+15559876543",
 					messageType:  sms.SentMessage,
 					readableDate: "2016-02-10 09:15:00",
@@ -172,7 +172,7 @@ func TestSMSValidatorImpl_ValidateSMSContent(t *testing.T) {
 			},
 			2016: {
 				mockSMS{
-					date:         time.Date(2016, 12, 25, 18, 0, 0, 0, time.UTC),
+					date:         time.Date(2016, 12, 25, 18, 0, 0, 0, time.UTC).UnixMilli(),
 					address:      "+15555555555",
 					messageType:  sms.ReceivedMessage,
 					readableDate: "2016-12-25 18:00:00",
@@ -307,14 +307,14 @@ func TestSMSValidatorImpl_ValidateSMSContent_ValidYear(t *testing.T) {
 		messages: map[int][]sms.Message{
 			2015: {
 				mockSMS{
-					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC),
+					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC).UnixMilli(),
 					address:      "+15551234567",
 					messageType:  sms.ReceivedMessage,
 					readableDate: "2015-06-15 14:30:00",
 					contactName:  "John Doe",
 				},
 				mockSMS{
-					date:         time.Date(2015, 12, 31, 23, 59, 0, 0, time.UTC),
+					date:         time.Date(2015, 12, 31, 23, 59, 0, 0, time.UTC).UnixMilli(),
 					address:      "+15559876543",
 					messageType:  sms.SentMessage,
 					readableDate: "2015-12-31 23:59:00",
@@ -443,7 +443,7 @@ func TestSMSValidatorImpl_AttachmentReferenceValidation(t *testing.T) {
 				messages: map[int][]sms.Message{
 					2015: {
 						mockSMS{
-							date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC),
+							date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC).UnixMilli(),
 							address:      "+15551234567",
 							messageType:  sms.ReceivedMessage,
 							readableDate: "2015-06-15 14:30:00",

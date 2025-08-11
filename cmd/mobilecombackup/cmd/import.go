@@ -305,5 +305,8 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 	
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
-	encoder.Encode(output)
+	if err := encoder.Encode(output); err != nil {
+		fmt.Fprintf(os.Stderr, "Error encoding JSON output: %v\n", err)
+		os.Exit(2)
+	}
 }

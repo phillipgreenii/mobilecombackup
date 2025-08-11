@@ -607,7 +607,7 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 		attachments: []*attachments.Attachment{
 			{Hash: pngHash, Path: pngPath, Exists: true, Size: int64(len(pngData))},
 		},
-		verifyResults: map[string]bool{pngHash: true},
+		verificationResults: map[string]bool{pngHash: true},
 	}
 
 	// Mock SMS reader with MMS that declares the attachment as JPEG (mismatch)
@@ -673,7 +673,7 @@ func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
 		attachments: []*attachments.Attachment{
 			{Hash: unknownHash, Path: unknownPath, Exists: true, Size: int64(len(unknownData))},
 		},
-		verifyResults: map[string]bool{unknownHash: true},
+		verificationResults: map[string]bool{unknownHash: true},
 	}
 
 	// Mock SMS reader with no MMS data

@@ -35,7 +35,7 @@ func ExampleXMLCallsReader_StreamCalls() {
 
 	// Stream calls for memory-efficient processing
 	callCount := 0
-	err := reader.StreamCalls(2014, func(call calls.Call) error {
+	err := reader.StreamCallsForYear(2014, func(call calls.Call) error {
 		callCount++
 		fmt.Printf("Call %d: %s -> %s (%d)\n",
 			callCount, call.Number, call.ContactName, call.Type)
@@ -66,19 +66,19 @@ func ExampleCallType() {
 	call := calls.Call{
 		Number:      "+15555551234",
 		Duration:    120,
-		Type:        calls.IncomingCall,
+		Type:        calls.Incoming,
 		ContactName: "John Doe",
 	}
 
 	// Check call type
 	switch call.Type {
-	case calls.IncomingCall:
+	case calls.Incoming:
 		fmt.Println("Received call from", call.ContactName)
-	case calls.OutgoingCall:
+	case calls.Outgoing:
 		fmt.Println("Called", call.ContactName)
-	case calls.MissedCall:
+	case calls.Missed:
 		fmt.Println("Missed call from", call.ContactName)
-	case calls.VoicemailCall:
+	case calls.Voicemail:
 		fmt.Println("Voicemail from", call.ContactName)
 	}
 }

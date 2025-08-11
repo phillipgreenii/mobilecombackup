@@ -56,7 +56,7 @@ func TestImportIntegration(t *testing.T) {
 				
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
 					filepath.Join(importPath, "calls-test.xml"))
 				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
@@ -82,7 +82,7 @@ func TestImportIntegration(t *testing.T) {
 				
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
 					filepath.Join(importPath, "calls-test.xml"))
 				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
@@ -106,7 +106,7 @@ func TestImportIntegration(t *testing.T) {
 				
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
 					filepath.Join(importPath, "calls-test.xml"))
 				
 				return repoPath, importPath
@@ -128,7 +128,7 @@ func TestImportIntegration(t *testing.T) {
 				
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
 					filepath.Join(importPath, "calls-test.xml"))
 				
 				return repoPath, importPath
@@ -164,7 +164,7 @@ func TestImportIntegration(t *testing.T) {
 				
 				// Create import directory
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/calls-test.xml", 
+				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml", 
 					filepath.Join(importPath, "calls-test.xml"))
 				
 				return "", importPath // Empty repo path to test env var

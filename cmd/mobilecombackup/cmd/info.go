@@ -534,7 +534,7 @@ func formatNumber(n int) string {
 	if n < 1000 {
 		return fmt.Sprintf("%d", n)
 	}
-	return fmt.Sprintf("%s", addCommas(fmt.Sprintf("%d", n)))
+	return addCommas(fmt.Sprintf("%d", n))
 }
 
 func formatBytes(bytes int64) string {

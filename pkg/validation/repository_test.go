@@ -261,8 +261,8 @@ func TestRepositoryValidatorImpl_ValidateContent(t *testing.T) {
 				{
 					Number:       "+15551234567",
 					Duration:     120,
-					Date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC),
-					Type:         calls.IncomingCall,
+					Date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC).UnixMilli(),
+					Type:         calls.Incoming,
 					ReadableDate: "2015-06-15 14:30:00",
 					ContactName:  "John Doe",
 				},
@@ -276,7 +276,7 @@ func TestRepositoryValidatorImpl_ValidateContent(t *testing.T) {
 		messages: map[int][]sms.Message{
 			2015: {
 				mockSMS{
-					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC),
+					date:         time.Date(2015, 6, 15, 14, 30, 0, 0, time.UTC).UnixMilli(),
 					address:      "+15551234567",
 					messageType:  sms.ReceivedMessage,
 					readableDate: "2015-06-15 14:30:00",
@@ -399,7 +399,7 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 		checksumValidator:    NewChecksumValidator(tempDir),
 		callsValidator:       NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
 		smsValidator:         NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
-		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}),
+		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
 		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
 	}
 

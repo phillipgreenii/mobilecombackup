@@ -158,7 +158,7 @@ func TestCountAttachmentFiles(t *testing.T) {
 	attachmentsDir := filepath.Join(tempDir, "attachments")
 	
 	// Test non-existent directory
-	count, err := countAttachmentFiles(attachmentsDir)
+	_, err := countAttachmentFiles(attachmentsDir)
 	if err == nil {
 		t.Error("Expected error for non-existent directory")
 	}
@@ -170,7 +170,7 @@ func TestCountAttachmentFiles(t *testing.T) {
 	}
 	
 	// Test empty directory
-	count, err = countAttachmentFiles(attachmentsDir)
+	count, err := countAttachmentFiles(attachmentsDir)
 	if err != nil {
 		t.Fatalf("Failed to count empty directory: %v", err)
 	}

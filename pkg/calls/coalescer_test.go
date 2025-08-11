@@ -249,7 +249,7 @@ func TestCallEntry_HashConsistency(t *testing.T) {
 	
 	// Verify it's valid hex
 	for _, c := range hash1 {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			t.Errorf("Hash contains invalid character: %c", c)
 		}
 	}

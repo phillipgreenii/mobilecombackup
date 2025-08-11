@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestXMLCallsReader_ReadCalls(t *testing.T) {
@@ -52,17 +51,17 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 	if call.Duration != 0 {
 		t.Errorf("Expected duration 0, got %d", call.Duration)
 	}
-	if call.Type != MissedCall {
-		t.Errorf("Expected type %d, got %d", MissedCall, call.Type)
+	if call.Type != Missed {
+		t.Errorf("Expected type %d, got %d", Missed, call.Type)
 	}
 	if call.ContactName != "(Unknown)" {
 		t.Errorf("Expected contact name '(Unknown)', got '%s'", call.ContactName)
 	}
 
 	// Verify date conversion
-	expectedTime := time.Unix(0, 1410881505425*int64(time.Millisecond))
-	if !call.Date.Equal(expectedTime) {
-		t.Errorf("Expected date %v, got %v", expectedTime, call.Date)
+	expectedTimeMs := int64(1410881505425)
+	if call.Date != expectedTimeMs {
+		t.Errorf("Expected date %d, got %d", expectedTimeMs, call.Date)
 	}
 
 	// Verify second call
@@ -73,8 +72,8 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 	if call.Duration != 43 {
 		t.Errorf("Expected duration 43, got %d", call.Duration)
 	}
-	if call.Type != IncomingCall {
-		t.Errorf("Expected type %d, got %d", IncomingCall, call.Type)
+	if call.Type != Incoming {
+		t.Errorf("Expected type %d, got %d", Incoming, call.Type)
 	}
 	if call.ContactName != "John Stuart" {
 		t.Errorf("Expected contact name 'John Stuart', got '%s'", call.ContactName)
@@ -88,8 +87,8 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 	if call.Duration != 120 {
 		t.Errorf("Expected duration 120, got %d", call.Duration)
 	}
-	if call.Type != OutgoingCall {
-		t.Errorf("Expected type %d, got %d", OutgoingCall, call.Type)
+	if call.Type != Outgoing {
+		t.Errorf("Expected type %d, got %d", Outgoing, call.Type)
 	}
 	if call.ContactName != "Jane Doe" {
 		t.Errorf("Expected contact name 'Jane Doe', got '%s'", call.ContactName)
@@ -122,7 +121,7 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 	reader := NewXMLCallsReader(repoRoot)
 
 	var streamedCalls []Call
-	err = reader.StreamCalls(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(2014, func(call Call) error {
 		streamedCalls = append(streamedCalls, call)
 		return nil
 	})
@@ -142,8 +141,8 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 	if call.Duration != 30 {
 		t.Errorf("Expected duration 30, got %d", call.Duration)
 	}
-	if call.Type != IncomingCall {
-		t.Errorf("Expected type %d, got %d", IncomingCall, call.Type)
+	if call.Type != Incoming {
+		t.Errorf("Expected type %d, got %d", Incoming, call.Type)
 	}
 }
 
@@ -300,7 +299,7 @@ func TestXMLCallsReader_MissingFile(t *testing.T) {
 		t.Error("ReadCalls should have failed on missing file")
 	}
 
-	err = reader.StreamCalls(2014, func(Call) error { return nil })
+	err = reader.StreamCallsForYear(2014, func(Call) error { return nil })
 	if err == nil {
 		t.Error("StreamCalls should have failed on missing file")
 	}
@@ -333,16 +332,16 @@ func TestXMLCallsReader_EmptyCallsDirectory(t *testing.T) {
 
 func TestCallTypeConstants(t *testing.T) {
 	// Test that the call type constants match the expected values
-	if IncomingCall != 1 {
-		t.Errorf("Expected IncomingCall to be 1, got %d", IncomingCall)
+	if Incoming != 1 {
+		t.Errorf("Expected Incoming to be 1, got %d", Incoming)
 	}
-	if OutgoingCall != 2 {
-		t.Errorf("Expected OutgoingCall to be 2, got %d", OutgoingCall)
+	if Outgoing != 2 {
+		t.Errorf("Expected Outgoing to be 2, got %d", Outgoing)
 	}
-	if MissedCall != 3 {
-		t.Errorf("Expected MissedCall to be 3, got %d", MissedCall)
+	if Missed != 3 {
+		t.Errorf("Expected Missed to be 3, got %d", Missed)
 	}
-	if VoicemailCall != 4 {
-		t.Errorf("Expected VoicemailCall to be 4, got %d", VoicemailCall)
+	if Voicemail != 4 {
+		t.Errorf("Expected Voicemail to be 4, got %d", Voicemail)
 	}
 }
