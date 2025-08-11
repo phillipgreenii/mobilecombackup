@@ -16,6 +16,17 @@ go build -v ./...
 devbox run builder
 ```
 
+### Code Formatting
+```bash
+# Format all Go code using standard formatting
+devbox run formatter
+
+# This runs: go fmt ./...
+# - Automatically fixes indentation, spacing, and structure
+# - Must be run before testing and committing
+# - Part of the quality pipeline: format → test → lint → build
+```
+
 ### Testing
 ```bash
 # Run all tests with coverage
@@ -321,6 +332,43 @@ When implementing issues:
 - Reference the feature document in commits (e.g., "FEAT-001: Implement generic XML parser")
 - Cross-reference related features in the References section
 
+## Code Formatting Best Practices
+
+All code must be consistently formatted using standard Go formatting tools to maintain readability and reduce merge conflicts.
+
+### Formatting Requirements
+- **Always format before testing**: Run `devbox run formatter` before any test execution
+- **Always format before committing**: Formatting is the first step in the quality verification process
+- **Use standard Go formatting**: The formatter script uses `go fmt ./...` for consistent style
+- **No formatting configuration**: Use Go's standard formatting without custom configuration
+
+### Integration with Development Workflow
+- **Quality Pipeline Order**: format → test → lint → build
+- **Automatic Formatting**: Agents automatically format code during task completion
+- **Error Handling**: If formatting changes files, include those changes in commits
+- **Never Skip**: Formatting is mandatory, not optional
+
+### Agent Behavior
+All Claude agents follow these formatting practices:
+- **Before Task Completion**: Always run formatter before marking any code task as complete
+- **Before Committing**: Format code as first step in auto-commit process
+- **Status Verification**: Include formatting in "clean state" verification requirements
+- **Error Recovery**: If formatter fails, investigate and resolve before proceeding
+
+### Formatting Command
+```bash
+# Format all Go code in the project
+devbox run formatter
+
+# This runs: go fmt ./...
+```
+
+### Expected Outcomes
+- All Go files follow standard Go formatting conventions
+- No formatting-related diffs in commits (code arrives pre-formatted)
+- Consistent indentation, spacing, and code structure
+- Reduced cognitive load during code reviews
+
 ## Issue Development Best Practices
 
 Based on analysis of existing issues, the following patterns and best practices should be followed:
@@ -386,7 +434,8 @@ Based on analysis of existing issues, the following patterns and best practices 
 ### Development Cycle
 1. **Work on one task at a time**: Focus on single task until completion
 2. **Format code before testing**: Always run `devbox run formatter` before testing or committing
-3. **Task completion verification**: Before marking any task complete, MUST verify clean state:
+3. **Task completion verification**: Before marking any task complete, MUST verify clean state in order:
+   - Run `devbox run formatter` - ensure consistent code formatting
    - Run `devbox run tests` - all tests must pass
    - Run `devbox run linter` - zero lint violations allowed
    - Run `devbox run build-cli` - build must succeed
@@ -811,7 +860,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 **Important Notes:**
 - Agents never use `git add .` - they stage only files they actually modified
-- Auto-commit only occurs after successful verification (tests pass, code compiles, linting clean)
+- Auto-commit only occurs after successful verification (code formatted, tests pass, code compiles, linting clean)
 - If commit fails unexpectedly, agents will stop and ask for user guidance
 - Commands that only read files (like `/review-issue`) do not auto-commit
 

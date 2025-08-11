@@ -1400,6 +1400,27 @@ unprocessed:
 
 ## Development Workflow with Claude Commands
 
+### Code Formatting (FEAT-027)
+
+Automatic code formatting is integrated into the development workflow to ensure consistent code style:
+
+**Formatting Requirements:**
+- All Go code must be formatted using `devbox run formatter` (executes `go fmt ./...`)
+- Formatting is mandatory before testing and committing
+- Follows standard Go formatting conventions without custom configuration
+
+**Integration Points:**
+- **Quality Pipeline**: format → test → lint → build (enforced order)
+- **Agent Behavior**: All agents automatically format code before auto-committing
+- **Task Completion**: Formatting verification required before marking tasks complete
+- **Development Commands**: Documented formatting commands in CLAUDE.md
+
+**Implementation:**
+- Uses existing `devbox run formatter` script in devbox.json
+- Integrated into agent auto-commit workflow in `.claude/commands/implement-issue.md`
+- Quality verification process updated to include formatting as first step
+- Comprehensive documentation in CLAUDE.md Code Formatting Best Practices section
+
 ### Auto-Commit Behavior
 
 All Claude commands and agents are configured with automatic commit functionality to streamline the development workflow:
