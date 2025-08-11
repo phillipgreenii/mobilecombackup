@@ -1398,3 +1398,48 @@ unprocessed:
 - New variations of existing numbers will still appear in unprocessed
 - Manual review process repeats for new entries only
 
+## Development Workflow with Claude Commands
+
+### Auto-Commit Behavior
+
+All Claude commands and agents are configured with automatic commit functionality to streamline the development workflow:
+
+#### When Auto-Commit Occurs
+- After completing each TodoWrite task in `/implement-issue`
+- After creating feature documents with `/create-feature`  
+- After creating bug documents with `/create-bug`
+- After completing documentation updates in agents
+
+#### File Detection Strategy
+Agents use git status comparison to identify only the files they modified during a task:
+
+```bash
+# Before starting task
+git status --porcelain > /tmp/before_task
+
+# After completing task
+git status --porcelain > /tmp/after_task
+
+# Stage only changed files (never use git add .)
+comm -13 /tmp/before_task /tmp/after_task | cut -c4- | xargs -r git add
+```
+
+#### Commit Message Format
+```
+[ISSUE-ID]: [Brief task description]
+
+[Optional: Details about implementation]
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+#### Key Features
+- **Smart File Detection**: Only stages files actually modified during the task
+- **Verification First**: Auto-commit only occurs after successful tests, build, and lint verification
+- **Error Handling**: Agents stop and ask for user guidance if commits fail unexpectedly
+- **Standard Format**: Consistent commit messages with issue references and proper attribution
+
+This auto-commit behavior ensures a clear development history while reducing manual overhead in the issue implementation workflow.
+
