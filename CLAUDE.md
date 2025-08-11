@@ -29,9 +29,23 @@ go test -v -run TestName ./pkg/packagename
 
 ### Linting and Formatting
 ```bash
+# Format code (always run first)
+go fmt ./...
+# or using devbox:
+devbox run formatter
+
 # Run golangci-lint
 golangci-lint run
 # or using devbox:
+devbox run linter
+```
+
+### Quality Workflow
+The recommended quality workflow is: **format → test → lint**
+```bash
+# Complete quality workflow
+devbox run formatter
+devbox run tests
 devbox run linter
 ```
 
@@ -371,11 +385,16 @@ Based on analysis of existing issues, the following patterns and best practices 
 
 ### Development Cycle
 1. **Work on one task at a time**: Focus on single task until completion
-2. **Ensure compilability**: Code must compile and tests pass before marking task complete
-3. **Remove conflicting code**: If feature conflicts with legacy code, remove the old implementation
-4. **Commit individual tasks**: Never use `git add .` or `git commit -a` - explicitly add files
-5. **Reference feature in commits**: Include "FEAT-XXX:" prefix in commit messages
-6. **Temporary files**: Create temp files in `tmp/` within the repository (not `/tmp`), clean up after use, never commit them
+2. **Format code before testing**: Always run `devbox run formatter` before testing or committing
+3. **Task completion verification**: Before marking any task complete, MUST verify clean state:
+   - Run `devbox run tests` - all tests must pass
+   - Run `devbox run linter` - zero lint violations allowed
+   - Run `devbox run build-cli` - build must succeed
+   - Fix any failures found before marking task complete
+4. **Remove conflicting code**: If feature conflicts with legacy code, remove the old implementation
+5. **Commit individual tasks**: Never use `git add .` or `git commit -a` - explicitly add files
+6. **Reference feature in commits**: Include "FEAT-XXX:" prefix in commit messages
+7. **Temporary files**: Create temp files in `tmp/` within the repository (not `/tmp`), clean up after use, never commit them
 
 ### Testing Best Practices
 1. **Test early and often**: Build and test after each significant change
@@ -440,6 +459,122 @@ EOF
 )"
 ```
 
+### Task Completion Verification
+
+Before marking any TodoWrite task as complete, agents MUST verify clean state by running all verification commands and fixing any failures found:
+
+#### Required Verification Commands
+1. **Full Test Suite**: `devbox run tests`
+   - All tests must pass (no failures, no compilation errors)
+   - Fix any test failures before proceeding
+   
+2. **Full Linter**: `devbox run linter`  
+   - Zero lint violations allowed
+   - Fix all lint issues before proceeding
+   
+3. **CLI Build**: `devbox run build-cli`
+   - Build must succeed without errors
+   - Fix any compilation issues before proceeding
+
+#### Development Process
+- **Incremental Testing**: Agents MAY use targeted commands during development for efficiency:
+  - `go test ./pkg/specific` for individual package testing
+  - `golangci-lint run ./pkg/specific` for targeted linting
+  - Quick builds with `go build ./pkg/specific`
+  
+- **Final Verification**: MUST run complete verification before task completion:
+  - No exceptions - all three verification commands must succeed
+  - If any command fails, task remains incomplete until fixed
+
+#### Common Auto-Fix Patterns
+- **Test Failures**:
+  - `undefined: functionName` → Add missing import or fix typo
+  - `cannot use x (type A) as type B` → Add type conversion  
+  - `declared but not used` → Remove unused variable or add usage
+  - Missing test data files → Create required files in testdata/
+  
+- **Lint Violations**:
+  - `declared but not used` → Remove unused variables/imports/functions
+  - `Error return value is not checked` → Add proper error handling
+  - `should have comment or be unexported` → Add documentation comments
+  - Formatting issues → Run `gofmt` or use `devbox run formatter`
+  
+- **Build Failures**:
+  - Missing imports → Add required imports
+  - Syntax errors → Fix code syntax
+  - Missing dependencies → Run `go mod tidy` or add dependencies
+
+#### When to Ask User
+- Test logic appears incorrect (wrong expected values)
+- Multiple valid approaches to fix a lint violation  
+- Fix would significantly change program behavior
+- Unfamiliar error patterns not covered by common fixes
+- Repeated failures after multiple fix attempts
+
+## TodoWrite Integration and Completion Verification
+
+### Mandatory TodoWrite Workflow
+When using the TodoWrite tool for task management, agents MUST follow the completion verification workflow:
+
+1. **Task Status Management**:
+   - Tasks start as `"status": "pending"`
+   - Change to `"status": "in_progress"` when beginning work
+   - Only change to `"status": "completed"` after FULL verification passes
+
+2. **Completion Verification Requirements**:
+   Before marking any TodoWrite task as `"completed"`, agents MUST:
+   ```bash
+   # All three commands must succeed:
+   devbox run tests    # Must pass with zero failures
+   devbox run linter   # Must pass with zero violations  
+   devbox run build-cli # Must build successfully
+   ```
+
+3. **No Exceptions Policy**:
+   - If ANY verification command fails, task remains `"in_progress"`
+   - Fix all issues before attempting completion again
+   - Document any fixes made in task comments
+
+4. **Auto-Fix Integration**:
+   When verification fails, agents should:
+   - Apply common auto-fixes for known patterns
+   - Re-run verification after each fix
+   - Ask user for guidance on complex issues
+   - Continue until all verification passes
+
+### TodoWrite Best Practices with Verification
+
+1. **Task Granularity**: Break down tasks small enough that verification can pass for each individual task
+2. **Progress Updates**: Update TodoWrite status immediately when starting/completing verification
+3. **Error Documentation**: If verification fails, update task with details of what was fixed
+4. **Incremental Development**: Use targeted testing during development, full verification at completion
+
+### Example TodoWrite Workflow
+
+```javascript
+// Starting a task
+{"id": "task-1", "content": "Add user authentication", "status": "in_progress", "priority": "high"}
+
+// During development - incremental testing allowed
+go test ./pkg/auth
+
+// Before marking complete - MANDATORY full verification
+devbox run tests   // All tests must pass
+devbox run linter  // Zero violations required
+devbox run build-cli // Build must succeed
+
+// Only after all verification passes:
+{"id": "task-1", "content": "Add user authentication", "status": "completed", "priority": "high"}
+```
+
+### Integration with Agent Templates
+
+All code-implementation agents must:
+- Check TodoWrite task status before beginning work
+- Update status to `"in_progress"` when starting
+- Run full verification before marking `"completed"`
+- Document any issues found and fixed during verification
+
 ### Issue Completion
 1. **Update task checkboxes**: Mark all tasks as `[x]` in issue document
 2. **Set completion date**: Update Status section with completion date
@@ -456,6 +591,113 @@ EOF
 - **Unused variables in tests**: Remove unused test fixtures to avoid compilation errors
 - **Year validation**: Test data often contains mixed years - adjust tests accordingly
 - **MMS type field**: Use `msg_box` (1=received, 2=sent) not `m_type` for message direction
+
+## Common Test Failure Patterns and Fixes
+
+### Compilation Errors in Tests
+- **`undefined: functionName`**:
+  - **Cause**: Missing import or typo in function name
+  - **Fix**: Add missing import (`import "package/path"`) or correct function name
+  - **Example**: `undefined: filepath` → add `import "path/filepath"`
+
+- **`cannot use x (type A) as type B`**:
+  - **Cause**: Type mismatch in function arguments or return values
+  - **Fix**: Add explicit type conversion or fix function signature
+  - **Example**: `string` to `[]byte` → use `[]byte(stringVar)`
+
+- **`declared but not used`**:
+  - **Cause**: Variable declared but never referenced
+  - **Fix**: Remove unused variable or add usage (use `_` for intentionally unused)
+  - **Example**: `result := someFunc()` not used → `_ = someFunc()` or use result
+
+### Test Logic Errors
+- **Wrong expected values**:
+  - **Cause**: Test expects incorrect data or counts
+  - **Fix**: Verify actual test data content and adjust expectations
+  - **Example**: Test expects 56 entries but file has 12 → update expected count
+
+- **Path resolution issues**:
+  - **Cause**: Relative paths incorrect from test directory
+  - **Fix**: Use correct relative paths or absolute paths with `filepath.Abs()`
+  - **Example**: `../../../../testdata/` → `../../../testdata/` from cmd/mobilecombackup/cmd/
+
+- **Exit code mismatches**:
+  - **Cause**: Unit tests vs integration tests expect different error handling
+  - **Fix**: Use `os.Exit()` for integration tests, return errors for unit tests
+  - **Example**: Use `testing.Testing()` to detect test mode
+
+### Test Data and File Issues
+- **Missing test data files**:
+  - **Cause**: Tests reference non-existent files
+  - **Fix**: Create required files in `testdata/` or update test paths
+  - **Example**: Create `testdata/to_process/00/calls-test.xml`
+
+- **Permission errors**:
+  - **Cause**: Test files have wrong permissions
+  - **Fix**: Fix file/directory permissions using `chmod` or `os.Chmod()`
+  - **Example**: `os.Chmod(dir, 0755)` for directories
+
+- **Empty XML causing rejections**:
+  - **Cause**: Test uses empty XML files that get rejected during import
+  - **Fix**: Use `--no-error-on-rejects` flag or provide realistic test data
+  - **Example**: Add flag to test command or use actual call/SMS records
+
+### Integration vs Unit Test Patterns
+- **Unit Tests**: Test command functions directly via `rootCmd.Execute()`
+  - Expect errors to be returned, not `os.Exit()` calls
+  - Mock external dependencies
+  - Focus on logic validation
+
+- **Integration Tests**: Test binary execution via `exec.Command`
+  - Expect specific exit codes via `os.Exit()` calls
+  - Use real file system and external dependencies
+  - Focus on end-to-end behavior
+
+## Common Lint Violation Patterns and Fixes
+
+### Error Handling Violations
+- **`Error return value is not checked (errcheck)`**:
+  - **Cause**: Function returning error not handled
+  - **Fix**: Add proper error handling or use `_` to explicitly ignore
+  - **Examples**:
+    - `file.Close()` → `_ = file.Close()` or `defer func() { _ = file.Close() }()`
+    - `os.Setenv(k, v)` → `_ = os.Setenv(k, v)` in tests
+
+### Unused Code Violations
+- **`declared but not used (unused)`**:
+  - **Cause**: Variables, functions, or imports not referenced
+  - **Fix**: Remove unused code or add usage
+  - **Examples**:
+    - Unused import → Remove from import statement
+    - Unused variable → Remove declaration or add usage
+    - Unused function → Remove or mark as used in tests
+
+### Documentation Violations
+- **`should have comment or be unexported (golint)`**:
+  - **Cause**: Exported functions/types missing documentation
+  - **Fix**: Add proper documentation comments
+  - **Example**: `// ProcessCalls processes call records from XML files`
+
+### Static Analysis Violations
+- **`empty branch (staticcheck)`**:
+  - **Cause**: Empty if/else branches that do nothing
+  - **Fix**: Add meaningful code or remove empty branch
+  - **Example**: Replace empty `if` with comment explaining why no action needed
+
+- **`could use tagged switch (staticcheck)`**:
+  - **Cause**: Complex if/else chain that could be a switch
+  - **Fix**: Refactor to use switch statement for clarity
+  - **Example**: Convert `if result.Action == "extracted"` chain to switch
+
+### Import and Formatting Issues
+- **Import ordering**:
+  - **Cause**: Imports not in standard Go order
+  - **Fix**: Use `goimports` or `devbox run formatter` to fix
+  - **Standard order**: stdlib, third-party, local packages
+
+- **Formatting inconsistencies**:
+  - **Cause**: Code not formatted according to `gofmt` standards
+  - **Fix**: Run `gofmt` or `devbox run formatter`
 
 ## Test Data Structure and Usage
 

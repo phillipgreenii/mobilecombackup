@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "Failed to create temp dir: %v\n", err)
 		os.Exit(1)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	testBinPath = filepath.Join(tmpDir, "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBinPath, "../../../cmd/mobilecombackup")
@@ -56,9 +56,9 @@ func TestImportIntegration(t *testing.T) {
 
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
-				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
 
 				return repoPath, importPath
@@ -82,9 +82,9 @@ func TestImportIntegration(t *testing.T) {
 
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
-				copyTestFile(t, "../../../../testdata/to_process/sms-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/sms-test.xml",
 					filepath.Join(importPath, "sms-test.xml"))
 
 				return repoPath, importPath
@@ -106,7 +106,7 @@ func TestImportIntegration(t *testing.T) {
 
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
 
 				return repoPath, importPath
@@ -128,7 +128,7 @@ func TestImportIntegration(t *testing.T) {
 
 				// Create import directory with test files
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
 
 				return repoPath, importPath
@@ -159,12 +159,12 @@ func TestImportIntegration(t *testing.T) {
 				initRepo(t, repoPath)
 
 				// Set environment variable
-				os.Setenv("MB_REPO_ROOT", repoPath)
-				t.Cleanup(func() { os.Unsetenv("MB_REPO_ROOT") })
+				_ = os.Setenv("MB_REPO_ROOT", repoPath)
+				t.Cleanup(func() { _ = os.Unsetenv("MB_REPO_ROOT") })
 
 				// Create import directory
 				importPath := t.TempDir()
-				copyTestFile(t, "../../../../testdata/to_process/00/calls-test.xml",
+				copyTestFile(t, "../../../testdata/to_process/00/calls-test.xml",
 					filepath.Join(importPath, "calls-test.xml"))
 
 				return "", importPath // Empty repo path to test env var
@@ -265,7 +265,7 @@ func TestImportScanningLogic(t *testing.T) {
 	createTestFile(t, filepath.Join(importDir, "calls", "calls-2020.xml"), "<calls></calls>")
 
 	// Run import with verbose to see what files are processed
-	cmd := exec.Command(testBinPath, "import", "--repo-root", repoPath, "--verbose", importDir)
+	cmd := exec.Command(testBinPath, "import", "--repo-root", repoPath, "--verbose", "--no-error-on-rejects", importDir)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {

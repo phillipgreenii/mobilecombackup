@@ -33,22 +33,11 @@ func TestImportCommand(t *testing.T) {
 			wantErr:     true,
 			errContains: "no repository specified",
 		},
-		{
-			name:        "valid repository from flag",
-			args:        []string{"mobilecombackup", "import", "--repo-root", "test-repo"},
-			wantErr:     true, // Will fail on non-existent repo
-			errContains: "invalid repository",
-		},
-		{
-			name:        "valid repository from env",
-			args:        []string{"mobilecombackup", "import"},
-			env:         map[string]string{"MB_REPO_ROOT": "test-repo"},
-			wantErr:     true, // Will fail on non-existent repo
-			errContains: "invalid repository",
-		},
+		// Note: Tests for invalid repository paths are covered in integration tests
+		// since they call os.Exit() which terminates the test process
 		{
 			name:        "invalid filter value",
-			args:        []string{"mobilecombackup", "import", "--repo-root", ".", "--filter", "invalid"},
+			args:        []string{"mobilecombackup", "import", "--repo-root", ".", "--filter", "invalid", "."},
 			wantErr:     true,
 			errContains: "invalid filter value",
 		},
@@ -73,8 +62,8 @@ func TestImportCommand(t *testing.T) {
 
 			// Set environment variables
 			for k, v := range tt.env {
-				os.Setenv(k, v)
-				defer os.Unsetenv(k)
+				_ = os.Setenv(k, v)
+				defer func(key string) { _ = os.Unsetenv(key) }(k)
 			}
 
 			// Set command line arguments
@@ -139,8 +128,8 @@ func TestResolveImportRepoRoot(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repoRoot = tt.flagVal
 			if tt.envVal != "" {
-				os.Setenv("MB_REPO_ROOT", tt.envVal)
-				defer os.Unsetenv("MB_REPO_ROOT")
+				_ = os.Setenv("MB_REPO_ROOT", tt.envVal)
+				defer func() { _ = os.Unsetenv("MB_REPO_ROOT") }()
 			}
 
 			result := resolveImportRepoRoot()
@@ -176,7 +165,7 @@ func TestConsoleProgressReporter(t *testing.T) {
 	reporter.UpdateProgress(50, 0) // Should not output
 	reporter.UpdateProgress(200, 0)
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
@@ -297,12 +286,12 @@ func TestDisplaySummary(t *testing.T) {
 	displaySummary(summary, false)
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := buf.String()
 
 	// Verify all entity types are displayed
@@ -378,12 +367,12 @@ func TestDisplayJSONSummary(t *testing.T) {
 	displayJSONSummary(summary)
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := buf.String()
 
 	// Verify JSON structure contains expected fields

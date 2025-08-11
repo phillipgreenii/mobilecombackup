@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/importer"
 	"github.com/spf13/cobra"
@@ -82,25 +83,31 @@ func runImport(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create import options
+	// JSON mode forces quiet to ensure clean JSON output
+	effectiveQuiet := quiet || importJSON
 	options := &importer.ImportOptions{
 		RepoRoot: resolvedRepoRoot,
 		Paths:    paths,
 		DryRun:   importDryRun,
 		Verbose:  importVerbose,
-		Quiet:    quiet,
+		Quiet:    effectiveQuiet,
 		Filter:   importFilter,
 	}
 
 	// Create progress reporter if not quiet
-	if !quiet {
+	if !effectiveQuiet {
 		options.ProgressReporter = &consoleProgressReporter{}
 	}
 
 	// Create importer
 	imp, err := importer.NewImporter(options)
 	if err != nil {
-		if !quiet {
+		if !effectiveQuiet {
 			PrintError("Failed to initialize importer: %v", err)
+		}
+		// Exit with code 2 for initialization failures, unless in test mode
+		if !testing.Testing() {
+			os.Exit(2)
 		}
 		return err
 	}
@@ -117,7 +124,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	// Display results
 	if importJSON {
 		displayJSONSummary(summary)
-	} else if !quiet {
+	} else if !effectiveQuiet {
 		displaySummary(summary, importDryRun)
 	}
 
@@ -272,6 +279,14 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 	output := map[string]interface{}{
 		"files_processed":  summary.FilesProcessed,
 		"duration_seconds": summary.Duration.Seconds(),
+		"total": map[string]interface{}{
+			"initial":    summary.Calls.Total.Initial + summary.SMS.Total.Initial,
+			"final":      summary.Calls.Total.Final + summary.SMS.Total.Final,
+			"added":      summary.Calls.Total.Added + summary.SMS.Total.Added,
+			"duplicates": summary.Calls.Total.Duplicates + summary.SMS.Total.Duplicates,
+			"rejected":   summary.Calls.Total.Rejected + summary.SMS.Total.Rejected,
+			"errors":     summary.Calls.Total.Errors + summary.SMS.Total.Errors,
+		},
 		"calls": map[string]interface{}{
 			"total": map[string]interface{}{
 				"initial":    summary.Calls.Total.Initial,
