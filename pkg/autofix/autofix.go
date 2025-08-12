@@ -2,10 +2,12 @@ package autofix
 
 import (
 	"crypto/sha256"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -80,6 +82,18 @@ func (a *AutofixerImpl) FixViolations(violations []validation.ValidationViolatio
 		FixedViolations:   []FixedViolation{},
 		SkippedViolations: []SkippedViolation{},
 		Errors:            []AutofixError{},
+	}
+
+	// In dry-run mode, perform permission checks
+	if options.DryRun {
+		if err := a.checkPermissions(violations); err != nil {
+			report.Errors = append(report.Errors, AutofixError{
+				ViolationType: "",
+				File:          a.repositoryRoot,
+				Operation:     "permission_check",
+				Error:         err.Error(),
+			})
+		}
 	}
 
 	// Phase 1: Create directories (must come first)
@@ -177,14 +191,23 @@ func (a *AutofixerImpl) FixViolations(violations []validation.ValidationViolatio
 			switch violation.Type {
 			case validation.CountMismatch:
 				fixAction = OperationUpdateXMLCount
+				details := fmt.Sprintf("Would update count attribute in %s", violation.File)
+				if violation.Expected != "" && violation.Actual != "" {
+					details = fmt.Sprintf("Would update count attribute in %s (from %s to %s)", violation.File, violation.Actual, violation.Expected)
+				}
+				report.FixedViolations = append(report.FixedViolations, FixedViolation{
+					OriginalViolation: violation,
+					FixAction:         fixAction,
+					Details:           details,
+				})
 			case validation.SizeMismatch:
 				fixAction = OperationUpdateFile
+				report.FixedViolations = append(report.FixedViolations, FixedViolation{
+					OriginalViolation: violation,
+					FixAction:         fixAction,
+					Details:           "Would regenerate files.yaml with correct file sizes",
+				})
 			}
-			report.FixedViolations = append(report.FixedViolations, FixedViolation{
-				OriginalViolation: violation,
-				FixAction:         fixAction,
-				Details:           fmt.Sprintf("Would fix %s in %s", violation.Type, violation.File),
-			})
 			continue
 		}
 
@@ -345,21 +368,49 @@ func (a *AutofixerImpl) fixMissingFile(violation validation.ValidationViolation)
 func (a *AutofixerImpl) fixCountMismatch(violation validation.ValidationViolation) error {
 	a.reporter.StartOperation(OperationUpdateXMLCount, violation.File)
 
-	// This will be implemented when we add XML count fixing
-	err := fmt.Errorf("XML count fixing not yet implemented")
+	filePath := filepath.Join(a.repositoryRoot, violation.File)
 
-	a.reporter.CompleteOperation(false, violation.File)
+	// Read the XML file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		a.reporter.CompleteOperation(false, violation.File)
+		return fmt.Errorf("failed to read XML file: %w", err)
+	}
 
-	return err
+	// Fix the count attribute
+	fixedContent, actualCount, err := fixXMLCountAttribute(content)
+	if err != nil {
+		a.reporter.CompleteOperation(false, violation.File)
+		return fmt.Errorf("failed to fix count attribute: %w", err)
+	}
+
+	// Write the fixed content atomically
+	tempPath := filePath + ".tmp"
+	if err := os.WriteFile(tempPath, fixedContent, 0644); err != nil {
+		a.reporter.CompleteOperation(false, violation.File)
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tempPath, filePath); err != nil {
+		_ = os.Remove(tempPath) // Clean up temp file, ignore error
+		a.reporter.CompleteOperation(false, violation.File)
+		return fmt.Errorf("failed to rename fixed file: %w", err)
+	}
+
+	a.reporter.CompleteOperation(true, fmt.Sprintf("%s (corrected count to %d)", violation.File, actualCount))
+
+	return nil
 }
 
 func (a *AutofixerImpl) fixSizeMismatch(violation validation.ValidationViolation) error {
 	a.reporter.StartOperation(OperationUpdateFile, violation.File)
 
-	// This will be implemented when we add size fixing in files.yaml
-	err := fmt.Errorf("size mismatch fixing not yet implemented")
+	// This fixes size mismatches in files.yaml by regenerating the entire manifest
+	// This ensures all file sizes and hashes are accurate
+	err := a.createFilesManifest()
 
-	a.reporter.CompleteOperation(false, violation.File)
+	a.reporter.CompleteOperation(err == nil, "files.yaml (regenerated with correct sizes)")
 
 	return err
 }
@@ -462,7 +513,28 @@ func (a *AutofixerImpl) createFilesManifest() error {
 		Files: []FileEntry{},
 	}
 
+	// First, count total files for progress reporting
+	var totalFiles int
 	err := filepath.Walk(a.repositoryRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			relPath, _ := filepath.Rel(a.repositoryRoot, path)
+			if relPath != "files.yaml" && relPath != "files.yaml.sha256" &&
+				!strings.HasSuffix(relPath, ".tmp") && !strings.HasPrefix(filepath.Base(relPath), ".") {
+				totalFiles++
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to count files: %w", err)
+	}
+
+	// Now process files with progress reporting
+	var processedFiles int
+	err = filepath.Walk(a.repositoryRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -482,6 +554,13 @@ func (a *AutofixerImpl) createFilesManifest() error {
 		if relPath == "files.yaml" || relPath == "files.yaml.sha256" ||
 			strings.HasSuffix(relPath, ".tmp") || strings.HasPrefix(filepath.Base(relPath), ".") {
 			return nil
+		}
+
+		processedFiles++
+
+		// Report progress every 1000 files or for the first/last file
+		if processedFiles%1000 == 0 || processedFiles == 1 || processedFiles == totalFiles {
+			a.reporter.ReportProgress(processedFiles, totalFiles)
 		}
 
 		// Calculate SHA-256
@@ -567,4 +646,151 @@ func calculateFileHash(filePath string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+// fixXMLCountAttribute fixes the count attribute in XML files to match actual child element count
+func fixXMLCountAttribute(content []byte) ([]byte, int, error) {
+	// Parse XML to count child elements
+	decoder := xml.NewDecoder(strings.NewReader(string(content)))
+
+	var rootElement xml.StartElement
+	var childCount int
+	inRoot := false
+
+	// Find the root element and count its direct children
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to parse XML: %w", err)
+		}
+
+		switch element := token.(type) {
+		case xml.StartElement:
+			if !inRoot {
+				// This is the root element
+				rootElement = element
+				inRoot = true
+			} else {
+				// This is a child element of the root
+				childCount++
+				// Skip to the end of this element
+				if err := skipElement(decoder); err != nil {
+					return nil, 0, fmt.Errorf("failed to skip element: %w", err)
+				}
+			}
+		case xml.EndElement:
+			if inRoot && element.Name.Local == rootElement.Name.Local {
+				// End of root element
+				break
+			}
+		}
+	}
+
+	// Use regex to find and replace the count attribute in the original content
+	// This preserves formatting and structure while only updating the count
+	countPattern := regexp.MustCompile(`(<\w+[^>]*\s)count="(\d+)"([^>]*>)`)
+
+	fixed := countPattern.ReplaceAllStringFunc(string(content), func(match string) string {
+		return countPattern.ReplaceAllString(match, fmt.Sprintf("${1}count=\"%d\"${3}", childCount))
+	})
+
+	return []byte(fixed), childCount, nil
+}
+
+// skipElement skips to the end of the current XML element
+func skipElement(decoder *xml.Decoder) error {
+	depth := 1
+	for depth > 0 {
+		token, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+
+		switch token.(type) {
+		case xml.StartElement:
+			depth++
+		case xml.EndElement:
+			depth--
+		}
+	}
+	return nil
+}
+
+// checkPermissions verifies write permissions for dry-run mode
+func (a *AutofixerImpl) checkPermissions(violations []validation.ValidationViolation) error {
+	// Check repository root write permission
+	if err := checkWritePermission(a.repositoryRoot); err != nil {
+		return fmt.Errorf("repository root not writable: %w", err)
+	}
+
+	// Check for files that would need to be modified
+	filesToCheck := make(map[string]bool)
+
+	for _, violation := range violations {
+		switch violation.Type {
+		case validation.MissingFile, validation.MissingMarkerFile:
+			// Check if parent directory is writable
+			filePath := filepath.Join(a.repositoryRoot, violation.File)
+			parentDir := filepath.Dir(filePath)
+			filesToCheck[parentDir] = true
+
+		case validation.CountMismatch, validation.SizeMismatch:
+			// Check if existing file is writable
+			filePath := filepath.Join(a.repositoryRoot, violation.File)
+			filesToCheck[filePath] = true
+
+		case validation.StructureViolation:
+			// Check if we can create directories
+			if isDirectoryMissing(violation) {
+				dirPath := filepath.Join(a.repositoryRoot, extractDirectoryFromViolation(violation))
+				parentDir := filepath.Dir(dirPath)
+				filesToCheck[parentDir] = true
+			}
+		}
+	}
+
+	// Check write permissions for all identified paths
+	for path := range filesToCheck {
+		if err := checkWritePermission(path); err != nil {
+			return fmt.Errorf("path not writable: %s (%w)", path, err)
+		}
+	}
+
+	return nil
+}
+
+// checkWritePermission verifies if a path is writable
+func checkWritePermission(path string) error {
+	// For directories, check if we can create files in them
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Path doesn't exist, check parent directory
+			return checkWritePermission(filepath.Dir(path))
+		}
+		return err
+	}
+
+	if info.IsDir() {
+		// Try to create a temporary file to test write permissions
+		tempFile := filepath.Join(path, ".autofix-permission-test")
+		file, err := os.Create(tempFile)
+		if err != nil {
+			return err
+		}
+		_ = file.Close()
+		_ = os.Remove(tempFile)
+		return nil
+	} else {
+		// For files, check if we can open them for writing
+		file, err := os.OpenFile(path, os.O_WRONLY, 0)
+		if err != nil {
+			return err
+		}
+		_ = file.Close()
+		return nil
+	}
 }

@@ -269,7 +269,11 @@ func runAutofixWithProgress(violations []validation.ValidationViolation, repoPat
 	defer reporter.CompletePhase()
 
 	// Create autofix progress reporter adapter
-	autofixReporter := &AutofixProgressReporter{baseReporter: reporter}
+	autofixReporter := &AutofixProgressReporter{
+		baseReporter:    reporter,
+		verbose:         verbose,
+		operationsTotal: len(violations), // Estimate based on violations count
+	}
 
 	// Create autofixer
 	autofixer := autofix.NewAutofixer(repoPath, autofixReporter)
@@ -286,29 +290,53 @@ func runAutofixWithProgress(violations []validation.ValidationViolation, repoPat
 
 // AutofixProgressReporter adapts autofix progress reporting to validation progress reporting
 type AutofixProgressReporter struct {
-	baseReporter ProgressReporter
+	baseReporter    ProgressReporter
+	verbose         bool
+	operationCount  int
+	operationsTotal int
 }
 
 func (r *AutofixProgressReporter) StartOperation(operation string, details string) {
-	// For now, just use the base reporter
-	if verbose {
-		fmt.Printf("  %s: %s\n", operation, details)
+	r.operationCount++
+
+	if !r.verbose {
+		// Update progress every 100 operations or if it's the first/last operation
+		if r.operationCount%100 == 0 || r.operationCount == 1 || r.operationCount == r.operationsTotal {
+			fmt.Printf("  Processing autofix operations... %d/%d\r", r.operationCount, r.operationsTotal)
+		}
+		return
 	}
+
+	// Verbose mode: show detailed operation info
+	fmt.Printf("  [%d/%d] Starting %s: %s\n", r.operationCount, r.operationsTotal, operation, details)
 }
 
 func (r *AutofixProgressReporter) CompleteOperation(success bool, details string) {
-	// For now, just use the base reporter
-	if verbose {
-		status := "✓"
-		if !success {
-			status = "✗"
-		}
-		fmt.Printf("  %s %s\n", status, details)
+	if !r.verbose {
+		// In non-verbose mode, just update the progress counter
+		return
 	}
+
+	// Verbose mode: show completion status
+	status := "✓"
+	if !success {
+		status = "✗"
+	}
+	fmt.Printf("    %s %s\n", status, details)
 }
 
 func (r *AutofixProgressReporter) ReportProgress(current, total int) {
-	r.baseReporter.UpdateProgress(current, total)
+	// Update the total count if we get more accurate information
+	if total > 0 && r.operationsTotal == 0 {
+		r.operationsTotal = total
+	}
+
+	if !r.verbose && total > 0 {
+		// Show progress for large operations
+		if current%1000 == 0 || current == total {
+			fmt.Printf("  Processing... %d/%d\r", current, total)
+		}
+	}
 }
 
 func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager, reporter ProgressReporter) (*OrphanRemovalResult, error) {
