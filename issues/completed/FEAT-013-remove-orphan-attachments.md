@@ -1,7 +1,7 @@
 # FEAT-013: Remove orphan attachments
 
 ## Status
-- **Completed**: -
+- **Completed**: 2025-08-12
 - **Priority**: low
 
 ## Overview
@@ -94,13 +94,13 @@ Orphan attachment removal:
 ```
 
 ## Tasks
-- [ ] Add `--remove-orphan-attachments` flag to validate command
-- [ ] Implement orphan attachment detection algorithm
-- [ ] Add safe file removal with error collection
-- [ ] Implement empty directory cleanup
-- [ ] Integrate with existing validation output formats
-- [ ] Add dry-run mode support
-- [ ] Write comprehensive tests
+- [x] Add `--remove-orphan-attachments` flag to validate command
+- [x] Implement orphan attachment detection algorithm
+- [x] Add safe file removal with error collection
+- [x] Implement empty directory cleanup
+- [x] Integrate with existing validation output formats
+- [x] Add dry-run mode support
+- [x] Write comprehensive tests
 
 ## Testing
 ### Unit Tests
