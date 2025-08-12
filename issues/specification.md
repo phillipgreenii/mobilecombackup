@@ -746,6 +746,93 @@ type MarkerFileValidator interface {
   - Repository with unsupported version is marked Invalid
   - Prevents processing of incompatible repository structures
 
+### Autofix Interface (FEAT-011)
+
+The AutofixManager provides automatic fixing of validation violations through safe, well-known operations:
+
+```go
+type AutofixManager interface {
+    // FixViolations attempts to fix all provided violations
+    FixViolations(violations []ValidationViolation) (*AutofixReport, error)
+    
+    // CanFix returns whether a specific violation type can be automatically fixed
+    CanFix(violationType ViolationType) bool
+    
+    // GetSupportedViolationTypes returns all violation types that can be fixed
+    GetSupportedViolationTypes() []ViolationType
+}
+
+type AutofixReport struct {
+    FixedViolations    []FixedViolation `json:"fixed_violations"`
+    UnfixedViolations  []ValidationViolation `json:"unfixed_violations"`
+    Errors            []AutofixError   `json:"errors"`
+    Summary           AutofixSummary   `json:"summary"`
+}
+
+type FixedViolation struct {
+    ValidationViolation
+    Action      string `json:"action"`        // Description of fix applied
+    NewValue    string `json:"new_value,omitempty"` // New value created/set
+}
+
+type AutofixError struct {
+    ViolationType ViolationType `json:"violation_type"`
+    File         string        `json:"file"`
+    Message      string        `json:"message"`
+    Action       string        `json:"attempted_action"`
+}
+
+type AutofixSummary struct {
+    TotalViolations int `json:"total_violations"`
+    Fixed          int `json:"fixed"`
+    Unfixed        int `json:"unfixed"`
+    Errors         int `json:"errors"`
+}
+```
+
+#### Supported Violation Types
+
+The AutofixManager can automatically fix the following violation types:
+
+| ViolationType | Fix Action | Safety Level |
+|---------------|------------|--------------|
+| `missing_directory` | Create directory with proper permissions | Safe |
+| `missing_file` | Generate file with appropriate content | Safe |
+| `missing_files_yaml` | Scan repository and generate complete file list | Safe |
+| `missing_checksum` | Generate SHA-256 for files.yaml.sha256 | Safe |
+| `incorrect_size` | Update size_bytes in files.yaml entries | Safe |
+| `missing_file_entry` | Add missing files to files.yaml | Safe |
+| `stale_file_entry` | Remove non-existent entries from files.yaml | Safe |
+
+#### Safety Principles
+
+- **Conservative Operations**: Only performs well-known, safe fixes that cannot cause data loss
+- **Atomic Operations**: Uses atomic file operations (write to temp, then rename) to prevent corruption
+- **Integrity Preservation**: Never auto-corrects SHA-256 mismatches to preserve integrity violation detection
+- **Idempotent Behavior**: Running autofix multiple times is safe and produces consistent results
+- **Error Isolation**: Individual fix failures do not stop the overall process
+
+#### CLI Integration
+
+The autofix functionality integrates seamlessly with the validate command:
+
+```bash
+# Run validation with automatic fixing
+mobilecombackup validate --autofix
+
+# Preview fixes without applying them (future enhancement)
+mobilecombackup validate --autofix --dry-run
+
+# Combine with JSON output for programmatic use
+mobilecombackup validate --autofix --output-json
+```
+
+**Exit Codes:**
+- `0`: All violations were successfully fixed
+- `1`: Some violations remain after autofix attempts
+- `2`: Errors occurred during autofix (but process continued)
+- `3`: Fatal error prevented autofix from running
+
 ### Validation Requirements
 
 Both CallsReader and SMSReader implementations provide validation capabilities:
@@ -872,6 +959,8 @@ mobilecombackup validate [flags]
 **Flags:**
 - `--verbose`: Show detailed progress information
 - `--output-json`: Output results in JSON format
+- `--remove-orphan-attachments`: Remove orphaned attachment files (FEAT-013)
+- `--dry-run`: Show what would be done without making changes
 
 **Behavior:**
 1. Resolves repository root from (in order):
@@ -920,6 +1009,72 @@ JSON output (`--output-json`):
 **Verbose Mode:**
 - With `--verbose` flag, shows detailed progress for each phase
 - Displays "Completed X validation" messages
+
+**Orphan Attachment Removal (FEAT-013):**
+The `--remove-orphan-attachments` flag enables removal of attachment files that are no longer referenced by any SMS/MMS messages:
+
+- **Safe Operation**: Only removes files confirmed to have no references
+- **Dry-Run Support**: Use `--dry-run` to preview what would be removed
+- **Progress Reporting**: Shows scanning and removal progress
+- **Error Handling**: Continues processing if individual files fail to remove
+- **Directory Cleanup**: Removes empty subdirectories after file removal
+- **Statistics**: Reports attachments scanned, orphans found, removed, and bytes freed
+
+**Output with Orphan Removal:**
+```
+Repository validation completed:
+  Calls: 12,345 processed, 0 violations found
+  SMS: 23,456 processed, 0 violations found
+  Attachments: 3,456 processed, 0 violations found
+  
+Orphan attachment removal:
+  Attachments scanned: 3,456
+  Orphans found: 23
+  Orphans removed: 22 (44.4 MB freed)
+  Removal failures: 1
+    - attachments/ab/ab12345...: Permission denied
+```
+
+**Usage Examples:**
+```bash
+# Validate and remove orphans
+mobilecombackup validate --remove-orphan-attachments
+
+# Preview orphan removal without changes
+mobilecombackup validate --remove-orphan-attachments --dry-run
+
+# Combine with JSON output
+mobilecombackup validate --remove-orphan-attachments --output-json
+```
+
+**Autofix Functionality (FEAT-011 - Core Implementation Complete):**
+Automatic fixing of validation violations has core implementation complete with production-ready functionality. The implemented features provide:
+
+- **CLI Integration**: Complete `--autofix` flag support in validate command
+- **Directory Structure Creation**: Automatic creation of missing directories (calls/, sms/, attachments/)
+- **Metadata File Generation**: 
+  - `.mobilecombackup.yaml` marker file with version and timestamp metadata
+  - `contacts.yaml` empty structure generation
+  - `summary.yaml` repository statistics generation
+- **Files.yaml Management**: Complete file list generation and updates with SHA-256 hashing
+- **Files.yaml.sha256 Generation**: Integrity verification file creation
+- **Atomic Operations**: Safe file operations with proper error handling and rollback
+- **Exit Codes**: Comprehensive exit code support (0=all fixed, 1=violations remain, 2=errors, 3=fatal)
+- **Output Formatting**: Both JSON and text output with detailed violation reporting
+
+**Core Operations Working (6/10 major tasks complete):**
+1. Directory structure creation - ✓ Complete
+2. Marker file generation - ✓ Complete  
+3. Metadata file generation - ✓ Complete
+4. Files.yaml generation/updates - ✓ Complete
+5. Files.yaml.sha256 generation - ✓ Complete
+6. Atomic file operations - ✓ Complete
+
+**Future Enhancements:**
+- XML count attribute fixes (for mismatched count attributes)
+- Enhanced progress reporting with per-operation status
+- Dry-run mode support for preview functionality
+- Additional comprehensive testing scenarios
 
 #### Info Command
 
