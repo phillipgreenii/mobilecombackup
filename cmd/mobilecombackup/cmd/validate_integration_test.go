@@ -348,3 +348,216 @@ created_by: "test"
 
 	return dir
 }
+
+// TestValidateOrphanRemovalIntegration tests the --remove-orphan-attachments flag via CLI
+func TestValidateOrphanRemovalIntegration(t *testing.T) {
+	// Build test binary
+	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	if output, err := buildCmd.CombinedOutput(); err != nil {
+		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
+	}
+
+	tests := []struct {
+		name         string
+		args         []string
+		setup        func(t *testing.T) string
+		wantExitCode int
+		checkOutput  func(t *testing.T, output string)
+		checkFiles   func(t *testing.T, repoPath string)
+	}{
+		{
+			name: "dry run orphan removal",
+			args: []string{"validate", "--remove-orphan-attachments", "--dry-run"},
+			setup: func(t *testing.T) string {
+				return createRepoWithOrphans(t)
+			},
+			wantExitCode: 1, // Validation violations exist
+			checkOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "Orphan attachment removal:") {
+					t.Error("Expected output to contain orphan removal section")
+				}
+				if !strings.Contains(output, "Would remove:") {
+					t.Error("Expected output to contain 'Would remove:' for dry run")
+				}
+			},
+			checkFiles: func(t *testing.T, repoPath string) {
+				// In dry run, orphan files should still exist
+				orphanPath := filepath.Join(repoPath, "attachments", "ab", "ab123456789abcdef123456789abcdef123456789abcdef123456789abcdef12")
+				if _, err := os.Stat(orphanPath); os.IsNotExist(err) {
+					t.Error("Expected orphan file to remain in dry-run mode")
+				}
+			},
+		},
+		{
+			name: "actual orphan removal",
+			args: []string{"validate", "--remove-orphan-attachments"},
+			setup: func(t *testing.T) string {
+				return createRepoWithOrphans(t)
+			},
+			wantExitCode: 1, // Validation violations exist
+			checkOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "Orphan attachment removal:") {
+					t.Error("Expected output to contain orphan removal section")
+				}
+				if !strings.Contains(output, "Orphans removed:") {
+					t.Error("Expected output to contain 'Orphans removed:'")
+				}
+			},
+			checkFiles: func(t *testing.T, repoPath string) {
+				// In actual removal, orphan files should be gone
+				orphanPath := filepath.Join(repoPath, "attachments", "ab", "ab123456789abcdef123456789abcdef123456789abcdef123456789abcdef12")
+				if _, err := os.Stat(orphanPath); !os.IsNotExist(err) {
+					t.Error("Expected orphan file to be removed")
+				}
+			},
+		},
+		{
+			name: "JSON output with orphan removal",
+			args: []string{"validate", "--remove-orphan-attachments", "--output-json"},
+			setup: func(t *testing.T) string {
+				return createRepoWithOrphans(t)
+			},
+			wantExitCode: 1, // Validation violations exist
+			checkOutput: func(t *testing.T, output string) {
+				// Filter out log messages to get pure JSON
+				lines := strings.Split(output, "\n")
+				var jsonLines []string
+				inJSON := false
+				for _, line := range lines {
+					if strings.HasPrefix(line, "{") {
+						inJSON = true
+					}
+					if inJSON {
+						jsonLines = append(jsonLines, line)
+					}
+					if strings.HasPrefix(line, "}") && inJSON {
+						break
+					}
+				}
+
+				if len(jsonLines) == 0 {
+					t.Error("No JSON found in output")
+					return
+				}
+
+				jsonContent := strings.Join(jsonLines, "\n")
+
+				// Validate JSON structure
+				var result struct {
+					Valid         bool `json:"valid"`
+					OrphanRemoval *struct {
+						AttachmentsScanned int   `json:"attachments_scanned"`
+						OrphansFound       int   `json:"orphans_found"`
+						OrphansRemoved     int   `json:"orphans_removed"`
+						BytesFreed         int64 `json:"bytes_freed"`
+					} `json:"orphan_removal"`
+				}
+
+				if err := json.Unmarshal([]byte(jsonContent), &result); err != nil {
+					t.Errorf("Failed to parse JSON output: %v", err)
+					return
+				}
+
+				if result.OrphanRemoval == nil {
+					t.Error("Expected orphan_removal section in JSON output")
+					return
+				}
+
+				if result.OrphanRemoval.OrphansFound == 0 {
+					t.Error("Expected to find orphans in test setup")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repoPath := tt.setup(t)
+
+			// Run command
+			cmd := exec.Command(testBin, tt.args...)
+			cmd.Args = append(cmd.Args, "--repo-root", repoPath)
+
+			output, err := cmd.CombinedOutput()
+
+			// Check exit code
+			var exitCode int
+			if err != nil {
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					exitCode = exitErr.ExitCode()
+				} else {
+					t.Fatalf("Failed to run command: %v", err)
+				}
+			}
+
+			if exitCode != tt.wantExitCode {
+				t.Errorf("Expected exit code %d, got %d\nOutput: %s", tt.wantExitCode, exitCode, output)
+			}
+
+			// Check output
+			if tt.checkOutput != nil {
+				tt.checkOutput(t, string(output))
+			}
+
+			// Check files
+			if tt.checkFiles != nil {
+				tt.checkFiles(t, repoPath)
+			}
+		})
+	}
+}
+
+// createRepoWithOrphans creates a test repository with orphaned attachments
+func createRepoWithOrphans(t *testing.T) string {
+	tempDir := t.TempDir()
+
+	// Create repository structure
+	for _, dir := range []string{"calls", "sms", "attachments", "contacts"} {
+		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0755); err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+	}
+
+	// Create marker file
+	markerContent := `version: 1
+created_at: "2024-01-01T10:00:00Z"
+created_by: "test"
+`
+	if err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644); err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+
+	// Create SMS file that references one attachment
+	smsContent := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<smses count="1">
+  <sms address="555-1234" type="1" subject="null" body="Test message" date="1609459200000" readable_date="Jan 1, 2021 12:00:00 AM" />
+</smses>`
+	if err := os.WriteFile(filepath.Join(tempDir, "sms", "sms-2021.xml"), []byte(smsContent), 0644); err != nil {
+		t.Fatalf("Failed to create SMS file: %v", err)
+	}
+
+	// Create two attachments - one referenced, one orphaned
+	referencedHash := "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef12"
+	orphanHash := "ab123456789abcdef123456789abcdef123456789abcdef123456789abcdef12"
+
+	// Create referenced attachment
+	refDir := filepath.Join(tempDir, "attachments", "a1")
+	if err := os.MkdirAll(refDir, 0755); err != nil {
+		t.Fatalf("Failed to create referenced attachment directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(refDir, referencedHash), []byte("referenced content"), 0644); err != nil {
+		t.Fatalf("Failed to create referenced attachment: %v", err)
+	}
+
+	// Create orphaned attachment
+	orphanDir := filepath.Join(tempDir, "attachments", "ab")
+	if err := os.MkdirAll(orphanDir, 0755); err != nil {
+		t.Fatalf("Failed to create orphan attachment directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(orphanDir, orphanHash), []byte("orphaned content"), 0644); err != nil {
+		t.Fatalf("Failed to create orphan attachment: %v", err)
+	}
+
+	return tempDir
+}

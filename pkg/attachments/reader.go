@@ -26,6 +26,11 @@ func NewAttachmentManager(repoPath string) *AttachmentManager {
 	}
 }
 
+// GetRepoPath returns the repository path
+func (am *AttachmentManager) GetRepoPath() string {
+	return am.repoPath
+}
+
 // GetAttachmentPath returns the expected path for a hash
 func (am *AttachmentManager) GetAttachmentPath(hash string) string {
 	if len(hash) < 2 {
