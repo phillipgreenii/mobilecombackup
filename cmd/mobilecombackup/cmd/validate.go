@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/autofix"
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
@@ -20,6 +21,7 @@ var (
 	outputJSON              bool
 	removeOrphanAttachments bool
 	validateDryRun          bool
+	autofixEnabled          bool
 )
 
 // validateCmd represents the validate command
@@ -45,6 +47,7 @@ func init() {
 	validateCmd.Flags().BoolVar(&outputJSON, "output-json", false, "Output results in JSON format")
 	validateCmd.Flags().BoolVar(&removeOrphanAttachments, "remove-orphan-attachments", false, "Remove orphaned attachment files")
 	validateCmd.Flags().BoolVar(&validateDryRun, "dry-run", false, "Show what would be done without making changes")
+	validateCmd.Flags().BoolVar(&autofixEnabled, "autofix", false, "Automatically fix safe validation violations")
 }
 
 // ValidationResult represents the result of validation
@@ -52,6 +55,7 @@ type ValidationResult struct {
 	Valid         bool                             `json:"valid"`
 	Violations    []validation.ValidationViolation `json:"violations"`
 	OrphanRemoval *OrphanRemovalResult             `json:"orphan_removal,omitempty"`
+	AutofixReport *autofix.AutofixReport           `json:"autofix_report,omitempty"`
 }
 
 // OrphanRemovalResult represents the result of orphan attachment removal
@@ -173,6 +177,28 @@ func runValidate(cmd *cobra.Command, args []string) error {
 		Violations: violations,
 	}
 
+	// Run autofix if requested
+	if autofixEnabled {
+		autofixReport, err := runAutofixWithProgress(violations, absPath, reporter)
+		if err != nil {
+			PrintError("Autofix failed: %v", err)
+			os.Exit(3)
+		}
+		result.AutofixReport = autofixReport
+
+		// Update result validity based on remaining violations
+		if autofixReport.Summary.FixedCount > 0 {
+			// Re-run validation to get current state after fixes
+			updatedViolations, err := validateWithProgress(validator, reporter)
+			if err != nil {
+				PrintError("Post-autofix validation failed: %v", err)
+				os.Exit(2)
+			}
+			result.Violations = updatedViolations
+			result.Valid = len(updatedViolations) == 0
+		}
+	}
+
 	// Run orphan removal if requested
 	if removeOrphanAttachments {
 		orphanResult, err := removeOrphanAttachmentsWithProgress(smsReader, attachmentReader, reporter)
@@ -192,9 +218,20 @@ func runValidate(cmd *cobra.Command, args []string) error {
 		outputTextResult(result, absPath)
 	}
 
-	// Set exit code
-	if !result.Valid {
-		os.Exit(1)
+	// Set exit code based on autofix and validation results
+	if autofixEnabled && result.AutofixReport != nil {
+		// Autofix was run - use autofix exit codes
+		if result.AutofixReport.Summary.ErrorCount > 0 {
+			os.Exit(2) // Errors occurred during autofix
+		} else if !result.Valid {
+			os.Exit(1) // Some violations remain after autofix
+		}
+		// Exit 0 - all violations were fixed successfully
+	} else {
+		// Standard validation - exit 1 if invalid
+		if !result.Valid {
+			os.Exit(1)
+		}
 	}
 
 	return nil
@@ -225,6 +262,53 @@ func validateWithProgress(validator validation.RepositoryValidator, reporter Pro
 	}
 
 	return report.Violations, nil
+}
+
+func runAutofixWithProgress(violations []validation.ValidationViolation, repoPath string, reporter ProgressReporter) (*autofix.AutofixReport, error) {
+	reporter.StartPhase("autofix")
+	defer reporter.CompletePhase()
+
+	// Create autofix progress reporter adapter
+	autofixReporter := &AutofixProgressReporter{baseReporter: reporter}
+
+	// Create autofixer
+	autofixer := autofix.NewAutofixer(repoPath, autofixReporter)
+
+	// Set up autofix options
+	options := autofix.AutofixOptions{
+		DryRun:  validateDryRun,
+		Verbose: verbose,
+	}
+
+	// Run autofix
+	return autofixer.FixViolations(violations, options)
+}
+
+// AutofixProgressReporter adapts autofix progress reporting to validation progress reporting
+type AutofixProgressReporter struct {
+	baseReporter ProgressReporter
+}
+
+func (r *AutofixProgressReporter) StartOperation(operation string, details string) {
+	// For now, just use the base reporter
+	if verbose {
+		fmt.Printf("  %s: %s\n", operation, details)
+	}
+}
+
+func (r *AutofixProgressReporter) CompleteOperation(success bool, details string) {
+	// For now, just use the base reporter
+	if verbose {
+		status := "✓"
+		if !success {
+			status = "✗"
+		}
+		fmt.Printf("  %s %s\n", status, details)
+	}
+}
+
+func (r *AutofixProgressReporter) ReportProgress(current, total int) {
+	r.baseReporter.UpdateProgress(current, total)
 }
 
 func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager, reporter ProgressReporter) (*OrphanRemovalResult, error) {
@@ -325,8 +409,8 @@ func outputJSONResult(result ValidationResult) error {
 }
 
 func outputTextResult(result ValidationResult, repoPath string) {
-	if quiet && result.Valid && result.OrphanRemoval == nil {
-		// In quiet mode, only show output if there are violations or orphan removal
+	if quiet && result.Valid && result.OrphanRemoval == nil && result.AutofixReport == nil {
+		// In quiet mode, only show output if there are violations, orphan removal, or autofix
 		return
 	}
 
@@ -367,6 +451,61 @@ func outputTextResult(result ValidationResult, repoPath string) {
 			if !quiet {
 				fmt.Println()
 			}
+		}
+	}
+
+	// Display autofix results if performed
+	if result.AutofixReport != nil {
+		if !quiet {
+			fmt.Println()
+			if validateDryRun {
+				fmt.Println("Autofix Report (dry-run mode):")
+			} else {
+				fmt.Println("Autofix Report:")
+			}
+			fmt.Println(strings.Repeat("=", 24))
+		}
+
+		// Display fixed violations
+		if len(result.AutofixReport.FixedViolations) > 0 {
+			if !quiet {
+				fmt.Println("\nFixed Violations:")
+			}
+			for _, fixed := range result.AutofixReport.FixedViolations {
+				if validateDryRun {
+					fmt.Printf("✓ Would fix: %s\n", fixed.Details)
+				} else {
+					fmt.Printf("✓ %s\n", fixed.Details)
+				}
+			}
+		}
+
+		// Display skipped violations
+		if len(result.AutofixReport.SkippedViolations) > 0 {
+			if !quiet {
+				fmt.Println("\nRemaining Violations:")
+			}
+			for _, skipped := range result.AutofixReport.SkippedViolations {
+				fmt.Printf("✗ %s: %s (%s)\n", skipped.OriginalViolation.File, skipped.OriginalViolation.Message, skipped.SkipReason)
+			}
+		}
+
+		// Display errors
+		if len(result.AutofixReport.Errors) > 0 {
+			if !quiet {
+				fmt.Println("\nErrors During Autofix:")
+			}
+			for _, autofixErr := range result.AutofixReport.Errors {
+				fmt.Printf("⚠ Failed %s on %s: %s\n", autofixErr.Operation, autofixErr.File, autofixErr.Error)
+			}
+		}
+
+		// Display summary
+		if !quiet {
+			fmt.Printf("\nSummary: %d violations fixed, %d remaining, %d errors\n",
+				result.AutofixReport.Summary.FixedCount,
+				result.AutofixReport.Summary.SkippedCount,
+				result.AutofixReport.Summary.ErrorCount)
 		}
 	}
 
