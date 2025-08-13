@@ -87,6 +87,9 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 		})
 	}
 
+	// Additional validation for new directory-based format
+	violations = append(violations, v.validateNewFormatStructure(attachmentsList)...)
+
 	return violations
 }
 
@@ -355,4 +358,114 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
 	}
 
 	return mimeTypes, nil
+}
+
+// validateNewFormatStructure validates the new directory-based attachment format
+func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []*attachments.Attachment) []ValidationViolation {
+	var violations []ValidationViolation
+
+	// Get attachment manager to check formats
+	attachmentManager := attachments.NewAttachmentManager(v.repositoryRoot)
+	storage := attachments.NewDirectoryAttachmentStorage(v.repositoryRoot)
+
+	for _, attachment := range attachmentsList {
+		// Check if this is a new format attachment
+		if attachmentManager.IsNewFormat(attachment.Hash) {
+			violations = append(violations, v.validateNewFormatAttachment(attachment, storage)...)
+		}
+	}
+
+	return violations
+}
+
+// validateNewFormatAttachment validates a single new format attachment
+func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attachments.Attachment, storage *attachments.DirectoryAttachmentStorage) []ValidationViolation {
+	var violations []ValidationViolation
+
+	// Validate metadata.yaml exists and is readable
+	metadata, err := storage.GetMetadata(attachment.Hash)
+	if err != nil {
+		violations = append(violations, ValidationViolation{
+			Type:     MissingFile,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Failed to read metadata for attachment %s: %v", attachment.Hash, err),
+		})
+		return violations
+	}
+
+	// Validate metadata consistency
+	if metadata.Hash != attachment.Hash {
+		violations = append(violations, ValidationViolation{
+			Type:     ChecksumMismatch,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Metadata hash mismatch for attachment %s: expected %s, got %s", attachment.Hash, attachment.Hash, metadata.Hash),
+			Expected: attachment.Hash,
+			Actual:   metadata.Hash,
+		})
+	}
+
+	if metadata.Size != attachment.Size {
+		violations = append(violations, ValidationViolation{
+			Type:     SizeMismatch,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Metadata size mismatch for attachment %s: expected %d, got %d", attachment.Hash, attachment.Size, metadata.Size),
+			Expected: fmt.Sprintf("%d bytes", attachment.Size),
+			Actual:   fmt.Sprintf("%d bytes", metadata.Size),
+		})
+	}
+
+	// Validate attachment file exists with proper name
+	attachmentFilePath, err := storage.GetAttachmentFilePath(attachment.Hash)
+	if err != nil {
+		violations = append(violations, ValidationViolation{
+			Type:     MissingFile,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Failed to get attachment file path for %s: %v", attachment.Hash, err),
+		})
+		return violations
+	}
+
+	if _, err := os.Stat(attachmentFilePath); os.IsNotExist(err) {
+		violations = append(violations, ValidationViolation{
+			Type:     MissingFile,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Attachment file missing for %s: %s", attachment.Hash, attachmentFilePath),
+		})
+	}
+
+	// Validate filename matches MIME type
+	expectedFilename := attachments.GenerateFilename(metadata.OriginalName, metadata.MimeType)
+	actualFilename := filepath.Base(attachmentFilePath)
+	if actualFilename != expectedFilename {
+		violations = append(violations, ValidationViolation{
+			Type:     StructureViolation,
+			Severity: SeverityWarning,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Attachment filename doesn't match expected pattern for %s: expected %s, got %s", attachment.Hash, expectedFilename, actualFilename),
+			Expected: expectedFilename,
+			Actual:   actualFilename,
+		})
+	}
+
+	// Validate MIME type is supported
+	if metadata.MimeType != "" {
+		ext := attachments.GetFileExtension(metadata.MimeType)
+		if ext == "bin" && metadata.MimeType != "application/octet-stream" {
+			violations = append(violations, ValidationViolation{
+				Type:     UnknownFormat,
+				Severity: SeverityWarning,
+				File:     attachment.Path,
+				Message:  fmt.Sprintf("Unknown MIME type for attachment %s: %s", attachment.Hash, metadata.MimeType),
+				Expected: "known MIME type",
+				Actual:   metadata.MimeType,
+			})
+		}
+	}
+
+	return violations
 }
