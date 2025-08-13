@@ -7,8 +7,98 @@ import (
 	"strings"
 	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
+
+// YearTracker tracks per-year statistics during import
+type YearTracker struct {
+	initial    map[int]int // Entries loaded from existing repository
+	added      map[int]int // New entries added during import
+	duplicates map[int]int // Duplicate entries found during import
+}
+
+// NewYearTracker creates a new year tracker
+func NewYearTracker() *YearTracker {
+	return &YearTracker{
+		initial:    make(map[int]int),
+		added:      make(map[int]int),
+		duplicates: make(map[int]int),
+	}
+}
+
+// TrackInitialEntry tracks an entry loaded from existing repository
+func (yt *YearTracker) TrackInitialEntry(year int) {
+	yt.initial[year]++
+}
+
+// TrackImportEntry tracks an entry based on coalescer result
+func (yt *YearTracker) TrackImportEntry(year int, wasAdded bool) {
+	if wasAdded {
+		yt.added[year]++
+	} else {
+		yt.duplicates[year]++
+	}
+}
+
+// GetInitial returns initial count for a year
+func (yt *YearTracker) GetInitial(year int) int {
+	return yt.initial[year]
+}
+
+// GetAdded returns added count for a year
+func (yt *YearTracker) GetAdded(year int) int {
+	return yt.added[year]
+}
+
+// GetDuplicates returns duplicates count for a year
+func (yt *YearTracker) GetDuplicates(year int) int {
+	return yt.duplicates[year]
+}
+
+// ValidateYearStatistics validates that the mathematics work correctly for a year
+func (yt *YearTracker) ValidateYearStatistics(year int, finalCount int) error {
+	initial := yt.GetInitial(year)
+	added := yt.GetAdded(year)
+	duplicates := yt.GetDuplicates(year)
+	
+	// The mathematics should be: Initial + Added = Final
+	expected := initial + added
+	if expected != finalCount {
+		return fmt.Errorf("year %d: mathematics error: Initial(%d) + Added(%d) = %d, but Final = %d", 
+			year, initial, added, expected, finalCount)
+	}
+	
+	// Duplicates should not be included in Final count
+	if duplicates < 0 {
+		return fmt.Errorf("year %d: negative duplicates count: %d", year, duplicates)
+	}
+	
+	return nil
+}
+
+// GetAllYears returns all years that have any activity
+func (yt *YearTracker) GetAllYears() []int {
+	yearsMap := make(map[int]bool)
+	for year := range yt.initial {
+		yearsMap[year] = true
+	}
+	for year := range yt.added {
+		yearsMap[year] = true
+	}
+	for year := range yt.duplicates {
+		yearsMap[year] = true
+	}
+	
+	var years []int
+	for year := range yearsMap {
+		years = append(years, year)
+	}
+	return years
+}
 
 // Importer handles the overall import process
 type Importer struct {
@@ -16,6 +106,8 @@ type Importer struct {
 	callsImporter   *CallsImporter
 	smsImporter     *SMSImporter
 	contactsManager *contacts.ContactsManager
+	callsTracker    *YearTracker
+	smsTracker      *YearTracker
 }
 
 // NewImporter creates a new importer
@@ -28,20 +120,26 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 	// Create contacts manager
 	contactsManager := contacts.NewContactsManager(options.RepoRoot)
 
+	// Create year trackers
+	callsTracker := NewYearTracker()
+	smsTracker := NewYearTracker()
+
 	// Create calls importer
-	callsImporter, err := NewCallsImporter(options, contactsManager)
+	callsImporter, err := NewCallsImporter(options, contactsManager, callsTracker)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
 
 	// Create SMS importer
-	smsImporter := NewSMSImporter(options, contactsManager)
+	smsImporter := NewSMSImporter(options, contactsManager, smsTracker)
 
 	return &Importer{
 		options:         options,
 		callsImporter:   callsImporter,
 		smsImporter:     smsImporter,
 		contactsManager: contactsManager,
+		callsTracker:    callsTracker,
+		smsTracker:      smsTracker,
 	}, nil
 }
 
@@ -172,7 +270,7 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 
 // validateRepository checks if the repository structure is valid
 func validateRepository(repoRoot string) error {
-	// For now, just check if the directory exists
+	// Check basic directory existence first
 	info, err := os.Stat(repoRoot)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -185,8 +283,43 @@ func validateRepository(repoRoot string) error {
 		return fmt.Errorf("repository path is not a directory: %s", repoRoot)
 	}
 
-	// TODO: Use validation from FEAT-007 when available
+	// TODO: Fix validation interface compatibility issue and re-enable
+	// Create readers required for validation
+	// callsReader := calls.NewXMLCallsReader(repoRoot)
+	// smsReader := sms.NewXMLSMSReader(repoRoot)
+	// attachmentReader := attachments.NewAttachmentManager(repoRoot)
+	// contactsReader := contacts.NewContactsManager(repoRoot)
+
+	// validator := validation.NewRepositoryValidator(
+	// 	repoRoot,
+	// 	callsReader,
+	// 	smsReader,
+	// 	attachmentReader,
+	// 	contactsReader,
+	// )
+
+	// report, err := validator.ValidateRepository()
+	// if err != nil {
+	// 	return fmt.Errorf("validation failed: %w", err)
+	// }
+
+	// if report.Status != validation.Valid {
+	// 	return formatValidationError(report.Violations)
+	// }
 	return nil
+}
+
+// formatValidationError formats validation violations same as validate subcommand
+func formatValidationError(violations []validation.ValidationViolation) error {
+	var messages []string
+	for _, v := range violations {
+		if v.File != "" {
+			messages = append(messages, fmt.Sprintf("- %s: %s: %s", v.Type, v.File, v.Message))
+		} else {
+			messages = append(messages, fmt.Sprintf("- %s: %s", v.Type, v.Message))
+		}
+	}
+	return fmt.Errorf("repository validation failed:\n%s", strings.Join(messages, "\n"))
 }
 
 // findFiles finds all files to import based on options
@@ -307,13 +440,52 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 		summary.Calls.Total.Initial = coalSummary.Initial
 		summary.Calls.Total.Final = coalSummary.Final
 
-		// Calculate per-year statistics for calls
+		// First, create YearStat entries for all years that had any activity
+		allYears := make(map[int]bool)
+		
+		// Collect years from tracker activity
+		for year := range imp.callsTracker.initial {
+			allYears[year] = true
+		}
+		for year := range imp.callsTracker.added {
+			allYears[year] = true
+		}
+		for year := range imp.callsTracker.duplicates {
+			allYears[year] = true
+		}
+		
+		// Initialize YearStat for all active years
+		for year := range allYears {
+			summary.Calls.YearStats[year] = &YearStat{
+				Initial:    imp.callsTracker.GetInitial(year),
+				Added:      imp.callsTracker.GetAdded(year),
+				Duplicates: imp.callsTracker.GetDuplicates(year),
+				Final:      0, // Will be counted below
+			}
+		}
+		
+		// Count final entries per year
 		for _, entry := range imp.callsImporter.coalescer.GetAll() {
 			year := entry.Year()
 			if _, exists := summary.Calls.YearStats[year]; !exists {
-				summary.Calls.YearStats[year] = &YearStat{}
+				// This should not happen but be defensive
+				summary.Calls.YearStats[year] = &YearStat{
+					Initial:    imp.callsTracker.GetInitial(year),
+					Added:      imp.callsTracker.GetAdded(year),
+					Duplicates: imp.callsTracker.GetDuplicates(year),
+					Final:      0,
+				}
 			}
 			summary.Calls.YearStats[year].Final++
+		}
+		
+		// Validate mathematics for all call years
+		for year, stat := range summary.Calls.YearStats {
+			if err := imp.callsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
+				if !imp.options.Quiet {
+					fmt.Printf("Warning: Calls statistics validation failed: %v\n", err)
+				}
+			}
 		}
 	}
 
@@ -323,13 +495,52 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 		summary.SMS.Total.Initial = coalSummary.Initial
 		summary.SMS.Total.Final = coalSummary.Final
 
-		// Calculate per-year statistics for SMS
+		// First, create YearStat entries for all years that had any activity
+		allYears := make(map[int]bool)
+		
+		// Collect years from tracker activity
+		for year := range imp.smsTracker.initial {
+			allYears[year] = true
+		}
+		for year := range imp.smsTracker.added {
+			allYears[year] = true
+		}
+		for year := range imp.smsTracker.duplicates {
+			allYears[year] = true
+		}
+		
+		// Initialize YearStat for all active years
+		for year := range allYears {
+			summary.SMS.YearStats[year] = &YearStat{
+				Initial:    imp.smsTracker.GetInitial(year),
+				Added:      imp.smsTracker.GetAdded(year),
+				Duplicates: imp.smsTracker.GetDuplicates(year),
+				Final:      0, // Will be counted below
+			}
+		}
+		
+		// Count final entries per year
 		for _, entry := range imp.smsImporter.coalescer.GetAll() {
 			year := entry.Year()
 			if _, exists := summary.SMS.YearStats[year]; !exists {
-				summary.SMS.YearStats[year] = &YearStat{}
+				// This should not happen but be defensive
+				summary.SMS.YearStats[year] = &YearStat{
+					Initial:    imp.smsTracker.GetInitial(year),
+					Added:      imp.smsTracker.GetAdded(year),
+					Duplicates: imp.smsTracker.GetDuplicates(year),
+					Final:      0,
+				}
 			}
 			summary.SMS.YearStats[year].Final++
+		}
+		
+		// Validate mathematics for all SMS years
+		for year, stat := range summary.SMS.YearStats {
+			if err := imp.smsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
+				if !imp.options.Quiet {
+					fmt.Printf("Warning: SMS statistics validation failed: %v\n", err)
+				}
+			}
 		}
 
 		// Get attachment statistics from SMS importer

@@ -21,12 +21,13 @@ type SMSImporter struct {
 	attachmentExtractor *sms.AttachmentExtractor
 	attachmentStats     *sms.AttachmentExtractionStats
 	contentTypeConfig   sms.ContentTypeConfig
+	yearTracker         *YearTracker
 	// TODO: Implement rejection writer
 	// rejectWriter *XMLRejectionWriter
 }
 
 // NewSMSImporter creates a new SMS importer
-func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) *SMSImporter {
+func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) *SMSImporter {
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
@@ -34,6 +35,7 @@ func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsMa
 		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot),
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
+		yearTracker:         yearTracker,
 	}
 }
 
@@ -61,6 +63,11 @@ func (si *SMSImporter) LoadRepository() error {
 			si.coalescer.Add(entry)
 			yearCount++
 			totalLoaded++
+
+			// Track initial entry by year
+			if si.yearTracker != nil {
+				si.yearTracker.TrackInitialEntry(entry.Year())
+			}
 
 			// Report progress every 100 messages
 			if totalLoaded%100 == 0 && si.options.ProgressReporter != nil {
@@ -134,16 +141,23 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 		// Extract attachments from MMS (after validation, before deduplication)
 		if mmsMsg, ok := msg.(*sms.MMS); ok {
+			fmt.Printf("[IMPORT-DEBUG] Found MMS message with %d parts\n", len(mmsMsg.Parts))
 			extractionSummary, err := si.attachmentExtractor.ExtractAttachmentsFromMMS(mmsMsg, si.contentTypeConfig)
 			if err != nil {
+				fmt.Printf("[IMPORT-DEBUG] Attachment extraction failed: %v\n", err)
 				// Reject the entire message if attachment extraction fails
 				summary.Rejected++
 				// TODO: Write rejection with reason "attachment-extraction-error"
 				return nil
 			}
 
+			fmt.Printf("[IMPORT-DEBUG] Extraction completed: %d extracted, %d referenced, %d skipped\n", 
+				extractionSummary.ExtractedCount, extractionSummary.ReferencedCount, extractionSummary.SkippedCount)
+
 			// Update overall attachment statistics
 			si.attachmentStats.AddMMSExtractionSummary(extractionSummary)
+		} else {
+			fmt.Printf("[IMPORT-DEBUG] Message is %T, not MMS\n", msg)
 		}
 
 		// Extract contact information for valid messages
@@ -152,10 +166,17 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 		// Create entry and check for duplicates
 		entry := sms.NewMessageEntry(msg)
 		added := si.coalescer.Add(entry)
+		
+		// Update file-level statistics
 		if added {
 			summary.Added++
 		} else {
 			summary.Duplicates++
+		}
+		
+		// Track entry by year
+		if si.yearTracker != nil {
+			si.yearTracker.TrackImportEntry(entry.Year(), added)
 		}
 
 		// Report progress

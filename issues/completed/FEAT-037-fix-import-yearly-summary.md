@@ -1,7 +1,7 @@
 # FEAT-037: Fix Import Yearly Summary Reporting
 
 ## Status
-- **Completed**: YYYY-MM-DD
+- **Completed**: 2025-08-13
 - **Priority**: high
 
 ## Overview
@@ -14,17 +14,17 @@ Root cause: The finalizeSummary function (pkg/importer/importer.go:303) only set
 
 ## Requirements
 ### Functional Requirements
-- [ ] Import yearly summary correctly reports new entry counts per year
-- [ ] Import yearly summary correctly reports duplicate entry counts per year
-- [ ] Track per-year statistics at entry level during import processing
-- [ ] Count Initial entries per year when loading existing repository
-- [ ] Yearly statistics match actual processing results (Added + Duplicates + Initial = Final)
-- [ ] Summary displays accurate totals that add up correctly
+- [x] Import yearly summary correctly reports new entry counts per year
+- [x] Import yearly summary correctly reports duplicate entry counts per year
+- [x] Track per-year statistics at entry level during import processing
+- [x] Count Initial entries per year when loading existing repository
+- [x] Yearly statistics match actual processing results (Added + Duplicates + Initial = Final)
+- [x] Summary displays accurate totals that add up correctly
 
 ### Non-Functional Requirements
-- [ ] Per-entry statistics tracking should not significantly impact import performance
-- [ ] Memory usage for year-based tracking should be minimal (map of ints per year)
-- [ ] Repository loading for Initial counts should be efficient
+- [x] Per-entry statistics tracking should not significantly impact import performance
+- [x] Memory usage for year-based tracking should be minimal (map of ints per year)
+- [x] Repository loading for Initial counts should be efficient
 
 ## Design
 ### Approach
@@ -114,16 +114,16 @@ for year, entries := range yearlyEntries {
 - Use efficient map[int]int for year-based counters (minimal memory overhead)
 
 ## Tasks
-- [ ] Add YearTracker struct to Importer with initial, added, duplicates maps
-- [ ] Implement trackInitialEntry method for repository loading phase
-- [ ] Implement trackImportEntry method for import processing phase
-- [ ] Update repository loading to count existing entries per year (Initial)
-- [ ] Update import processing to track Added/Duplicates per entry using coalescer results
-- [ ] Update finalizeSummary to use YearTracker statistics instead of only Final counts
-- [ ] Verify mathematics: Initial + Added = Final for each year
-- [ ] Add validation that Duplicates are tracked but not added to Final
-- [ ] Write tests for YearTracker accuracy with known multi-year data
-- [ ] Test integration with existing import workflow
+- [x] Add YearTracker struct to Importer with initial, added, duplicates maps
+- [x] Implement trackInitialEntry method for repository loading phase
+- [x] Implement trackImportEntry method for import processing phase
+- [x] Update repository loading to count existing entries per year (Initial)
+- [x] Update import processing to track Added/Duplicates per entry using coalescer results
+- [x] Update finalizeSummary to use YearTracker statistics instead of only Final counts
+- [x] Verify mathematics: Initial + Added = Final for each year
+- [x] Add validation that Duplicates are tracked but not added to Final
+- [x] Write tests for YearTracker accuracy with known multi-year data
+- [x] Test integration with existing import workflow
 
 ## Testing
 ### Unit Tests
@@ -164,4 +164,28 @@ for year, entries := range yearlyEntries {
 - Code locations: pkg/importer/importer.go:192-196 (summary display code)
 
 ## Notes
-Additional thoughts, questions, or considerations that arise during planning/implementation.
+
+### Implementation Summary
+Successfully implemented YearTracker struct to track per-year statistics during import processing:
+
+**Key Changes Made:**
+1. **YearTracker struct** added to `pkg/importer/importer.go` with `initial`, `added`, and `duplicates` maps
+2. **CallsImporter** updated to accept YearTracker and track entries during LoadRepository and ImportFile
+3. **SMSImporter** updated to accept YearTracker and track entries during LoadRepository and processFile  
+4. **finalizeSummary** completely rewritten to use YearTracker statistics instead of only counting Final entries
+5. **Validation methods** added to verify mathematics: Initial + Added = Final per year
+6. **Comprehensive tests** added in `year_tracker_test.go` covering basic functionality, validation, and multi-year scenarios
+
+**Files Modified:**
+- `pkg/importer/importer.go` - YearTracker struct, methods, and finalizeSummary integration
+- `pkg/importer/calls.go` - Updated NewCallsImporter, LoadRepository, and ImportFile 
+- `pkg/importer/sms.go` - Updated NewSMSImporter, LoadRepository, and processFile
+- `pkg/importer/year_tracker_test.go` - New comprehensive test suite
+
+**Verification:**
+- Mathematics validation ensures Initial + Added = Final for each year
+- Duplicates are tracked but not included in Final counts
+- All years with any activity (initial, added, duplicates) are represented in summary
+- Warning messages logged if validation fails during import
+
+The fix addresses the root cause where `finalizeSummary` only set Final counts but never populated Added/Duplicates per year. Now per-entry tracking during import provides accurate yearly statistics.

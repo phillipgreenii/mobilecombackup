@@ -6,10 +6,16 @@ type Contact struct {
 	Numbers []string `yaml:"numbers"`
 }
 
+// UnprocessedEntry represents an unprocessed contact entry with structured data
+type UnprocessedEntry struct {
+	PhoneNumber  string   `yaml:"phone_number"`
+	ContactNames []string `yaml:"contact_names"`
+}
+
 // ContactsData represents the YAML structure of contacts.yaml
 type ContactsData struct {
-	Contacts    []*Contact `yaml:"contacts"`
-	Unprocessed []string   `yaml:"unprocessed,omitempty"`
+	Contacts    []*Contact         `yaml:"contacts"`
+	Unprocessed []UnprocessedEntry `yaml:"unprocessed,omitempty"`
 }
 
 // ContactsReader reads contact information from repository
@@ -34,6 +40,12 @@ type ContactsReader interface {
 
 	// GetContactsCount returns total number of contacts
 	GetContactsCount() int
+
+	// AddUnprocessedContacts adds contacts from multi-address SMS parsing
+	AddUnprocessedContacts(addresses, contactNames string) error
+
+	// GetUnprocessedEntries returns all unprocessed entries in structured format
+	GetUnprocessedEntries() []UnprocessedEntry
 }
 
 // ContactsWriter handles writing contact information to repository

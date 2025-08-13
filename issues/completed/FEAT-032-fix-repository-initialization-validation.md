@@ -1,7 +1,7 @@
 # FEAT-032: Fix Repository Initialization and Validation
 
 ## Status
-- **Ready for Implementation**: 2025-08-13
+- **Completed**: 2025-08-13
 - **Priority**: high
 
 ## Overview
@@ -18,16 +18,16 @@ Multiple issues were identified with repository initialization and validation:
 
 ## Requirements
 ### Functional Requirements
-- [ ] `init` command creates complete repository structure: directories (calls/, sms/, attachments/), required files (files.yaml, files.yaml.sha256, summary.yaml, contacts.yaml), and marker file (.mobilecombackup.yaml)
-- [ ] `validate --autofix` always regenerates files.yaml; only creates files.yaml.sha256 if missing
-- [ ] .mobilecombackup.yaml is properly tracked in files.yaml (but files.yaml does not include itself or files.yaml.sha256)
-- [ ] `info` command shows counts for all entity types (0 for empty repo)
-- [ ] Fix relative path interpretation in files.yaml validation (files showing as both missing and unexpected)
-- [ ] Files.yaml validation rules align with generation logic
+- [x] `init` command creates complete repository structure: directories (calls/, sms/, attachments/), required files (files.yaml, files.yaml.sha256, summary.yaml, contacts.yaml), and marker file (.mobilecombackup.yaml)
+- [x] `validate --autofix` always regenerates files.yaml; only creates files.yaml.sha256 if missing
+- [x] .mobilecombackup.yaml is properly tracked in files.yaml (but files.yaml does not include itself or files.yaml.sha256)
+- [x] `info` command shows counts for all entity types (0 for empty repo)
+- [x] Fix relative path interpretation in files.yaml validation (files showing as both missing and unexpected)
+- [x] Files.yaml validation rules align with generation logic
 
 ### Non-Functional Requirements
-- [ ] Repository initialization should be atomic (all-or-nothing)
-- [ ] Validation should be fast and comprehensive
+- [x] Repository initialization should be atomic (all-or-nothing)
+- [x] Validation should be fast and comprehensive
 
 ## Design
 ### Approach
@@ -77,16 +77,16 @@ func InitializeRepository(repoRoot string, quiet bool) error
 - Info command: show "0" counts for all entity types on empty but valid repository
 
 ## Tasks
-- [ ] Extract manifest generation from autofix into shared utility in pkg/manifest/
-- [ ] Update init command to create complete repository structure (core directories and files, not rejected/)
-- [ ] Fix autofix logic: always regenerate files.yaml, only create .sha256 if missing
-- [ ] Add .mobilecombackup.yaml to files.yaml manifest (exclude files.yaml itself and rejected/ contents)
-- [ ] Fix path interpretation mismatch between manifest generation and validation
-- [ ] Update info command to show "0" counts for all entity types on empty repo
-- [ ] Ensure atomic init operation with proper cleanup on failure
-- [ ] Add cross-platform path normalization (filepath.ToSlash)
-- [ ] Write comprehensive tests covering all fixed scenarios
-- [ ] Update CLI documentation and help text
+- [x] Extract manifest generation from autofix into shared utility in pkg/manifest/
+- [x] Update init command to create complete repository structure (core directories and files, not rejected/)
+- [x] Fix autofix logic: always regenerate files.yaml, only create .sha256 if missing
+- [x] Add .mobilecombackup.yaml to files.yaml manifest (exclude files.yaml itself and rejected/ contents)
+- [x] Fix path interpretation mismatch between manifest generation and validation
+- [x] Update info command to show "0" counts for all entity types on empty repo
+- [x] Ensure atomic init operation with proper cleanup on failure
+- [x] Add cross-platform path normalization (filepath.ToSlash)
+- [x] Write comprehensive tests covering all fixed scenarios
+- [x] Update CLI documentation and help text
 
 ## Testing
 ### Unit Tests

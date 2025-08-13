@@ -98,8 +98,8 @@ devbox run go test -v -covermode=set ./pkg/calls
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
 - **pkg/contacts**: Contact information management
-  - `types.go`: Contact struct and ContactsReader interface
-  - `reader.go`: ContactsManager implementation with YAML parsing
+  - `types.go`: Contact struct, ContactsReader interface, and UnprocessedEntry (FEAT-035)
+  - `reader.go`: ContactsManager implementation with YAML parsing and multi-address support
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
 - **pkg/attachments**: Attachment file management
@@ -107,6 +107,17 @@ devbox run go test -v -covermode=set ./pkg/calls
   - `reader.go`: AttachmentManager implementation with hash-based storage
   - `*_test.go`: Comprehensive unit and integration tests
   - `example_test.go`: Usage documentation and examples
+- **pkg/manifest**: File manifest generation and management (FEAT-032)
+  - `types.go`: FileEntry and FileManifest structs
+  - `generator.go`: ManifestGenerator implementation with atomic operations
+  - `*_test.go`: Comprehensive unit and integration tests
+- **pkg/importer**: Import functionality with deduplication and validation
+  - `importer.go`: Main importer orchestration with YearTracker for accurate statistics (FEAT-037)
+  - `calls.go`: Call import processing with repository validation (FEAT-036)
+  - `sms.go`: SMS/MMS import with attachment extraction and contact processing (FEAT-034, FEAT-035)
+  - `summary.go`: Import summary generation with per-year statistics tracking
+  - `types.go`: Core types including YearTracker for statistics validation
+  - `*_test.go`: Comprehensive unit and integration tests
 - **pkg/coalescer**: Core deduplication logic using hash-based comparison
 - **pkg/mobilecombackup**: Main processing logic, interfaces (Processor, BackupReader, BackupWriter), and CLI implementation
 - **internal/**: Test utilities and integration tests
@@ -119,26 +130,32 @@ devbox run go test -v -covermode=set ./pkg/calls
 - `CallsReader`: Reads call records from repository with methods for streaming, validation, and metadata
 - `SMSReader`: Reads SMS/MMS records from repository with attachment tracking capabilities
 - `Message`: Base interface for SMS and MMS messages with common accessors
-- `ContactsReader`: Reads contact information from repository with phone number normalization and lookup capabilities
+- `ContactsReader`: Reads contact information from repository with phone number normalization, lookup capabilities, and structured unprocessed contact management (FEAT-035)
 - `AttachmentReader`: Reads attachment files from repository with hash-based storage and verification capabilities
 
 ### Key Types
 - `BackupEntryMetadata[B BackupEntry]`: Wraps entries with hash, year, and error info
 - `CoalImpl[V any]`: Implementation with memory store (map[string][V])
 - `CoalesceSummary`: Tracks added, duplicate, and error counts
+- `ManifestGenerator`: Generates and manages file manifests with atomic operations (FEAT-032)
+- `YearTracker`: Tracks per-year statistics for accurate import summary reporting (FEAT-037)
+- `UnprocessedEntry`: Structured format for unprocessed contact data with phone number and contact names (FEAT-035)
 
 ### Processing Flow
 1. Parse CLI arguments for repo root and paths to process
-2. Initialize coalescers and read existing repository
-3. Walk additional paths, adding files to appropriate coalescers
-4. For each entry:
+2. **Repository Validation**: Comprehensive validation before any import operations (FEAT-036)
+3. Initialize coalescers and read existing repository with initial year statistics tracking (FEAT-037)
+4. Walk additional paths, adding files to appropriate coalescers
+5. For each entry:
    - Remove `readable_date` field (timezone-dependent)
-   - Extract and write attachments to disk (hash-based naming)
+   - Extract and write attachments to disk with debug logging (hash-based naming) (FEAT-034)
+   - Process contact names with structured multi-address support (FEAT-035)
    - Calculate hash on all fields except `readable_date`
-   - Check for duplicates by hash
-5. Sort all entries by timestamp
-6. Partition by year (using `date` field)
-7. Write to repository structure with recalculated `readable_date` in EST
+   - Check for duplicates by hash with per-year tracking (FEAT-037)
+6. Sort all entries by timestamp
+7. Partition by year (using `date` field) with accurate statistics validation (FEAT-037)
+8. Write to repository structure with recalculated `readable_date` in EST
+9. Update manifest files with comprehensive file tracking (FEAT-032)
 
 ### Repository Output Structure
 ```

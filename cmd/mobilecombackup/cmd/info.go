@@ -418,8 +418,8 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 	fmt.Println()
 
 	// Calls statistics
+	fmt.Println("Calls:")
 	if len(info.Calls) > 0 {
-		fmt.Println("Calls:")
 		var totalCalls int
 		var years []string
 		for year := range info.Calls {
@@ -439,12 +439,14 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 			fmt.Println()
 		}
 		fmt.Printf("  Total: %s calls\n", formatNumber(totalCalls))
-		fmt.Println()
+	} else {
+		fmt.Println("  Total: 0 calls")
 	}
+	fmt.Println()
 
 	// SMS/MMS statistics
+	fmt.Println("Messages:")
 	if len(info.SMS) > 0 {
-		fmt.Println("Messages:")
 		var totalMessages, totalSMS, totalMMS int
 		var years []string
 		for year := range info.SMS {
@@ -473,12 +475,14 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 			formatNumber(totalMessages),
 			formatNumber(totalSMS),
 			formatNumber(totalMMS))
-		fmt.Println()
+	} else {
+		fmt.Println("  Total: 0 messages (0 SMS, 0 MMS)")
 	}
+	fmt.Println()
 
 	// Attachments statistics
+	fmt.Println("Attachments:")
 	if info.Attachments.Count > 0 {
-		fmt.Println("Attachments:")
 		fmt.Printf("  Count: %s\n", formatNumber(info.Attachments.Count))
 		fmt.Printf("  Total Size: %s\n", formatBytes(info.Attachments.TotalSize))
 
@@ -502,13 +506,14 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		if info.Attachments.OrphanedCount > 0 {
 			fmt.Printf("  Orphaned: %s\n", formatNumber(info.Attachments.OrphanedCount))
 		}
-		fmt.Println()
+	} else {
+		fmt.Println("  Count: 0")
+		fmt.Println("  Total Size: 0 B")
 	}
+	fmt.Println()
 
 	// Contacts
-	if info.Contacts > 0 {
-		fmt.Printf("Contacts: %s\n\n", formatNumber(info.Contacts))
-	}
+	fmt.Printf("Contacts: %s\n\n", formatNumber(info.Contacts))
 
 	// Rejections and errors
 	if len(info.Rejections) > 0 || len(info.Errors) > 0 {

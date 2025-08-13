@@ -3,6 +3,8 @@ package contacts_test
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
@@ -190,4 +192,128 @@ func Example_phoneNumberNormalization() {
 			fmt.Printf("%s -> %s\n", variation, name)
 		}
 	}
+}
+
+// ExampleContactsManager_AddUnprocessedContacts demonstrates the new multi-address parsing functionality
+func ExampleContactsManager_AddUnprocessedContacts() {
+	// Create a manager for a temporary directory
+	tempDir := "/tmp/example"
+	_ = os.MkdirAll(tempDir, 0755)
+	defer os.RemoveAll(tempDir)
+
+	manager := contacts.NewContactsManager(tempDir)
+
+	// Single address and contact name
+	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	// Multiple addresses separated by ~ with corresponding names separated by ,
+	err = manager.AddUnprocessedContacts("5559876543~5551111111", "Jane Smith,Bob Wilson")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	// Get structured unprocessed entries (sorted by phone number)
+	entries := manager.GetUnprocessedEntries()
+	
+	for _, entry := range entries {
+		fmt.Printf("Phone: %s, Names: %v\n", entry.PhoneNumber, entry.ContactNames)
+	}
+
+	// Output:
+	// Phone: 5551111111, Names: [Bob Wilson]
+	// Phone: 5551234567, Names: [John Doe]
+	// Phone: 5559876543, Names: [Jane Smith]
+}
+
+// ExampleContactsManager_AddUnprocessedContacts_countMismatch demonstrates validation error handling
+func ExampleContactsManager_AddUnprocessedContacts_countMismatch() {
+	manager := contacts.NewContactsManager("")
+
+	// Address count doesn't match contact name count - this will return an error
+	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe")
+	if err != nil {
+		fmt.Printf("Validation error: %v\n", err)
+	}
+
+	// Output:
+	// Validation error: address count (2) does not match contact name count (1)
+}
+
+// ExampleContactsManager_GetUnprocessedEntries demonstrates the new structured format
+func ExampleContactsManager_GetUnprocessedEntries() {
+	tempDir := "/tmp/example"
+	_ = os.MkdirAll(tempDir, 0755)
+	defer os.RemoveAll(tempDir)
+
+	contactsPath := filepath.Join(tempDir, "contacts.yaml")
+
+	// Create a contacts.yaml file with the new structured unprocessed format
+	yamlContent := `contacts:
+  - name: "Alice Johnson"
+    numbers: ["5554567890"]
+
+unprocessed:
+  - phone_number: "5551234567"
+    contact_names: ["John Doe", "Johnny"]
+  - phone_number: "5559876543"
+    contact_names: ["Jane Smith"]
+`
+
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+
+	manager := contacts.NewContactsManager(tempDir)
+	err := manager.LoadContacts()
+	if err != nil {
+		fmt.Printf("Error loading contacts: %v\n", err)
+		return
+	}
+
+	// Get unprocessed entries in structured format
+	entries := manager.GetUnprocessedEntries()
+	fmt.Printf("Unprocessed entries: %d\n", len(entries))
+	for _, entry := range entries {
+		fmt.Printf("  %s: %v\n", entry.PhoneNumber, entry.ContactNames)
+	}
+
+	// Output:
+	// Unprocessed entries: 2
+	//   5551234567: [John Doe Johnny]
+	//   5559876543: [Jane Smith]
+}
+
+// ExampleContactsManager_KnownContactMatching demonstrates how known contacts are excluded
+func ExampleContactsManager_KnownContactMatching() {
+	tempDir := "/tmp/example"
+	_ = os.MkdirAll(tempDir, 0755)
+	defer os.RemoveAll(tempDir)
+
+	contactsPath := filepath.Join(tempDir, "contacts.yaml")
+
+	// Create contacts.yaml with existing contact
+	yamlContent := `contacts:
+  - name: "Alice Johnson"
+    numbers: ["5551234567"]
+`
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+
+	manager := contacts.NewContactsManager(tempDir)
+	_ = manager.LoadContacts()
+
+	// Try to add both known and unknown contacts
+	_ = manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
+
+	entries := manager.GetUnprocessedEntries()
+	fmt.Printf("Unprocessed entries: %d\n", len(entries))
+	for _, entry := range entries {
+		fmt.Printf("  %s: %v\n", entry.PhoneNumber, entry.ContactNames)
+	}
+
+	// Output:
+	// Unprocessed entries: 1
+	//   5559876543: [Jane Smith]
 }

@@ -20,10 +20,11 @@ type CallsImporter struct {
 	validator       *CallValidator
 	rejWriter       RejectionWriter
 	contactsManager *contacts.ContactsManager
+	yearTracker     *YearTracker
 }
 
 // NewCallsImporter creates a new calls importer
-func NewCallsImporter(options *ImportOptions, contactsManager *contacts.ContactsManager) (*CallsImporter, error) {
+func NewCallsImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) (*CallsImporter, error) {
 	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
@@ -36,6 +37,7 @@ func NewCallsImporter(options *ImportOptions, contactsManager *contacts.Contacts
 		validator:       NewCallValidator(),
 		rejWriter:       NewXMLRejectionWriter(options.RepoRoot),
 		contactsManager: contactsManager,
+		yearTracker:     yearTracker,
 	}, nil
 }
 
@@ -46,7 +48,14 @@ func (ci *CallsImporter) LoadRepository() error {
 	// Stream all existing calls into the coalescer
 	var existingCalls []calls.CallEntry
 	err := reader.StreamCalls(func(call *calls.Call) error {
-		existingCalls = append(existingCalls, calls.CallEntry{Call: call})
+		entry := calls.CallEntry{Call: call}
+		existingCalls = append(existingCalls, entry)
+		
+		// Track initial entry by year
+		if ci.yearTracker != nil {
+			ci.yearTracker.TrackInitialEntry(entry.Year())
+		}
+		
 		return nil
 	})
 
@@ -137,10 +146,18 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 
 		// Add to coalescer (checks for duplicates)
 		entry := calls.CallEntry{Call: call}
-		if ci.coalescer.Add(entry) {
+		wasAdded := ci.coalescer.Add(entry)
+		
+		// Update file-level statistics
+		if wasAdded {
 			stat.Added++
 		} else {
 			stat.Duplicates++
+		}
+		
+		// Track entry by year
+		if ci.yearTracker != nil {
+			ci.yearTracker.TrackImportEntry(entry.Year(), wasAdded)
 		}
 
 		// Report progress every 100 entries

@@ -157,17 +157,21 @@ contacts:
       - "9999999999"
 
 unprocessed:
-  - "5551234567: John Doe"
-  - "5551234567: Johnny"
-  - "5559876543: Jane Smith"
+  - phone_number: "5551234567"
+    contact_names: ["John Doe", "Johnny"]
+  - phone_number: "5559876543" 
+    contact_names: ["Jane Smith"]
 ```
 
-**Unprocessed Section:**
-- Contains contact names extracted from imported messages
-- Format: "phone: name" strings for easy manual editing
-- Multiple names per phone number are preserved for user review
-- Phone numbers are normalized before storage
-- Requires manual review and promotion to main contacts section
+**Unprocessed Section (FEAT-035):**
+- Contains contact names extracted from imported messages in structured format
+- **Structure**: Each entry has `phone_number` and `contact_names` fields
+- **Multi-Address Support**: Parses addresses with `~` separators and contact names with `,` separators
+- **Validation**: Requires equal counts of phone numbers and contact names (rejects entire SMS entry if mismatch)
+- **Contact Matching**: Excludes phone numbers that already exist in main contacts section
+- **Name Combining**: Multiple contact names for same phone number are combined into single entry
+- **Sorting**: Entries sorted by raw phone number (lexicographic comparison)
+- **Manual Review**: Requires manual promotion to main contacts section for canonical name selection
 
 #### files.yaml
 
@@ -445,6 +449,12 @@ type ContactsReader interface {
     
     // GetContactsCount returns total number of contacts
     GetContactsCount() int
+    
+    // AddUnprocessedContacts processes SMS address and contact names (FEAT-035)
+    AddUnprocessedContacts(address, contactNames string) error
+    
+    // GetUnprocessedEntries returns all unprocessed entries sorted by phone number
+    GetUnprocessedEntries() []UnprocessedEntry
 }
 ```
 
@@ -492,10 +502,16 @@ type Contact struct {
     Numbers []string `yaml:"numbers"`
 }
 
+// UnprocessedEntry represents structured unprocessed contact data (FEAT-035)
+type UnprocessedEntry struct {
+    PhoneNumber  string   `yaml:"phone_number"`
+    ContactNames []string `yaml:"contact_names"`
+}
+
 // ContactsData represents the YAML structure of contacts.yaml
 type ContactsData struct {
-    Contacts    []*Contact `yaml:"contacts"`
-    Unprocessed []string   `yaml:"unprocessed,omitempty"`
+    Contacts    []*Contact         `yaml:"contacts"`
+    Unprocessed []UnprocessedEntry `yaml:"unprocessed,omitempty"`
 }
 ```
 
@@ -1220,7 +1236,11 @@ The repository location is determined by (in order of precedence):
 3. Current directory
 
 **Behavior:**
-1. Validates repository structure before import
+1. **Repository Validation**: Comprehensive validation using pkg/validation before any import operations (FEAT-036)
+   - Validates repository structure, manifest, and content integrity
+   - Fast-fail behavior with detailed error messages if validation fails
+   - Silent operation unless validation errors occur
+   - Exit code 2 for validation failures (consistent with validate command)
 2. Loads existing repository data for deduplication
 3. Scans paths for backup files (`calls*.xml`, `sms*.xml`)
    - Follows symlinks
@@ -1358,6 +1378,81 @@ source <(mobilecombackup completion zsh)
 
 - `PrintError(format string, args ...interface{})`: Consistent error output to stderr
 
+## Repository Initialization and Manifest Management
+
+### Overview
+
+Repository initialization creates a complete, valid repository structure with all required files and directories. The manifest system tracks all repository files for integrity validation.
+
+### Manifest Package (pkg/manifest/)
+
+The manifest package provides shared functionality for generating and managing file manifests across repository operations.
+
+#### Core Types
+```go
+// FileEntry represents a single file entry in files.yaml
+type FileEntry struct {
+    File      string `yaml:"file"`
+    SHA256    string `yaml:"sha256"`
+    SizeBytes int64  `yaml:"size_bytes"`
+}
+
+// FileManifest represents the structure of files.yaml
+type FileManifest struct {
+    Files []FileEntry `yaml:"files"`
+}
+```
+
+#### ManifestGenerator Interface
+```go
+type ManifestGenerator struct {
+    repositoryRoot string
+}
+
+// Core methods
+func NewManifestGenerator(repositoryRoot string) *ManifestGenerator
+func (g *ManifestGenerator) GenerateFileManifest() (*FileManifest, error)
+func (g *ManifestGenerator) WriteManifestFiles(manifest *FileManifest) error
+func (g *ManifestGenerator) WriteManifestOnly(manifest *FileManifest) error
+func (g *ManifestGenerator) WriteChecksumOnly() error
+```
+
+#### Manifest Generation Rules
+- **Included Files**: `.mobilecombackup.yaml`, `summary.yaml`, `contacts.yaml`, and all files in `calls/`, `sms/`, `attachments/`
+- **Excluded Files**: `files.yaml` (itself), `files.yaml.sha256`, temporary files (`.tmp`), rejected entries (`rejected/`), hidden files (except `.mobilecombackup.yaml`)
+- **Path Format**: Cross-platform consistency using forward slashes via `filepath.ToSlash()`
+- **Atomic Operations**: Uses temporary files with atomic rename to prevent corruption
+
+#### Integration Points
+- **Repository Initialization**: Creates complete manifest during `init` command
+- **Validation Autofix**: Regenerates manifest when inconsistencies detected
+- **Import Operations**: Updates manifest after successful imports
+
+### Repository Structure Creation
+
+#### Complete Initialization (FEAT-032)
+The `init` command creates a complete, valid repository structure:
+
+```
+repository/
+├── .mobilecombackup.yaml    # Repository marker with version metadata
+├── files.yaml               # File manifest (excludes itself and .sha256)
+├── files.yaml.sha256        # SHA-256 checksum of files.yaml
+├── summary.yaml             # Empty import summary
+├── contacts.yaml            # Empty contacts list
+├── calls/                   # Empty directory for call logs
+├── sms/                     # Empty directory for SMS/MMS
+└── attachments/             # Empty directory for attachments
+```
+
+Note: `rejected/` directory is created only when needed during import operations.
+
+#### Autofix Behavior
+- **files.yaml**: Always regenerated from repository scan to ensure completeness
+- **files.yaml.sha256**: Created only if missing (preserves existing checksums)
+- **Marker File**: Generated with current timestamp and tool version metadata
+- **Directory Structure**: Missing directories created with proper permissions (0750)
+
 ## Import Functionality
 
 ### Overview
@@ -1439,22 +1534,48 @@ type Coalescer[T Entry] interface {
 
 #### Import Process
 
-1. **Repository Validation**: Ensure valid structure before import
+1. **Repository Validation**: Comprehensive validation ensuring valid structure before any import operations (FEAT-036)
 2. **Load Existing Data**: 
    - Build deduplication index from repository
    - Load contacts.yaml including existing unprocessed entries
+   - Track initial entry counts per year for summary reporting (FEAT-037)
 3. **Process Files**: 
    - Stream XML parsing for memory efficiency
    - Validate each entry
-   - Extract contact names after validation but before deduplication
+   - Extract contact names after validation but before deduplication (FEAT-035)
+   - Extract attachments from MMS messages with debug logging (FEAT-034)
    - Check for duplicates via hash (excluding contact_name)
+   - Track added/duplicate entries per year during processing (FEAT-037)
    - Accumulate valid entries
 4. **Single Write Operation**:
    - Merge existing and new entries
    - Sort by timestamp (stable for same timestamps)
    - Partition by year
    - Write atomically to repository
-   - Save contacts.yaml with extracted names in unprocessed section
+   - Save contacts.yaml with extracted names in structured unprocessed format (FEAT-035)
+   - Generate accurate yearly summary with mathematics validation (FEAT-037)
+
+#### Year-Based Statistics Tracking (FEAT-037)
+
+**YearTracker Implementation:**
+```go
+type YearTracker struct {
+    initial    map[int]int  // Entries loaded from existing repository
+    added      map[int]int  // New entries added during import
+    duplicates map[int]int  // Duplicate entries found during import
+}
+
+// Core methods
+func (yt *YearTracker) trackInitialEntry(entry BackupEntry)
+func (yt *YearTracker) trackImportEntry(entry BackupEntry, wasAdded bool)
+func (yt *YearTracker) validateMathematics() error
+```
+
+**Statistics Validation:**
+- **Mathematics Check**: Validates Initial + Added = Final for each year
+- **Entry-Level Tracking**: Tracks statistics at individual entry level during processing
+- **Memory Efficient**: Uses simple map[int]int counters (minimal overhead)
+- **Error Detection**: Logs warnings if mathematics validation fails
 
 #### Attachment Extraction (FEAT-012)
 
@@ -1497,6 +1618,14 @@ SkippedTypes: []string{
 5. Store in `attachments/[first-2-chars]/[full-hash]` structure
 6. Update MMS part with path reference and metadata
 7. Handle deduplication (reference existing files, extract only new ones)
+
+**Debug Logging (FEAT-034):**
+- **Comprehensive Tracing**: Debug logs track every step of attachment extraction pipeline
+- **Content Type Filtering**: Logs decisions about which parts to extract vs skip
+- **Deduplication Tracking**: Logs when attachments already exist vs new extractions
+- **Error Context**: Detailed error logging for base64 decode failures and file operations
+- **Performance Monitoring**: Logs processing time and attachment statistics
+- **Verification Steps**: Logs file size validation and hash calculation results
 
 **Enhanced MMSPart Structure:**
 After extraction, MMS parts are updated with new fields:

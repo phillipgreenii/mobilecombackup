@@ -1,7 +1,7 @@
 # FEAT-035: Fix Contacts Processing and Format Issues
 
 ## Status
-- **Completed**: YYYY-MM-DD
+- **Completed**: 2025-08-13
 - **Priority**: high
 - **Ready for Implementation**: 2025-08-13
 
@@ -17,18 +17,18 @@ Several issues were identified with contacts processing:
 
 ## Requirements
 ### Functional Requirements
-- [ ] Fix contacts.yaml unprocessed format to use structured phone_number and contact_names properties
-- [ ] Sort unprocessed entries by raw phone number (lexicographic)
-- [ ] Parse multiple phone numbers from SMS address field (separated by `~`)
-- [ ] Parse corresponding contact names (separated by `,`)
-- [ ] Validate equal counts of phone numbers and contact names (reject if mismatch)
-- [ ] Match against existing contacts.yaml entries (exclude known numbers from unprocessed)
-- [ ] Combine contact names for same phone number into single unprocessed entry
+- [x] Fix contacts.yaml unprocessed format to use structured phone_number and contact_names properties
+- [x] Sort unprocessed entries by raw phone number (lexicographic)
+- [x] Parse multiple phone numbers from SMS address field (separated by `~`)
+- [x] Parse corresponding contact names (separated by `,`)
+- [x] Validate equal counts of phone numbers and contact names (reject if mismatch)
+- [x] Match against existing contacts.yaml entries (exclude known numbers from unprocessed)
+- [x] Combine contact names for same phone number into single unprocessed entry
 
 ### Non-Functional Requirements
-- [ ] Contact matching should be efficient for large contact lists
-- [ ] No phone number normalization required (use raw numbers for matching)
-- [ ] No data migration needed (repositories can be recreated)
+- [x] Contact matching should be efficient for large contact lists
+- [x] No phone number normalization required (use raw numbers for matching)
+- [x] No data migration needed (repositories can be recreated)
 
 ## Design
 ### Unprocessed Format Change
@@ -118,15 +118,15 @@ type ContactsData struct {
 - No data migration required (repositories recreated from source)
 
 ## Tasks
-- [ ] Update UnprocessedEntry struct with phone_number and contact_names fields
-- [ ] Implement multi-address parsing with count validation
-- [ ] Add contact matching against main contacts.yaml entries
-- [ ] Implement contact name combining for duplicate phone numbers
-- [ ] Add sorting of unprocessed entries by raw phone number
-- [ ] Update contacts.yaml reading/writing to use new format
-- [ ] Add validation rejection for count mismatches
-- [ ] Write comprehensive parsing tests for edge cases
-- [ ] Update documentation for new contacts.yaml format
+- [x] Update UnprocessedEntry struct with phone_number and contact_names fields
+- [x] Implement multi-address parsing with count validation
+- [x] Add contact matching against main contacts.yaml entries
+- [x] Implement contact name combining for duplicate phone numbers
+- [x] Add sorting of unprocessed entries by raw phone number
+- [x] Update contacts.yaml reading/writing to use new format
+- [x] Add validation rejection for count mismatches
+- [x] Write comprehensive parsing tests for edge cases
+- [x] Update documentation for new contacts.yaml format
 
 ## Testing
 ### Unit Tests
@@ -166,5 +166,40 @@ type ContactsData struct {
 - Code locations: pkg/sms/ (SMS address parsing during import)
 - Dependencies: YAML parsing for new structured format
 
+## Implementation Notes
+
+### Completed Implementation
+All functional requirements have been successfully implemented:
+
+1. **UnprocessedEntry Struct**: Added new struct with `phone_number` and `contact_names` fields to replace the old string format.
+
+2. **Multi-Address Parsing**: Implemented `AddUnprocessedContacts()` method that splits addresses by `~` and contact names by `,`, validates equal counts, and processes each pair.
+
+3. **Contact Matching**: Integrated with existing `IsKnownNumber()` to exclude numbers that already exist in the main contacts section.
+
+4. **Contact Combining**: Uses internal helper `addUnprocessedEntry()` that prevents duplicate name entries for the same phone number.
+
+5. **Sorting**: Implemented lexicographic sorting by raw phone number in `GetUnprocessedEntries()` method.
+
+6. **New Format Support**: Updated both loading and saving logic to handle the new structured YAML format while maintaining backward compatibility for reading old-format files.
+
+7. **Validation**: Returns error if address count doesn't match contact name count, preventing data corruption.
+
+8. **Comprehensive Testing**: Added extensive unit tests covering all edge cases including count mismatches, empty values, known contact filtering, duplicate combining, and sorting.
+
+9. **Documentation**: Added example tests demonstrating all new functionality including multi-address parsing, validation errors, and the new structured format.
+
+### Key Design Decisions
+- **Backward Compatibility**: Old-format contacts.yaml files are automatically converted during loading
+- **Raw Phone Numbers**: No normalization applied per requirements (uses exact string matching)
+- **Error Handling**: Count mismatches cause entire entry rejection rather than partial processing
+- **Memory Efficiency**: Uses efficient sorting algorithm and map-based deduplication
+
+### Files Modified
+- `pkg/contacts/types.go`: Added UnprocessedEntry struct and new interface methods
+- `pkg/contacts/reader.go`: Implemented new methods and updated reading/writing logic
+- `pkg/contacts/reader_test.go`: Updated existing tests and added comprehensive new tests
+- `pkg/contacts/example_test.go`: Added documentation examples for new functionality
+
 ## Notes
-Additional thoughts, questions, or considerations that arise during planning/implementation.
+Implementation completed successfully with all requirements met and comprehensive test coverage achieved.

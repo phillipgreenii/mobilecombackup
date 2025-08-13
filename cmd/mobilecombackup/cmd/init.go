@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -29,7 +30,9 @@ Creates the following directories:
 Also creates:
 - .mobilecombackup.yaml  Repository marker file with version info
 - contacts.yaml          Empty contacts file
-- summary.yaml           Initial summary with zero counts`,
+- summary.yaml           Initial summary with zero counts
+- files.yaml             File manifest tracking all repository files
+- files.yaml.sha256      Checksum file for manifest verification`,
 	RunE: runInit,
 }
 
@@ -140,6 +143,17 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		Created:  []string{},
 	}
 
+	// If not dry run, set up rollback on failure
+	var createdPaths []string
+	rollback := func() {
+		if !dryRun {
+			// Remove files and directories in reverse order
+			for i := len(createdPaths) - 1; i >= 0; i-- {
+				_ = os.RemoveAll(createdPaths[i])
+			}
+		}
+	}
+
 	// Directories to create
 	directories := []string{
 		"calls",
@@ -153,6 +167,7 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 			if err := os.MkdirAll(repoRoot, 0750); err != nil {
 				return nil, fmt.Errorf("failed to create repository root: %w", err)
 			}
+			createdPaths = append(createdPaths, repoRoot)
 		}
 		result.Created = append(result.Created, repoRoot)
 	}
@@ -162,8 +177,10 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 		dirPath := filepath.Join(repoRoot, dir)
 		if !dryRun {
 			if err := os.MkdirAll(dirPath, 0750); err != nil {
+				rollback()
 				return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 			}
+			createdPaths = append(createdPaths, dirPath)
 		}
 		result.Created = append(result.Created, dirPath)
 	}
@@ -179,11 +196,14 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 	if !dryRun {
 		data, err := yaml.Marshal(markerContent)
 		if err != nil {
+			rollback()
 			return nil, fmt.Errorf("failed to marshal marker file: %w", err)
 		}
 		if err := os.WriteFile(markerPath, data, 0644); err != nil {
+			rollback()
 			return nil, fmt.Errorf("failed to create marker file: %w", err)
 		}
+		createdPaths = append(createdPaths, markerPath)
 	}
 	result.Created = append(result.Created, markerPath)
 
@@ -192,8 +212,10 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 	if !dryRun {
 		// Write empty YAML array
 		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0644); err != nil {
+			rollback()
 			return nil, fmt.Errorf("failed to create contacts file: %w", err)
 		}
+		createdPaths = append(createdPaths, contactsPath)
 	}
 	result.Created = append(result.Created, contactsPath)
 
@@ -206,13 +228,35 @@ func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult
 	if !dryRun {
 		data, err := yaml.Marshal(summaryContent)
 		if err != nil {
+			rollback()
 			return nil, fmt.Errorf("failed to marshal summary file: %w", err)
 		}
 		if err := os.WriteFile(summaryPath, data, 0644); err != nil {
+			rollback()
 			return nil, fmt.Errorf("failed to create summary file: %w", err)
 		}
+		createdPaths = append(createdPaths, summaryPath)
 	}
 	result.Created = append(result.Created, summaryPath)
+
+	// Create files.yaml and files.yaml.sha256 using manifest generator
+	if !dryRun {
+		manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+		fileManifest, err := manifestGenerator.GenerateFileManifest()
+		if err != nil {
+			rollback()
+			return nil, fmt.Errorf("failed to generate file manifest: %w", err)
+		}
+
+		if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
+			rollback()
+			return nil, fmt.Errorf("failed to write manifest files: %w", err)
+		}
+		createdPaths = append(createdPaths, filepath.Join(repoRoot, "files.yaml"))
+		createdPaths = append(createdPaths, filepath.Join(repoRoot, "files.yaml.sha256"))
+	}
+	result.Created = append(result.Created, filepath.Join(repoRoot, "files.yaml"))
+	result.Created = append(result.Created, filepath.Join(repoRoot, "files.yaml.sha256"))
 
 	return result, nil
 }

@@ -48,7 +48,31 @@ func (cm *ContactsManager) LoadContacts() error {
 
 	var contactsData ContactsData
 	if err := yaml.Unmarshal(data, &contactsData); err != nil {
-		return fmt.Errorf("failed to parse contacts.yaml: %w", err)
+		// Try parsing with old format (string array)
+		var oldFormatData struct {
+			Contacts    []*Contact `yaml:"contacts"`
+			Unprocessed []string   `yaml:"unprocessed,omitempty"`
+		}
+		if oldErr := yaml.Unmarshal(data, &oldFormatData); oldErr != nil {
+			return fmt.Errorf("failed to parse contacts.yaml: %w", err)
+		}
+
+		// Convert old format to new format
+		contactsData.Contacts = oldFormatData.Contacts
+		for _, entry := range oldFormatData.Unprocessed {
+			// Parse "phone: name" format
+			parts := strings.SplitN(entry, ":", 2)
+			if len(parts) == 2 {
+				phone := strings.TrimSpace(parts[0])
+				name := strings.TrimSpace(parts[1])
+				if phone != "" && name != "" {
+					contactsData.Unprocessed = append(contactsData.Unprocessed, UnprocessedEntry{
+						PhoneNumber:  phone,
+						ContactNames: []string{name},
+					})
+				}
+			}
+		}
 	}
 
 	// Clear existing data
@@ -105,19 +129,17 @@ func (cm *ContactsManager) LoadContacts() error {
 
 	// Parse unprocessed section
 	for _, entry := range contactsData.Unprocessed {
-		// Parse "phone: name" format
-		parts := strings.SplitN(entry, ":", 2)
-		if len(parts) != 2 {
-			continue // Skip malformed entries
-		}
+		phone := entry.PhoneNumber
+		names := entry.ContactNames
 
-		phone := strings.TrimSpace(parts[0])
-		name := strings.TrimSpace(parts[1])
-
-		if phone != "" && name != "" {
+		if phone != "" && len(names) > 0 {
 			normalized := normalizePhoneNumber(phone)
 			if normalized != "" {
-				cm.unprocessed[normalized] = append(cm.unprocessed[normalized], name)
+				for _, name := range names {
+					if name != "" {
+						cm.unprocessed[normalized] = append(cm.unprocessed[normalized], name)
+					}
+				}
 			}
 		}
 	}
@@ -252,6 +274,93 @@ func (cm *ContactsManager) GetUnprocessedContacts() map[string][]string {
 	return result
 }
 
+// AddUnprocessedContacts adds contacts from multi-address SMS parsing
+func (cm *ContactsManager) AddUnprocessedContacts(addresses, contactNames string) error {
+	// Parse addresses separated by ~
+	addressList := strings.Split(addresses, "~")
+	// Parse contact names separated by ,
+	nameList := strings.Split(contactNames, ",")
+
+	// Validate equal counts
+	if len(addressList) != len(nameList) {
+		return fmt.Errorf("address count (%d) does not match contact name count (%d)", len(addressList), len(nameList))
+	}
+
+	// Process each address-name pair
+	for i, address := range addressList {
+		name := nameList[i]
+
+		// Skip empty values
+		if address == "" || name == "" {
+			continue
+		}
+
+		// Check if this number is known in main contacts (no normalization per requirement)
+		if cm.IsKnownNumber(address) {
+			continue // Skip known contacts
+		}
+
+		// Add to unprocessed using raw address (no normalization per requirement)
+		cm.addUnprocessedEntry(address, name)
+	}
+
+	return nil
+}
+
+// GetUnprocessedEntries returns all unprocessed entries in structured format
+func (cm *ContactsManager) GetUnprocessedEntries() []UnprocessedEntry {
+	var entries []UnprocessedEntry
+
+	// Group by raw phone number and sort
+	phoneNumbers := make([]string, 0, len(cm.unprocessed))
+	for phone := range cm.unprocessed {
+		phoneNumbers = append(phoneNumbers, phone)
+	}
+
+	// Sort by raw phone number (lexicographic)
+	for i := 0; i < len(phoneNumbers); i++ {
+		for j := i + 1; j < len(phoneNumbers); j++ {
+			if phoneNumbers[i] > phoneNumbers[j] {
+				phoneNumbers[i], phoneNumbers[j] = phoneNumbers[j], phoneNumbers[i]
+			}
+		}
+	}
+
+	// Create entries with combined contact names
+	for _, phone := range phoneNumbers {
+		names := cm.unprocessed[phone]
+		if len(names) > 0 {
+			entry := UnprocessedEntry{
+				PhoneNumber:  phone,
+				ContactNames: make([]string, len(names)),
+			}
+			copy(entry.ContactNames, names)
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries
+}
+
+// addUnprocessedEntry adds a single unprocessed entry (internal helper)
+func (cm *ContactsManager) addUnprocessedEntry(phone, name string) {
+	normalized := normalizePhoneNumber(phone)
+	if normalized == "" {
+		return // Skip invalid phone numbers
+	}
+
+	// Check if this exact combination already exists
+	existingNames := cm.unprocessed[normalized]
+	for _, existingName := range existingNames {
+		if existingName == name {
+			return // Duplicate, skip
+		}
+	}
+
+	// Add the new name
+	cm.unprocessed[normalized] = append(cm.unprocessed[normalized], name)
+}
+
 // SaveContacts writes the current state to contacts.yaml
 func (cm *ContactsManager) SaveContacts(path string) error {
 	// Prepare data structure for YAML
@@ -270,10 +379,14 @@ func (cm *ContactsManager) SaveContacts(path string) error {
 		contactsData.Contacts = append(contactsData.Contacts, contactCopy)
 	}
 
-	// Add unprocessed entries in "phone: name" format
+	// Add unprocessed entries in structured format
 	for phone, names := range cm.unprocessed {
-		for _, name := range names {
-			entry := fmt.Sprintf("%s: %s", phone, name)
+		if len(names) > 0 {
+			entry := UnprocessedEntry{
+				PhoneNumber:  phone,
+				ContactNames: make([]string, len(names)),
+			}
+			copy(entry.ContactNames, names)
 			contactsData.Unprocessed = append(contactsData.Unprocessed, entry)
 		}
 	}

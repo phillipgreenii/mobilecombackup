@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 	"gopkg.in/yaml.v3"
 )
@@ -36,17 +37,6 @@ type SummaryContent struct {
 	} `yaml:"counts"`
 }
 
-// FileEntry represents a single file entry in files.yaml
-type FileEntry struct {
-	File      string `yaml:"file"`
-	SHA256    string `yaml:"sha256"`
-	SizeBytes int64  `yaml:"size_bytes"`
-}
-
-// FileManifest represents the structure of files.yaml
-type FileManifest struct {
-	Files []FileEntry `yaml:"files"`
-}
 
 // Autofixer interface for fixing validation violations
 type Autofixer interface {
@@ -506,147 +496,29 @@ func (a *AutofixerImpl) createSummaryFile() error {
 }
 
 func (a *AutofixerImpl) createFilesManifest() error {
-	manifestPath := filepath.Join(a.repositoryRoot, "files.yaml")
-
-	// Scan repository for all files (excluding files.yaml itself and temp files)
-	manifest := FileManifest{
-		Files: []FileEntry{},
-	}
-
-	// First, count total files for progress reporting
-	var totalFiles int
-	err := filepath.Walk(a.repositoryRoot, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			relPath, _ := filepath.Rel(a.repositoryRoot, path)
-			if relPath != "files.yaml" && relPath != "files.yaml.sha256" &&
-				!strings.HasSuffix(relPath, ".tmp") && !strings.HasPrefix(filepath.Base(relPath), ".") {
-				totalFiles++
-			}
-		}
-		return nil
-	})
+	// Use the shared manifest generator
+	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
+	
+	// Generate manifest
+	fileManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
-		return fmt.Errorf("failed to count files: %w", err)
+		return fmt.Errorf("failed to generate file manifest: %w", err)
 	}
 
-	// Now process files with progress reporting
-	var processedFiles int
-	err = filepath.Walk(a.repositoryRoot, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip directories
-		if info.IsDir() {
-			return nil
-		}
-
-		// Get relative path
-		relPath, err := filepath.Rel(a.repositoryRoot, path)
-		if err != nil {
-			return err
-		}
-
-		// Skip files.yaml itself, temp files, and hidden files
-		if relPath == "files.yaml" || relPath == "files.yaml.sha256" ||
-			strings.HasSuffix(relPath, ".tmp") || strings.HasPrefix(filepath.Base(relPath), ".") {
-			return nil
-		}
-
-		processedFiles++
-
-		// Report progress every 1000 files or for the first/last file
-		if processedFiles%1000 == 0 || processedFiles == 1 || processedFiles == totalFiles {
-			a.reporter.ReportProgress(processedFiles, totalFiles)
-		}
-
-		// Calculate SHA-256
-		hash, err := calculateFileHash(path)
-		if err != nil {
-			return fmt.Errorf("failed to calculate hash for %s: %w", relPath, err)
-		}
-
-		// Add to manifest
-		manifest.Files = append(manifest.Files, FileEntry{
-			File:      relPath,
-			SHA256:    hash,
-			SizeBytes: info.Size(),
-		})
-
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to scan repository: %w", err)
-	}
-
-	// Marshal to YAML
-	data, err := yaml.Marshal(manifest)
-	if err != nil {
-		return fmt.Errorf("failed to marshal files manifest: %w", err)
-	}
-
-	// Write to file atomically
-	tempPath := manifestPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write temporary files manifest: %w", err)
-	}
-
-	// Atomic rename
-	if err := os.Rename(tempPath, manifestPath); err != nil {
-		_ = os.Remove(tempPath) // Clean up temp file, ignore error
-		return fmt.Errorf("failed to rename files manifest: %w", err)
+	// Always regenerate files.yaml
+	if err := manifestGenerator.WriteManifestOnly(fileManifest); err != nil {
+		return fmt.Errorf("failed to write manifest: %w", err)
 	}
 
 	return nil
 }
 
 func (a *AutofixerImpl) createManifestChecksum() error {
-	manifestPath := filepath.Join(a.repositoryRoot, "files.yaml")
-	checksumPath := filepath.Join(a.repositoryRoot, "files.yaml.sha256")
-
-	// Calculate hash of files.yaml
-	hash, err := calculateFileHash(manifestPath)
-	if err != nil {
-		return fmt.Errorf("failed to calculate files.yaml hash: %w", err)
-	}
-
-	// Create checksum content (just the hash)
-	checksumContent := hash + "\n"
-
-	// Write to file atomically
-	tempPath := checksumPath + ".tmp"
-	if err := os.WriteFile(tempPath, []byte(checksumContent), 0644); err != nil {
-		return fmt.Errorf("failed to write temporary checksum file: %w", err)
-	}
-
-	// Atomic rename
-	if err := os.Rename(tempPath, checksumPath); err != nil {
-		_ = os.Remove(tempPath) // Clean up temp file, ignore error
-		return fmt.Errorf("failed to rename checksum file: %w", err)
-	}
-
-	return nil
+	// Use the shared manifest generator - only create if missing
+	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
+	return manifestGenerator.WriteChecksumOnly()
 }
 
-// calculateFileHash calculates SHA-256 hash of a file
-func calculateFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer func() { _ = file.Close() }()
-
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
-}
 
 // fixXMLCountAttribute fixes the count attribute in XML files to match actual child element count
 func fixXMLCountAttribute(content []byte) ([]byte, int, error) {

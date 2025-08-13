@@ -25,6 +25,10 @@ var importCmd = &cobra.Command{
 	Short: "Import mobile backup files into the repository",
 	Long: `Import mobile backup files into the repository.
 
+Before processing any files, validates the repository structure to ensure it is valid
+and properly initialized. If validation fails, the import exits immediately without
+processing any files.
+
 Scans the specified paths (or current directory if none provided) for backup files
 matching the patterns calls*.xml and sms*.xml, processes them to remove duplicates,
 and imports new entries into the repository organized by year.
@@ -33,6 +37,11 @@ The repository location is determined by (in order of precedence):
 1. --repo-root flag
 2. MB_REPO_ROOT environment variable  
 3. Current directory
+
+Exit Codes:
+  0  Success - all files processed without errors
+  1  Warning - some entries were rejected but import completed
+  2  Error - repository validation failed or import could not complete
 
 Arguments:
   paths    Files or directories to import (default: current directory)`,

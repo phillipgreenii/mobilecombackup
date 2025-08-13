@@ -61,6 +61,41 @@ func TestInitCommandIntegration(t *testing.T) {
 						}
 					}
 				}
+
+				// Check required files
+				requiredFiles := []string{
+					"contacts.yaml",
+					"summary.yaml",
+					"files.yaml",
+					"files.yaml.sha256",
+				}
+				for _, file := range requiredFiles {
+					path := filepath.Join(repoRoot, file)
+					if _, err := os.Stat(path); err != nil {
+						t.Errorf("Required file %s not created: %v", file, err)
+					}
+				}
+
+				// Verify files.yaml contains expected entries
+				filesYamlPath := filepath.Join(repoRoot, "files.yaml")
+				filesData, err := os.ReadFile(filesYamlPath)
+				if err != nil {
+					t.Errorf("Failed to read files.yaml: %v", err)
+				} else {
+					if !strings.Contains(string(filesData), ".mobilecombackup.yaml") {
+						t.Error("files.yaml does not contain .mobilecombackup.yaml")
+					}
+					if !strings.Contains(string(filesData), "contacts.yaml") {
+						t.Error("files.yaml does not contain contacts.yaml")
+					}
+					if !strings.Contains(string(filesData), "summary.yaml") {
+						t.Error("files.yaml does not contain summary.yaml")
+					}
+					// Should NOT contain files.yaml itself or rejected/ files
+					if strings.Contains(string(filesData), "files.yaml") {
+						t.Error("files.yaml incorrectly contains reference to itself")
+					}
+				}
 			},
 		},
 		{

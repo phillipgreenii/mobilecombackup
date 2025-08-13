@@ -42,6 +42,7 @@ Usage:
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
+  import      Import mobile backup files into the repository
   info        Show repository information and statistics
   init        Initialize a new mobilecombackup repository
   validate    Validate a mobilecombackup repository
@@ -272,6 +273,115 @@ JSON output format:
   "validation_ok": true
 }
 ```
+
+### Import Command
+
+Import mobile backup files into the repository with deduplication, validation, and attachment extraction.
+
+```bash
+# Import specific files
+$ mobilecombackup import backup1.xml backup2.xml
+
+# Scan directory for backup files  
+$ mobilecombackup import /path/to/backups/
+
+# Import to specific repository
+$ mobilecombackup import --repo-root /path/to/repo backups/
+
+# Use environment variable for repository
+$ MB_REPO_ROOT=/path/to/repo mobilecombackup import backups/
+
+# Preview import without changes
+$ mobilecombackup import --dry-run backup.xml
+
+# Import only call logs
+$ mobilecombackup import --filter calls backups/
+
+# Import only SMS/MMS
+$ mobilecombackup import --filter sms backups/
+
+# Verbose output with progress details
+$ mobilecombackup import --verbose backups/
+
+# JSON output for scripting
+$ mobilecombackup import --json backups/
+
+# Continue even if rejected entries found
+$ mobilecombackup import --no-error-on-rejects backups/
+
+# Quiet mode (suppress progress output)
+$ mobilecombackup import --quiet backups/
+```
+
+The import command performs:
+1. **Repository Validation**: Comprehensive validation before any import operations
+2. **File Discovery**: Scans for `calls*.xml` and `sms*.xml` files in specified paths
+3. **Deduplication**: Detects and skips duplicate entries using SHA-256 hashes
+4. **Attachment Extraction**: Extracts images, videos, and documents from MMS messages
+5. **Contact Processing**: Extracts contact names with structured multi-address support
+6. **Year-Based Organization**: Partitions data by year with accurate statistics tracking
+7. **Atomic Write**: Single repository update operation with rollback on failure
+
+**File Discovery Rules:**
+- Follows symbolic links
+- Skips hidden directories (starting with `.`)
+- Excludes files already in repository structure
+- Processes files matching patterns: `calls*.xml`, `sms*.xml`
+
+**Import Process:**
+```
+Processing files...
+  Processing: backup-2024-01-15.xml (100 records)... (200 records)... done
+  Processing: calls-2024-02-01.xml (100 records)... done
+
+Import Summary:
+              Initial     Final     Delta     Duplicates    Rejected
+Calls Total        10        45        35             12           3
+  2023              5        15        10              3           1
+  2024              5        30        25              9           2
+SMS Total          23        78        55             20           5
+  2023             13        38        25              8           2
+  2024             10        40        30             12           3
+
+Files processed: 2
+Time taken: 2.3s
+```
+
+**JSON Output:**
+```json
+{
+  "files_processed": 2,
+  "duration_seconds": 2.3,
+  "total": {
+    "initial": 33,
+    "final": 123,
+    "added": 90,
+    "duplicates": 32,
+    "rejected": 8,
+    "errors": 0
+  },
+  "years": {
+    "2023": {"final": 53, "added": 35, "duplicates": 11, "rejected": 3},
+    "2024": {"final": 70, "added": 55, "duplicates": 21, "rejected": 5}
+  },
+  "rejection_files": ["rejected/calls/calls-abc12345-20240115.xml"]
+}
+```
+
+**Exit Codes:**
+- `0`: Import completed successfully
+- `1`: Import completed with rejected entries (unless `--no-error-on-rejects`)
+- `2`: Import failed (validation error, repository error, I/O error)
+
+**Features:**
+- **Repository Validation**: Fast-fail validation ensures repository integrity before import
+- **Progress Reporting**: Real-time progress every 100 records for large files
+- **Attachment Extraction**: Automatic extraction and deduplication of MMS attachments
+- **Contact Processing**: Structured extraction of contact names with multi-address support
+- **Year-Based Statistics**: Accurate tracking of initial, added, and duplicate counts per year
+- **Error Resilience**: Continue processing on individual entry failures, collect errors for reporting
+- **Dry-Run Support**: Preview import operations without modifying repository
+- **Filter Support**: Process only specific data types (calls or SMS)
 
 ### Exit Codes
 

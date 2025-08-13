@@ -90,6 +90,16 @@ func (m *mockContactsReader) GetContactsCount() int {
 	return len(m.contacts)
 }
 
+func (m *mockContactsReader) AddUnprocessedContacts(addresses, contactNames string) error {
+	// Mock implementation - do nothing for tests
+	return nil
+}
+
+func (m *mockContactsReader) GetUnprocessedEntries() []contacts.UnprocessedEntry {
+	// Mock implementation - return empty slice for tests
+	return []contacts.UnprocessedEntry{}
+}
+
 func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {
 	tempDir := t.TempDir()
 

@@ -140,6 +140,43 @@ func TestImportIntegration(t *testing.T) {
 			},
 		},
 		{
+			name: "repository missing marker file",
+			setupFunc: func(t *testing.T) (string, string) {
+				// Create directory without .mobilecombackup.yaml
+				repoPath := t.TempDir()
+				importPath := t.TempDir()
+				
+				// Create subdirectories but no marker file
+				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
+				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
+				
+				return repoPath, importPath
+			},
+			args:         []string{},
+			wantExitCode: 2,
+			wantInOutput: []string{"repository validation failed", "missing_marker_file"},
+		},
+		{
+			name: "repository with invalid structure",
+			setupFunc: func(t *testing.T) (string, string) {
+				// Create repository with marker but missing required directories
+				repoPath := t.TempDir()
+				importPath := t.TempDir()
+				
+				// Create only marker file, missing subdirectories
+				markerContent := `version: "2.0.0"
+created: "2024-01-01T00:00:00Z"
+creator: "mobilecombackup-test"
+`
+				_ = os.WriteFile(filepath.Join(repoPath, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+				
+				return repoPath, importPath
+			},
+			args:         []string{},
+			wantExitCode: 2,
+			wantInOutput: []string{"repository validation failed"},
+		},
+		{
 			name: "invalid repository",
 			setupFunc: func(t *testing.T) (string, string) {
 				// Non-existent repository
@@ -150,6 +187,23 @@ func TestImportIntegration(t *testing.T) {
 			args:         []string{},
 			wantExitCode: 2,
 			wantInOutput: []string{"invalid repository"},
+		},
+		{
+			name: "quiet mode with validation failure",
+			setupFunc: func(t *testing.T) (string, string) {
+				// Create directory without .mobilecombackup.yaml for validation failure
+				repoPath := t.TempDir()
+				importPath := t.TempDir()
+				
+				// Create subdirectories but no marker file
+				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
+				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
+				
+				return repoPath, importPath
+			},
+			args:         []string{"--quiet"},
+			wantExitCode: 2,
+			wantInOutput: []string{}, // Should be silent in quiet mode
 		},
 		{
 			name: "repository from environment",
