@@ -31,7 +31,7 @@ func (am *AttachmentManager) GetRepoPath() string {
 	return am.repoPath
 }
 
-// GetAttachmentPath returns the expected path for a hash
+// GetAttachmentPath returns the expected path for a hash (legacy format)
 func (am *AttachmentManager) GetAttachmentPath(hash string) string {
 	if len(hash) < 2 {
 		return ""
@@ -45,6 +45,50 @@ func (am *AttachmentManager) GetAttachmentPath(hash string) string {
 	return filepath.Join("attachments", prefix, hash)
 }
 
+// GetAttachmentDirPath returns the directory path for new directory-based structure
+func (am *AttachmentManager) GetAttachmentDirPath(hash string) string {
+	if len(hash) < 2 {
+		return ""
+	}
+
+	// Normalize hash to lowercase
+	hash = strings.ToLower(hash)
+
+	// Use first 2 characters as subdirectory, hash as directory name
+	prefix := hash[:2]
+	return filepath.Join("attachments", prefix, hash)
+}
+
+// IsNewFormat checks if an attachment uses the new directory format
+func (am *AttachmentManager) IsNewFormat(hash string) bool {
+	dirPath := am.GetAttachmentDirPath(hash)
+	fullDirPath := filepath.Join(am.repoPath, dirPath)
+
+	// Check if directory exists
+	if info, err := os.Stat(fullDirPath); err == nil && info.IsDir() {
+		// Check if metadata.yaml exists in the directory
+		metadataPath := filepath.Join(fullDirPath, "metadata.yaml")
+		if _, err := os.Stat(metadataPath); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsLegacyFormat checks if an attachment uses the legacy file format
+func (am *AttachmentManager) IsLegacyFormat(hash string) bool {
+	legacyPath := am.GetAttachmentPath(hash)
+	fullPath := filepath.Join(am.repoPath, legacyPath)
+
+	// Check if file exists and is not a directory
+	if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
+		return true
+	}
+
+	return false
+}
+
 // isValidHash checks if a hash string is valid (64-char lowercase hex)
 func isValidHash(hash string) bool {
 	if len(hash) != 64 {
@@ -56,31 +100,54 @@ func isValidHash(hash string) bool {
 	return matched
 }
 
-// GetAttachment retrieves attachment info by hash
+// GetAttachment retrieves attachment info by hash (supports both formats)
 func (am *AttachmentManager) GetAttachment(hash string) (*Attachment, error) {
 	if !isValidHash(hash) {
 		return nil, fmt.Errorf("invalid hash format: %s", hash)
 	}
 
-	relPath := am.GetAttachmentPath(hash)
-	fullPath := filepath.Join(am.repoPath, relPath)
-
 	attachment := &Attachment{
 		Hash: hash,
-		Path: relPath,
 	}
 
-	info, err := os.Stat(fullPath)
-	if os.IsNotExist(err) {
-		attachment.Exists = false
+	// Check new format first
+	if am.IsNewFormat(hash) {
+		storage := NewDirectoryAttachmentStorage(am.repoPath)
+		metadata, err := storage.GetMetadata(hash)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get metadata for new format attachment: %w", err)
+		}
+
+		relPath, err := storage.GetPath(hash)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get path for new format attachment: %w", err)
+		}
+
+		attachment.Path = relPath
+		attachment.Size = metadata.Size
+		attachment.Exists = true
 		return attachment, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to stat attachment %s: %w", hash, err)
 	}
 
-	attachment.Exists = true
-	attachment.Size = info.Size()
+	// Check legacy format
+	if am.IsLegacyFormat(hash) {
+		relPath := am.GetAttachmentPath(hash)
+		fullPath := filepath.Join(am.repoPath, relPath)
 
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat legacy attachment %s: %w", hash, err)
+		}
+
+		attachment.Path = relPath
+		attachment.Size = info.Size()
+		attachment.Exists = true
+		return attachment, nil
+	}
+
+	// Not found in either format
+	attachment.Exists = false
+	attachment.Path = am.GetAttachmentPath(hash) // Default to legacy path format
 	return attachment, nil
 }
 
@@ -93,21 +160,32 @@ func (am *AttachmentManager) AttachmentExists(hash string) (bool, error) {
 	return attachment.Exists, nil
 }
 
-// ReadAttachment reads the actual file content
+// ReadAttachment reads the actual file content (supports both formats)
 func (am *AttachmentManager) ReadAttachment(hash string) ([]byte, error) {
 	if !isValidHash(hash) {
 		return nil, fmt.Errorf("invalid hash format: %s", hash)
 	}
 
-	relPath := am.GetAttachmentPath(hash)
-	fullPath := filepath.Join(am.repoPath, relPath)
-
-	data, err := os.ReadFile(fullPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read attachment %s: %w", hash, err)
+	// Check new format first
+	if am.IsNewFormat(hash) {
+		storage := NewDirectoryAttachmentStorage(am.repoPath)
+		return storage.ReadAttachment(hash)
 	}
 
-	return data, nil
+	// Check legacy format
+	if am.IsLegacyFormat(hash) {
+		relPath := am.GetAttachmentPath(hash)
+		fullPath := filepath.Join(am.repoPath, relPath)
+
+		data, err := os.ReadFile(fullPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read legacy attachment %s: %w", hash, err)
+		}
+
+		return data, nil
+	}
+
+	return nil, fmt.Errorf("attachment not found: %s", hash)
 }
 
 // VerifyAttachment checks if file content matches its hash
@@ -137,7 +215,7 @@ func (am *AttachmentManager) ListAttachments() ([]*Attachment, error) {
 	return attachments, err
 }
 
-// StreamAttachments streams attachment info for memory efficiency
+// StreamAttachments streams attachment info for memory efficiency (supports both formats)
 func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error) error {
 	attachmentsDir := filepath.Join(am.repoPath, "attachments")
 
@@ -172,13 +250,9 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 		}
 
 		for _, prefixEntry := range prefixEntries {
-			if prefixEntry.IsDir() {
-				continue // Skip subdirectories
-			}
-
 			hash := prefixEntry.Name()
 			if !isValidHash(hash) {
-				continue // Skip invalid hash files
+				continue // Skip invalid hash names
 			}
 
 			// Verify hash starts with the correct prefix
@@ -186,20 +260,37 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 				continue // Skip misplaced files
 			}
 
-			info, err := prefixEntry.Info()
-			if err != nil {
-				continue // Skip files we can't read
-			}
+			if prefixEntry.IsDir() {
+				// New format: directory with metadata.yaml
+				metadataPath := filepath.Join(prefixDir, hash, "metadata.yaml")
+				if _, err := os.Stat(metadataPath); err == nil {
+					// This is a new format attachment
+					attachment, err := am.GetAttachment(hash)
+					if err != nil {
+						continue // Skip attachments we can't process
+					}
 
-			attachment := &Attachment{
-				Hash:   hash,
-				Path:   am.GetAttachmentPath(hash),
-				Size:   info.Size(),
-				Exists: true,
-			}
+					if err := callback(attachment); err != nil {
+						return err
+					}
+				}
+			} else {
+				// Legacy format: direct file
+				info, err := prefixEntry.Info()
+				if err != nil {
+					continue // Skip files we can't read
+				}
 
-			if err := callback(attachment); err != nil {
-				return err
+				attachment := &Attachment{
+					Hash:   hash,
+					Path:   am.GetAttachmentPath(hash),
+					Size:   info.Size(),
+					Exists: true,
+				}
+
+				if err := callback(attachment); err != nil {
+					return err
+				}
 			}
 		}
 	}
