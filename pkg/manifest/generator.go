@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,8 +27,12 @@ func NewManifestGenerator(repositoryRoot string) *ManifestGenerator {
 // GenerateFileManifest scans the repository and creates a complete file manifest
 // It excludes files.yaml itself, files.yaml.sha256, and anything in rejected/
 func (g *ManifestGenerator) GenerateFileManifest() (*FileManifest, error) {
+	now := time.Now().UTC()
 	manifest := &FileManifest{
-		Files: []FileEntry{},
+		Version:   "1.0",
+		Generated: now.Format(time.RFC3339),
+		Generator: "mobilecombackup dev",
+		Files:     []FileEntry{},
 	}
 
 	err := filepath.Walk(g.repositoryRoot, func(path string, info os.FileInfo, err error) error {
@@ -60,9 +65,10 @@ func (g *ManifestGenerator) GenerateFileManifest() (*FileManifest, error) {
 
 		// Add to manifest
 		manifest.Files = append(manifest.Files, FileEntry{
-			File:      relPath,
-			SHA256:    hash,
-			SizeBytes: info.Size(),
+			Name:     relPath,
+			Size:     info.Size(),
+			Checksum: fmt.Sprintf("sha256:%s", hash),
+			Modified: info.ModTime().UTC().Format(time.RFC3339),
 		})
 
 		return nil
@@ -170,8 +176,8 @@ func (g *ManifestGenerator) writeManifestChecksum() error {
 		return fmt.Errorf("failed to calculate files.yaml hash: %w", err)
 	}
 
-	// Create checksum content (just the hash)
-	checksumContent := hash + "\n"
+	// Create checksum content in standard format: "hash  filename"
+	checksumContent := hash + "  files.yaml\n"
 
 	// Write to file atomically
 	tempPath := checksumPath + ".tmp"

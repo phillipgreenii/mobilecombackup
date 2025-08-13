@@ -32,15 +32,15 @@ func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
 	}
 
 	for _, entry := range manifest.Files {
-		if _, expected := expectedFiles[entry.File]; expected {
-			expectedFiles[entry.File] = true
+		if _, expected := expectedFiles[entry.Name]; expected {
+			expectedFiles[entry.Name] = true
 
 			// Verify entry has required fields
-			if entry.SHA256 == "" {
-				t.Errorf("File %s missing SHA256", entry.File)
+			if entry.Checksum == "" || !strings.HasPrefix(entry.Checksum, "sha256:") {
+				t.Errorf("File %s missing or invalid checksum: %s", entry.Name, entry.Checksum)
 			}
-			if entry.SizeBytes <= 0 {
-				t.Errorf("File %s has invalid size: %d", entry.File, entry.SizeBytes)
+			if entry.Size <= 0 {
+				t.Errorf("File %s has invalid size: %d", entry.Name, entry.Size)
 			}
 		}
 	}
@@ -56,7 +56,7 @@ func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
 	excludedFiles := []string{"files.yaml", "files.yaml.sha256", "rejected/rejected-calls.xml", ".hidden-file"}
 	for _, entry := range manifest.Files {
 		for _, excluded := range excludedFiles {
-			if entry.File == excluded {
+			if entry.Name == excluded {
 				t.Errorf("Excluded file %s found in manifest", excluded)
 			}
 		}
@@ -87,7 +87,7 @@ func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 	// Find our test file in manifest
 	var foundEntry *FileEntry
 	for _, entry := range manifest.Files {
-		if strings.Contains(entry.File, "calls-jan.xml") {
+		if strings.Contains(entry.Name, "calls-jan.xml") {
 			foundEntry = &entry
 			break
 		}
@@ -99,13 +99,13 @@ func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 
 	// Verify path uses forward slashes (cross-platform)
 	expected := "calls/2023/calls-jan.xml"
-	if foundEntry.File != expected {
-		t.Errorf("Expected path %s, got %s", expected, foundEntry.File)
+	if foundEntry.Name != expected {
+		t.Errorf("Expected path %s, got %s", expected, foundEntry.Name)
 	}
 
 	// Verify no backslashes (Windows compatibility)
-	if strings.Contains(foundEntry.File, "\\") {
-		t.Errorf("Path contains backslashes: %s", foundEntry.File)
+	if strings.Contains(foundEntry.Name, "\\") {
+		t.Errorf("Path contains backslashes: %s", foundEntry.Name)
 	}
 }
 
@@ -147,9 +147,24 @@ func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	actualHash := strings.TrimSpace(string(checksumData))
+	actualLine := strings.TrimSpace(string(checksumData))
+
+	// Parse "hash  filename" format
+	parts := strings.Fields(actualLine)
+	if len(parts) != 2 {
+		t.Errorf("Invalid checksum format: expected 'hash  filename', got %s", actualLine)
+		return
+	}
+
+	actualHash := parts[0]
+	actualFilename := parts[1]
+
 	if actualHash != expectedHash {
 		t.Errorf("Checksum mismatch: expected %s, got %s", expectedHash, actualHash)
+	}
+
+	if actualFilename != "files.yaml" {
+		t.Errorf("Expected filename 'files.yaml', got %s", actualFilename)
 	}
 }
 
