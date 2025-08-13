@@ -561,14 +561,14 @@ func TestDisplayJSONSummaryYearOrdering(t *testing.T) {
 
 	// Verify the JSON output has years in ascending order by checking the raw JSON string
 	// Since JSON objects maintain insertion order in Go's json package, we can check the string position
-	
+
 	// For calls section, verify 2020 appears before 2022, which appears before 2024
 	callsYearsStart := strings.Index(output, `"calls"`)
 	if callsYearsStart == -1 {
 		t.Fatal("calls section not found in JSON output")
 	}
 	callsSection := output[callsYearsStart:]
-	
+
 	smsYearsStart := strings.Index(callsSection, `"sms"`)
 	if smsYearsStart != -1 {
 		callsSection = callsSection[:smsYearsStart] // Limit to just calls section
@@ -595,7 +595,7 @@ func TestDisplayJSONSummaryYearOrdering(t *testing.T) {
 		t.Fatal("sms section not found in JSON output")
 	}
 	smsSection := output[smsStart:]
-	
+
 	// Limit SMS section to just that section (before attachments)
 	attachmentsStart := strings.Index(smsSection, `"attachments"`)
 	if attachmentsStart != -1 {
@@ -626,7 +626,7 @@ func TestSortYearStatsForJSON(t *testing.T) {
 
 	result := sortYearStatsForJSON(yearStats)
 
-	// Since Go maps have non-deterministic iteration order, 
+	// Since Go maps have non-deterministic iteration order,
 	// we need to check ordering differently. The sortYearStatsForJSON function
 	// should create an ordered map in the internal representation.
 	// We'll verify by marshaling to JSON and checking the order in the JSON string.
@@ -648,7 +648,7 @@ func TestSortYearStatsForJSON(t *testing.T) {
 
 	// Verify ascending order
 	if index2020 > index2021 || index2021 > index2022 || index2022 > index2024 {
-		t.Errorf("Years not in ascending order in JSON. Positions: 2020=%d, 2021=%d, 2022=%d, 2024=%d\nJSON: %s", 
+		t.Errorf("Years not in ascending order in JSON. Positions: 2020=%d, 2021=%d, 2022=%d, 2024=%d\nJSON: %s",
 			index2020, index2021, index2022, index2024, jsonStr)
 	}
 
