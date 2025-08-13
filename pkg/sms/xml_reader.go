@@ -600,12 +600,35 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 		}
 	}
 
-	// Skip to end element since part is self-closing
-	if err := decoder.Skip(); err != nil {
-		return part, fmt.Errorf("failed to skip part element: %w", err)
-	}
+	// Parse child elements like AttachmentRef
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			return part, fmt.Errorf("error reading part elements: %w", err)
+		}
 
-	return part, nil
+		switch se := token.(type) {
+		case xml.StartElement:
+			switch se.Name.Local {
+			case "AttachmentRef":
+				// Read the text content of the AttachmentRef element
+				var attachmentRef string
+				if err := decoder.DecodeElement(&attachmentRef, &se); err != nil {
+					return part, fmt.Errorf("failed to decode AttachmentRef: %w", err)
+				}
+				part.AttachmentRef = attachmentRef
+			default:
+				// Skip unknown elements
+				if err := decoder.Skip(); err != nil {
+					return part, fmt.Errorf("failed to skip unknown element %s: %w", se.Name.Local, err)
+				}
+			}
+		case xml.EndElement:
+			if se.Name.Local == "part" {
+				return part, nil
+			}
+		}
+	}
 }
 
 // parseMMSAddresses parses the addresses section of an MMS
@@ -815,7 +838,39 @@ func (r *XMLSMSReader) GetAttachmentRefs(year int) ([]string, error) {
 	return refs, err
 }
 
-// GetAllAttachmentRefs returns all attachment references across all years
+// extractHashFromAttachmentPath extracts the hash from an attachment reference path
+// Expected format: attachments/xx/hash/filename or attachments/xx/hash
+// Returns the hash or empty string if path is invalid
+func extractHashFromAttachmentPath(attachmentPath string) string {
+	if attachmentPath == "" {
+		return ""
+	}
+
+	// Split path by separators
+	parts := strings.Split(attachmentPath, "/")
+
+	// Expected format: [attachments, prefix, hash, filename] or [attachments, prefix, hash]
+	if len(parts) < 3 || parts[0] != "attachments" {
+		return ""
+	}
+
+	// Extract potential hash (should be 64-char lowercase hex)
+	potentialHash := parts[2]
+	if len(potentialHash) != 64 {
+		return ""
+	}
+
+	// Validate it's a proper hex string
+	for _, char := range potentialHash {
+		if (char < '0' || char > '9') && (char < 'a' || char > 'f') {
+			return ""
+		}
+	}
+
+	return potentialHash
+}
+
+// GetAllAttachmentRefs returns all attachment references across all years as a map of hashes
 func (r *XMLSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
 	years, err := r.GetAvailableYears()
 	if err != nil {
@@ -829,7 +884,11 @@ func (r *XMLSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
 			return nil, fmt.Errorf("failed to get attachment refs for year %d: %w", year, err)
 		}
 		for _, ref := range refs {
-			allRefs[ref] = true
+			// Extract hash from attachment reference path
+			hash := extractHashFromAttachmentPath(ref)
+			if hash != "" {
+				allRefs[hash] = true
+			}
 		}
 	}
 
