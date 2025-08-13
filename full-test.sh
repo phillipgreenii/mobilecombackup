@@ -34,7 +34,11 @@ if [[ $(ls -1 "$repodir/sms" | wc -l) -eq 0 ]]; then
 	exit 2
 fi
 
-echo "Should have imported attachments (skipping - test data contains no extractable attachments)"
+echo "Should have imported attachments"
+if [[ $(ls -1 "$repodir/attachments" | wc -l) -eq 0 ]]; then
+	echo "ERROR: No attachments found" >&2
+	exit 2
+fi
 
 echo "Re-Import Test Data should work"
 ./mobilecombackup import --repo-root="$repodir" testdata
