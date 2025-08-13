@@ -358,12 +358,35 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 		}
 
 		for _, subEntry := range subEntries {
+			entryName := subEntry.Name()
+
 			if subEntry.IsDir() {
-				errors = append(errors, fmt.Sprintf("unexpected subdirectory: %s/%s", name, subEntry.Name()))
-				continue
+				// This could be a new format hash directory
+				if !isValidHash(entryName) {
+					errors = append(errors, fmt.Sprintf("invalid hash directory name: %s/%s", name, entryName))
+					continue
+				}
+
+				// Verify directory is in correct prefix (hash starts with directory name)
+				if !strings.HasPrefix(entryName, name) {
+					errors = append(errors, fmt.Sprintf("misplaced hash directory %s in prefix %s", entryName, name))
+					continue
+				}
+
+				// Check if this is a valid new format directory (has metadata.yaml)
+				metadataPath := filepath.Join(subDir, entryName, "metadata.yaml")
+				if _, err := os.Stat(metadataPath); err == nil {
+					// Valid new format directory - no further validation needed here
+					continue
+				} else {
+					// Directory without metadata.yaml is invalid
+					errors = append(errors, fmt.Sprintf("hash directory missing metadata.yaml: %s/%s", name, entryName))
+					continue
+				}
 			}
 
-			fileName := subEntry.Name()
+			// Legacy format: direct file in prefix directory
+			fileName := entryName
 			if !isValidHash(fileName) {
 				errors = append(errors, fmt.Sprintf("invalid hash filename: %s/%s", name, fileName))
 				continue
