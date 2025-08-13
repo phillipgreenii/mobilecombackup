@@ -63,12 +63,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isEx
 	// Normalize content type (remove parameters like charset)
 	contentType = strings.ToLower(strings.Split(contentType, ";")[0])
 
-	// If explicitly marked as attachment (cd="attachment"), extract regardless of content type
-	if isExplicitAttachment {
-		return true
-	}
-
-	// Check if explicitly skipped
+	// Check if explicitly skipped (skipped types override everything, including explicit attachment marking)
 	for _, skipped := range config.SkippedTypes {
 		if contentType == strings.ToLower(skipped) {
 			return false
@@ -80,6 +75,12 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isEx
 		if contentType == strings.ToLower(extractable) {
 			return true
 		}
+	}
+
+	// For unknown content types, only extract if explicitly marked as attachment
+	// This handles edge cases like proprietary formats marked as attachments
+	if isExplicitAttachment {
+		return true
 	}
 
 	// Default: don't extract unknown types

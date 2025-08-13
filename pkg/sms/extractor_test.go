@@ -92,12 +92,27 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 		})
 	}
 
-	// Test explicit attachment marking
-	t.Run("Explicit attachment overrides content type filtering", func(t *testing.T) {
-		// text/plain is normally skipped, but should be extracted if marked as attachment
+	// Test that skipped types are never extracted, even with explicit attachment marking
+	t.Run("Skipped content types override explicit attachment marking", func(t *testing.T) {
+		// text/plain is skipped and should never be extracted, even if marked as attachment
 		result := extractor.shouldExtractContentType("text/plain", true, config)
+		if result {
+			t.Errorf("shouldExtractContentType('text/plain', true, config) = true, expected false (skipped types should never be extracted)")
+		}
+	})
+
+	// Test that unknown types can still be extracted with explicit attachment marking
+	t.Run("Unknown content types can be extracted with explicit attachment marking", func(t *testing.T) {
+		// application/unknown is not in extractable or skipped lists, should be extracted if marked as attachment
+		result := extractor.shouldExtractContentType("application/unknown", true, config)
 		if !result {
-			t.Errorf("shouldExtractContentType('text/plain', true, config) = false, expected true")
+			t.Errorf("shouldExtractContentType('application/unknown', true, config) = false, expected true")
+		}
+		
+		// But not extracted without explicit marking
+		result = extractor.shouldExtractContentType("application/unknown", false, config)
+		if result {
+			t.Errorf("shouldExtractContentType('application/unknown', false, config) = true, expected false")
 		}
 	})
 }

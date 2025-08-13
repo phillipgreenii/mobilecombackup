@@ -62,7 +62,7 @@ func TestChecksumValidatorImpl_VerifyFileChecksum(t *testing.T) {
 	// Calculate correct checksum
 	hasher := sha256.New()
 	hasher.Write(testContent)
-	correctChecksum := fmt.Sprintf("sha256:%x", hasher.Sum(nil))
+	correctChecksum := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	// Test with correct checksum
 	err = validator.VerifyFileChecksum(testFile, correctChecksum)

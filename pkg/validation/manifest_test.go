@@ -245,7 +245,8 @@ func TestManifestValidatorImpl_VerifyManifestChecksum(t *testing.T) {
 
 	// Test with correct checksum
 	checksumPath := filepath.Join(tempDir, "files.yaml.sha256")
-	err = os.WriteFile(checksumPath, []byte(correctChecksum), 0644)
+	checksumContent := fmt.Sprintf("%s  files.yaml", correctChecksum)
+	err = os.WriteFile(checksumPath, []byte(checksumContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create files.yaml.sha256: %v", err)
 	}
