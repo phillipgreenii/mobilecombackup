@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/importer"
@@ -197,11 +198,19 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 	// Display calls statistics
 	if importFilter == "" || importFilter == "calls" {
 		fmt.Println("\nCalls:")
-		for year, stats := range summary.Calls.YearStats {
-			fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
-				year, stats.Final, stats.Added, stats.Duplicates)
-		}
 		if len(summary.Calls.YearStats) > 0 {
+			// Sort years in ascending order for consistent display
+			var years []int
+			for year := range summary.Calls.YearStats {
+				years = append(years, year)
+			}
+			sort.Ints(years)
+
+			for _, year := range years {
+				stats := summary.Calls.YearStats[year]
+				fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
+					year, stats.Final, stats.Added, stats.Duplicates)
+			}
 			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
 				summary.Calls.Total.Final, summary.Calls.Total.Added, summary.Calls.Total.Duplicates)
 		}
@@ -210,11 +219,19 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 	// Display SMS statistics
 	if importFilter == "" || importFilter == "sms" {
 		fmt.Println("SMS:")
-		for year, stats := range summary.SMS.YearStats {
-			fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
-				year, stats.Final, stats.Added, stats.Duplicates)
-		}
 		if len(summary.SMS.YearStats) > 0 {
+			// Sort years in ascending order for consistent display
+			var years []int
+			for year := range summary.SMS.YearStats {
+				years = append(years, year)
+			}
+			sort.Ints(years)
+
+			for _, year := range years {
+				stats := summary.SMS.YearStats[year]
+				fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
+					year, stats.Final, stats.Added, stats.Duplicates)
+			}
 			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
 				summary.SMS.Total.Final, summary.SMS.Total.Added, summary.SMS.Total.Duplicates)
 		}
