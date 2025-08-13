@@ -85,12 +85,21 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := extractor.shouldExtractContentType(tt.contentType, config)
+			result := extractor.shouldExtractContentType(tt.contentType, false, config)
 			if result != tt.expected {
 				t.Errorf("shouldExtractContentType(%q) = %v, expected %v", tt.contentType, result, tt.expected)
 			}
 		})
 	}
+
+	// Test explicit attachment marking
+	t.Run("Explicit attachment overrides content type filtering", func(t *testing.T) {
+		// text/plain is normally skipped, but should be extracted if marked as attachment
+		result := extractor.shouldExtractContentType("text/plain", true, config)
+		if !result {
+			t.Errorf("shouldExtractContentType('text/plain', true, config) = false, expected true")
+		}
+	})
 }
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {

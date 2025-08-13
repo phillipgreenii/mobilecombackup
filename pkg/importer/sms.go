@@ -140,8 +140,8 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 		}
 
 		// Extract attachments from MMS (after validation, before deduplication)
-		if mmsMsg, ok := msg.(*sms.MMS); ok {
-			extractionSummary, err := si.attachmentExtractor.ExtractAttachmentsFromMMS(mmsMsg, si.contentTypeConfig)
+		if mmsMsg, ok := msg.(sms.MMS); ok {
+			extractionSummary, err := si.attachmentExtractor.ExtractAttachmentsFromMMS(&mmsMsg, si.contentTypeConfig)
 			if err != nil {
 				// Reject the entire message if attachment extraction fails
 				summary.Rejected++
@@ -151,6 +151,9 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 			// Update overall attachment statistics
 			si.attachmentStats.AddMMSExtractionSummary(extractionSummary)
+
+			// Update the message interface with the modified MMS
+			msg = mmsMsg
 		}
 
 		// Extract contact information for valid messages

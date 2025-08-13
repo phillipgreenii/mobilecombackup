@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,9 +59,14 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 }
 
 // shouldExtractContentType determines if a content type should be extracted
-func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, config ContentTypeConfig) bool {
+func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isExplicitAttachment bool, config ContentTypeConfig) bool {
 	// Normalize content type (remove parameters like charset)
 	contentType = strings.ToLower(strings.Split(contentType, ";")[0])
+
+	// If explicitly marked as attachment (cd="attachment"), extract regardless of content type
+	if isExplicitAttachment {
+		return true
+	}
 
 	// Check if explicitly skipped
 	for _, skipped := range config.SkippedTypes {
@@ -84,11 +88,27 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, conf
 
 // ExtractAttachmentFromPart extracts an attachment from an MMS part if needed
 func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config ContentTypeConfig) (*AttachmentExtractionResult, error) {
-	log.Printf("[DEBUG] ExtractAttachmentFromPart: CT=%s, DataLen=%d", part.ContentType, len(part.Data))
+	// Log for debugging if needed
+	// log.Printf("[DEBUG] ExtractAttachmentFromPart: CT=%s, DataLen=%d, TextLen=%d, CD=%s",
+	//	part.ContentType, len(part.Data), len(part.Text), part.ContentDisp)
 
-	// Skip if no data to extract
-	if part.Data == "" || part.Data == "null" {
-		log.Printf("[DEBUG] Skipping part - no data")
+	// Check if this is explicitly marked as an attachment
+	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
+
+	// Determine what content we have to extract
+	var contentToExtract string
+	var isBase64 bool
+
+	if part.Data != "" && part.Data != "null" {
+		// Binary data (base64 encoded)
+		contentToExtract = part.Data
+		isBase64 = true
+	} else if part.Text != "" && part.Text != "null" && isExplicitAttachment {
+		// Text content marked as attachment
+		contentToExtract = part.Text
+		isBase64 = false
+	} else {
+		// No extractable content - skip
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "no-data",
@@ -97,8 +117,8 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 	}
 
 	// Skip if content type should not be extracted
-	if !ae.shouldExtractContentType(part.ContentType, config) {
-		log.Printf("[DEBUG] Skipping part - content type filtered: %s", part.ContentType)
+	if !ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config) {
+		// Content type filtered - skip
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "content-type-filtered",
@@ -106,9 +126,10 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		}, nil
 	}
 
-	// Skip small files (likely metadata)
-	if len(part.Data) < 1024 { // Less than 1KB when base64 encoded
-		log.Printf("[DEBUG] Skipping part - too small: %d bytes", len(part.Data))
+	// For text content, skip size check as text attachments can be small
+	// For binary content, skip small files (likely metadata)
+	if isBase64 && len(contentToExtract) < 1024 {
+		// Too small - skip
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "too-small",
@@ -116,13 +137,22 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		}, nil
 	}
 
-	log.Printf("[DEBUG] Proceeding with extraction for %s, data length: %d", part.ContentType, len(part.Data))
+	// Proceed with extraction
 
-	// Decode base64 data
-	decodedData, err := base64.StdEncoding.DecodeString(part.Data)
-	if err != nil {
-		log.Printf("[DEBUG] Failed to decode base64 data: %v", err)
-		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
+	// Decode content based on type
+	var decodedData []byte
+	var err error
+
+	if isBase64 {
+		// Decode base64 data
+		decodedData, err = base64.StdEncoding.DecodeString(contentToExtract)
+		if err != nil {
+			// Failed to decode base64 data
+			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
+		}
+	} else {
+		// Use text content as-is (UTF-8 encoded)
+		decodedData = []byte(contentToExtract)
 	}
 
 	// Calculate SHA-256 hash
@@ -190,8 +220,9 @@ func UpdatePartWithExtraction(part *MMSPart, result *AttachmentExtractionResult)
 		return
 	}
 
-	// Remove base64 data and replace with path reference
+	// Remove original content and replace with path reference
 	part.Data = ""
+	part.Text = "" // Clear text content if it was extracted as attachment
 	part.Path = result.Path
 	part.OriginalSize = result.OriginalSize
 	part.ExtractionDate = result.ExtractionDate.Format(time.RFC3339)
@@ -200,7 +231,7 @@ func UpdatePartWithExtraction(part *MMSPart, result *AttachmentExtractionResult)
 
 // ExtractAttachmentsFromMMS processes all parts of an MMS message for attachment extraction
 func (ae *AttachmentExtractor) ExtractAttachmentsFromMMS(mms *MMS, config ContentTypeConfig) (*MMSExtractionSummary, error) {
-	log.Printf("[DEBUG] ExtractAttachmentsFromMMS called: MMS date=%d, parts=%d", mms.GetDate(), len(mms.Parts))
+	// Extract attachments from MMS message
 
 	summary := &MMSExtractionSummary{
 		MessageDate: mms.GetDate(),
@@ -209,16 +240,16 @@ func (ae *AttachmentExtractor) ExtractAttachmentsFromMMS(mms *MMS, config Conten
 	}
 
 	for i := range mms.Parts {
-		log.Printf("[DEBUG] Processing part %d: CT=%s, DataLen=%d", i, mms.Parts[i].ContentType, len(mms.Parts[i].Data))
+		// Process part for attachment extraction
 		result, err := ae.ExtractAttachmentFromPart(&mms.Parts[i], config)
 		if err != nil {
-			log.Printf("[DEBUG] Error extracting part %d: %v", i, err)
+			// Error extracting part
 			return nil, fmt.Errorf("failed to extract attachment from part %d: %w", i, err)
 		}
 
 		// Update the part if needed
 		UpdatePartWithExtraction(&mms.Parts[i], result)
-		log.Printf("[DEBUG] Part %d result: Action=%s, Reason=%s, UpdatePart=%t", i, result.Action, result.Reason, result.UpdatePart)
+		// Part extraction complete
 
 		summary.Results = append(summary.Results, result)
 
