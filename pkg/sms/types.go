@@ -171,7 +171,7 @@ type MMSPart struct {
 	Path           string `xml:"path,attr"`            // Repository-relative path to extracted attachment
 	OriginalSize   int64  `xml:"original_size,attr"`   // Size of decoded attachment in bytes
 	ExtractionDate string `xml:"extraction_date,attr"` // When attachment was extracted (ISO8601)
-	AttachmentRef  string // Internal field for tracking, not serialized
+	AttachmentRef  string `xml:"AttachmentRef"`        // Attachment reference path for validation
 }
 
 // MMSAddress represents an address in an MMS
