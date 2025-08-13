@@ -307,16 +307,16 @@ func TestValidateCommandFlags(t *testing.T) {
 	// Test that flags are properly registered
 	cmd := validateCmd
 
-	// Check verbose flag
-	verboseFlag := cmd.Flags().Lookup("verbose")
-	if verboseFlag == nil {
-		t.Error("verbose flag not registered")
-	}
-
 	// Check output-json flag
 	jsonFlag := cmd.Flags().Lookup("output-json")
 	if jsonFlag == nil {
 		t.Error("output-json flag not registered")
+	}
+
+	// Check that verbose flag is available as a global flag
+	verboseFlag := rootCmd.PersistentFlags().Lookup("verbose")
+	if verboseFlag == nil {
+		t.Error("verbose flag not registered as global flag")
 	}
 }
 

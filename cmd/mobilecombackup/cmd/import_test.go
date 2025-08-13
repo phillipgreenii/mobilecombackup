@@ -59,6 +59,7 @@ func TestImportCommand(t *testing.T) {
 			}
 			// Re-register commands manually
 			rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress non-error output")
+			rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 			rootCmd.PersistentFlags().StringVar(&repoRoot, "repo-root", ".", "Path to repository root")
 			rootCmd.AddCommand(importCmd)
 
@@ -204,7 +205,6 @@ func TestImportCommandFlags(t *testing.T) {
 	// Check flags exist
 	expectedFlags := []string{
 		"dry-run",
-		"verbose",
 		"json",
 		"filter",
 		"no-error-on-rejects",
@@ -221,6 +221,7 @@ func TestImportCommandFlags(t *testing.T) {
 	globalFlags := []string{
 		"repo-root",
 		"quiet",
+		"verbose",
 	}
 
 	for _, flagName := range globalFlags {

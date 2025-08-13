@@ -12,6 +12,7 @@ import (
 func initRootCmd() {
 	rootCmd.SetVersionTemplate("mobilecombackup version {{.Version}}\n")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress non-error output")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().StringVar(&repoRoot, "repo-root", ".", "Path to repository root")
 }
 

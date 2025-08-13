@@ -14,7 +14,6 @@ import (
 
 var (
 	importDryRun     bool
-	importVerbose    bool
 	importJSON       bool
 	importFilter     string
 	noErrorOnRejects bool
@@ -65,7 +64,6 @@ func init() {
 
 	// Local flags
 	importCmd.Flags().BoolVar(&importDryRun, "dry-run", false, "Preview import without making changes")
-	importCmd.Flags().BoolVar(&importVerbose, "verbose", false, "Enable verbose output")
 	importCmd.Flags().BoolVar(&importJSON, "json", false, "Output summary in JSON format")
 	importCmd.Flags().StringVar(&importFilter, "filter", "", "Process only specific type: calls, sms")
 	importCmd.Flags().BoolVar(&noErrorOnRejects, "no-error-on-rejects", false, "Don't exit with error code if rejects found")
@@ -99,7 +97,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 		RepoRoot: resolvedRepoRoot,
 		Paths:    paths,
 		DryRun:   importDryRun,
-		Verbose:  importVerbose,
+		Verbose:  verbose,
 		Quiet:    effectiveQuiet,
 		Filter:   importFilter,
 	}

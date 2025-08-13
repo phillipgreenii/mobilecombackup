@@ -10,6 +10,7 @@ import (
 var (
 	version  string
 	quiet    bool
+	verbose  bool
 	repoRoot string
 )
 
@@ -44,10 +45,32 @@ func init() {
 
 	// Global flags
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress non-error output")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().StringVar(&repoRoot, "repo-root", ".", "Path to repository root")
 }
 
-// Helper functions for error handling
+// Helper functions for output and logging
 func PrintError(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+}
+
+// PrintInfo prints informational messages unless quiet mode is enabled
+func PrintInfo(format string, args ...interface{}) {
+	if !quiet {
+		fmt.Printf(format+"\n", args...)
+	}
+}
+
+// PrintVerbose prints verbose messages only when verbose mode is enabled
+func PrintVerbose(format string, args ...interface{}) {
+	if verbose && !quiet {
+		fmt.Printf(format+"\n", args...)
+	}
+}
+
+// PrintDebug prints debug messages only when verbose mode is enabled
+func PrintDebug(format string, args ...interface{}) {
+	if verbose && !quiet {
+		fmt.Printf("DEBUG: "+format+"\n", args...)
+	}
 }

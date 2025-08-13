@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	verbose                 bool
 	outputJSON              bool
 	removeOrphanAttachments bool
 	validateDryRun          bool
@@ -43,7 +42,6 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 
 	// Local flags
-	validateCmd.Flags().BoolVar(&verbose, "verbose", false, "Show detailed progress information")
 	validateCmd.Flags().BoolVar(&outputJSON, "output-json", false, "Output results in JSON format")
 	validateCmd.Flags().BoolVar(&removeOrphanAttachments, "remove-orphan-attachments", false, "Remove orphaned attachment files")
 	validateCmd.Flags().BoolVar(&validateDryRun, "dry-run", false, "Show what would be done without making changes")
