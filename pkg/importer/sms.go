@@ -141,23 +141,16 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 		// Extract attachments from MMS (after validation, before deduplication)
 		if mmsMsg, ok := msg.(*sms.MMS); ok {
-			fmt.Printf("[IMPORT-DEBUG] Found MMS message with %d parts\n", len(mmsMsg.Parts))
 			extractionSummary, err := si.attachmentExtractor.ExtractAttachmentsFromMMS(mmsMsg, si.contentTypeConfig)
 			if err != nil {
-				fmt.Printf("[IMPORT-DEBUG] Attachment extraction failed: %v\n", err)
 				// Reject the entire message if attachment extraction fails
 				summary.Rejected++
 				// TODO: Write rejection with reason "attachment-extraction-error"
 				return nil
 			}
 
-			fmt.Printf("[IMPORT-DEBUG] Extraction completed: %d extracted, %d referenced, %d skipped\n",
-				extractionSummary.ExtractedCount, extractionSummary.ReferencedCount, extractionSummary.SkippedCount)
-
 			// Update overall attachment statistics
 			si.attachmentStats.AddMMSExtractionSummary(extractionSummary)
-		} else {
-			fmt.Printf("[IMPORT-DEBUG] Message is %T, not MMS\n", msg)
 		}
 
 		// Extract contact information for valid messages
