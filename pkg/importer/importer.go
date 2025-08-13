@@ -7,7 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
 
 // YearTracker tracks per-year statistics during import
@@ -279,32 +283,60 @@ func validateRepository(repoRoot string) error {
 		return fmt.Errorf("repository path is not a directory: %s", repoRoot)
 	}
 
-	// TODO: Fix validation interface compatibility issue and re-enable
 	// Create readers required for validation
-	// callsReader := calls.NewXMLCallsReader(repoRoot)
-	// smsReader := sms.NewXMLSMSReader(repoRoot)
-	// attachmentReader := attachments.NewAttachmentManager(repoRoot)
-	// contactsReader := contacts.NewContactsManager(repoRoot)
+	callsReader := calls.NewXMLCallsReader(repoRoot)
+	smsReader := sms.NewXMLSMSReader(repoRoot)
+	attachmentReader := attachments.NewAttachmentManager(repoRoot)
+	contactsReader := contacts.NewContactsManager(repoRoot)
 
-	// validator := validation.NewRepositoryValidator(
-	// 	repoRoot,
-	// 	callsReader,
-	// 	smsReader,
-	// 	attachmentReader,
-	// 	contactsReader,
-	// )
+	validator := validation.NewRepositoryValidator(
+		repoRoot,
+		callsReader,
+		smsReader,
+		attachmentReader,
+		contactsReader,
+	)
 
-	// report, err := validator.ValidateRepository()
-	// if err != nil {
-	// 	return fmt.Errorf("validation failed: %w", err)
-	// }
+	report, err := validator.ValidateRepository()
+	if err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
 
-	// if report.Status != validation.Valid {
-	// 	return formatValidationError(report.Violations)
-	// }
+	if report.Status != validation.Valid {
+		return formatValidationError(report.Violations)
+	}
 	return nil
 }
 
+// formatValidationError formats validation violations into an error message
+// matching the format used by the validate subcommand
+func formatValidationError(violations []validation.ValidationViolation) error {
+	if len(violations) == 0 {
+		return nil
+	}
+
+	// Group violations by type (matching validate command format)
+	violationsByType := make(map[string][]validation.ValidationViolation)
+	for _, v := range violations {
+		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
+	}
+
+	// Build error message
+	var msg strings.Builder
+	msg.WriteString("repository validation failed:")
+
+	for vType, typeViolations := range violationsByType {
+		msg.WriteString(fmt.Sprintf("\n  %s:", vType))
+		for _, v := range typeViolations {
+			msg.WriteString(fmt.Sprintf("\n    %s", v.Message))
+			if v.File != "" {
+				msg.WriteString(fmt.Sprintf(" (%s)", v.File))
+			}
+		}
+	}
+
+	return fmt.Errorf("%s", msg.String())
+}
 
 // findFiles finds all files to import based on options
 func (imp *Importer) findFiles() ([]string, error) {
