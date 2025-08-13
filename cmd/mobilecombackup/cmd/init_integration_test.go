@@ -241,7 +241,9 @@ func TestInitCommandTreeOutput(t *testing.T) {
 		"├── attachments",
 		"├── .mobilecombackup.yaml",
 		"├── contacts.yaml",
-		"└── summary.yaml",
+		"├── summary.yaml",
+		"├── files.yaml",
+		"└── files.yaml.sha256",
 	}
 
 	outputStr := string(output)

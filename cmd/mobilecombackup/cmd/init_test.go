@@ -163,6 +163,8 @@ func TestInitializeRepository(t *testing.T) {
 				filepath.Join(repoRoot, ".mobilecombackup.yaml"),
 				filepath.Join(repoRoot, "contacts.yaml"),
 				filepath.Join(repoRoot, "summary.yaml"),
+				filepath.Join(repoRoot, "files.yaml"),
+				filepath.Join(repoRoot, "files.yaml.sha256"),
 			}
 
 			if len(result.Created) != len(expectedCreated) {

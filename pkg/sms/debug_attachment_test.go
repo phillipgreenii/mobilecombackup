@@ -36,7 +36,7 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 		messageCount++
 		t.Logf("Message %d: Type=%T, Date=%d", messageCount, msg, msg.GetDate())
 
-		if mms, ok := msg.(*MMS); ok {
+		if mms, ok := msg.(MMS); ok {
 			mmsCount++
 			t.Logf("  MMS with %d parts", len(mms.Parts))
 
@@ -57,7 +57,7 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 				config := GetDefaultContentTypeConfig()
 
 				t.Logf("  Testing extraction...")
-				summary, err := extractor.ExtractAttachmentsFromMMS(mms, config)
+				summary, err := extractor.ExtractAttachmentsFromMMS(&mms, config)
 				if err != nil {
 					t.Errorf("  ERROR during extraction: %v", err)
 				} else {

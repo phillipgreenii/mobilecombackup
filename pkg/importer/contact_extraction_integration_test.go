@@ -1,24 +1,79 @@
 package importer
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 )
+
+// setupTestRepository creates a complete test repository with all required files
+func setupTestRepository(t *testing.T, repoRoot string) {
+	t.Helper()
+
+	// Create directory structure
+	dirs := []string{
+		repoRoot,
+		filepath.Join(repoRoot, "calls"),
+		filepath.Join(repoRoot, "sms"),
+		filepath.Join(repoRoot, "attachments"),
+	}
+
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+	}
+
+	// Create marker file
+	markerContent := `repository_structure_version: "1"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup v1.0.0"
+`
+	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0644); err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+
+	// Create empty contacts file
+	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
+	contactsContent := "contacts: []\n"
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0644); err != nil {
+		t.Fatalf("Failed to create contacts file: %v", err)
+	}
+
+	// Create summary file
+	summaryPath := filepath.Join(repoRoot, "summary.yaml")
+	summaryContent := `counts:
+  calls: 0
+  sms: 0
+`
+	if err := os.WriteFile(summaryPath, []byte(summaryContent), 0644); err != nil {
+		t.Fatalf("Failed to create summary file: %v", err)
+	}
+
+	// Generate and write manifest files
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	fileManifest, err := manifestGenerator.GenerateFileManifest()
+	if err != nil {
+		t.Fatalf("Failed to generate file manifest: %v", err)
+	}
+
+	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
+		t.Fatalf("Failed to write manifest files: %v", err)
+	}
+}
 
 func TestImporter_ContactExtraction_SMS(t *testing.T) {
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test SMS file with contact names
 	testFile := filepath.Join(tempDir, "sms-test.xml")
@@ -71,16 +126,27 @@ func TestImporter_ContactExtraction_SMS(t *testing.T) {
 
 	yamlStr := string(content)
 
-	// Verify all contacts were extracted
-	expectedContacts := []string{
-		"5551234567: John Doe",
-		"5559876543: Jane Smith",
-		"5551111111: Bob Ross",
+	// Verify all contacts were extracted in the unprocessed section
+	expectedNumbers := []string{
+		"5551234567",
+		"5559876543",
+		"5551111111",
+	}
+	expectedNames := []string{
+		"John Doe",
+		"Jane Smith",
+		"Bob Ross",
 	}
 
-	for _, expected := range expectedContacts {
-		if !strings.Contains(yamlStr, expected) {
-			t.Errorf("Expected to find '%s' in contacts.yaml", expected)
+	for _, number := range expectedNumbers {
+		if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", number)) {
+			t.Errorf("Expected to find phone number '%s' in contacts.yaml", number)
+		}
+	}
+
+	for _, name := range expectedNames {
+		if !strings.Contains(yamlStr, name) {
+			t.Errorf("Expected to find contact name '%s' in contacts.yaml", name)
 		}
 	}
 
@@ -95,13 +161,8 @@ func TestImporter_ContactExtraction_Calls(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test calls file with contact names
 	testFile := filepath.Join(tempDir, "calls-test.xml")
@@ -154,17 +215,33 @@ func TestImporter_ContactExtraction_Calls(t *testing.T) {
 
 	yamlStr := string(content)
 
-	// Verify all contacts were extracted
-	expectedContacts := []string{
-		"5551234567: John Doe",
-		"5559876543: Jane Smith",
-		"5551111111: Bob Ross",
+	// Verify all contacts were extracted in the new structured format
+	expectedNumbers := []string{
+		"5551234567",
+		"5559876543",
+		"5551111111",
+	}
+	expectedNames := []string{
+		"John Doe",
+		"Jane Smith",
+		"Bob Ross",
 	}
 
-	for _, expected := range expectedContacts {
-		if !strings.Contains(yamlStr, expected) {
-			t.Errorf("Expected to find '%s' in contacts.yaml", expected)
+	for _, number := range expectedNumbers {
+		if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", number)) {
+			t.Errorf("Expected to find phone number '%s' in contacts.yaml", number)
 		}
+	}
+
+	for _, name := range expectedNames {
+		if !strings.Contains(yamlStr, name) {
+			t.Errorf("Expected to find contact name '%s' in contacts.yaml", name)
+		}
+	}
+
+	// Verify it has the unprocessed section
+	if !strings.Contains(yamlStr, "unprocessed:") {
+		t.Error("contacts.yaml should have unprocessed section")
 	}
 }
 
@@ -173,13 +250,8 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test MMS file with contact names (only primary address has contact name)
 	testFile := filepath.Join(tempDir, "sms-mms-test.xml")
@@ -243,19 +315,29 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 	yamlStr := string(content)
 
 	// Verify only primary addresses were extracted (MMS additional addresses don't have contact names)
-	expectedContacts := []string{
-		"5551234567: John Doe",
-		"5555555555: Jane Smith",
+	expectedNumbers := []string{
+		"5551234567",
+		"5555555555",
+	}
+	expectedNames := []string{
+		"John Doe",
+		"Jane Smith",
 	}
 
-	for _, expected := range expectedContacts {
-		if !strings.Contains(yamlStr, expected) {
-			t.Errorf("Expected to find '%s' in contacts.yaml", expected)
+	for _, number := range expectedNumbers {
+		if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", number)) {
+			t.Errorf("Expected to find phone number '%s' in contacts.yaml", number)
+		}
+	}
+
+	for _, name := range expectedNames {
+		if !strings.Contains(yamlStr, name) {
+			t.Errorf("Expected to find contact name '%s' in contacts.yaml", name)
 		}
 	}
 
 	// Should NOT contain the additional address since it doesn't have a contact name
-	if strings.Contains(yamlStr, "5559876543:") {
+	if strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5559876543")) {
 		t.Error("Should not extract contacts from MMS additional addresses without contact names")
 	}
 }
@@ -265,15 +347,41 @@ func TestImporter_ContactExtraction_ExistingContacts(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
+	// Create basic repository structure (without files.yaml)
+	dirs := []string{
+		repoRoot,
+		filepath.Join(repoRoot, "calls"),
+		filepath.Join(repoRoot, "sms"),
+		filepath.Join(repoRoot, "attachments"),
 	}
 
-	// Create existing contacts.yaml
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+	}
+
+	// Create marker file
+	markerContent := `repository_structure_version: "1"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup v1.0.0"
+`
+	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0644); err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+
+	// Create summary file
+	summaryPath := filepath.Join(repoRoot, "summary.yaml")
+	summaryContent := `counts:
+  calls: 0
+  sms: 0
+`
+	if err := os.WriteFile(summaryPath, []byte(summaryContent), 0644); err != nil {
+		t.Fatalf("Failed to create summary file: %v", err)
+	}
+
+	// Create existing contacts.yaml with custom content
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	existingYaml := `contacts:
   - name: "Existing Contact"
@@ -284,6 +392,17 @@ unprocessed:
 `
 	if err := os.WriteFile(contactsPath, []byte(existingYaml), 0644); err != nil {
 		t.Fatalf("Failed to create existing contacts.yaml: %v", err)
+	}
+
+	// Generate and write manifest files AFTER creating custom contacts.yaml
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	fileManifest, err := manifestGenerator.GenerateFileManifest()
+	if err != nil {
+		t.Fatalf("Failed to generate file manifest: %v", err)
+	}
+
+	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
+		t.Fatalf("Failed to write manifest files: %v", err)
 	}
 
 	// Create test SMS file
@@ -329,15 +448,25 @@ unprocessed:
 	if !strings.Contains(yamlStr, "name: Existing Contact") {
 		t.Error("Should preserve existing contacts")
 	}
-	if !strings.Contains(yamlStr, "5551111111: Previous Entry") {
-		t.Error("Should preserve existing unprocessed entries")
+	// Old format should be converted to new structured format
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551111111")) {
+		t.Error("Should preserve existing unprocessed entries in new format")
+	}
+	if !strings.Contains(yamlStr, "Previous Entry") {
+		t.Error("Should preserve existing unprocessed entry names")
 	}
 
-	// Verify new contacts were added
-	if !strings.Contains(yamlStr, "5551234567: John Doe") {
+	// Verify new contacts were added in structured format
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551234567")) {
 		t.Error("Should add new extracted contacts")
 	}
-	if !strings.Contains(yamlStr, "5559876543: Jane Smith") {
+	if !strings.Contains(yamlStr, "John Doe") {
+		t.Error("Should add new extracted contacts")
+	}
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5559876543")) {
+		t.Error("Should add new extracted contacts")
+	}
+	if !strings.Contains(yamlStr, "Jane Smith") {
 		t.Error("Should add new extracted contacts")
 	}
 }
@@ -347,13 +476,8 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test SMS file with duplicate names for same number
 	testFile := filepath.Join(tempDir, "sms-test.xml")
@@ -397,11 +521,11 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 
 	yamlStr := string(content)
 
-	// Verify all different names are included
+	// Verify all different names are included in the new structured format
 	expectedNames := []string{
-		"5551234567: John Doe",
-		"5551234567: Johnny",
-		"5551234567: J. Doe",
+		"John Doe",
+		"Johnny",
+		"J. Doe",
 	}
 
 	for _, expected := range expectedNames {
@@ -410,8 +534,13 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 		}
 	}
 
+	// Verify phone number appears in structured format
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551234567")) {
+		t.Error("Expected to find phone number in structured format")
+	}
+
 	// Verify "John Doe" appears only once despite being duplicated in input
-	johnDoeCount := strings.Count(yamlStr, "5551234567: John Doe")
+	johnDoeCount := strings.Count(yamlStr, "John Doe")
 	if johnDoeCount != 1 {
 		t.Errorf("Expected 'John Doe' to appear once, found %d times", johnDoeCount)
 	}
@@ -422,13 +551,8 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test SMS file with empty/missing contact names
 	testFile := filepath.Join(tempDir, "sms-test.xml")
@@ -471,16 +595,19 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 
 	yamlStr := string(content)
 
-	// Should only have the valid contact
-	if !strings.Contains(yamlStr, "5551234567: John Doe") {
+	// Should only have the valid contact in structured format
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551234567")) {
+		t.Error("Should extract valid contact phone number")
+	}
+	if !strings.Contains(yamlStr, "John Doe") {
 		t.Error("Should extract valid contact name")
 	}
 
 	// Should NOT have empty or missing contact names
-	if strings.Contains(yamlStr, "5559876543:") {
+	if strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5559876543")) {
 		t.Error("Should not extract empty contact names")
 	}
-	if strings.Contains(yamlStr, "5551111111:") {
+	if strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551111111")) {
 		t.Error("Should not extract missing contact names")
 	}
 }
@@ -490,13 +617,8 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test SMS file
 	testFile := filepath.Join(tempDir, "sms-test.xml")
@@ -528,10 +650,16 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 		t.Fatalf("Import failed: %v", err)
 	}
 
-	// Verify contacts.yaml was NOT created in dry-run mode
+	// Verify contacts.yaml was NOT modified in dry-run mode (should stay empty)
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
-	if _, err := os.Stat(contactsPath); !os.IsNotExist(err) {
-		t.Error("contacts.yaml should not be created in dry-run mode")
+	content, err := os.ReadFile(contactsPath)
+	if err != nil {
+		t.Fatalf("Failed to read contacts.yaml: %v", err)
+	}
+
+	yamlStr := string(content)
+	if strings.Contains(yamlStr, "John Doe") || strings.Contains(yamlStr, "unprocessed:") {
+		t.Error("contacts.yaml should not be modified in dry-run mode")
 	}
 }
 
@@ -540,13 +668,8 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
 
-	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755); err != nil {
-		t.Fatalf("Failed to create repo structure: %v", err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
 
 	// Create test SMS file with various phone number formats
 	testFile := filepath.Join(tempDir, "sms-test.xml")
@@ -593,10 +716,10 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 	// All should be normalized to the same number: 5551234567
 	// and all different contact name variations should be preserved
 	expectedNames := []string{
-		"5551234567: John Doe",
-		"5551234567: John Doe Alt",
-		"5551234567: John Doe Formatted",
-		"5551234567: John Doe Dashed",
+		"John Doe",
+		"John Doe Alt",
+		"John Doe Formatted",
+		"John Doe Dashed",
 	}
 
 	for _, expected := range expectedNames {
@@ -605,16 +728,21 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 		}
 	}
 
+	// Verify normalized phone number appears in structured format
+	if !strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", "5551234567")) {
+		t.Error("Expected to find normalized phone number in structured format")
+	}
+
 	// Verify we don't have any other phone number formats in the output
 	unwantedFormats := []string{
-		"+15551234567:",
-		"15551234567:",
-		"(555) 123-4567:",
-		"555-123-4567:",
+		"+15551234567",
+		"15551234567",
+		"(555) 123-4567",
+		"555-123-4567",
 	}
 
 	for _, unwanted := range unwantedFormats {
-		if strings.Contains(yamlStr, unwanted) {
+		if strings.Contains(yamlStr, fmt.Sprintf("phone_number: \"%s\"", unwanted)) {
 			t.Errorf("Should not find unnormalized format '%s' in contacts.yaml", unwanted)
 		}
 	}

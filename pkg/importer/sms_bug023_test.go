@@ -12,10 +12,9 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 	repoRoot := filepath.Join(tempDir, "repo")
 	toProcess := filepath.Join(tempDir, "to_process")
 
-	// Initialize repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
-		t.Fatal(err)
-	}
+	// Create complete repository structure
+	setupTestRepository(t, repoRoot)
+
 	if err := os.MkdirAll(toProcess, 0755); err != nil {
 		t.Fatal(err)
 	}
