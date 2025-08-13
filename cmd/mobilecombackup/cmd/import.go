@@ -300,6 +300,27 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 	fmt.Printf("Time taken: %.1fs\n", summary.Duration.Seconds())
 }
 
+// sortYearStatsForJSON converts YearStats map to an ordered map with years sorted in ascending order
+func sortYearStatsForJSON(yearStats map[int]*importer.YearStat) map[string]interface{} {
+	if len(yearStats) == 0 {
+		return make(map[string]interface{})
+	}
+
+	// Sort years in ascending order
+	var years []int
+	for year := range yearStats {
+		years = append(years, year)
+	}
+	sort.Ints(years)
+
+	// Create ordered map using sorted years
+	result := make(map[string]interface{})
+	for _, year := range years {
+		result[fmt.Sprintf("%d", year)] = yearStats[year]
+	}
+	return result
+}
+
 // displayJSONSummary displays the import summary in JSON format
 func displayJSONSummary(summary *importer.ImportSummary) {
 	output := map[string]interface{}{
@@ -322,7 +343,7 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 				"rejected":   summary.Calls.Total.Rejected,
 				"errors":     summary.Calls.Total.Errors,
 			},
-			"years": summary.Calls.YearStats,
+			"years": sortYearStatsForJSON(summary.Calls.YearStats),
 		},
 		"sms": map[string]interface{}{
 			"total": map[string]interface{}{
@@ -333,7 +354,7 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 				"rejected":   summary.SMS.Total.Rejected,
 				"errors":     summary.SMS.Total.Errors,
 			},
-			"years": summary.SMS.YearStats,
+			"years": sortYearStatsForJSON(summary.SMS.YearStats),
 		},
 		"attachments": map[string]interface{}{
 			"total":      summary.Attachments.Total.Total,
