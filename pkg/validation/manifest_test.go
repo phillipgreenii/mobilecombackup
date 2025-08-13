@@ -23,8 +23,8 @@ func TestManifestValidatorImpl_LoadManifest(t *testing.T) {
 	// Create valid files.yaml
 	manifest := FileManifest{
 		Files: []FileEntry{
-			{File: "summary.yaml", SHA256: "abc123", SizeBytes: 100},
-			{File: "contacts.yaml", SHA256: "def456", SizeBytes: 200},
+			{Name: "summary.yaml", Checksum: "sha256:abc123", Size: 100},
+			{Name: "contacts.yaml", Checksum: "sha256:def456", Size: 200},
 		},
 	}
 
@@ -49,8 +49,8 @@ func TestManifestValidatorImpl_LoadManifest(t *testing.T) {
 		t.Errorf("Expected 2 files, got %d", len(loaded.Files))
 	}
 
-	if loaded.Files[0].File != "summary.yaml" {
-		t.Errorf("Expected first file to be summary.yaml, got %s", loaded.Files[0].File)
+	if loaded.Files[0].Name != "summary.yaml" {
+		t.Errorf("Expected first file to be summary.yaml, got %s", loaded.Files[0].Name)
 	}
 }
 
@@ -66,8 +66,8 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "valid manifest",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: 100},
-					{File: "calls/calls-2015.xml", SHA256: "b7c9c1c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9", SizeBytes: 200},
+					{Name: "summary.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: 100},
+					{Name: "calls/calls-2015.xml", Checksum: "sha256:b7c9c1c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9", Size: 200},
 				},
 			},
 			wantCount: 0,
@@ -76,8 +76,8 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "duplicate files",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: 100},
-					{File: "summary.yaml", SHA256: "b7c9c1c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9", SizeBytes: 200},
+					{Name: "summary.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: 100},
+					{Name: "summary.yaml", Checksum: "sha256:b7c9c1c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9", Size: 200},
 				},
 			},
 			wantCount: 1,
@@ -86,7 +86,7 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "invalid SHA-256",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "invalid", SizeBytes: 100},
+					{Name: "summary.yaml", Checksum: "sha256:invalid", Size: 100},
 				},
 			},
 			wantCount: 1,
@@ -95,7 +95,7 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "invalid size",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: -1},
+					{Name: "summary.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: -1},
 				},
 			},
 			wantCount: 1,
@@ -104,7 +104,7 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "absolute path",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "/absolute/path.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: 100},
+					{Name: "/absolute/path.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: 100},
 				},
 			},
 			wantCount: 1,
@@ -113,7 +113,7 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "path with ..",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "../outside.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: 100},
+					{Name: "../outside.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: 100},
 				},
 			},
 			wantCount: 1,
@@ -122,7 +122,7 @@ func TestManifestValidatorImpl_ValidateManifestFormat(t *testing.T) {
 			name: "includes files.yaml",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "files.yaml", SHA256: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", SizeBytes: 100},
+					{Name: "files.yaml", Checksum: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", Size: 100},
 				},
 			},
 			wantCount: 1,
@@ -174,11 +174,11 @@ func TestManifestValidatorImpl_CheckManifestCompleteness(t *testing.T) {
 			name: "complete manifest",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "abc123", SizeBytes: 100},
-					{File: "contacts.yaml", SHA256: "def456", SizeBytes: 200},
-					{File: "calls/calls-2015.xml", SHA256: "ghi789", SizeBytes: 300},
-					{File: "sms/sms-2015.xml", SHA256: "jkl012", SizeBytes: 400},
-					{File: "attachments/ab/ab123456", SHA256: "mno345", SizeBytes: 500},
+					{Name: "summary.yaml", Checksum: "sha256:abc123", Size: 100},
+					{Name: "contacts.yaml", Checksum: "sha256:def456", Size: 200},
+					{Name: "calls/calls-2015.xml", Checksum: "sha256:ghi789", Size: 300},
+					{Name: "sms/sms-2015.xml", Checksum: "sha256:jkl012", Size: 400},
+					{Name: "attachments/ab/ab123456", Checksum: "sha256:mno345", Size: 500},
 				},
 			},
 			wantCount: 0,
@@ -187,8 +187,8 @@ func TestManifestValidatorImpl_CheckManifestCompleteness(t *testing.T) {
 			name: "missing file in manifest",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "abc123", SizeBytes: 100},
-					{File: "contacts.yaml", SHA256: "def456", SizeBytes: 200},
+					{Name: "summary.yaml", Checksum: "sha256:abc123", Size: 100},
+					{Name: "contacts.yaml", Checksum: "sha256:def456", Size: 200},
 					// Missing other files
 				},
 			},
@@ -198,12 +198,12 @@ func TestManifestValidatorImpl_CheckManifestCompleteness(t *testing.T) {
 			name: "extra file in manifest",
 			manifest: FileManifest{
 				Files: []FileEntry{
-					{File: "summary.yaml", SHA256: "abc123", SizeBytes: 100},
-					{File: "contacts.yaml", SHA256: "def456", SizeBytes: 200},
-					{File: "calls/calls-2015.xml", SHA256: "ghi789", SizeBytes: 300},
-					{File: "sms/sms-2015.xml", SHA256: "jkl012", SizeBytes: 400},
-					{File: "attachments/ab/ab123456", SHA256: "mno345", SizeBytes: 500},
-					{File: "nonexistent.yaml", SHA256: "pqr678", SizeBytes: 600}, // Extra file
+					{Name: "summary.yaml", Checksum: "sha256:abc123", Size: 100},
+					{Name: "contacts.yaml", Checksum: "sha256:def456", Size: 200},
+					{Name: "calls/calls-2015.xml", Checksum: "sha256:ghi789", Size: 300},
+					{Name: "sms/sms-2015.xml", Checksum: "sha256:jkl012", Size: 400},
+					{Name: "attachments/ab/ab123456", Checksum: "sha256:mno345", Size: 500},
+					{Name: "nonexistent.yaml", Checksum: "sha256:pqr678", Size: 600}, // Extra file
 				},
 			},
 			wantCount: 1, // 1 file in manifest but not on disk

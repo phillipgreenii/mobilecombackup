@@ -48,69 +48,69 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 	// Check for duplicate entries
 	seenFiles := make(map[string]bool)
 
-	// SHA-256 regex pattern (64 hex characters)
-	sha256Pattern := regexp.MustCompile(`^[0-9a-f]{64}$`)
+	// SHA-256 regex pattern for checksum format (sha256:64hexchars)
+	sha256Pattern := regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 	for i, entry := range manifest.Files {
 		entryContext := fmt.Sprintf("files.yaml entry %d", i+1)
 
 		// Check for duplicate file paths
-		if seenFiles[entry.File] {
+		if seenFiles[entry.Name] {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     "files.yaml",
-				Message:  fmt.Sprintf("Duplicate file entry: %s", entry.File),
+				Message:  fmt.Sprintf("Duplicate file entry: %s", entry.Name),
 			})
 		}
-		seenFiles[entry.File] = true
+		seenFiles[entry.Name] = true
 
 		// Validate SHA-256 format
-		if !sha256Pattern.MatchString(entry.SHA256) {
+		if !sha256Pattern.MatchString(entry.Checksum) {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
-				Message:  fmt.Sprintf("Invalid SHA-256 format for file %s: %s", entry.File, entry.SHA256),
+				Message:  fmt.Sprintf("Invalid SHA-256 format for file %s: %s", entry.Name, entry.Checksum),
 			})
 		}
 
 		// Validate positive size
-		if entry.SizeBytes <= 0 {
+		if entry.Size <= 0 {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
-				Message:  fmt.Sprintf("Invalid size_bytes for file %s: %d (must be positive)", entry.File, entry.SizeBytes),
+				Message:  fmt.Sprintf("Invalid size_bytes for file %s: %d (must be positive)", entry.Name, entry.Size),
 			})
 		}
 
 		// Validate relative path (no ".." or absolute paths)
-		if filepath.IsAbs(entry.File) {
+		if filepath.IsAbs(entry.Name) {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
-				Message:  fmt.Sprintf("File path must be relative: %s", entry.File),
+				Message:  fmt.Sprintf("File path must be relative: %s", entry.Name),
 			})
 		}
 
-		if strings.Contains(entry.File, "..") {
+		if strings.Contains(entry.Name, "..") {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
-				Message:  fmt.Sprintf("File path contains '..': %s", entry.File),
+				Message:  fmt.Sprintf("File path contains '..': %s", entry.Name),
 			})
 		}
 
 		// Validate file path doesn't include files.yaml or files.yaml.sha256
-		if entry.File == "files.yaml" || entry.File == "files.yaml.sha256" {
+		if entry.Name == "files.yaml" || entry.Name == "files.yaml.sha256" {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
-				Message:  fmt.Sprintf("files.yaml should not include itself or its checksum: %s", entry.File),
+				Message:  fmt.Sprintf("files.yaml should not include itself or its checksum: %s", entry.Name),
 			})
 		}
 	}
@@ -125,7 +125,7 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 	// Build set of files in manifest
 	manifestFiles := make(map[string]bool)
 	for _, entry := range manifest.Files {
-		manifestFiles[entry.File] = true
+		manifestFiles[entry.Name] = true
 	}
 
 	// Walk repository and find all files (excluding files.yaml and files.yaml.sha256)
@@ -183,12 +183,12 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 	}
 
 	for _, entry := range manifest.Files {
-		if !actualFileSet[entry.File] {
+		if !actualFileSet[entry.Name] {
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile,
 				Severity: SeverityError,
-				File:     entry.File,
-				Message:  fmt.Sprintf("File listed in files.yaml but not found in repository: %s", entry.File),
+				File:     entry.Name,
+				Message:  fmt.Sprintf("File listed in files.yaml but not found in repository: %s", entry.Name),
 			})
 		}
 	}
@@ -212,12 +212,26 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 		return fmt.Errorf("failed to read files.yaml.sha256: %w", err)
 	}
 
-	expected := strings.TrimSpace(string(expectedData))
+	expectedLine := strings.TrimSpace(string(expectedData))
+
+	// Parse SHA256 checksum format: "hash  filename"
+	parts := strings.Fields(expectedLine)
+	if len(parts) != 2 {
+		return fmt.Errorf("files.yaml.sha256 contains invalid format: %s", expectedLine)
+	}
+
+	expected := parts[0]
+	expectedFilename := parts[1]
+
+	// Validate that it's checking the correct file
+	if expectedFilename != "files.yaml" {
+		return fmt.Errorf("files.yaml.sha256 should reference files.yaml, but references: %s", expectedFilename)
+	}
 
 	// Validate checksum format
 	sha256Pattern := regexp.MustCompile(`^[0-9a-f]{64}$`)
 	if !sha256Pattern.MatchString(expected) {
-		return fmt.Errorf("files.yaml.sha256 contains invalid SHA-256 format: %s", expected)
+		return fmt.Errorf("files.yaml.sha256 contains invalid SHA-256 hash format: %s", expected)
 	}
 
 	// Calculate actual checksum

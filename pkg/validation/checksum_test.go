@@ -62,7 +62,7 @@ func TestChecksumValidatorImpl_VerifyFileChecksum(t *testing.T) {
 	// Calculate correct checksum
 	hasher := sha256.New()
 	hasher.Write(testContent)
-	correctChecksum := fmt.Sprintf("%x", hasher.Sum(nil))
+	correctChecksum := fmt.Sprintf("sha256:%x", hasher.Sum(nil))
 
 	// Test with correct checksum
 	err = validator.VerifyFileChecksum(testFile, correctChecksum)
@@ -117,9 +117,9 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 		checksum := fmt.Sprintf("%x", hasher.Sum(nil))
 
 		manifestEntries = append(manifestEntries, FileEntry{
-			File:      fileName,
-			SHA256:    checksum,
-			SizeBytes: int64(len(content)),
+			Name:     fileName,
+			Checksum: fmt.Sprintf("sha256:%s", checksum),
+			Size:     int64(len(content)),
 		})
 	}
 
@@ -134,9 +134,9 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 	manifestWithWrongChecksum := &FileManifest{
 		Files: []FileEntry{
 			{
-				File:      "file1.txt",
-				SHA256:    "0000000000000000000000000000000000000000000000000000000000000000",
-				SizeBytes: int64(len("Content of file 1")),
+				Name:     "file1.txt",
+				Checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+				Size:     int64(len("Content of file 1")),
 			},
 		},
 	}
@@ -154,9 +154,9 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 	manifestWithWrongSize := &FileManifest{
 		Files: []FileEntry{
 			{
-				File:      "file1.txt",
-				SHA256:    manifestEntries[0].SHA256, // Correct checksum
-				SizeBytes: 999,                       // Wrong size
+				Name:     "file1.txt",
+				Checksum: manifestEntries[0].Checksum, // Correct checksum
+				Size:     999,                         // Wrong size
 			},
 		},
 	}
@@ -183,9 +183,9 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 	manifestWithMissingFile := &FileManifest{
 		Files: []FileEntry{
 			{
-				File:      "nonexistent.txt",
-				SHA256:    "abc123",
-				SizeBytes: 100,
+				Name:     "nonexistent.txt",
+				Checksum: "sha256:abc123",
+				Size:     100,
 			},
 		},
 	}
@@ -214,30 +214,30 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums_MultipleViolations(t *t
 
 	hasher := sha256.New()
 	hasher.Write(testContent)
-	correctChecksum := fmt.Sprintf("%x", hasher.Sum(nil))
+	correctChecksum := fmt.Sprintf("sha256:%x", hasher.Sum(nil))
 
 	// Create manifest with multiple issues
 	manifest := &FileManifest{
 		Files: []FileEntry{
 			{
-				File:      "valid.txt",
-				SHA256:    correctChecksum,
-				SizeBytes: int64(len(testContent)),
+				Name:     "valid.txt",
+				Checksum: correctChecksum,
+				Size:     int64(len(testContent)),
 			}, // Valid entry
 			{
-				File:      "valid.txt",
-				SHA256:    "wrong_checksum_here",
-				SizeBytes: int64(len(testContent)),
+				Name:     "valid.txt",
+				Checksum: "sha256:wrong_checksum_here",
+				Size:     int64(len(testContent)),
 			}, // Wrong checksum
 			{
-				File:      "valid.txt",
-				SHA256:    correctChecksum,
-				SizeBytes: 999,
+				Name:     "valid.txt",
+				Checksum: correctChecksum,
+				Size:     999,
 			}, // Wrong size
 			{
-				File:      "missing.txt",
-				SHA256:    "abc123",
-				SizeBytes: 100,
+				Name:     "missing.txt",
+				Checksum: "sha256:abc123",
+				Size:     100,
 			}, // Missing file
 		},
 	}

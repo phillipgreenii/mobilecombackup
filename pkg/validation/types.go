@@ -6,14 +6,18 @@ import (
 
 // FileManifest represents the structure of files.yaml
 type FileManifest struct {
-	Files []FileEntry `yaml:"files"`
+	Version   string      `yaml:"version"`
+	Generated string      `yaml:"generated"`
+	Generator string      `yaml:"generator"`
+	Files     []FileEntry `yaml:"files"`
 }
 
 // FileEntry represents a single file entry in files.yaml
 type FileEntry struct {
-	File      string `yaml:"file"`
-	SHA256    string `yaml:"sha256"`
-	SizeBytes int64  `yaml:"size_bytes"`
+	Name     string `yaml:"name"`
+	Size     int64  `yaml:"size"`
+	Checksum string `yaml:"checksum"`
+	Modified string `yaml:"modified"`
 }
 
 // ValidationReport represents the result of repository validation

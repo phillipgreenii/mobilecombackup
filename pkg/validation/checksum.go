@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // ChecksumValidator validates SHA-256 checksums for repository files
@@ -68,15 +69,15 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 	var violations []ValidationViolation
 
 	for _, entry := range manifest.Files {
-		fullPath := filepath.Join(v.repositoryRoot, entry.File)
+		fullPath := filepath.Join(v.repositoryRoot, entry.Name)
 
 		// Check if file exists
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 			violations = append(violations, ValidationViolation{
 				Type:     MissingFile,
 				Severity: SeverityError,
-				File:     entry.File,
-				Message:  fmt.Sprintf("File not found: %s", entry.File),
+				File:     entry.Name,
+				Message:  fmt.Sprintf("File not found: %s", entry.Name),
 			})
 			continue
 		}
@@ -87,20 +88,23 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 			violations = append(violations, ValidationViolation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
-				File:     entry.File,
-				Message:  fmt.Sprintf("Failed to calculate checksum for %s: %v", entry.File, err),
+				File:     entry.Name,
+				Message:  fmt.Sprintf("Failed to calculate checksum for %s: %v", entry.Name, err),
 			})
 			continue
 		}
 
+		// Extract hex checksum from sha256:xxx format
+		expectedChecksum := strings.TrimPrefix(entry.Checksum, "sha256:")
+
 		// Verify checksum matches
-		if actualChecksum != entry.SHA256 {
+		if actualChecksum != expectedChecksum {
 			violations = append(violations, ValidationViolation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
-				File:     entry.File,
-				Message:  fmt.Sprintf("Checksum mismatch for %s", entry.File),
-				Expected: entry.SHA256,
+				File:     entry.Name,
+				Message:  fmt.Sprintf("Checksum mismatch for %s", entry.Name),
+				Expected: expectedChecksum,
 				Actual:   actualChecksum,
 			})
 		}
@@ -108,13 +112,13 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 		// Verify file size matches (if we can get it)
 		if fileInfo, err := os.Stat(fullPath); err == nil {
 			actualSize := fileInfo.Size()
-			if actualSize != entry.SizeBytes {
+			if actualSize != entry.Size {
 				violations = append(violations, ValidationViolation{
 					Type:     SizeMismatch,
 					Severity: SeverityError,
-					File:     entry.File,
-					Message:  fmt.Sprintf("Size mismatch for %s", entry.File),
-					Expected: fmt.Sprintf("%d", entry.SizeBytes),
+					File:     entry.Name,
+					Message:  fmt.Sprintf("Size mismatch for %s", entry.Name),
+					Expected: fmt.Sprintf("%d", entry.Size),
 					Actual:   fmt.Sprintf("%d", actualSize),
 				})
 			}
