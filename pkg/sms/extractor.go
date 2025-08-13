@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -287,35 +285,49 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
 	}
 
-	attachmentPath := ae.attachmentManager.GetAttachmentPath(hash)
-
 	if exists {
-		// Attachment already exists, just reference it
-		log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachmentPath)
+		// Attachment already exists, get its current path
+		attachment, err := ae.attachmentManager.GetAttachment(hash)
+		if err != nil {
+			log.Printf("[ATTACHMENT] Failed to get existing attachment path: %v", err)
+			return nil, fmt.Errorf("failed to get existing attachment path: %w", err)
+		}
+
+		log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachment.Path)
 		return &AttachmentExtractionResult{
 			Action:         "referenced",
 			Hash:           hash,
-			Path:           attachmentPath,
+			Path:           attachment.Path,
 			OriginalSize:   int64(len(decodedData)),
 			UpdatePart:     true,
 			ExtractionDate: time.Now().UTC(),
 		}, nil
 	}
 
-	// Write attachment to disk
-	fullPath := filepath.Join(ae.repoRoot, attachmentPath)
-	log.Printf("[ATTACHMENT] Writing new attachment to: %s", fullPath)
+	// Use new directory-based storage for new attachments
+	storage := attachments.NewDirectoryAttachmentStorage(ae.repoRoot)
 
-	// Create directory if needed
-	if err := os.MkdirAll(filepath.Dir(fullPath), 0750); err != nil {
-		log.Printf("[ATTACHMENT] Failed to create directory: %v", err)
-		return nil, fmt.Errorf("failed to create attachment directory: %w", err)
+	// Create metadata
+	metadata := attachments.AttachmentInfo{
+		Hash:         hash,
+		OriginalName: part.Filename,
+		MimeType:     part.ContentType,
+		Size:         int64(len(decodedData)),
+		CreatedAt:    time.Now().UTC(),
+		SourceMMS:    "", // Could be populated with MMS ID if available
 	}
 
-	// Write file
-	if err := os.WriteFile(fullPath, decodedData, 0644); err != nil {
-		log.Printf("[ATTACHMENT] Failed to write file: %v", err)
-		return nil, fmt.Errorf("failed to write attachment file: %w", err)
+	// Store attachment with new format
+	if err := storage.Store(hash, decodedData, metadata); err != nil {
+		log.Printf("[ATTACHMENT] Failed to store attachment: %v", err)
+		return nil, fmt.Errorf("failed to store attachment: %w", err)
+	}
+
+	// Get the path for the stored attachment
+	attachmentPath, err := storage.GetPath(hash)
+	if err != nil {
+		log.Printf("[ATTACHMENT] Failed to get stored attachment path: %v", err)
+		return nil, fmt.Errorf("failed to get stored attachment path: %w", err)
 	}
 
 	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
