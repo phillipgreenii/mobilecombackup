@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -318,13 +319,7 @@ func (cm *ContactsManager) GetUnprocessedEntries() []UnprocessedEntry {
 	}
 
 	// Sort by raw phone number (lexicographic)
-	for i := 0; i < len(phoneNumbers); i++ {
-		for j := i + 1; j < len(phoneNumbers); j++ {
-			if phoneNumbers[i] > phoneNumbers[j] {
-				phoneNumbers[i], phoneNumbers[j] = phoneNumbers[j], phoneNumbers[i]
-			}
-		}
-	}
+	sort.Strings(phoneNumbers)
 
 	// Create entries with combined contact names
 	for _, phone := range phoneNumbers {
@@ -335,6 +330,10 @@ func (cm *ContactsManager) GetUnprocessedEntries() []UnprocessedEntry {
 				ContactNames: make([]string, len(names)),
 			}
 			copy(entry.ContactNames, names)
+
+			// Sort contact names for consistent ordering
+			sort.Strings(entry.ContactNames)
+
 			entries = append(entries, entry)
 		}
 	}
