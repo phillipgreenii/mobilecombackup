@@ -107,7 +107,6 @@ type ProcessingSummary struct {
 - Related features: FEAT-024-contact-name-processing.md, FEAT-010-add-import-subcommand.md
 - Code locations: cmd/mobilecombackup/, pkg/contacts/, pkg/calls/, pkg/sms/
 - Updates required: full-test.sh script integration
-- See NEW_ISSUES item #6 for detailed requirements
 
 ## Notes
 ### Usage Flow
