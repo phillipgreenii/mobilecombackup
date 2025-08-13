@@ -298,7 +298,7 @@ func TestContactsValidatorImpl_ValidateContactReferences(t *testing.T) {
 
 	violations := validator.ValidateContactReferences(callContacts, smsContacts)
 
-	// Should have violations for missing contacts and orphaned contacts
+	// Should have violations for missing contacts only (no orphaned contact violations)
 	if len(violations) < 2 {
 		t.Errorf("Expected at least 2 violations, got %d: %v", len(violations), violations)
 	}
@@ -354,7 +354,7 @@ func TestContactsValidatorImpl_ValidateContactReferences_EmptyContacts(t *testin
 	}
 }
 
-func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *testing.T) {
+func TestContactsValidatorImpl_ValidateContactReferences_UnusedContacts(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Test contacts with some unreferenced
@@ -382,19 +382,16 @@ func TestContactsValidatorImpl_ValidateContactReferences_OrphanedContacts(t *tes
 
 	violations := validator.ValidateContactReferences(callContacts, make(map[string]bool))
 
-	// Should have violation for orphaned contact
-	foundOrphanedContact := false
+	// Should NOT have violation for unused contact - unused contacts are acceptable
+	foundUnusedContactViolation := false
 	for _, violation := range violations {
 		if violation.Message == "Contact 'Unused Contact' defined but not referenced in any calls/SMS" {
-			foundOrphanedContact = true
-			if violation.Severity != SeverityWarning {
-				t.Errorf("Expected warning severity for orphaned contact, got %s", violation.Severity)
-			}
+			foundUnusedContactViolation = true
 		}
 	}
 
-	if !foundOrphanedContact {
-		t.Error("Expected orphaned contact violation")
+	if foundUnusedContactViolation {
+		t.Error("Unused contacts should not be flagged as violations")
 	}
 }
 

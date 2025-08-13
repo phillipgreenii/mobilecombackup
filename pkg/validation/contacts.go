@@ -226,22 +226,8 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 		}
 	}
 
-	// Check for unused contacts (informational warning)
-	if v.contactsReader.GetContactsCount() > 0 {
-		allContacts, err := v.contactsReader.GetAllContacts()
-		if err == nil {
-			for _, contact := range allContacts {
-				if !allReferencedContacts[contact.Name] {
-					violations = append(violations, ValidationViolation{
-						Type:     OrphanedAttachment, // Reusing this type for orphaned contacts
-						Severity: SeverityWarning,
-						File:     "contacts.yaml",
-						Message:  fmt.Sprintf("Contact '%s' defined but not referenced in any calls/SMS", contact.Name),
-					})
-				}
-			}
-		}
-	}
+	// Note: Unused contacts are acceptable and should not be flagged as violations.
+	// Users may maintain contacts that are not currently active in their data.
 
 	return violations
 }
