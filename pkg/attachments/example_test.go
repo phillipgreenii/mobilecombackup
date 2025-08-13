@@ -3,6 +3,7 @@ package attachments_test
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
 )
@@ -247,4 +248,185 @@ func ExampleAttachment() {
 		sizeStr = fmt.Sprintf("%.1f MB", float64(attachment.Size)/(1024*1024))
 	}
 	fmt.Printf("  Human size: %s\n", sizeStr)
+}
+
+// Example demonstrates using the new DirectoryAttachmentStorage
+func ExampleDirectoryAttachmentStorage() {
+	// Create storage instance
+	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+
+	// Store a new attachment
+	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	data := []byte("Hello, world!")
+	metadata := attachments.AttachmentInfo{
+		Hash:         hash,
+		OriginalName: "hello.txt",
+		MimeType:     "text/plain",
+		Size:         int64(len(data)),
+		CreatedAt:    time.Now().UTC(),
+		SourceMMS:    "mms-12345",
+	}
+
+	err := storage.Store(hash, data, metadata)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Stored attachment: %s\n", hash[:8])
+	fmt.Println("New directory structure created with metadata")
+
+	// Output:
+	// Stored attachment: e3b0c442
+	// New directory structure created with metadata
+}
+
+// Example demonstrates retrieving attachment metadata
+func ExampleDirectoryAttachmentStorage_GetMetadata() {
+	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+
+	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	metadata, err := storage.GetMetadata(hash)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Attachment Metadata:\n")
+	fmt.Printf("  Hash: %s\n", metadata.Hash[:8])
+	fmt.Printf("  Original Name: %s\n", metadata.OriginalName)
+	fmt.Printf("  MIME Type: %s\n", metadata.MimeType)
+	fmt.Printf("  Size: %d bytes\n", metadata.Size)
+	fmt.Printf("  Created: %s\n", metadata.CreatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Printf("  Source MMS: %s\n", metadata.SourceMMS)
+}
+
+// Example demonstrates MIME type to file extension mapping
+func ExampleGetFileExtension() {
+	mimeTypes := []string{
+		"image/jpeg",
+		"image/png",
+		"application/pdf",
+		"video/mp4",
+		"audio/mpeg",
+		"application/unknown",
+	}
+
+	fmt.Println("MIME Type to Extension Mapping:")
+	for _, mimeType := range mimeTypes {
+		ext := attachments.GetFileExtension(mimeType)
+		fmt.Printf("  %s -> .%s\n", mimeType, ext)
+	}
+
+	// Output:
+	// MIME Type to Extension Mapping:
+	//   image/jpeg -> .jpg
+	//   image/png -> .png
+	//   application/pdf -> .pdf
+	//   video/mp4 -> .mp4
+	//   audio/mpeg -> .mp3
+	//   application/unknown -> .bin
+}
+
+// Example demonstrates filename generation
+func ExampleGenerateFilename() {
+	testCases := []struct {
+		originalName string
+		mimeType     string
+	}{
+		{"photo.jpg", "image/jpeg"},
+		{"", "image/png"},
+		{"document.pdf", "application/pdf"},
+		{"null", "video/mp4"},
+		{"readme.txt", ""},
+	}
+
+	fmt.Println("Filename Generation:")
+	for _, tc := range testCases {
+		filename := attachments.GenerateFilename(tc.originalName, tc.mimeType)
+		fmt.Printf("  Original: '%s', MIME: '%s' -> '%s'\n",
+			tc.originalName, tc.mimeType, filename)
+	}
+
+	// Output:
+	// Filename Generation:
+	//   Original: 'photo.jpg', MIME: 'image/jpeg' -> 'photo.jpg'
+	//   Original: '', MIME: 'image/png' -> 'attachment.png'
+	//   Original: 'document.pdf', MIME: 'application/pdf' -> 'document.pdf'
+	//   Original: 'null', MIME: 'video/mp4' -> 'attachment.mp4'
+	//   Original: 'readme.txt', MIME: '' -> 'readme.txt'
+}
+
+// Example demonstrates migration from legacy format
+func ExampleMigrationManager() {
+	// Create migration manager
+	migrationManager := attachments.NewMigrationManager("/path/to/repository")
+
+	// Check current migration status
+	status, err := migrationManager.GetMigrationStatus()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Migration Status:\n")
+	fmt.Printf("  Total attachments: %d\n", status["total_count"])
+	fmt.Printf("  Legacy format: %d\n", status["legacy_count"])
+	fmt.Printf("  New format: %d\n", status["new_count"])
+	fmt.Printf("  Migration complete: %t\n", status["migrated"])
+
+	// Perform migration if needed
+	if !status["migrated"].(bool) {
+		summary, err := migrationManager.MigrateAllAttachments()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("\nMigration Results:\n")
+		fmt.Printf("  Found: %d attachments\n", summary.TotalFound)
+		fmt.Printf("  Migrated: %d attachments\n", summary.Migrated)
+		fmt.Printf("  Failed: %d attachments\n", summary.Failed)
+		fmt.Printf("  Skipped: %d attachments\n", summary.Skipped)
+	}
+}
+
+// Example demonstrates dry run migration
+func ExampleMigrationManager_dryRun() {
+	migrationManager := attachments.NewMigrationManager("/path/to/repository")
+
+	// Enable dry run mode
+	migrationManager.SetDryRun(true)
+
+	// Run migration simulation
+	summary, err := migrationManager.MigrateAllAttachments()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Dry Run Migration Results:\n")
+	fmt.Printf("  Would migrate: %d attachments\n", summary.Migrated)
+	fmt.Printf("  Would fail: %d attachments\n", summary.Failed)
+	fmt.Printf("  Would skip: %d attachments\n", summary.Skipped)
+	fmt.Println("No actual changes made to filesystem")
+}
+
+// Example demonstrates attachment format detection
+func ExampleAttachmentManager_formatDetection() {
+	manager := attachments.NewAttachmentManager("/path/to/repository")
+
+	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+	// Check which format this attachment uses
+	if manager.IsNewFormat(hash) {
+		fmt.Printf("Attachment %s uses new directory format\n", hash[:8])
+
+		// Access metadata
+		storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+		metadata, err := storage.GetMetadata(hash)
+		if err == nil {
+			fmt.Printf("  Original name: %s\n", metadata.OriginalName)
+			fmt.Printf("  MIME type: %s\n", metadata.MimeType)
+		}
+	} else if manager.IsLegacyFormat(hash) {
+		fmt.Printf("Attachment %s uses legacy file format\n", hash[:8])
+	} else {
+		fmt.Printf("Attachment %s not found\n", hash[:8])
+	}
 }
