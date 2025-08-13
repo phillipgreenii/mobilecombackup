@@ -25,6 +25,13 @@ Review an issue specification:
 - Asks clarifying questions about requirements
 - **Auto-commits any improvements made to the issue document**
 
+### `/ready-backlog-issues`
+Process all issues in backlog to assess readiness:
+- Reviews each issue individually using the same criteria as `/ready-issue`
+- **Moves ready issues to `ready/` directory with auto-commit**
+- **Updates and commits improvements to issues that need more work**
+- Processes one issue at a time with summary report
+
 ### `/create-feature <description>`
 Create a new feature issue:
 - Finds next sequential issue number
@@ -57,6 +64,7 @@ All Claude commands and agents are configured to automatically commit code chang
 - After creating feature documents with `/create-feature`
 - After creating bug documents with `/create-bug`
 - After moving issues to ready with `/ready-issue`
+- After processing each issue with `/ready-backlog-issues` (either move to ready or update in backlog)
 - After completing issue reviews with `/review-issue` (if changes were made)
 - After completing documentation updates
 
