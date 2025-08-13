@@ -1,7 +1,6 @@
 package autofix
 
 import (
-	"crypto/sha256"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -36,7 +35,6 @@ type SummaryContent struct {
 		SMS   int `yaml:"sms"`
 	} `yaml:"counts"`
 }
-
 
 // Autofixer interface for fixing validation violations
 type Autofixer interface {
@@ -498,7 +496,7 @@ func (a *AutofixerImpl) createSummaryFile() error {
 func (a *AutofixerImpl) createFilesManifest() error {
 	// Use the shared manifest generator
 	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
-	
+
 	// Generate manifest
 	fileManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
@@ -518,7 +516,6 @@ func (a *AutofixerImpl) createManifestChecksum() error {
 	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
 	return manifestGenerator.WriteChecksumOnly()
 }
-
 
 // fixXMLCountAttribute fixes the count attribute in XML files to match actual child element count
 func fixXMLCountAttribute(content []byte) ([]byte, int, error) {

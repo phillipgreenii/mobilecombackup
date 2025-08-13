@@ -34,7 +34,8 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 	}
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(tempDir)
-	importer := NewSMSImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer := NewSMSImporter(options, contactsManager, yearTracker)
 
 	// Load repository (should be empty)
 	if err := importer.LoadRepository(); err != nil {
@@ -102,7 +103,8 @@ func TestSMSImporter_MessageValidation(t *testing.T) {
 	}
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(tempDir)
-	importer := NewSMSImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer := NewSMSImporter(options, contactsManager, yearTracker)
 
 	tests := []struct {
 		name       string

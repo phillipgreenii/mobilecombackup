@@ -12,7 +12,7 @@ import (
 func TestAutofixer_ManifestBehavior(t *testing.T) {
 	// Create temporary repository
 	tempDir := t.TempDir()
-	
+
 	// Create basic repository structure
 	dirs := []string{"calls", "sms", "attachments"}
 	for _, dir := range dirs {

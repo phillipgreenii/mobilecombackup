@@ -151,7 +151,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 				return nil
 			}
 
-			fmt.Printf("[IMPORT-DEBUG] Extraction completed: %d extracted, %d referenced, %d skipped\n", 
+			fmt.Printf("[IMPORT-DEBUG] Extraction completed: %d extracted, %d referenced, %d skipped\n",
 				extractionSummary.ExtractedCount, extractionSummary.ReferencedCount, extractionSummary.SkippedCount)
 
 			// Update overall attachment statistics
@@ -166,14 +166,14 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 		// Create entry and check for duplicates
 		entry := sms.NewMessageEntry(msg)
 		added := si.coalescer.Add(entry)
-		
+
 		// Update file-level statistics
 		if added {
 			summary.Added++
 		} else {
 			summary.Duplicates++
 		}
-		
+
 		// Track entry by year
 		if si.yearTracker != nil {
 			si.yearTracker.TrackImportEntry(entry.Year(), added)

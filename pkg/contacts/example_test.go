@@ -199,7 +199,7 @@ func ExampleContactsManager_AddUnprocessedContacts() {
 	// Create a manager for a temporary directory
 	tempDir := "/tmp/example"
 	_ = os.MkdirAll(tempDir, 0755)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := contacts.NewContactsManager(tempDir)
 
@@ -219,7 +219,7 @@ func ExampleContactsManager_AddUnprocessedContacts() {
 
 	// Get structured unprocessed entries (sorted by phone number)
 	entries := manager.GetUnprocessedEntries()
-	
+
 	for _, entry := range entries {
 		fmt.Printf("Phone: %s, Names: %v\n", entry.PhoneNumber, entry.ContactNames)
 	}
@@ -248,7 +248,7 @@ func ExampleContactsManager_AddUnprocessedContacts_countMismatch() {
 func ExampleContactsManager_GetUnprocessedEntries() {
 	tempDir := "/tmp/example"
 	_ = os.MkdirAll(tempDir, 0755)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
@@ -286,11 +286,11 @@ unprocessed:
 	//   5559876543: [Jane Smith]
 }
 
-// ExampleContactsManager_KnownContactMatching demonstrates how known contacts are excluded
-func ExampleContactsManager_KnownContactMatching() {
+// Example_knownContactFiltering demonstrates how known contacts are excluded during processing
+func Example_knownContactFiltering() {
 	tempDir := "/tmp/example"
 	_ = os.MkdirAll(tempDir, 0755)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 

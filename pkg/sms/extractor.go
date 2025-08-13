@@ -85,7 +85,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, conf
 // ExtractAttachmentFromPart extracts an attachment from an MMS part if needed
 func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config ContentTypeConfig) (*AttachmentExtractionResult, error) {
 	log.Printf("[DEBUG] ExtractAttachmentFromPart: CT=%s, DataLen=%d", part.ContentType, len(part.Data))
-	
+
 	// Skip if no data to extract
 	if part.Data == "" || part.Data == "null" {
 		log.Printf("[DEBUG] Skipping part - no data")
@@ -117,7 +117,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 	}
 
 	log.Printf("[DEBUG] Proceeding with extraction for %s, data length: %d", part.ContentType, len(part.Data))
-	
+
 	// Decode base64 data
 	decodedData, err := base64.StdEncoding.DecodeString(part.Data)
 	if err != nil {
@@ -201,7 +201,7 @@ func UpdatePartWithExtraction(part *MMSPart, result *AttachmentExtractionResult)
 // ExtractAttachmentsFromMMS processes all parts of an MMS message for attachment extraction
 func (ae *AttachmentExtractor) ExtractAttachmentsFromMMS(mms *MMS, config ContentTypeConfig) (*MMSExtractionSummary, error) {
 	log.Printf("[DEBUG] ExtractAttachmentsFromMMS called: MMS date=%d, parts=%d", mms.GetDate(), len(mms.Parts))
-	
+
 	summary := &MMSExtractionSummary{
 		MessageDate: mms.GetDate(),
 		TotalParts:  len(mms.Parts),

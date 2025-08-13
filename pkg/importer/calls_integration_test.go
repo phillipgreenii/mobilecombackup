@@ -36,7 +36,8 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(repoRoot)
 
-	importer, err := NewCallsImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer, err := NewCallsImporter(options, contactsManager, yearTracker)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -128,7 +129,8 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(repoRoot)
 
-	importer, err := NewCallsImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer, err := NewCallsImporter(options, contactsManager, yearTracker)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -199,7 +201,8 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(repoRoot)
 
-	importer, err := NewCallsImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer, err := NewCallsImporter(options, contactsManager, yearTracker)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -298,7 +301,8 @@ func TestCallsImporter_OrderPreservation(t *testing.T) {
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(repoRoot)
 
-	importer, err := NewCallsImporter(options, contactsManager)
+	yearTracker := NewYearTracker()
+	importer, err := NewCallsImporter(options, contactsManager, yearTracker)
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}

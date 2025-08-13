@@ -116,12 +116,12 @@ func TestYearTracker_MultiYearScenario(t *testing.T) {
 	tracker := NewYearTracker()
 
 	// Simulate a realistic multi-year import scenario
-	
+
 	// Year 2022: 100 initial entries
 	for i := 0; i < 100; i++ {
 		tracker.TrackInitialEntry(2022)
 	}
-	
+
 	// Year 2023: 50 initial, 25 new added, 10 duplicates
 	for i := 0; i < 50; i++ {
 		tracker.TrackInitialEntry(2023)
@@ -132,8 +132,8 @@ func TestYearTracker_MultiYearScenario(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		tracker.TrackImportEntry(2023, false)
 	}
-	
-	// Year 2024: 0 initial, 15 new added, 5 duplicates  
+
+	// Year 2024: 0 initial, 15 new added, 5 duplicates
 	for i := 0; i < 15; i++ {
 		tracker.TrackImportEntry(2024, true)
 	}
@@ -145,11 +145,11 @@ func TestYearTracker_MultiYearScenario(t *testing.T) {
 	if err := tracker.ValidateYearStatistics(2022, 100); err != nil {
 		t.Errorf("Year 2022 validation failed: %v", err)
 	}
-	
+
 	if err := tracker.ValidateYearStatistics(2023, 75); err != nil {
 		t.Errorf("Year 2023 validation failed: %v", err)
 	}
-	
+
 	if err := tracker.ValidateYearStatistics(2024, 15); err != nil {
 		t.Errorf("Year 2024 validation failed: %v", err)
 	}

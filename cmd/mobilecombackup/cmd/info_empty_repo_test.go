@@ -18,7 +18,7 @@ func TestInfoCommandEmptyRepository(t *testing.T) {
 
 	// Create empty repository
 	repoRoot := filepath.Join(t.TempDir(), "empty-repo")
-	
+
 	// Initialize repository first
 	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init")
 	if output, err := initCmd.CombinedOutput(); err != nil {
@@ -74,7 +74,7 @@ func TestInfoCommandEmptyRepositoryJSON(t *testing.T) {
 
 	// Create empty repository
 	repoRoot := filepath.Join(t.TempDir(), "empty-repo")
-	
+
 	// Initialize repository first
 	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init")
 	if output, err := initCmd.CombinedOutput(); err != nil {

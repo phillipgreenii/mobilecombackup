@@ -145,11 +145,11 @@ func TestImportIntegration(t *testing.T) {
 				// Create directory without .mobilecombackup.yaml
 				repoPath := t.TempDir()
 				importPath := t.TempDir()
-				
+
 				// Create subdirectories but no marker file
 				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
 				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
-				
+
 				return repoPath, importPath
 			},
 			args:         []string{},
@@ -162,14 +162,14 @@ func TestImportIntegration(t *testing.T) {
 				// Create repository with marker but missing required directories
 				repoPath := t.TempDir()
 				importPath := t.TempDir()
-				
+
 				// Create only marker file, missing subdirectories
 				markerContent := `version: "2.0.0"
 created: "2024-01-01T00:00:00Z"
 creator: "mobilecombackup-test"
 `
 				_ = os.WriteFile(filepath.Join(repoPath, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
-				
+
 				return repoPath, importPath
 			},
 			args:         []string{},
@@ -194,11 +194,11 @@ creator: "mobilecombackup-test"
 				// Create directory without .mobilecombackup.yaml for validation failure
 				repoPath := t.TempDir()
 				importPath := t.TempDir()
-				
+
 				// Create subdirectories but no marker file
 				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
 				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
-				
+
 				return repoPath, importPath
 			},
 			args:         []string{"--quiet"},

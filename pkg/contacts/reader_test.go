@@ -719,18 +719,18 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 
 func TestContactsManager_AddUnprocessedContacts_SingleAddress(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Test single address and name
 	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 1 {
 		t.Fatalf("Expected 1 entry, got %d", len(entries))
 	}
-	
+
 	entry := entries[0]
 	if entry.PhoneNumber != "5551234567" {
 		t.Errorf("Expected phone number '5551234567', got '%s'", entry.PhoneNumber)
@@ -745,29 +745,29 @@ func TestContactsManager_AddUnprocessedContacts_SingleAddress(t *testing.T) {
 
 func TestContactsManager_AddUnprocessedContacts_MultipleAddresses(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Test multiple addresses and names
 	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 2 {
 		t.Fatalf("Expected 2 entries, got %d", len(entries))
 	}
-	
+
 	// Entries should be sorted by phone number
 	entry1 := entries[0]
 	entry2 := entries[1]
-	
+
 	if entry1.PhoneNumber != "5551234567" {
 		t.Errorf("Expected first phone number '5551234567', got '%s'", entry1.PhoneNumber)
 	}
 	if entry2.PhoneNumber != "5559876543" {
 		t.Errorf("Expected second phone number '5559876543', got '%s'", entry2.PhoneNumber)
 	}
-	
+
 	if entry1.ContactNames[0] != "John Doe" {
 		t.Errorf("Expected first contact name 'John Doe', got '%s'", entry1.ContactNames[0])
 	}
@@ -778,18 +778,18 @@ func TestContactsManager_AddUnprocessedContacts_MultipleAddresses(t *testing.T) 
 
 func TestContactsManager_AddUnprocessedContacts_CountMismatch(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Test count mismatch - should return error
 	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe")
 	if err == nil {
 		t.Fatal("Expected error for count mismatch, got nil")
 	}
-	
+
 	expectedError := "address count (2) does not match contact name count (1)"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
-	
+
 	// Should not add any entries
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 0 {
@@ -799,18 +799,18 @@ func TestContactsManager_AddUnprocessedContacts_CountMismatch(t *testing.T) {
 
 func TestContactsManager_AddUnprocessedContacts_EmptyValues(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Test empty address or name - should skip
 	err := manager.AddUnprocessedContacts("5551234567~", "John Doe,")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 1 {
 		t.Fatalf("Expected 1 entry (skipping empty), got %d", len(entries))
 	}
-	
+
 	entry := entries[0]
 	if entry.PhoneNumber != "5551234567" {
 		t.Errorf("Expected phone number '5551234567', got '%s'", entry.PhoneNumber)
@@ -823,7 +823,7 @@ func TestContactsManager_AddUnprocessedContacts_EmptyValues(t *testing.T) {
 func TestContactsManager_AddUnprocessedContacts_KnownContactsSkipped(t *testing.T) {
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
-	
+
 	// Create contacts.yaml with known contact
 	contactsData := `
 contacts:
@@ -833,24 +833,24 @@ contacts:
 	if err := os.WriteFile(contactsPath, []byte(contactsData), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	manager := NewContactsManager(tempDir)
 	err := manager.LoadContacts()
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
-	
+
 	// Try to add known and unknown contacts
 	err = manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 1 {
 		t.Fatalf("Expected 1 entry (known contact skipped), got %d", len(entries))
 	}
-	
+
 	entry := entries[0]
 	if entry.PhoneNumber != "5559876543" {
 		t.Errorf("Expected phone number '5559876543', got '%s'", entry.PhoneNumber)
@@ -862,23 +862,23 @@ contacts:
 
 func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Add same phone number with different names
 	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
 	if err != nil {
 		t.Fatalf("First AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	err = manager.AddUnprocessedContacts("5551234567", "Johnny")
 	if err != nil {
 		t.Fatalf("Second AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 1 {
 		t.Fatalf("Expected 1 entry (combined), got %d", len(entries))
 	}
-	
+
 	entry := entries[0]
 	if entry.PhoneNumber != "5551234567" {
 		t.Errorf("Expected phone number '5551234567', got '%s'", entry.PhoneNumber)
@@ -886,7 +886,7 @@ func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) 
 	if len(entry.ContactNames) != 2 {
 		t.Fatalf("Expected 2 contact names, got %d", len(entry.ContactNames))
 	}
-	
+
 	// Check both names are present (order may vary)
 	names := entry.ContactNames
 	if !contains(names, "John Doe") {
@@ -899,23 +899,23 @@ func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) 
 
 func TestContactsManager_GetUnprocessedEntries_Sorting(t *testing.T) {
 	manager := NewContactsManager("")
-	
+
 	// Add entries in reverse order
 	err := manager.AddUnprocessedContacts("5559876543", "Jane Smith")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	err = manager.AddUnprocessedContacts("5551234567", "John Doe")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
-	
+
 	entries := manager.GetUnprocessedEntries()
 	if len(entries) != 2 {
 		t.Fatalf("Expected 2 entries, got %d", len(entries))
 	}
-	
+
 	// Should be sorted lexicographically
 	if entries[0].PhoneNumber != "5551234567" {
 		t.Errorf("Expected first phone number '5551234567', got '%s'", entries[0].PhoneNumber)

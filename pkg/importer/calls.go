@@ -50,12 +50,12 @@ func (ci *CallsImporter) LoadRepository() error {
 	err := reader.StreamCalls(func(call *calls.Call) error {
 		entry := calls.CallEntry{Call: call}
 		existingCalls = append(existingCalls, entry)
-		
+
 		// Track initial entry by year
 		if ci.yearTracker != nil {
 			ci.yearTracker.TrackInitialEntry(entry.Year())
 		}
-		
+
 		return nil
 	})
 
@@ -147,14 +147,14 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 		// Add to coalescer (checks for duplicates)
 		entry := calls.CallEntry{Call: call}
 		wasAdded := ci.coalescer.Add(entry)
-		
+
 		// Update file-level statistics
 		if wasAdded {
 			stat.Added++
 		} else {
 			stat.Duplicates++
 		}
-		
+
 		// Track entry by year
 		if ci.yearTracker != nil {
 			ci.yearTracker.TrackImportEntry(entry.Year(), wasAdded)
