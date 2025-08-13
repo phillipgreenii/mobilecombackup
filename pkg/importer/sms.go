@@ -334,7 +334,7 @@ func (si *SMSImporter) extractSMSContact(smsMsg sms.SMS) {
 		contactNames := strings.Split(smsMsg.ContactName, ",")
 		for _, name := range contactNames {
 			name = strings.TrimSpace(name)
-			if name != "" {
+			if name != "" && !isUnknownContact(name) {
 				si.contactsManager.AddUnprocessedContact(smsMsg.Address, name)
 			}
 		}
@@ -349,7 +349,7 @@ func (si *SMSImporter) extractMMSContacts(mmsMsg sms.MMS) {
 		contactNames := strings.Split(mmsMsg.ContactName, ",")
 		for _, name := range contactNames {
 			name = strings.TrimSpace(name)
-			if name != "" {
+			if name != "" && !isUnknownContact(name) {
 				si.contactsManager.AddUnprocessedContact(mmsMsg.Address, name)
 			}
 		}

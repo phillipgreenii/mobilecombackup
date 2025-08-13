@@ -171,3 +171,92 @@ func TestContactParsing_EmptyAndSingleContacts(t *testing.T) {
 		}
 	}
 }
+
+func TestContactParsing_UnknownContactFiltering(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Test calls importer with unknown contacts
+	t.Run("Calls_UnknownContacts", func(t *testing.T) {
+		contactsManager := contacts.NewContactsManager(tempDir)
+		callsImporter := &CallsImporter{
+			contactsManager: contactsManager,
+		}
+
+		// Test various unknown contact patterns
+		call1 := &calls.Call{Number: "15555551234", ContactName: "(Unknown)"}
+		callsImporter.extractContact(call1)
+
+		call2 := &calls.Call{Number: "15555556789", ContactName: "null"}
+		callsImporter.extractContact(call2)
+
+		call3 := &calls.Call{Number: "15555550000", ContactName: ""}
+		callsImporter.extractContact(call3)
+
+		// Test mixed valid and unknown contacts
+		call4 := &calls.Call{Number: "15555551111", ContactName: "John Doe, (Unknown), Jane Smith, null"}
+		callsImporter.extractContact(call4)
+
+		// Get unprocessed entries
+		entries := contactsManager.GetUnprocessedEntries()
+
+		// Should only have one entry (for call4 with valid contacts)
+		expectedEntries := 1
+		if len(entries) != expectedEntries {
+			t.Errorf("Expected %d unprocessed entry, got %d", expectedEntries, len(entries))
+		}
+
+		if len(entries) > 0 {
+			entry := entries[0]
+			if entry.PhoneNumber != "5555551111" || len(entry.ContactNames) != 2 {
+				t.Errorf("Expected 2 valid contacts for 5555551111, got %v", entry.ContactNames)
+			} else {
+				// Check that only valid contacts are included
+				expectedNames := []string{"John Doe", "Jane Smith"}
+				for _, expected := range expectedNames {
+					found := false
+					for _, name := range entry.ContactNames {
+						if name == expected {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Expected contact '%s' not found in %v", expected, entry.ContactNames)
+					}
+				}
+			}
+		}
+	})
+
+	// Test SMS importer with unknown contacts
+	t.Run("SMS_UnknownContacts", func(t *testing.T) {
+		contactsManager := contacts.NewContactsManager(tempDir)
+		smsImporter := &SMSImporter{
+			contactsManager: contactsManager,
+		}
+
+		// Test SMS with unknown contact
+		smsMsg1 := sms.SMS{Address: "15555551111", ContactName: "(Unknown)"}
+		smsImporter.extractSMSContact(smsMsg1)
+
+		// Test MMS with mixed unknown and valid contacts
+		mmsMsg1 := sms.MMS{Address: "15555552222", ContactName: "Valid User, null, (Unknown)"}
+		smsImporter.extractMMSContacts(mmsMsg1)
+
+		// Get unprocessed entries
+		entries := contactsManager.GetUnprocessedEntries()
+
+		// Should only have one entry (for the MMS with valid contact)
+		expectedEntries := 1
+		if len(entries) != expectedEntries {
+			t.Errorf("Expected %d unprocessed entry, got %d", expectedEntries, len(entries))
+		}
+
+		if len(entries) > 0 {
+			entry := entries[0]
+			if entry.PhoneNumber != "5555552222" || len(entry.ContactNames) != 1 || entry.ContactNames[0] != "Valid User" {
+				t.Errorf("Expected single contact 'Valid User' for 5555552222, got %v", entry.ContactNames)
+			}
+		}
+	})
+}

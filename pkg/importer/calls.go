@@ -264,9 +264,15 @@ func (ci *CallsImporter) extractContact(call *calls.Call) {
 		contactNames := strings.Split(call.ContactName, ",")
 		for _, name := range contactNames {
 			name = strings.TrimSpace(name)
-			if name != "" {
+			if name != "" && !isUnknownContact(name) {
 				ci.contactsManager.AddUnprocessedContact(call.Number, name)
 			}
 		}
 	}
+}
+
+// isUnknownContact checks if a contact name represents an unknown contact
+// and should be ignored during contact extraction
+func isUnknownContact(contactName string) bool {
+	return contactName == "" || contactName == "(Unknown)" || contactName == "null"
 }
