@@ -16,6 +16,21 @@ echo "Initialize Repository"
 echo "Validate Fresh Repository"
 ./mobilecombackup validate --repo-root="$repodir"
 
+echo "Info should work with empty repository"
+./mobilecombackup info --repo-root="$repodir"
+
+echo "Setting adding contacts.yaml"
+cat > "$repodir/contacts.yaml" << EOF
+contacts: 
+    - name: "Oscar Wild"
+      numbers:
+        - "5555550004"
+EOF
+./mobilecombackup reprocess-contacts --repo-root="$repodir" 
+
+echo "Validate After contact change"
+./mobilecombackup validate --repo-root="$repodir" 
+
 echo "Import Test Data"
 ./mobilecombackup import --repo-root="$repodir" testdata
 
@@ -39,6 +54,9 @@ if [[ $(ls -1 "$repodir/attachments" | wc -l) -eq 0 ]]; then
 	echo "ERROR: No attachments found" >&2
 	exit 2
 fi
+
+echo "Info should work with imported data"
+./mobilecombackup info --repo-root="$repodir"
 
 echo "Re-Import Test Data should work"
 ./mobilecombackup import --repo-root="$repodir" testdata
