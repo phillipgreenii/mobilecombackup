@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -391,5 +393,307 @@ func TestDisplayJSONSummary(t *testing.T) {
 		if !strings.Contains(output, expected) {
 			t.Errorf("Expected JSON output to contain %q, but it didn't.\nOutput:\n%s", expected, output)
 		}
+	}
+}
+
+// TestDisplaySummaryYearOrdering tests that years are displayed in ascending chronological order
+func TestDisplaySummaryYearOrdering(t *testing.T) {
+	// Create a test summary with years in mixed order
+	summary := &importer.ImportSummary{
+		Calls: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2024: {Final: 100, Added: 80, Duplicates: 20},
+				2020: {Final: 200, Added: 150, Duplicates: 50},
+				2022: {Final: 150, Added: 120, Duplicates: 30},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      450,
+				Added:      350,
+				Duplicates: 100,
+			},
+		},
+		SMS: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2023: {Final: 300, Added: 250, Duplicates: 50},
+				2021: {Final: 250, Added: 200, Duplicates: 50},
+				2019: {Final: 180, Added: 150, Duplicates: 30},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      730,
+				Added:      600,
+				Duplicates: 130,
+			},
+		},
+		Attachments: &importer.AttachmentStats{
+			Total: &importer.AttachmentStat{
+				Total:      10,
+				New:        8,
+				Duplicates: 2,
+			},
+		},
+		FilesProcessed: 3,
+		Duration:       1 * time.Second,
+	}
+
+	// Capture output
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Save importFilter
+	oldFilter := importFilter
+	importFilter = ""
+	defer func() { importFilter = oldFilter }()
+
+	// Call displaySummary
+	displaySummary(summary, false)
+
+	// Restore stdout
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	// Read captured output
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify years appear in ascending order for Calls
+	callsSection := output[strings.Index(output, "Calls:"):]
+	smsSection := callsSection[strings.Index(callsSection, "SMS:"):]
+
+	// For calls section, verify 2020 appears before 2022, which appears before 2024
+	index2020 := strings.Index(callsSection, "2020: 200 entries")
+	index2022 := strings.Index(callsSection, "2022: 150 entries")
+	index2024 := strings.Index(callsSection, "2024: 100 entries")
+
+	if index2020 == -1 || index2022 == -1 || index2024 == -1 {
+		t.Fatalf("Missing expected year entries in calls section:\nOutput:\n%s", output)
+	}
+
+	if index2020 > index2022 {
+		t.Errorf("Year 2020 should appear before 2022 in calls section")
+	}
+	if index2022 > index2024 {
+		t.Errorf("Year 2022 should appear before 2024 in calls section")
+	}
+
+	// For SMS section, verify 2019 appears before 2021, which appears before 2023
+	index2019 := strings.Index(smsSection, "2019: 180 entries")
+	index2021 := strings.Index(smsSection, "2021: 250 entries")
+	index2023 := strings.Index(smsSection, "2023: 300 entries")
+
+	if index2019 == -1 || index2021 == -1 || index2023 == -1 {
+		t.Fatalf("Missing expected year entries in SMS section:\nOutput:\n%s", output)
+	}
+
+	if index2019 > index2021 {
+		t.Errorf("Year 2019 should appear before 2021 in SMS section")
+	}
+	if index2021 > index2023 {
+		t.Errorf("Year 2021 should appear before 2023 in SMS section")
+	}
+}
+
+// TestDisplayJSONSummaryYearOrdering tests that years are ordered in JSON output
+func TestDisplayJSONSummaryYearOrdering(t *testing.T) {
+	// Create a test summary with years in mixed order
+	summary := &importer.ImportSummary{
+		Calls: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2024: {Final: 100, Added: 80, Duplicates: 20},
+				2020: {Final: 200, Added: 150, Duplicates: 50},
+				2022: {Final: 150, Added: 120, Duplicates: 30},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      450,
+				Added:      350,
+				Duplicates: 100,
+			},
+		},
+		SMS: &importer.EntityStats{
+			YearStats: map[int]*importer.YearStat{
+				2023: {Final: 300, Added: 250, Duplicates: 50},
+				2021: {Final: 250, Added: 200, Duplicates: 50},
+			},
+			Total: &importer.YearStat{
+				Initial:    0,
+				Final:      550,
+				Added:      450,
+				Duplicates: 100,
+			},
+		},
+		Attachments: &importer.AttachmentStats{
+			Total: &importer.AttachmentStat{
+				Total:      5,
+				New:        4,
+				Duplicates: 1,
+			},
+		},
+		FilesProcessed: 2,
+		Duration:       1 * time.Second,
+	}
+
+	// Capture output
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Call displayJSONSummary
+	displayJSONSummary(summary)
+
+	// Restore stdout
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	// Read captured output
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	output := buf.String()
+
+	// Parse JSON to verify structure
+	var result map[string]interface{}
+	if err := json.Unmarshal([]byte(output), &result); err != nil {
+		t.Fatalf("Failed to parse JSON output: %v\nOutput:\n%s", err, output)
+	}
+
+	// Verify the JSON output has years in ascending order by checking the raw JSON string
+	// Since JSON objects maintain insertion order in Go's json package, we can check the string position
+	
+	// For calls section, verify 2020 appears before 2022, which appears before 2024
+	callsYearsStart := strings.Index(output, `"calls"`)
+	if callsYearsStart == -1 {
+		t.Fatal("calls section not found in JSON output")
+	}
+	callsSection := output[callsYearsStart:]
+	
+	smsYearsStart := strings.Index(callsSection, `"sms"`)
+	if smsYearsStart != -1 {
+		callsSection = callsSection[:smsYearsStart] // Limit to just calls section
+	}
+
+	index2020 := strings.Index(callsSection, `"2020"`)
+	index2022 := strings.Index(callsSection, `"2022"`)
+	index2024 := strings.Index(callsSection, `"2024"`)
+
+	if index2020 == -1 || index2022 == -1 || index2024 == -1 {
+		t.Fatalf("Missing expected year keys in calls section:\nOutput:\n%s", output)
+	}
+
+	if index2020 > index2022 {
+		t.Errorf("Year 2020 should appear before 2022 in calls JSON section")
+	}
+	if index2022 > index2024 {
+		t.Errorf("Year 2022 should appear before 2024 in calls JSON section")
+	}
+
+	// For SMS section, verify 2021 appears before 2023
+	smsStart := strings.Index(output, `"sms"`)
+	if smsStart == -1 {
+		t.Fatal("sms section not found in JSON output")
+	}
+	smsSection := output[smsStart:]
+	
+	// Limit SMS section to just that section (before attachments)
+	attachmentsStart := strings.Index(smsSection, `"attachments"`)
+	if attachmentsStart != -1 {
+		smsSection = smsSection[:attachmentsStart]
+	}
+
+	index2021 := strings.Index(smsSection, `"2021"`)
+	index2023 := strings.Index(smsSection, `"2023"`)
+
+	if index2021 == -1 || index2023 == -1 {
+		t.Fatalf("Missing expected year keys in SMS section:\nOutput:\n%s", output)
+	}
+
+	if index2021 > index2023 {
+		t.Errorf("Year 2021 should appear before 2023 in SMS JSON section")
+	}
+}
+
+// TestSortYearStatsForJSON tests the helper function directly
+func TestSortYearStatsForJSON(t *testing.T) {
+	// Test with mixed order years
+	yearStats := map[int]*importer.YearStat{
+		2024: {Final: 100, Added: 80, Duplicates: 20},
+		2020: {Final: 200, Added: 150, Duplicates: 50},
+		2022: {Final: 150, Added: 120, Duplicates: 30},
+		2021: {Final: 175, Added: 140, Duplicates: 35},
+	}
+
+	result := sortYearStatsForJSON(yearStats)
+
+	// Since Go maps have non-deterministic iteration order, 
+	// we need to check ordering differently. The sortYearStatsForJSON function
+	// should create an ordered map in the internal representation.
+	// We'll verify by marshaling to JSON and checking the order in the JSON string.
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		t.Fatalf("Failed to marshal result to JSON: %v", err)
+	}
+	jsonStr := string(jsonBytes)
+
+	// Check positions of years in the JSON string
+	index2020 := strings.Index(jsonStr, `"2020"`)
+	index2021 := strings.Index(jsonStr, `"2021"`)
+	index2022 := strings.Index(jsonStr, `"2022"`)
+	index2024 := strings.Index(jsonStr, `"2024"`)
+
+	if index2020 == -1 || index2021 == -1 || index2022 == -1 || index2024 == -1 {
+		t.Fatalf("Missing expected years in JSON: %s", jsonStr)
+	}
+
+	// Verify ascending order
+	if index2020 > index2021 || index2021 > index2022 || index2022 > index2024 {
+		t.Errorf("Years not in ascending order in JSON. Positions: 2020=%d, 2021=%d, 2022=%d, 2024=%d\nJSON: %s", 
+			index2020, index2021, index2022, index2024, jsonStr)
+	}
+
+	// Verify we have all expected keys
+	expectedOrder := []string{"2020", "2021", "2022", "2024"}
+	if len(result) != len(expectedOrder) {
+		t.Fatalf("Expected %d keys, got %d: %v", len(expectedOrder), len(result), result)
+	}
+
+	// Verify values are preserved correctly
+	for year, originalStat := range yearStats {
+		yearStr := fmt.Sprintf("%d", year)
+		if resultStat, exists := result[yearStr]; !exists {
+			t.Errorf("Missing year %s in result", yearStr)
+		} else if resultStat != originalStat {
+			t.Errorf("Year %s stat not preserved correctly", yearStr)
+		}
+	}
+}
+
+// TestSortYearStatsForJSON_EdgeCases tests edge cases for the helper function
+func TestSortYearStatsForJSON_EdgeCases(t *testing.T) {
+	// Test with empty map
+	emptyResult := sortYearStatsForJSON(nil)
+	if len(emptyResult) != 0 {
+		t.Errorf("Expected empty result for nil input, got %v", emptyResult)
+	}
+
+	emptyMap := make(map[int]*importer.YearStat)
+	emptyResult = sortYearStatsForJSON(emptyMap)
+	if len(emptyResult) != 0 {
+		t.Errorf("Expected empty result for empty input, got %v", emptyResult)
+	}
+
+	// Test with single year
+	singleYear := map[int]*importer.YearStat{
+		2023: {Final: 50, Added: 40, Duplicates: 10},
+	}
+
+	singleResult := sortYearStatsForJSON(singleYear)
+	if len(singleResult) != 1 {
+		t.Fatalf("Expected 1 result for single year, got %d", len(singleResult))
+	}
+
+	if _, exists := singleResult["2023"]; !exists {
+		t.Errorf("Expected year 2023 in result, got keys: %v", singleResult)
 	}
 }
