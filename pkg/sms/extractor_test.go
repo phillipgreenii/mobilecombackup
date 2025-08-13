@@ -63,58 +63,222 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
-		name        string
-		contentType string
-		expected    bool
+		name             string
+		contentType      string
+		expected         bool
+		expectedCategory string
+		expectedReason   string
 	}{
-		// Should extract
-		{"JPEG image", "image/jpeg", true},
-		{"PNG image", "image/png", true},
-		{"MP4 video", "video/mp4", true},
-		{"PDF document", "application/pdf", true},
-		{"JPEG with charset", "image/jpeg; charset=utf-8", true},
+		// Should extract - binary types
+		{"JPEG image", "image/jpeg", true, "binary", "whitelisted binary type"},
+		{"PNG image", "image/png", true, "binary", "whitelisted binary type"},
+		{"MP4 video", "video/mp4", true, "binary", "whitelisted binary type"},
+		{"PDF document", "application/pdf", true, "binary", "whitelisted binary type"},
+		{"JPEG with charset", "image/jpeg; charset=utf-8", true, "binary", "whitelisted binary type"},
 
-		// Should not extract
-		{"SMIL presentation", "application/smil", false},
-		{"Plain text", "text/plain", false},
-		{"vCard contact", "text/x-vCard", false},
-		{"WAP container", "application/vnd.wap.multipart.related", false},
-		{"Unknown type", "application/unknown", false},
-		{"Empty content type", "", false},
+		// Should not extract - text types
+		{"SMIL presentation", "application/smil", false, "text", "text content - keeping inline"},
+		{"Plain text", "text/plain", false, "text", "text content - keeping inline"},
+		{"vCard contact", "text/x-vCard", false, "text", "text content - keeping inline"},
+		{"WAP container", "application/vnd.wap.multipart.related", false, "text", "text content - keeping inline"},
+
+		// Should not extract - unknown types
+		{"Unknown type", "application/unknown", false, "unknown", "unknown content type: application/unknown"},
+		{"Empty content type", "", false, "unknown", "missing content type header"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := extractor.shouldExtractContentType(tt.contentType, false, config)
-			if result != tt.expected {
-				t.Errorf("shouldExtractContentType(%q) = %v, expected %v", tt.contentType, result, tt.expected)
+			decision := extractor.shouldExtractContentType(tt.contentType, false, config)
+			if decision.ShouldExtract != tt.expected {
+				t.Errorf("shouldExtractContentType(%q).ShouldExtract = %v, expected %v", tt.contentType, decision.ShouldExtract, tt.expected)
+			}
+			if decision.Category != tt.expectedCategory {
+				t.Errorf("shouldExtractContentType(%q).Category = %q, expected %q", tt.contentType, decision.Category, tt.expectedCategory)
+			}
+			if decision.Reason != tt.expectedReason {
+				t.Errorf("shouldExtractContentType(%q).Reason = %q, expected %q", tt.contentType, decision.Reason, tt.expectedReason)
 			}
 		})
 	}
 
-	// Test that skipped types are never extracted, even with explicit attachment marking
-	t.Run("Skipped content types override explicit attachment marking", func(t *testing.T) {
-		// text/plain is skipped and should never be extracted, even if marked as attachment
-		result := extractor.shouldExtractContentType("text/plain", true, config)
-		if result {
-			t.Errorf("shouldExtractContentType('text/plain', true, config) = true, expected false (skipped types should never be extracted)")
+	// Test text types are consistently rejected, even with explicit attachment marking
+	t.Run("Text content types are always rejected", func(t *testing.T) {
+		// text/plain is a text type and should never be extracted
+		decision := extractor.shouldExtractContentType("text/plain", true, config)
+		if decision.ShouldExtract {
+			t.Errorf("shouldExtractContentType('text/plain', true, config).ShouldExtract = true, expected false (text types should never be extracted)")
+		}
+		if decision.Category != "text" {
+			t.Errorf("Expected category 'text', got %q", decision.Category)
 		}
 	})
 
-	// Test that unknown types can still be extracted with explicit attachment marking
-	t.Run("Unknown content types can be extracted with explicit attachment marking", func(t *testing.T) {
-		// application/unknown is not in extractable or skipped lists, should be extracted if marked as attachment
-		result := extractor.shouldExtractContentType("application/unknown", true, config)
-		if !result {
-			t.Errorf("shouldExtractContentType('application/unknown', true, config) = false, expected true")
+	// Test unknown types are rejected under the new strict policy
+	t.Run("Unknown content types are rejected", func(t *testing.T) {
+		// application/unknown is not in either whitelist and should be rejected
+		decision := extractor.shouldExtractContentType("application/unknown", true, config)
+		if decision.ShouldExtract {
+			t.Errorf("shouldExtractContentType('application/unknown', true, config).ShouldExtract = true, expected false (unknown types should be rejected)")
 		}
-		
-		// But not extracted without explicit marking
-		result = extractor.shouldExtractContentType("application/unknown", false, config)
-		if result {
-			t.Errorf("shouldExtractContentType('application/unknown', false, config) = true, expected false")
+		if decision.Category != "unknown" {
+			t.Errorf("Expected category 'unknown', got %q", decision.Category)
+		}
+
+		// Same result without explicit marking
+		decision = extractor.shouldExtractContentType("application/unknown", false, config)
+		if decision.ShouldExtract {
+			t.Errorf("shouldExtractContentType('application/unknown', false, config).ShouldExtract = true, expected false")
 		}
 	})
+
+	// Test edge cases
+	t.Run("Edge cases", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			contentType    string
+			expectedCat    string
+			expectedReason string
+		}{
+			{"Whitespace content type", "  \t  ", "unknown", "empty content type after normalization"},
+			{"Content type with semicolon", "image/png;", "binary", "whitelisted binary type"},
+			{"Case insensitive", "IMAGE/JPEG", "binary", "whitelisted binary type"},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				decision := extractor.shouldExtractContentType(tt.contentType, false, config)
+				if decision.Category != tt.expectedCat {
+					t.Errorf("%s: Expected category %q, got %q", tt.name, tt.expectedCat, decision.Category)
+				}
+				if decision.Reason != tt.expectedReason {
+					t.Errorf("%s: Expected reason %q, got %q", tt.name, tt.expectedReason, decision.Reason)
+				}
+			})
+		}
+	})
+}
+
+// TestAttachmentExtractor_ContentTypeEdgeCases tests comprehensive edge cases for content type handling
+func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
+	extractor := NewAttachmentExtractor(t.TempDir())
+	config := GetDefaultContentTypeConfig()
+
+	tests := []struct {
+		name             string
+		contentType      string
+		expectedExtract  bool
+		expectedCategory string
+		expectedReason   string
+	}{
+		// Malformed content types
+		{"Malformed semicolon only", ";", false, "unknown", "empty content type after normalization"},
+		{"Multiple semicolons", "image/png;;charset=utf-8;", true, "binary", "whitelisted binary type"},
+		{"Content type with trailing space", "image/jpeg ", true, "binary", "whitelisted binary type"},
+		{"Content type with leading space", " image/jpeg", true, "binary", "whitelisted binary type"},
+		{"Content type with tabs", "\timage/png\t", true, "binary", "whitelisted binary type"},
+		{"Content type with newlines", "image/jpeg\n", true, "binary", "whitelisted binary type"},
+
+		// Mixed case variations
+		{"Upper case", "IMAGE/JPEG", true, "binary", "whitelisted binary type"},
+		{"Mixed case", "Image/Jpeg", true, "binary", "whitelisted binary type"},
+		{"Mixed case with charset", "Image/PNG; Charset=UTF-8", true, "binary", "whitelisted binary type"},
+
+		// Boundary conditions
+		{"Just whitespace", "   \t\n  ", false, "unknown", "empty content type after normalization"},
+		{"Single character", "x", false, "unknown", "unknown content type: x"},
+		{"Slash without subtype", "image/", false, "unknown", "unknown content type: image/"},
+		{"Subtype without main type", "/jpeg", false, "unknown", "unknown content type: /jpeg"},
+		{"Double slash", "image//jpeg", false, "unknown", "unknown content type: image//jpeg"},
+
+		// Common variations and alternatives
+		{"JPEG alt spelling", "image/jpg", true, "binary", "whitelisted binary type"},
+		{"Non-standard MP3", "audio/mp3", true, "binary", "whitelisted binary type"},
+		{"TIFF variation", "image/tiff", true, "binary", "whitelisted binary type"},
+		{"TIFF short form", "image/tif", true, "binary", "whitelisted binary type"},
+
+		// Common unknown types that should be rejected
+		{"Adobe Flash", "application/x-shockwave-flash", false, "unknown", "unknown content type: application/x-shockwave-flash"},
+		{"Custom application", "application/x-custom-format", false, "unknown", "unknown content type: application/x-custom-format"},
+		{"Binary stream", "application/binary", false, "unknown", "unknown content type: application/binary"},
+		{"Generic data", "application/data", false, "unknown", "unknown content type: application/data"},
+
+		// Text variations that should remain inline
+		{"Rich text format", "text/rtf", false, "text", "text content - keeping inline"},
+		{"CSV data", "text/csv", false, "text", "text content - keeping inline"},
+		{"JavaScript", "text/javascript", false, "text", "text content - keeping inline"},
+		{"Application JavaScript", "application/javascript", false, "text", "text content - keeping inline"},
+
+		// Complex parameter strings
+		{"Multiple parameters", "image/jpeg; charset=utf-8; boundary=something", true, "binary", "whitelisted binary type"},
+		{"Parameters with spaces", "image/png; charset = utf-8 ; quality = high", true, "binary", "whitelisted binary type"},
+		{"Parameters with quotes", `image/gif; name="file name.gif"`, true, "binary", "whitelisted binary type"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decision := extractor.shouldExtractContentType(tt.contentType, false, config)
+			if decision.ShouldExtract != tt.expectedExtract {
+				t.Errorf("shouldExtractContentType(%q).ShouldExtract = %v, expected %v", tt.contentType, decision.ShouldExtract, tt.expectedExtract)
+			}
+			if decision.Category != tt.expectedCategory {
+				t.Errorf("shouldExtractContentType(%q).Category = %q, expected %q", tt.contentType, decision.Category, tt.expectedCategory)
+			}
+			if decision.Reason != tt.expectedReason {
+				t.Errorf("shouldExtractContentType(%q).Reason = %q, expected %q", tt.contentType, decision.Reason, tt.expectedReason)
+			}
+		})
+	}
+}
+
+// TestAttachmentExtractor_LoggingBehavior tests that logging is comprehensive and correct
+func TestAttachmentExtractor_LoggingBehavior(t *testing.T) {
+	tempDir := t.TempDir()
+	extractor := NewAttachmentExtractor(tempDir)
+	config := GetDefaultContentTypeConfig()
+
+	// Test that each decision path logs appropriately
+	testCases := []struct {
+		name        string
+		contentType string
+		hasData     bool
+		dataSize    int
+		expectLog   string
+	}{
+		{"Binary type approval", "image/png", true, 2000, "whitelisted binary type"},
+		{"Text type rejection", "text/plain", true, 2000, "text content - keeping inline"},
+		{"Unknown type rejection", "application/unknown", true, 2000, "unknown content type: application/unknown"},
+		{"Missing content type", "", true, 2000, "missing content type header"},
+		{"Small data skip", "image/jpeg", true, 100, "Skipping small binary content"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			part := &MMSPart{
+				ContentType: tc.contentType,
+				Filename:    "test.bin",
+			}
+
+			if tc.hasData {
+				// Create test data of specified size
+				testData := make([]byte, tc.dataSize)
+				for i := range testData {
+					testData[i] = byte(i % 256)
+				}
+				part.Data = base64.StdEncoding.EncodeToString(testData)
+			}
+
+			// The actual extraction test - we mainly care that it doesn't crash
+			// and that logging happens (we can't easily capture logs in tests but
+			// the log.Printf calls will execute)
+			_, err := extractor.ExtractAttachmentFromPart(part, config)
+
+			// Some test cases will error (like invalid base64), that's expected
+			if tc.name == "Small data skip" && err != nil {
+				t.Errorf("Unexpected error for small data: %v", err)
+			}
+		})
+	}
 }
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {

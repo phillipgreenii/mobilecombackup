@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,14 +27,93 @@ func NewAttachmentExtractor(repoRoot string) *AttachmentExtractor {
 	}
 }
 
-// ContentTypeConfig defines which content types to extract vs skip
+// BinaryContentTypes defines the explicit whitelist of binary content types for extraction
+var BinaryContentTypes = map[string]bool{
+	// Common image types - strict binary only
+	"image/jpeg": true,
+	"image/jpg":  true, // Some systems use this non-standard variant
+	"image/png":  true,
+	"image/gif":  true,
+	"image/bmp":  true,
+	"image/webp": true,
+	"image/tiff": true,
+	"image/tif":  true, // TIFF variant
+
+	// Video types
+	"video/mp4":       true,
+	"video/3gpp":      true,
+	"video/quicktime": true,
+	"video/avi":       true,
+	"video/mov":       true,
+	"video/wmv":       true,
+	"video/flv":       true,
+
+	// Audio types
+	"audio/mpeg": true,
+	"audio/mp3":  true, // Non-standard but commonly used
+	"audio/mp4":  true,
+	"audio/amr":  true,
+	"audio/wav":  true,
+	"audio/ogg":  true,
+	"audio/aac":  true,
+	"audio/m4a":  true,
+
+	// Document types
+	"application/pdf": true,
+	"application/zip": true,
+	"application/rar": true,
+	"application/7z":  true,
+
+	// Microsoft Office binary formats
+	"application/msword":            true, // .doc
+	"application/vnd.ms-excel":      true, // .xls
+	"application/vnd.ms-powerpoint": true, // .ppt
+
+	// Microsoft Office XML formats
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   true, // .docx
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true, // .xlsx
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true, // .pptx
+
+	// Other common binary formats
+	"application/octet-stream": true, // Generic binary
+}
+
+// TextContentTypes defines text-based content that should remain inline (for logging)
+var TextContentTypes = map[string]bool{
+	"text/plain":                            true,
+	"text/html":                             true,
+	"text/xml":                              true,
+	"text/css":                              true,
+	"text/javascript":                       true,
+	"text/csv":                              true,
+	"text/rtf":                              true, // Rich Text Format
+	"text/x-vcard":                          true,
+	"text/vcard":                            true,
+	"application/xml":                       true,
+	"application/json":                      true,
+	"application/javascript":                true,
+	"application/smil":                      true,
+	"application/xhtml+xml":                 true,
+	"application/vnd.wap.multipart.related": true,
+}
+
+// ContentDecision represents the decision made about content extraction
+type ContentDecision struct {
+	ShouldExtract bool
+	Reason        string
+	ContentType   string
+	Category      string // "binary", "text", "unknown"
+}
+
+// ContentTypeConfig defines which content types to extract vs skip (maintained for backward compatibility)
 type ContentTypeConfig struct {
 	ExtractableTypes []string // Content types to extract
 	SkippedTypes     []string // Content types to skip (leave inline)
 }
 
-// GetDefaultContentTypeConfig returns the default content type configuration
+// GetDefaultContentTypeConfig returns the default content type configuration (backward compatibility)
 func GetDefaultContentTypeConfig() ContentTypeConfig {
+	// Hardcode the original list to maintain exact backward compatibility
 	return ContentTypeConfig{
 		ExtractableTypes: []string{
 			// Images
@@ -58,40 +138,63 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 	}
 }
 
-// shouldExtractContentType determines if a content type should be extracted
-func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isExplicitAttachment bool, config ContentTypeConfig) bool {
+// shouldExtractContentType determines if a content type should be extracted with detailed decision logging
+func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isExplicitAttachment bool, config ContentTypeConfig) ContentDecision {
+	decision := ContentDecision{
+		ContentType: contentType,
+	}
+
+	// Handle edge cases first
+	if contentType == "" {
+		decision.ShouldExtract = false
+		decision.Reason = "missing content type header"
+		decision.Category = "unknown"
+		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		return decision
+	}
+
 	// Normalize content type (remove parameters like charset)
-	contentType = strings.ToLower(strings.Split(contentType, ";")[0])
+	normalizedType := strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 
-	// Check if explicitly skipped (skipped types override everything, including explicit attachment marking)
-	for _, skipped := range config.SkippedTypes {
-		if contentType == strings.ToLower(skipped) {
-			return false
-		}
+	if normalizedType == "" {
+		decision.ShouldExtract = false
+		decision.Reason = "empty content type after normalization"
+		decision.Category = "unknown"
+		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		return decision
 	}
 
-	// Check if explicitly extractable
-	for _, extractable := range config.ExtractableTypes {
-		if contentType == strings.ToLower(extractable) {
-			return true
-		}
+	// Check against binary whitelist first
+	if BinaryContentTypes[normalizedType] {
+		decision.ShouldExtract = true
+		decision.Reason = "whitelisted binary type"
+		decision.Category = "binary"
+		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		return decision
 	}
 
-	// For unknown content types, only extract if explicitly marked as attachment
-	// This handles edge cases like proprietary formats marked as attachments
-	if isExplicitAttachment {
-		return true
+	// Check if it's a known text type
+	if TextContentTypes[normalizedType] {
+		decision.ShouldExtract = false
+		decision.Reason = "text content - keeping inline"
+		decision.Category = "text"
+		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		return decision
 	}
 
-	// Default: don't extract unknown types
-	return false
+	// Unknown content type - reject with detailed logging for manual review
+	decision.ShouldExtract = false
+	decision.Reason = fmt.Sprintf("unknown content type: %s", normalizedType)
+	decision.Category = "unknown"
+	log.Printf("[ATTACHMENT] Content type decision: %+v (ExplicitAttachment: %t)", decision, isExplicitAttachment)
+	return decision
 }
 
 // ExtractAttachmentFromPart extracts an attachment from an MMS part if needed
 func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config ContentTypeConfig) (*AttachmentExtractionResult, error) {
-	// Log for debugging if needed
-	// log.Printf("[DEBUG] ExtractAttachmentFromPart: CT=%s, DataLen=%d, TextLen=%d, CD=%s",
-	//	part.ContentType, len(part.Data), len(part.Text), part.ContentDisp)
+	// Log extraction attempt for debugging and auditing
+	log.Printf("[ATTACHMENT] Processing part: ContentType=%s, DataLen=%d, TextLen=%d, ContentDisp=%s, Filename=%s",
+		part.ContentType, len(part.Data), len(part.Text), part.ContentDisp, part.Filename)
 
 	// Check if this is explicitly marked as an attachment
 	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
@@ -104,12 +207,16 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		// Binary data (base64 encoded)
 		contentToExtract = part.Data
 		isBase64 = true
+		log.Printf("[ATTACHMENT] Found base64 data, size: %d bytes", len(contentToExtract))
 	} else if part.Text != "" && part.Text != "null" && isExplicitAttachment {
 		// Text content marked as attachment
 		contentToExtract = part.Text
 		isBase64 = false
+		log.Printf("[ATTACHMENT] Found text content marked as attachment, size: %d bytes", len(contentToExtract))
 	} else {
 		// No extractable content - skip
+		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
+			part.Data, part.Text, isExplicitAttachment)
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "no-data",
@@ -117,9 +224,11 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		}, nil
 	}
 
-	// Skip if content type should not be extracted
-	if !ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config) {
-		// Content type filtered - skip
+	// Check content type extraction decision with comprehensive logging
+	decision := ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config)
+	if !decision.ShouldExtract {
+		log.Printf("[ATTACHMENT] Content type filtering: %s - %s (category: %s)",
+			decision.Reason, part.ContentType, decision.Category)
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "content-type-filtered",
@@ -127,10 +236,14 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		}, nil
 	}
 
+	log.Printf("[ATTACHMENT] Content type approved for extraction: %s - %s",
+		part.ContentType, decision.Reason)
+
 	// For text content, skip size check as text attachments can be small
 	// For binary content, skip small files (likely metadata)
 	if isBase64 && len(contentToExtract) < 1024 {
 		// Too small - skip
+		log.Printf("[ATTACHMENT] Skipping small binary content: %d bytes (threshold: 1024)", len(contentToExtract))
 		return &AttachmentExtractionResult{
 			Action:     "skipped",
 			Reason:     "too-small",
@@ -139,6 +252,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 	}
 
 	// Proceed with extraction
+	log.Printf("[ATTACHMENT] Proceeding with extraction for content type: %s", part.ContentType)
 
 	// Decode content based on type
 	var decodedData []byte
@@ -146,24 +260,30 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 	if isBase64 {
 		// Decode base64 data
+		log.Printf("[ATTACHMENT] Decoding base64 data (%d chars)", len(contentToExtract))
 		decodedData, err = base64.StdEncoding.DecodeString(contentToExtract)
 		if err != nil {
 			// Failed to decode base64 data
+			log.Printf("[ATTACHMENT] Failed to decode base64 data: %v", err)
 			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
 		}
+		log.Printf("[ATTACHMENT] Decoded to %d bytes", len(decodedData))
 	} else {
 		// Use text content as-is (UTF-8 encoded)
 		decodedData = []byte(contentToExtract)
+		log.Printf("[ATTACHMENT] Using text content as-is: %d bytes", len(decodedData))
 	}
 
 	// Calculate SHA-256 hash
 	hasher := sha256.New()
 	hasher.Write(decodedData)
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+	log.Printf("[ATTACHMENT] Calculated hash: %s", hash)
 
 	// Check if attachment already exists
 	exists, err := ae.attachmentManager.AttachmentExists(hash)
 	if err != nil {
+		log.Printf("[ATTACHMENT] Failed to check attachment existence: %v", err)
 		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
 	}
 
@@ -171,6 +291,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 	if exists {
 		// Attachment already exists, just reference it
+		log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachmentPath)
 		return &AttachmentExtractionResult{
 			Action:         "referenced",
 			Hash:           hash,
@@ -183,17 +304,21 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 	// Write attachment to disk
 	fullPath := filepath.Join(ae.repoRoot, attachmentPath)
+	log.Printf("[ATTACHMENT] Writing new attachment to: %s", fullPath)
 
 	// Create directory if needed
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0750); err != nil {
+		log.Printf("[ATTACHMENT] Failed to create directory: %v", err)
 		return nil, fmt.Errorf("failed to create attachment directory: %w", err)
 	}
 
 	// Write file
 	if err := os.WriteFile(fullPath, decodedData, 0644); err != nil {
+		log.Printf("[ATTACHMENT] Failed to write file: %v", err)
 		return nil, fmt.Errorf("failed to write attachment file: %w", err)
 	}
 
+	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
 	return &AttachmentExtractionResult{
 		Action:         "extracted",
 		Hash:           hash,
