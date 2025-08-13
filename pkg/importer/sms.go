@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
@@ -327,17 +328,31 @@ func (si *SMSImporter) extractContacts(msg sms.Message) {
 
 // extractSMSContact extracts contact from SMS message
 func (si *SMSImporter) extractSMSContact(smsMsg sms.SMS) {
-	// Extract primary address contact
+	// Extract primary address contact, splitting multiple contact names
 	if smsMsg.Address != "" && smsMsg.ContactName != "" {
-		si.contactsManager.AddUnprocessedContact(smsMsg.Address, smsMsg.ContactName)
+		// Split contact names by comma and process each separately
+		contactNames := strings.Split(smsMsg.ContactName, ",")
+		for _, name := range contactNames {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				si.contactsManager.AddUnprocessedContact(smsMsg.Address, name)
+			}
+		}
 	}
 }
 
 // extractMMSContacts extracts contacts from MMS message
 func (si *SMSImporter) extractMMSContacts(mmsMsg sms.MMS) {
-	// Extract primary address contact
+	// Extract primary address contact, splitting multiple contact names
 	if mmsMsg.Address != "" && mmsMsg.ContactName != "" {
-		si.contactsManager.AddUnprocessedContact(mmsMsg.Address, mmsMsg.ContactName)
+		// Split contact names by comma and process each separately
+		contactNames := strings.Split(mmsMsg.ContactName, ",")
+		for _, name := range contactNames {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				si.contactsManager.AddUnprocessedContact(mmsMsg.Address, name)
+			}
+		}
 	}
 
 	// Note: MMSAddress does not contain ContactName fields,

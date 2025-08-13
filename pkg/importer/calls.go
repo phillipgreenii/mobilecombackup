@@ -258,8 +258,15 @@ func (ci *CallsImporter) extractContact(call *calls.Call) {
 		return
 	}
 
-	// Extract contact name if both number and contact name are present
+	// Extract contact names if both number and contact name are present
 	if call.Number != "" && call.ContactName != "" {
-		ci.contactsManager.AddUnprocessedContact(call.Number, call.ContactName)
+		// Split contact names by comma and process each separately
+		contactNames := strings.Split(call.ContactName, ",")
+		for _, name := range contactNames {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				ci.contactsManager.AddUnprocessedContact(call.Number, name)
+			}
+		}
 	}
 }
