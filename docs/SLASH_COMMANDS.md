@@ -16,7 +16,8 @@ Start implementing an issue following the established workflow:
 ### `/ready-issue FEAT-XXX or BUG-XXX`
 Validate if an issue has enough detail for implementation:
 - Reviews issue document completeness
-- Moves from `backlog/` to `ready/` if sufficiently detailed
+- **Uses `git mv` to cleanly move from `backlog/` to `ready/`** if sufficiently detailed
+- **Auto-commits the file movement** with proper message format
 
 ### `/review-issue FEAT-XXX or BUG-XXX`
 Review an issue specification:
@@ -55,6 +56,7 @@ All Claude commands and agents are configured to automatically commit code chang
 - After completing each TodoWrite task in `/implement-issue`
 - After creating feature documents with `/create-feature`
 - After creating bug documents with `/create-bug`
+- After moving issues to ready with `/ready-issue`
 - After completing issue reviews with `/review-issue` (if changes were made)
 - After completing documentation updates
 
