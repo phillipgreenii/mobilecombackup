@@ -22,6 +22,7 @@ Validate if an issue has enough detail for implementation:
 Review an issue specification:
 - Provides feedback and suggestions for improvements
 - Asks clarifying questions about requirements
+- **Auto-commits any improvements made to the issue document**
 
 ### `/create-feature <description>`
 Create a new feature issue:
@@ -54,6 +55,7 @@ All Claude commands and agents are configured to automatically commit code chang
 - After completing each TodoWrite task in `/implement-issue`
 - After creating feature documents with `/create-feature`
 - After creating bug documents with `/create-bug`
+- After completing issue reviews with `/review-issue` (if changes were made)
 - After completing documentation updates
 
 ### File Detection Strategy
@@ -84,4 +86,4 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Agents never use `git add .` - they stage only files they actually modified
 - Auto-commit only occurs after successful verification (code formatted, tests pass, code compiles, linting clean)
 - If commit fails unexpectedly, agents will stop and ask for user guidance
-- Commands that only read files (like `/review-issue`) do not auto-commit
+- Commands that only read files without making changes do not auto-commit
