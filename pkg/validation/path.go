@@ -9,6 +9,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	customerrors "github.com/phillipgreen/mobilecombackup/pkg/errors"
 )
 
 // Maximum path length to prevent resource exhaustion attacks
@@ -32,13 +34,13 @@ var (
 // The baseDir must be an absolute path.
 func NewPathValidator(baseDir string) (*PathValidator, error) {
 	if baseDir == "" {
-		return nil, fmt.Errorf("base directory cannot be empty")
+		return nil, customerrors.NewConfigurationError("baseDir", "", errors.New("base directory cannot be empty"))
 	}
 
 	// Convert to absolute path and clean it
 	absBase, err := filepath.Abs(baseDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path for base directory: %w", err)
+		return nil, customerrors.WrapWithFile(baseDir, "resolve absolute path", err)
 	}
 
 	// Clean the path to normalize it

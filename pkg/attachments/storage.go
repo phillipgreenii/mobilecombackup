@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	customerrors "github.com/phillipgreen/mobilecombackup/pkg/errors"
 	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"gopkg.in/yaml.v3"
 )
@@ -29,7 +30,7 @@ func NewDirectoryAttachmentStorage(repoPath string) *DirectoryAttachmentStorage 
 func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata AttachmentInfo) error {
 	// Validate hash first to prevent null byte injection before path construction
 	if err := das.validateHash(hash); err != nil {
-		return fmt.Errorf("invalid hash: %w", err)
+		return customerrors.WrapWithValidation("validate attachment hash", err)
 	}
 
 	// Create directory path: attachments/ab/abc123.../
