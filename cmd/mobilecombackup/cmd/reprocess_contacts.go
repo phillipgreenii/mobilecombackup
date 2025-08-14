@@ -9,6 +9,7 @@ import (
 
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 	"github.com/spf13/cobra"
 )
@@ -145,12 +146,28 @@ func runReprocessContacts(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save updated contacts: %w", err)
 	}
 
+	// Update manifest to reflect the new contacts.yaml file
+	if verbose && !quiet {
+		PrintVerbose("Updating manifest files after contacts reprocessing")
+	}
+
+	manifestGenerator := manifest.NewManifestGenerator(resolvedRepoRoot)
+	fileManifest, err := manifestGenerator.GenerateFileManifest()
+	if err != nil {
+		return fmt.Errorf("failed to generate updated file manifest: %w", err)
+	}
+
+	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
+		return fmt.Errorf("failed to write updated manifest files: %w", err)
+	}
+
 	finalUnprocessedCount := len(contactsManager.GetUnprocessedEntries())
 	newContactsAdded := finalUnprocessedCount - initialUnprocessedCount
 
 	if !quiet {
 		PrintInfo("Successfully updated contacts.yaml")
 		PrintInfo("Added %d new unprocessed contact entries", newContactsAdded)
+		PrintInfo("Updated manifest files (files.yaml, files.yaml.sha256)")
 	}
 
 	return nil
