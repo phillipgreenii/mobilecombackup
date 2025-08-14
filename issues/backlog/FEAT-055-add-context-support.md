@@ -26,25 +26,22 @@ The current codebase lacks context.Context support, making it impossible to grac
 Gradually introduce context support starting with core interfaces and working outward to implementation details.
 
 ### Complete Interface Updates
-**All interfaces requiring context.Context support:**
+**PLACEHOLDER: Interfaces requiring context.Context support (MUST BE UPDATED IN PHASE 0):**
 
 ```go
-// File readers (TO BE VERIFIED - current interface audit needed)
+// ⚠️  WARNING: These interface definitions do NOT match current codebase
+// ⚠️  Phase 0 MUST update these with actual current interfaces before implementation
+
+// PLACEHOLDER - REPLACE WITH ACTUAL CallsReader interface from pkg/calls/reader.go
 type CallsReader interface {
-    // Current methods (need context versions):
-    ReadCalls(ctx context.Context, year int) ([]Call, error)
-    StreamCallsForYear(ctx context.Context, year int, callback func(Call) error) error
-    // These may not exist yet - verify during Phase 0:
-    GetAvailableYears(ctx context.Context) ([]int, error) // VERIFY
-    GetCallsCount(ctx context.Context, year int) (int, error) // VERIFY
+    // TODO: Document actual methods from codebase
+    // TODO: Add context versions of each method
 }
 
+// PLACEHOLDER - REPLACE WITH ACTUAL SMSReader interface  
 type SMSReader interface {
-    // AUDIT REQUIRED - current interface may differ significantly
-    // Current likely has ReadMessages(), not ReadSMS()/ReadMMS()
-    ReadMessages(ctx context.Context, year int) ([]Message, error) // VERIFY ACTUAL METHOD
-    StreamMessagesForYear(ctx context.Context, year int, callback func(Message) error) error
-    GetAvailableYears(ctx context.Context) ([]int, error) // VERIFY
+    // TODO: Document actual methods from codebase
+    // TODO: Add context versions of each method
 }
 
 type ContactsReader interface {
@@ -173,15 +170,28 @@ func runImportCommand(cmd *cobra.Command, args []string) error {
   - Validation: **10 minutes**
 
 ## Tasks
-### Phase 0: Interface Alignment and Strategy (Week 1) 
-- [ ] **CRITICAL**: Audit all current interfaces against proposed changes:
-  - Current `CallsReader` has: `ReadCalls`, `StreamCallsForYear` - align with spec
-  - Current `SMSReader` has: `ReadMessages`, `StreamMessagesForYear` - update spec
-  - Current `ContactsReader` has: `LoadContacts`, `GetContactByNumber` - align spec
-  - Current `AttachmentStorage` methods need verification
-- [ ] **Choose backward compatibility strategy**: Context suffix vs direct change + adapters
-- [ ] Map all dependent packages that use these interfaces (importer, CLI commands, etc.)
-- [ ] Define specific migration path and timeline
+### Phase 0: Interface Alignment and Strategy (Week 1) - **REQUIRED BEFORE READY**
+- [ ] **CRITICAL**: Complete full interface audit and update spec with actual current interfaces:
+  - `pkg/calls/reader.go`: Document exact CallsReader interface methods
+  - `pkg/sms/reader.go`: Document exact SMSReader interface methods  
+  - `pkg/contacts/types.go`: Document exact ContactsReader interface methods
+  - `pkg/attachments/types.go`: Document exact AttachmentStorage interface methods
+  - `pkg/validation/types.go`: Document validator interfaces (if any)
+  - **Replace ALL "VERIFY" sections in this spec** with actual interface definitions
+
+- [ ] **Choose and document backward compatibility strategy**:
+  ```
+  DECISION NEEDED: 
+  Option A: Context suffix approach (ReadCallsContext, etc.)
+  Option B: Interface versioning (CallsReaderV2)  
+  Option C: Direct change + adapter functions
+  
+  Document chosen approach with rationale here.
+  ```
+
+- [ ] **Create dependency map**: Document which packages/files use each interface
+- [ ] **Integration with existing context**: Document how to integrate with existing context usage in logging/metrics packages
+- [ ] **Define migration timeline**: Which interfaces/packages to update first based on dependencies
 
 ### Phase 1: Core Interface Updates (Week 2)
 - [ ] Update interfaces based on Phase 0 alignment
