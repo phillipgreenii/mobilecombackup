@@ -33,14 +33,38 @@ Systematically review and improve documentation across the codebase, focusing on
 - Create clear package hierarchy and relationship documentation
 
 ## Tasks
-- [ ] Audit existing documentation coverage
-- [ ] Add missing package-level documentation
-- [ ] Improve godoc comments for public APIs
-- [ ] Create example_test.go files with working examples
-- [ ] Document architecture and package relationships
-- [ ] Add troubleshooting guides for common issues
-- [ ] Create developer setup and contribution guide
-- [ ] Set up documentation generation and publishing
+### Phase 1: Package Documentation Audit
+- [ ] Document specific packages lacking godoc: `pkg/autofix`, `pkg/coalescer`, `pkg/manifest`
+- [ ] Add package-level documentation with usage examples for core packages:
+  - `pkg/calls`: Call log processing and streaming
+  - `pkg/sms`: SMS/MMS processing with attachment handling
+  - `pkg/attachments`: Hash-based storage system
+  - `pkg/validation`: Repository validation and reporting
+
+### Phase 2: API Documentation and Examples
+- [ ] Create `example_test.go` for `pkg/importer` showing full import workflow
+- [ ] Add godoc examples for key interfaces: CallsReader, SMSReader, AttachmentStorage
+- [ ] Document complex types: ValidationReport, ImportSummary, MMS structure
+- [ ] Add usage examples for CLI commands in package documentation
+
+### Phase 3: Developer Documentation
+- [ ] Create ARCHITECTURE.md documenting package relationships and data flow
+- [ ] Add troubleshooting guide for common XML parsing errors
+- [ ] Document validation violation types and their meanings
+- [ ] Create developer onboarding guide with setup and testing instructions
+
+## Specific Documentation Targets
+**Priority packages for documentation:**
+- `pkg/sms`: Complex MMS handling needs better examples
+- `pkg/validation`: Validation types and violation handling
+- `pkg/importer`: Integration workflows and error handling
+- `pkg/coalescer`: Deduplication logic and entry handling
+
+**Missing documentation areas:**
+- Repository structure and file organization
+- XML schema expectations and parsing behavior  
+- Error handling patterns and custom error types
+- Performance characteristics and memory usage
 
 ## Testing
 ### Unit Tests
