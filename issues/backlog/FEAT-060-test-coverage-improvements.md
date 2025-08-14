@@ -34,14 +34,37 @@ Systematically analyze test coverage and add missing tests using modern Go testi
 - Include property-based testing where appropriate
 
 ## Tasks
-- [ ] Analyze current test coverage across all packages
-- [ ] Identify packages with insufficient coverage
-- [ ] Add table-driven tests for complex functions
-- [ ] Implement fuzz tests for XML parsers and input validation
-- [ ] Create benchmark tests for performance-critical operations
-- [ ] Add integration tests for end-to-end workflows
-- [ ] Set up coverage reporting and tracking
-- [ ] Document testing standards and guidelines
+### Phase 1: Coverage Analysis and Prioritization
+- [ ] Run `go test -coverprofile=coverage.out ./...` to establish baseline
+- [ ] Identify packages below 80% coverage (likely: pkg/autofix, pkg/validation)
+- [ ] Document specific functions lacking test coverage in priority packages
+- [ ] Focus on critical paths: XML parsing, validation logic, error handling
+
+### Phase 2: Targeted Test Implementation  
+- [ ] Add fuzz tests for `pkg/calls/xml_reader.go` and `pkg/sms/xml_reader.go`
+- [ ] Create table-driven tests for validation rules in `pkg/validation`
+- [ ] Add benchmark tests for `pkg/attachments` storage operations
+- [ ] Implement error path testing for `pkg/importer` rejection handling
+- [ ] Add integration tests for full import workflow with various file sizes
+
+### Phase 3: Infrastructure and Standards
+- [ ] Set up coverage reporting in devbox scripts (`devbox run coverage`)
+- [ ] Create testing guidelines document with patterns and standards
+- [ ] Add coverage gates: minimum 85% for new packages, 80% for existing
+- [ ] Document fuzzing strategy for security-critical parsers
+
+## Specific Coverage Targets
+**Packages needing attention (based on complexity):**
+- `pkg/validation`: Complex validation logic, multiple error paths
+- `pkg/autofix`: File manipulation, error recovery scenarios  
+- `pkg/sms/xml_reader.go`: Complex MMS parsing with attachments
+- `pkg/importer`: Integration logic with multiple failure modes
+
+**Critical functions to test:**
+- XML parsing error handling in streaming operations
+- Attachment extraction and hash validation
+- Coalescer deduplication logic
+- Validation violation detection and reporting
 
 ## Testing
 ### Unit Tests
