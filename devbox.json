@@ -3,7 +3,9 @@
   "packages": [
 	  "go@1.24",
 	  "golangci-lint@latest",
-	  "claude-code@latest"
+	  "claude-code@latest",
+	  "viu@latest",
+	  "yq@latest"
   ],
   "shell": {
     "init_hook": [
