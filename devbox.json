@@ -9,7 +9,9 @@
   ],
   "shell": {
     "init_hook": [
-      "go mod tidy"
+      "go mod tidy",
+      "echo '📋 Setting up development environment...'",
+      "if [ -f scripts/install-hooks.sh ]; then bash scripts/install-hooks.sh; fi"
     ],
     "scripts": {
       "list-issues": [
@@ -38,6 +40,13 @@
               "devbox run tests",
               "devbox run linter",
               "devbox run build-cli"
+      ],
+      "install-hooks": [
+              "bash scripts/install-hooks.sh"
+      ],
+      "test-hooks": [
+              "echo '🧪 Testing pre-commit hooks...'",
+              ".githooks/pre-commit"
       ]
     }
   }
