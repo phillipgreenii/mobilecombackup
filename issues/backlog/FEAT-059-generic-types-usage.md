@@ -54,13 +54,30 @@ type Optional[T any] struct {
 - Maintain clear documentation for generic types
 
 ## Tasks
-- [ ] Analyze codebase for generic type opportunities
-- [ ] Design generic result and error handling types
-- [ ] Implement generic collection utilities
-- [ ] Create generic pagination and optional types
-- [ ] Update existing code to use generics where beneficial
-- [ ] Add tests for generic type implementations
-- [ ] Update documentation with generic type usage examples
+### Phase 1: Concrete Opportunity Identification
+- [ ] Identify duplicate pattern in coalescer.go: Entry interface could benefit from constraints
+- [ ] Review validation package for duplicate error handling patterns
+- [ ] Analyze result/error patterns in reader interfaces (calls, sms, contacts)
+- [ ] Document specific functions with repeated type patterns
+
+### Phase 2: Targeted Generic Implementation
+- [ ] Create generic Result[T] type for operations that return value+error
+- [ ] Implement generic Coalescer[T Entry] with type constraints
+- [ ] Add generic Optional[T] for nullable values in parsing
+- [ ] Create generic Validator[T] interface for different validation types
+
+### Phase 3: Integration and Testing
+- [ ] Update 2-3 specific packages to use generic types (start with pkg/coalescer)
+- [ ] Add comprehensive tests for generic type implementations
+- [ ] Benchmark performance impact vs non-generic versions
+- [ ] Update documentation with concrete usage examples from updated packages
+
+## Implementation Targets
+**Specific opportunities identified:**
+- `pkg/coalescer/types.go`: Entry interface and Coalescer can be more type-safe
+- `pkg/calls/types.go` and `pkg/sms/types.go`: Similar timestamp conversion patterns
+- Error handling patterns in `pkg/validation`: repeated error wrapping logic
+- Reader interfaces: common streaming patterns across calls/sms/contacts
 
 ## Testing
 ### Unit Tests
