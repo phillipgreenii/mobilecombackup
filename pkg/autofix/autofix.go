@@ -650,8 +650,10 @@ func checkWritePermission(path string) error {
 		if err != nil {
 			return err
 		}
-		_ = file.Close()
-		_ = os.Remove(tempFile)
+		defer func() {
+			_ = file.Close()
+			_ = os.Remove(tempFile)
+		}()
 		return nil
 	} else {
 		// For files, check if we can open them for writing
@@ -659,7 +661,9 @@ func checkWritePermission(path string) error {
 		if err != nil {
 			return err
 		}
-		_ = file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 		return nil
 	}
 }

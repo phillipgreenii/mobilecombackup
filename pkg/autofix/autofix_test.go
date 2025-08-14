@@ -621,6 +621,73 @@ func TestAutofixer_ComprehensiveWorkflow(t *testing.T) {
 	}
 }
 
+// TestCheckWritePermission_ResourceCleanup tests that file handles are properly closed
+func TestCheckWritePermission_ResourceCleanup(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Test directory permission check with proper resource cleanup
+	err := checkWritePermission(tempDir)
+	if err != nil {
+		t.Errorf("checkWritePermission on directory failed: %v", err)
+	}
+
+	// Verify that temporary test file is cleaned up
+	files, err := os.ReadDir(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to read temp directory: %v", err)
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".autofix-permission-test") {
+			t.Errorf("Temporary test file %s was not cleaned up", file.Name())
+		}
+	}
+
+	// Test file permission check with proper resource cleanup
+	testFile := filepath.Join(tempDir, "test.txt")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	err = checkWritePermission(testFile)
+	if err != nil {
+		t.Errorf("checkWritePermission on file failed: %v", err)
+	}
+
+	// Verify file is still accessible (not corrupted by permission test)
+	content, err := os.ReadFile(testFile)
+	if err != nil {
+		t.Errorf("Test file was corrupted after permission check: %v", err)
+	}
+	if string(content) != "test" {
+		t.Errorf("Test file content was modified after permission check")
+	}
+}
+
+// TestCheckWritePermission_ErrorScenarios tests resource cleanup during error conditions
+func TestCheckWritePermission_ErrorScenarios(t *testing.T) {
+	// Test with non-existent path (should check parent directory)
+	tempDir := t.TempDir()
+	nonExistentPath := filepath.Join(tempDir, "nonexistent")
+
+	err := checkWritePermission(nonExistentPath)
+	if err != nil {
+		t.Errorf("checkWritePermission with non-existent path failed: %v", err)
+	}
+
+	// Verify no temporary files left behind in parent directory
+	files, err := os.ReadDir(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to read temp directory: %v", err)
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".autofix-permission-test") {
+			t.Errorf("Temporary test file %s was not cleaned up after error scenario", file.Name())
+		}
+	}
+}
+
 // BenchmarkFixXMLCountAttribute benchmarks the XML count fixing function
 func BenchmarkFixXMLCountAttribute(b *testing.B) {
 	testXML := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
