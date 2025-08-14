@@ -66,7 +66,7 @@ type LogConfig struct {
 type ContextKey string
 
 const (
-	RequestIDKey  ContextKey = "request_id"
+	RequestIDKey   ContextKey = "request_id"
 	OperationIDKey ContextKey = "operation_id"
 )
 
