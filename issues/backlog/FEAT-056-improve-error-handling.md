@@ -49,15 +49,70 @@ type ImportError struct {
 }
 ```
 
-### Data Structures
+### Complete Error Type Implementation
 ```go
-// Error context helpers
-type ErrorContext struct {
-    Operation string
+// Structured error types with full Go 1.13+ compatibility
+type ValidationError struct {
     File      string
     Line      int
-    Details   map[string]interface{}
+    Operation string
+    Err       error
 }
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("%s:%d: %s failed: %v", e.File, e.Line, e.Operation, e.Err)
+}
+
+func (e *ValidationError) Unwrap() error {
+    return e.Err
+}
+
+type ProcessingError struct {
+    Stage     string
+    InputFile string
+    Err       error
+}
+
+func (e *ProcessingError) Error() string {
+    return fmt.Sprintf("processing failed at stage '%s' for file '%s': %v", e.Stage, e.InputFile, e.Err)
+}
+
+func (e *ProcessingError) Unwrap() error {
+    return e.Err
+}
+
+// Error creation helpers with runtime context
+func NewValidationError(operation string, err error) *ValidationError {
+    _, file, line, _ := runtime.Caller(1)
+    return &ValidationError{
+        File:      filepath.Base(file),
+        Line:      line,
+        Operation: operation,
+        Err:       err,
+    }
+}
+
+func NewProcessingError(stage, inputFile string, err error) *ProcessingError {
+    return &ProcessingError{
+        Stage:     stage,
+        InputFile: inputFile,
+        Err:       err,
+    }
+}
+```
+
+### Error Codes and Categories
+```go
+type ErrorCode string
+
+const (
+    ErrCodeValidation     ErrorCode = "VALIDATION_ERROR"
+    ErrCodeFileNotFound   ErrorCode = "FILE_NOT_FOUND"
+    ErrCodeParsing        ErrorCode = "PARSE_ERROR"
+    ErrCodePermission     ErrorCode = "PERMISSION_ERROR"
+    ErrCodeStorage        ErrorCode = "STORAGE_ERROR"
+    ErrCodeIntegrity      ErrorCode = "INTEGRITY_ERROR"
+)
 ```
 
 ### Implementation Notes
