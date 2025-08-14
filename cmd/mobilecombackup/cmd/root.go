@@ -2,16 +2,18 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/spf13/cobra"
 )
 
 var (
-	version  string
-	quiet    bool
-	verbose  bool
-	repoRoot string
+	version   string
+	quiet     bool
+	verbose   bool
+	repoRoot  string
+	logFormat string
+	logger    logging.Logger
 )
 
 var rootCmd = &cobra.Command{
@@ -47,30 +49,71 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress non-error output")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().StringVar(&repoRoot, "repo-root", ".", "Path to repository root")
+	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", "console", "Log output format (console or json)")
+
+	// Initialize logger
+	initLogger()
+}
+
+// initLogger initializes the global logger based on command-line flags
+func initLogger() {
+	config := &logging.LogConfig{
+		Format:     logging.FormatConsole,
+		TimeStamps: true,
+		Color:      true,
+	}
+
+	// Set log level based on flags
+	if quiet {
+		config.Level = logging.LevelError
+	} else if verbose {
+		config.Level = logging.LevelDebug
+	} else {
+		config.Level = logging.LevelInfo
+	}
+
+	// Set log format
+	switch logFormat {
+	case "json":
+		config.Format = logging.FormatJSON
+		config.Color = false
+	case "console":
+		config.Format = logging.FormatConsole
+	}
+
+	logger = logging.NewLogger(config).WithComponent("cli")
+}
+
+// GetLogger returns the configured logger for use by subcommands
+func GetLogger() logging.Logger {
+	return logger
+}
+
+// UpdateLogger re-initializes the logger with current flag values
+func UpdateLogger() {
+	initLogger()
 }
 
 // Helper functions for output and logging
+// Deprecated: Use GetLogger().Error() instead
 func PrintError(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	logger.Error().Msgf(format, args...)
 }
 
-// PrintInfo prints informational messages unless quiet mode is enabled
+// PrintInfo prints informational messages
+// Deprecated: Use GetLogger().Info() instead
 func PrintInfo(format string, args ...interface{}) {
-	if !quiet {
-		fmt.Printf(format+"\n", args...)
-	}
+	logger.Info().Msgf(format, args...)
 }
 
-// PrintVerbose prints verbose messages only when verbose mode is enabled
+// PrintVerbose prints verbose messages
+// Deprecated: Use GetLogger().Debug() instead
 func PrintVerbose(format string, args ...interface{}) {
-	if verbose && !quiet {
-		fmt.Printf(format+"\n", args...)
-	}
+	logger.Debug().Msgf(format, args...)
 }
 
-// PrintDebug prints debug messages only when verbose mode is enabled
+// PrintDebug prints debug messages
+// Deprecated: Use GetLogger().Debug() instead
 func PrintDebug(format string, args ...interface{}) {
-	if verbose && !quiet {
-		fmt.Printf("DEBUG: "+format+"\n", args...)
-	}
+	logger.Debug().Msgf(format, args...)
 }
