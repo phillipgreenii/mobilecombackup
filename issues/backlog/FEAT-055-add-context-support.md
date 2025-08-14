@@ -29,19 +29,22 @@ Gradually introduce context support starting with core interfaces and working ou
 **All interfaces requiring context.Context support:**
 
 ```go
-// File readers
+// File readers (TO BE VERIFIED - current interface audit needed)
 type CallsReader interface {
+    // Current methods (need context versions):
     ReadCalls(ctx context.Context, year int) ([]Call, error)
     StreamCallsForYear(ctx context.Context, year int, callback func(Call) error) error
-    GetAvailableYears(ctx context.Context) ([]int, error)
-    GetCallsCount(ctx context.Context, year int) (int, error)
+    // These may not exist yet - verify during Phase 0:
+    GetAvailableYears(ctx context.Context) ([]int, error) // VERIFY
+    GetCallsCount(ctx context.Context, year int) (int, error) // VERIFY
 }
 
 type SMSReader interface {
-    ReadSMS(ctx context.Context, year int) ([]SMS, error)
-    ReadMMS(ctx context.Context, year int) ([]MMS, error)
+    // AUDIT REQUIRED - current interface may differ significantly
+    // Current likely has ReadMessages(), not ReadSMS()/ReadMMS()
+    ReadMessages(ctx context.Context, year int) ([]Message, error) // VERIFY ACTUAL METHOD
     StreamMessagesForYear(ctx context.Context, year int, callback func(Message) error) error
-    GetAvailableYears(ctx context.Context) ([]int, error)
+    GetAvailableYears(ctx context.Context) ([]int, error) // VERIFY
 }
 
 type ContactsReader interface {
@@ -170,13 +173,21 @@ func runImportCommand(cmd *cobra.Command, args []string) error {
   - Validation: **10 minutes**
 
 ## Tasks
-### Phase 1: Core Interface Updates (Week 1)
-- [ ] Update CallsReader interface with context methods
-- [ ] Update SMSReader interface with context methods  
-- [ ] Update ContactsReader interface with context methods
-- [ ] Update AttachmentStorage interface with context methods
-- [ ] Add backward compatibility adapter methods
+### Phase 0: Interface Alignment and Strategy (Week 1) 
+- [ ] **CRITICAL**: Audit all current interfaces against proposed changes:
+  - Current `CallsReader` has: `ReadCalls`, `StreamCallsForYear` - align with spec
+  - Current `SMSReader` has: `ReadMessages`, `StreamMessagesForYear` - update spec
+  - Current `ContactsReader` has: `LoadContacts`, `GetContactByNumber` - align spec
+  - Current `AttachmentStorage` methods need verification
+- [ ] **Choose backward compatibility strategy**: Context suffix vs direct change + adapters
+- [ ] Map all dependent packages that use these interfaces (importer, CLI commands, etc.)
+- [ ] Define specific migration path and timeline
+
+### Phase 1: Core Interface Updates (Week 2)
+- [ ] Update interfaces based on Phase 0 alignment
+- [ ] Implement chosen backward compatibility strategy consistently
 - [ ] Update interface implementations to accept context
+- [ ] Add context checking patterns to streaming operations
 
 ### Phase 2: Processing Components (Week 2)
 - [ ] Add context support to Coalescer interfaces and implementations
