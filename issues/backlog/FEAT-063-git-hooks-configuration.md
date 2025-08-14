@@ -34,13 +34,56 @@ Create git hooks that integrate with existing devbox scripts and provide clear s
 - Consider using tools like pre-commit or simple shell scripts
 
 ## Tasks
-- [ ] Create pre-commit hook script
-- [ ] Add hook installation and setup instructions
-- [ ] Integrate with existing devbox quality scripts
-- [ ] Add bypass mechanism for emergency situations
-- [ ] Test hooks across different development environments
-- [ ] Create developer setup documentation
-- [ ] Add hook configuration to project setup guide
+### Phase 1: Hook Script Development
+- [ ] Create `.githooks/pre-commit` script with specific checks:
+  - Run `devbox run formatter` (must pass)
+  - Run `devbox run tests` (must pass)  
+  - Run `devbox run linter` (must pass)
+  - Performance target: complete within 30 seconds
+- [ ] Add bypass mechanism: `git commit --no-verify` for emergencies
+- [ ] Handle partial commits correctly (only check staged files)
+
+### Phase 2: Installation and Integration
+- [ ] Create `scripts/install-hooks.sh` installation script
+- [ ] Update `.devbox.json` to include hook installation in init_hook
+- [ ] Add git config setup: `git config core.hooksPath .githooks`
+- [ ] Test hook behavior across different development environments (devbox, direct)
+
+### Phase 3: Documentation and Guidelines
+- [ ] Add hook documentation to CLAUDE.md development commands section
+- [ ] Create troubleshooting guide for common hook failures
+- [ ] Document bypass procedures for emergency commits
+- [ ] Add hooks to new developer setup checklist
+
+## Implementation Specifications
+**Hook Script Requirements:**
+```bash
+#!/bin/sh
+# Pre-commit hook - runs quality checks
+set -e
+
+echo "Running pre-commit checks..."
+
+# Run formatter (fast, should complete in ~5s)
+echo "1/3 Running formatter..."
+devbox run formatter
+
+# Run tests (slower, target ~20s)  
+echo "2/3 Running tests..."
+devbox run tests
+
+# Run linter (fast, should complete in ~5s)
+echo "3/3 Running linter..."
+devbox run linter
+
+echo "✓ All pre-commit checks passed"
+```
+
+**Performance Targets:**
+- Total execution time: < 30 seconds
+- Formatter: < 5 seconds
+- Tests: < 20 seconds  
+- Linter: < 5 seconds
 
 ## Testing
 ### Unit Tests
