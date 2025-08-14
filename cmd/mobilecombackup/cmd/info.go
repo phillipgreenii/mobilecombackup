@@ -274,9 +274,9 @@ func gatherSMSStats(reader sms.SMSReader, info *RepositoryInfo) error {
 
 			// Count SMS vs MMS by type assertion
 			switch msg.(type) {
-			case *sms.SMS:
+			case sms.SMS:
 				messageStats.SMSCount++
-			case *sms.MMS:
+			case sms.MMS:
 				messageStats.MMSCount++
 			}
 			return nil
