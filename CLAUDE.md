@@ -18,6 +18,11 @@ devbox run build-cli # Build the CLI
 # Development shortcuts
 devbox shell         # Enter development environment
 devbox run builder   # Build all packages
+
+# Git hooks (quality enforcement)
+devbox run install-hooks  # Install pre-commit hooks
+devbox run test-hooks     # Test hooks without committing
+git commit --no-verify   # Bypass hooks for emergencies
 ```
 
 ## Architecture Overview
