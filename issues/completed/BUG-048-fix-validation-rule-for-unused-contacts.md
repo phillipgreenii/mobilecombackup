@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-13
-- **Fixed**: 
+- **Fixed**: 2025-08-14 (Already implemented - validation correctly accepts unused contacts)
 - **Priority**: medium
 - **Severity**: minor
 

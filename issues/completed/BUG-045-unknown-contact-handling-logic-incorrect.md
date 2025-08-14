@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-13
-- **Fixed**: 
+- **Fixed**: 2025-08-14 (Fixed unknown contact replacement logic)
 - **Priority**: high
 - **Severity**: major
 

@@ -1,7 +1,7 @@
 # FEAT-046: Sort Unprocessed Number List by Phone Number
 
 ## Status
-- **Completed**: 
+- **Completed**: 2025-08-14 (Already implemented - contacts sorted lexicographically)
 - **Priority**: medium
 
 ## Overview

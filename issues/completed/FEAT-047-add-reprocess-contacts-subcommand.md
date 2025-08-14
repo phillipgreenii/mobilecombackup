@@ -1,7 +1,7 @@
 # FEAT-047: Add Reprocess-Contacts Subcommand
 
 ## Status
-- **Completed**: 
+- **Completed**: 2025-08-14 (Already implemented - full CLI command with comprehensive features)
 - **Priority**: high
 
 ## Overview

@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-13
-- **Fixed**: 
+- **Fixed**: 2025-08-14 (Fixed multi-address contact parsing logic)
 - **Priority**: high
 - **Severity**: major
 
