@@ -3,6 +3,7 @@ package importer
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
@@ -29,6 +31,9 @@ type SMSImporter struct {
 
 // NewSMSImporter creates a new SMS importer
 func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) *SMSImporter {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
@@ -126,9 +131,12 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	}
 	defer func() { _ = file.Close() }()
 
+	// Apply size limit to prevent DoS attacks (BUG-051)
+	limitedReader := &io.LimitedReader{R: file, N: si.options.MaxXMLSize}
+
 	reader := sms.NewXMLSMSReader("")
 	lineNumber := 0
-	err = reader.StreamMessagesFromReader(file, func(msg sms.Message) error {
+	err = reader.StreamMessagesFromReader(limitedReader, func(msg sms.Message) error {
 		lineNumber++
 
 		// Validate message
@@ -137,6 +145,13 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 			summary.Rejected++
 			// TODO: Write rejection to file
 			// Need to implement XMLRejectionWriter for SMS
+			return nil
+		}
+
+		// Check message size limit (BUG-051)
+		if err := si.validateMessageSize(msg); err != nil {
+			summary.Rejected++
+			// TODO: Write rejection with size limit reason
 			return nil
 		}
 
@@ -185,6 +200,15 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	})
 
 	if err != nil {
+		// Check if the error was due to size limit exceeded
+		if err == io.EOF && limitedReader.N == 0 {
+			summary.Errors++
+			return summary, security.NewFileSizeLimitExceededError(
+				filepath.Base(filePath),
+				si.options.MaxXMLSize,
+				0, // Don't know actual size
+				"SMS XML parsing")
+		}
 		summary.Errors++
 		return summary, err
 	}
@@ -231,6 +255,43 @@ func (si *SMSImporter) validateMessage(msg sms.Message) []string {
 	}
 
 	return violations
+}
+
+// validateMessageSize validates that a message doesn't exceed size limits (BUG-051)
+func (si *SMSImporter) validateMessageSize(msg sms.Message) error {
+	// Calculate approximate message size
+	// For SMS: body + address + basic fields
+	// For MMS: body + address + all parts data
+
+	var messageSize int64
+
+	// Base message size (address, date, type fields)
+	messageSize += int64(len(msg.GetAddress()))
+	messageSize += 50 // Estimated for date, type, and other basic fields
+
+	if smsMsg, ok := msg.(sms.SMS); ok {
+		// SMS: add body size
+		messageSize += int64(len(smsMsg.Body))
+	} else if mmsMsg, ok := msg.(sms.MMS); ok {
+		// MMS: add subject and all parts
+		messageSize += int64(len(mmsMsg.Sub))
+		for _, part := range mmsMsg.Parts {
+			messageSize += int64(len(part.Data))
+			messageSize += int64(len(part.ContentType))
+			messageSize += int64(len(part.Name))
+		}
+	}
+
+	// Check against limit
+	if messageSize > si.options.MaxMessageSize {
+		return security.NewFileSizeLimitExceededError(
+			"message",
+			si.options.MaxMessageSize,
+			messageSize,
+			"Message size validation")
+	}
+
+	return nil
 }
 
 // WriteRepository writes the coalesced messages to the repository

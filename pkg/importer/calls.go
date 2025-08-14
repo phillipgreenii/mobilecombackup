@@ -3,6 +3,7 @@ package importer
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 )
 
 // CallsImporter handles importing call backup files
@@ -25,6 +27,9 @@ type CallsImporter struct {
 
 // NewCallsImporter creates a new calls importer
 func NewCallsImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) (*CallsImporter, error) {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
 	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
@@ -90,8 +95,11 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 	}
 	defer func() { _ = file.Close() }()
 
-	// Parse the XML file
-	decoder := xml.NewDecoder(file)
+	// Apply size limit to prevent DoS attacks (BUG-051)
+	limitedReader := &io.LimitedReader{R: file, N: ci.options.MaxXMLSize}
+
+	// Parse the XML file with size limit
+	decoder := xml.NewDecoder(limitedReader)
 
 	// Find the root element
 	var root struct {
@@ -109,6 +117,14 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 	}
 
 	if err := decoder.Decode(&root); err != nil {
+		// Check if the error was due to size limit exceeded
+		if err == io.EOF && limitedReader.N == 0 {
+			return nil, security.NewFileSizeLimitExceededError(
+				filepath.Base(filename),
+				ci.options.MaxXMLSize,
+				0, // Don't know actual size
+				"XML parsing")
+		}
 		return nil, fmt.Errorf("failed to parse XML: %w", err)
 	}
 

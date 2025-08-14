@@ -118,6 +118,20 @@ type ImportOptions struct {
 	NoErrorOnRejects bool
 	// Progress reporter for UI updates
 	ProgressReporter ProgressReporter
+	// Maximum XML file size (default: 500MB)
+	MaxXMLSize int64
+	// Maximum message size (default: 10MB)
+	MaxMessageSize int64
+}
+
+// SetDefaults sets default values for ImportOptions fields that are zero-valued
+func (o *ImportOptions) SetDefaults() {
+	if o.MaxXMLSize == 0 {
+		o.MaxXMLSize = 500 * 1024 * 1024 // 500MB default
+	}
+	if o.MaxMessageSize == 0 {
+		o.MaxMessageSize = 10 * 1024 * 1024 // 10MB default
+	}
 }
 
 // ProgressReporter handles progress updates during import

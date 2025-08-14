@@ -9,14 +9,17 @@ import (
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/importer"
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/spf13/cobra"
 )
 
 var (
-	importDryRun     bool
-	importJSON       bool
-	importFilter     string
-	noErrorOnRejects bool
+	importDryRun      bool
+	importJSON        bool
+	importFilter      string
+	noErrorOnRejects  bool
+	maxXMLSizeStr     string
+	maxMessageSizeStr string
 )
 
 // importCmd represents the import command
@@ -67,6 +70,8 @@ func init() {
 	importCmd.Flags().BoolVar(&importJSON, "json", false, "Output summary in JSON format")
 	importCmd.Flags().StringVar(&importFilter, "filter", "", "Process only specific type: calls, sms")
 	importCmd.Flags().BoolVar(&noErrorOnRejects, "no-error-on-rejects", false, "Don't exit with error code if rejects found")
+	importCmd.Flags().StringVar(&maxXMLSizeStr, "max-xml-size", "500MB", "Maximum XML file size (e.g., 500MB, 1GB)")
+	importCmd.Flags().StringVar(&maxMessageSizeStr, "max-message-size", "10MB", "Maximum message size (e.g., 10MB, 100MB)")
 }
 
 func runImport(cmd *cobra.Command, args []string) error {
@@ -90,16 +95,29 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid filter value: %s (must be 'calls' or 'sms')", importFilter)
 	}
 
+	// Parse size limits
+	maxXMLSize, err := security.ParseSize(maxXMLSizeStr)
+	if err != nil {
+		return fmt.Errorf("invalid max-xml-size: %w", err)
+	}
+
+	maxMessageSize, err := security.ParseSize(maxMessageSizeStr)
+	if err != nil {
+		return fmt.Errorf("invalid max-message-size: %w", err)
+	}
+
 	// Create import options
 	// JSON mode forces quiet to ensure clean JSON output
 	effectiveQuiet := quiet || importJSON
 	options := &importer.ImportOptions{
-		RepoRoot: resolvedRepoRoot,
-		Paths:    paths,
-		DryRun:   importDryRun,
-		Verbose:  verbose,
-		Quiet:    effectiveQuiet,
-		Filter:   importFilter,
+		RepoRoot:       resolvedRepoRoot,
+		Paths:          paths,
+		DryRun:         importDryRun,
+		Verbose:        verbose,
+		Quiet:          effectiveQuiet,
+		Filter:         importFilter,
+		MaxXMLSize:     maxXMLSize,
+		MaxMessageSize: maxMessageSize,
 	}
 
 	// Create progress reporter if not quiet
