@@ -55,6 +55,18 @@ if [[ $(ls -1 "$repodir/attachments" | wc -l) -eq 0 ]]; then
 	exit 2
 fi
 
+echo ">> Should have unprocessed contacts"
+if [[ $(yq --exit-status '.unprocessed[] | length > 0 ' "$repodir/contacts.yaml"  > /dev/null) -ne 0 ]]; then
+	echo "ERROR: No unprocessed contacts found" >&2
+	exit 2
+fi
+
+echo ">> Should not have Oscar Wilde's phone number as unprocessed contact"
+if [[ $(yq --exit-status '.unprocessed[] | select(.phone_number == "5555550004") | length == 0 ' "$repodir/contacts.yaml"  > /dev/null) -ne 0 ]]; then
+	echo "ERROR: Known contact, Oscar Wilde's phone number is listed in unprocessed contacts found" >&2
+	exit 2
+fi
+
 echo ">> Info should work with imported data"
 ./mobilecombackup info --repo-root="$repodir"
 
