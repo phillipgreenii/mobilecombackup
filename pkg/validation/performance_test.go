@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -476,6 +477,169 @@ func BenchmarkOptimizedValidation_Parallel(b *testing.B) {
 		_, err := optimized.ValidateRepositoryWithOptions(ctx, options)
 		if err != nil {
 			b.Fatalf("Validation failed: %v", err)
+		}
+	}
+}
+
+// TestParallelValidation_RaceDetection tests that parallel validation doesn't have race conditions
+func TestParallelValidation_RaceDetection(t *testing.T) {
+	// This test is designed to be run with the race detector: go test -race
+
+	tempDir := t.TempDir()
+
+	baseValidator := NewRepositoryValidator(
+		tempDir,
+		&mockCallsReader{availableYears: []int{}},
+		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
+		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
+		&mockContactsReader{contacts: []*contacts.Contact{}},
+	)
+
+	validator := NewOptimizedRepositoryValidator(baseValidator)
+
+	options := &PerformanceOptions{
+		ParallelValidation: true,
+		MaxConcurrency:     4,
+		ProgressCallback: func(stage string, progress float64) {
+			// Progress callback that might cause race conditions if not properly synchronized
+			_ = stage
+			_ = progress
+		},
+	}
+
+	// Run multiple parallel validations concurrently to stress test race conditions
+	const numConcurrentTests = 10
+	done := make(chan error, numConcurrentTests)
+
+	for i := 0; i < numConcurrentTests; i++ {
+		go func() {
+			ctx := context.Background()
+			_, err := validator.ValidateRepositoryWithOptions(ctx, options)
+			done <- err
+		}()
+	}
+
+	// Wait for all validations to complete
+	for i := 0; i < numConcurrentTests; i++ {
+		err := <-done
+		if err != nil {
+			t.Errorf("Concurrent validation %d failed: %v", i, err)
+		}
+	}
+}
+
+// TestConcurrentViolationAppend tests concurrent violation collection
+func TestConcurrentViolationAppend(t *testing.T) {
+	// This test verifies that the violation collection mechanism is thread-safe
+
+	tempDir := t.TempDir()
+
+	baseValidator := NewRepositoryValidator(
+		tempDir,
+		&mockCallsReader{availableYears: []int{}},
+		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
+		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
+		&mockContactsReader{contacts: []*contacts.Contact{}},
+	)
+
+	validator := NewOptimizedRepositoryValidator(baseValidator)
+
+	// Run concurrent validations and verify that all violations are collected correctly
+	const numTests = 5
+	results := make(chan *ValidationReport, numTests)
+
+	for i := 0; i < numTests; i++ {
+		go func() {
+			options := &PerformanceOptions{
+				ParallelValidation: true,
+				MaxConcurrency:     4,
+			}
+			ctx := context.Background()
+			report, _ := validator.ValidateRepositoryWithOptions(ctx, options)
+			results <- report
+		}()
+	}
+
+	// Collect results and verify they are consistent
+	var totalViolations int
+	for i := 0; i < numTests; i++ {
+		report := <-results
+		if report != nil {
+			if i == 0 {
+				totalViolations = len(report.Violations)
+			} else {
+				// All runs should produce the same number of violations
+				if len(report.Violations) != totalViolations {
+					t.Errorf("Inconsistent violation counts: expected %d, got %d", totalViolations, len(report.Violations))
+				}
+			}
+		}
+	}
+}
+
+// TestProgressCallbackSynchronization tests that progress callbacks are properly synchronized
+func TestProgressCallbackSynchronization(t *testing.T) {
+	// This test verifies that progress callbacks don't cause race conditions
+
+	tempDir := t.TempDir()
+
+	baseValidator := NewRepositoryValidator(
+		tempDir,
+		&mockCallsReader{availableYears: []int{}},
+		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
+		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
+		&mockContactsReader{contacts: []*contacts.Contact{}},
+	)
+
+	validator := NewOptimizedRepositoryValidator(baseValidator)
+
+	// Create a shared map to simulate state that could be accessed from callbacks
+	callbackData := make(map[string]float64)
+	var callbackMu sync.Mutex
+
+	options := &PerformanceOptions{
+		ParallelValidation: true,
+		MaxConcurrency:     4,
+		ProgressCallback: func(stage string, progress float64) {
+			// This callback accesses shared state - would cause race conditions if not protected
+			callbackMu.Lock()
+			defer callbackMu.Unlock()
+			callbackData[stage] = progress
+		},
+	}
+
+	// Run multiple concurrent validations with progress callbacks
+	const numConcurrentTests = 5
+	done := make(chan error, numConcurrentTests)
+
+	for i := 0; i < numConcurrentTests; i++ {
+		go func() {
+			ctx := context.Background()
+			_, err := validator.ValidateRepositoryWithOptions(ctx, options)
+			done <- err
+		}()
+	}
+
+	// Wait for all validations to complete
+	for i := 0; i < numConcurrentTests; i++ {
+		err := <-done
+		if err != nil {
+			t.Errorf("Concurrent validation %d failed: %v", i, err)
+		}
+	}
+
+	// Verify callback data was collected
+	callbackMu.Lock()
+	defer callbackMu.Unlock()
+
+	if len(callbackData) == 0 {
+		t.Error("Expected progress callback data to be collected")
+	}
+
+	// Verify we have reasonable progress data
+	for stage, progress := range callbackData {
+		if progress < 0 || progress > 1 {
+			t.Errorf("Invalid progress value for stage %s: %f", stage, progress)
 		}
 	}
 }

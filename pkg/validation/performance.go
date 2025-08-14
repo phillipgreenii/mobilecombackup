@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -177,14 +178,18 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 
 	// Progress tracking
 	stages := []string{"structure", "manifest", "content", "consistency"}
-	completedStages := 0
-	totalStages := len(stages)
+	var completedStages int32
+	totalStages := int32(len(stages))
+	var progressMu sync.Mutex
 
 	updateProgress := func(stage string) {
-		completedStages++
+		completed := atomic.AddInt32(&completedStages, 1)
 		if options.ProgressCallback != nil {
-			progress := float64(completedStages) / float64(totalStages)
+			// Protect the callback invocation to ensure ordered/consistent calls
+			progressMu.Lock()
+			progress := float64(completed) / float64(totalStages)
 			options.ProgressCallback(stage, progress)
+			progressMu.Unlock()
 		}
 	}
 

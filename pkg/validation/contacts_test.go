@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
@@ -11,6 +12,7 @@ import (
 
 // mockContactsReader implements ContactsReader for testing
 type mockContactsReader struct {
+	mu               sync.RWMutex
 	contacts         []*contacts.Contact
 	loadError        error
 	getAllError      error
@@ -21,6 +23,9 @@ type mockContactsReader struct {
 }
 
 func (m *mockContactsReader) LoadContacts() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.loadCalled = true
 	if m.loadError != nil {
 		return m.loadError
@@ -43,6 +48,9 @@ func (m *mockContactsReader) LoadContacts() error {
 }
 
 func (m *mockContactsReader) GetContactByNumber(number string) (string, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return "", false
 	}
@@ -51,6 +59,9 @@ func (m *mockContactsReader) GetContactByNumber(number string) (string, bool) {
 }
 
 func (m *mockContactsReader) GetNumbersByContact(name string) ([]string, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return nil, false
 	}
@@ -59,6 +70,9 @@ func (m *mockContactsReader) GetNumbersByContact(name string) ([]string, bool) {
 }
 
 func (m *mockContactsReader) GetAllContacts() ([]*contacts.Contact, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return nil, fmt.Errorf("contacts not loaded")
 	}
@@ -69,6 +83,9 @@ func (m *mockContactsReader) GetAllContacts() ([]*contacts.Contact, error) {
 }
 
 func (m *mockContactsReader) ContactExists(name string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return false
 	}
@@ -76,6 +93,9 @@ func (m *mockContactsReader) ContactExists(name string) bool {
 }
 
 func (m *mockContactsReader) IsKnownNumber(number string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return false
 	}
@@ -84,6 +104,9 @@ func (m *mockContactsReader) IsKnownNumber(number string) bool {
 }
 
 func (m *mockContactsReader) GetContactsCount() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if !m.loadCalled {
 		return 0
 	}
