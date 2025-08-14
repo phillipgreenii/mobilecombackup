@@ -149,6 +149,17 @@ func (cm *ContactsManager) LoadContacts() error {
 	return nil
 }
 
+// isUnknownContact checks if a contact name represents an unknown contact placeholder
+func isUnknownContact(contactName string) bool {
+	unknownIndicators := []string{"(Unknown)", "null", ""}
+	for _, indicator := range unknownIndicators {
+		if contactName == indicator {
+			return true
+		}
+	}
+	return false
+}
+
 // normalizePhoneNumber normalizes a phone number for consistent lookup
 func normalizePhoneNumber(number string) string {
 	// Remove all non-digit characters
@@ -250,12 +261,38 @@ func (cm *ContactsManager) AddUnprocessedContact(phone, name string) {
 		return // Skip invalid phone numbers
 	}
 
-	// Check if this exact combination already exists
 	existingNames := cm.unprocessed[normalized]
+
+	// Check if this exact combination already exists
 	for _, existingName := range existingNames {
 		if existingName == name {
 			return // Duplicate, skip
 		}
+	}
+
+	// Handle unknown contact replacement logic
+	if isUnknownContact(name) {
+		// Only add unknown contact if no real contacts exist for this number
+		hasRealContacts := false
+		for _, existingName := range existingNames {
+			if !isUnknownContact(existingName) {
+				hasRealContacts = true
+				break
+			}
+		}
+
+		if hasRealContacts {
+			return // Don't add unknown contact when real contacts exist
+		}
+	} else {
+		// This is a real contact - remove any unknown contacts for this number
+		var filteredNames []string
+		for _, existingName := range existingNames {
+			if !isUnknownContact(existingName) {
+				filteredNames = append(filteredNames, existingName)
+			}
+		}
+		cm.unprocessed[normalized] = filteredNames
 	}
 
 	// Add the new name
@@ -348,12 +385,38 @@ func (cm *ContactsManager) addUnprocessedEntry(phone, name string) {
 		return // Skip invalid phone numbers
 	}
 
-	// Check if this exact combination already exists
 	existingNames := cm.unprocessed[normalized]
+
+	// Check if this exact combination already exists
 	for _, existingName := range existingNames {
 		if existingName == name {
 			return // Duplicate, skip
 		}
+	}
+
+	// Handle unknown contact replacement logic
+	if isUnknownContact(name) {
+		// Only add unknown contact if no real contacts exist for this number
+		hasRealContacts := false
+		for _, existingName := range existingNames {
+			if !isUnknownContact(existingName) {
+				hasRealContacts = true
+				break
+			}
+		}
+
+		if hasRealContacts {
+			return // Don't add unknown contact when real contacts exist
+		}
+	} else {
+		// This is a real contact - remove any unknown contacts for this number
+		var filteredNames []string
+		for _, existingName := range existingNames {
+			if !isUnknownContact(existingName) {
+				filteredNames = append(filteredNames, existingName)
+			}
+		}
+		cm.unprocessed[normalized] = filteredNames
 	}
 
 	// Add the new name
