@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,11 @@ func NewDirectoryAttachmentStorage(repoPath string) *DirectoryAttachmentStorage 
 
 // Store saves an attachment with its metadata in a directory structure
 func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata AttachmentInfo) error {
+	// Validate hash first to prevent null byte injection before path construction
+	if err := das.validateHash(hash); err != nil {
+		return fmt.Errorf("invalid hash: %w", err)
+	}
+
 	// Create directory path: attachments/ab/abc123.../
 	dirPath := das.getAttachmentDirPath(hash)
 
@@ -87,6 +93,11 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 
 // Store with io.Reader interface
 func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Reader, metadata AttachmentInfo) error {
+	// Validate hash first
+	if err := das.validateHash(hash); err != nil {
+		return fmt.Errorf("invalid hash: %w", err)
+	}
+
 	// Read all data first
 	dataBytes, err := io.ReadAll(data)
 	if err != nil {
@@ -98,6 +109,11 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 
 // GetPath returns the path to the attachment file
 func (das *DirectoryAttachmentStorage) GetPath(hash string) (string, error) {
+	// Validate hash first
+	if err := das.validateHash(hash); err != nil {
+		return "", fmt.Errorf("invalid hash: %w", err)
+	}
+
 	dirPath := das.getAttachmentDirPath(hash)
 
 	// Validate directory path
@@ -135,6 +151,11 @@ func (das *DirectoryAttachmentStorage) GetPath(hash string) (string, error) {
 
 // GetMetadata reads the metadata.yaml file
 func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo, error) {
+	// Validate hash first
+	if err := das.validateHash(hash); err != nil {
+		return AttachmentInfo{}, fmt.Errorf("invalid hash: %w", err)
+	}
+
 	dirPath := das.getAttachmentDirPath(hash)
 
 	// Validate directory path
@@ -169,6 +190,11 @@ func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo,
 
 // Exists checks if an attachment directory exists
 func (das *DirectoryAttachmentStorage) Exists(hash string) bool {
+	// Validate hash first - invalid hashes don't exist by definition
+	if err := das.validateHash(hash); err != nil {
+		return false
+	}
+
 	dirPath := das.getAttachmentDirPath(hash)
 
 	// Validate directory path
@@ -213,6 +239,39 @@ func (das *DirectoryAttachmentStorage) getAttachmentDirPath(hash string) string 
 	// Use first 2 characters as subdirectory
 	prefix := hash[:2]
 	return filepath.Join("attachments", prefix, hash)
+}
+
+// validateHash validates that a hash is safe to use in file paths
+func (das *DirectoryAttachmentStorage) validateHash(hash string) error {
+	// Check for empty hash
+	if hash == "" {
+		return fmt.Errorf("hash cannot be empty")
+	}
+
+	// Check for null bytes (must be done before any path operations)
+	if strings.Contains(hash, "\x00") {
+		return fmt.Errorf("hash contains null byte")
+	}
+
+	// Check for path traversal characters
+	if strings.Contains(hash, "..") {
+		return fmt.Errorf("hash contains path traversal sequence")
+	}
+
+	// Check for absolute path characters
+	if strings.Contains(hash, "/") || strings.Contains(hash, "\\") {
+		return fmt.Errorf("hash contains path separator")
+	}
+
+	// Check hash length (reasonable bounds)
+	if len(hash) < 2 {
+		return fmt.Errorf("hash too short (minimum 2 characters)")
+	}
+	if len(hash) > 256 {
+		return fmt.Errorf("hash too long (maximum 256 characters)")
+	}
+
+	return nil
 }
 
 // GetAttachmentFilePath returns the full path to the attachment file
