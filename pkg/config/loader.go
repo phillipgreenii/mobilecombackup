@@ -39,9 +39,7 @@ func (l *ViperConfigLoader) Load(path string) (*Config, error) {
 	v := viper.New()
 
 	// Set up Viper
-	if err := l.setupViper(v); err != nil {
-		return nil, fmt.Errorf("failed to set up configuration loader: %w", err)
-	}
+	l.setupViper(v)
 
 	// Load from file
 	if path != "" {
@@ -63,9 +61,7 @@ func (l *ViperConfigLoader) LoadWithDefaults() (*Config, error) {
 	v := viper.New()
 
 	// Set up Viper
-	if err := l.setupViper(v); err != nil {
-		return nil, fmt.Errorf("failed to set up configuration loader: %w", err)
-	}
+	l.setupViper(v)
 
 	// Set config name and paths for automatic discovery
 	v.SetConfigName("mobilecombackup")
@@ -92,9 +88,7 @@ func (l *ViperConfigLoader) LoadFromEnvironment(env Environment) (*Config, error
 	defaults := GetEnvironmentDefaults(env)
 
 	v := viper.New()
-	if err := l.setupViper(v); err != nil {
-		return nil, fmt.Errorf("failed to set up configuration loader: %w", err)
-	}
+	l.setupViper(v)
 
 	// Set defaults from environment configuration
 	l.setViperDefaults(v, defaults)
@@ -119,7 +113,7 @@ func (l *ViperConfigLoader) LoadFromEnvironment(env Environment) (*Config, error
 }
 
 // setupViper configures Viper with common settings
-func (l *ViperConfigLoader) setupViper(v *viper.Viper) error {
+func (l *ViperConfigLoader) setupViper(v *viper.Viper) {
 	// Set environment variable prefix
 	v.SetEnvPrefix("MOBILECOMBACKUP")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
@@ -128,8 +122,6 @@ func (l *ViperConfigLoader) setupViper(v *viper.Viper) error {
 	// Set default values
 	defaults := DefaultConfig()
 	l.setViperDefaults(v, defaults)
-
-	return nil
 }
 
 // setViperDefaults sets default values in Viper from a Config struct

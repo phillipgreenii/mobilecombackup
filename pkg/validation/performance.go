@@ -177,9 +177,8 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 	errorCh := make(chan error, 4)
 
 	// Progress tracking
-	stages := []string{"structure", "manifest", "content", "consistency"}
 	var completedStages int32
-	totalStages := int32(len(stages))
+	const totalStages = 4 // Number of validation stages
 	var progressMu sync.Mutex
 
 	updateProgress := func(stage string) {

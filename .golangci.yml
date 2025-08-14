@@ -1,0 +1,83 @@
+# Configuration for golangci-lint
+version: 2
+
+linters:
+  enable:
+    # Code quality and correctness (enabled by default)
+    - errcheck       # Check for unchecked errors
+    - govet          # Reports suspicious constructs  
+    - ineffassign    # Detects unused assignments
+    - staticcheck    # Staticcheck is a go vet on steroids
+    - unused         # Checks for unused constants, variables, functions
+    
+    # Security
+    - gosec          # Inspects source code for security problems
+    
+    # Performance  
+    - prealloc       # Finds slice declarations that could potentially be preallocated
+    - bodyclose      # Checks whether HTTP response body is closed successfully
+    - rowserrcheck   # Checks whether Rows.Err of rows is checked successfully
+    
+    # Style and consistency
+    - revive         # Fast, configurable replacement for golint
+    - misspell       # Finds commonly misspelled English words
+    - goconst        # Finds repeated strings that could be replaced by a constant
+    - dupl           # Tool for code clone detection
+    - lll            # Reports long lines
+    - nakedret       # Finds naked returns in functions greater than specified length
+    
+    # Code complexity
+    - gocyclo        # Computes and checks the cyclomatic complexity of functions
+    - funlen         # Tool for detection of long functions
+    - nestif         # Reports deeply nested if statements
+    - cyclop         # Alternative cyclomatic complexity checker
+    
+    # Other useful linters
+    - unconvert      # Remove unnecessary type conversions
+    - unparam        # Reports unused function parameters
+    - gocritic       # Provides diagnostics for bugs, performance and style
+
+linters-settings:
+  lll:
+    line-length: 130
+  gocyclo:
+    min-complexity: 25
+  cyclop:
+    max-complexity: 25
+  dupl:
+    threshold: 100
+  funlen:
+    lines: 80
+    statements: 50
+  gosec:
+    severity: medium
+  nestif:
+    min-complexity: 5
+  nakedret:
+    max-func-lines: 30
+
+issues:
+  exclude-rules:
+    # Exclude certain checks for all test files
+    - path: ".*_test\\.go"
+      linters:
+        - dupl        # Allow duplicate code in tests
+        - gosec       # Security checks less critical in tests
+        - funlen      # Test functions can be longer
+        - gocyclo     # Test complexity can be higher
+        - cyclop      # Alternative complexity check
+        - gocritic    # Less strict style in tests
+        - nestif      # Allow deeper nesting in tests
+        - revive      # Less strict style in tests
+        - lll         # Allow longer lines in tests
+        - goconst     # Allow string duplication in tests
+        - prealloc    # Performance less critical in tests
+    - path: ".*integration_test\\.go"
+      linters:
+        - cyclop      # Integration tests are inherently complex
+        - gocyclo     # Allow higher complexity in integration tests
+        - funlen      # Integration tests can be longer
+    - path: ".*example_test\\.go"
+      linters:
+        - lll         # Examples can have longer lines for clarity
+        - dupl        # Example duplication is often intentional
