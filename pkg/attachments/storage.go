@@ -6,18 +6,21 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"gopkg.in/yaml.v3"
 )
 
 // DirectoryAttachmentStorage implements AttachmentStorage with directory-based organization
 type DirectoryAttachmentStorage struct {
-	repoPath string
+	repoPath      string
+	pathValidator *security.PathValidator
 }
 
 // NewDirectoryAttachmentStorage creates a new directory-based attachment storage
 func NewDirectoryAttachmentStorage(repoPath string) *DirectoryAttachmentStorage {
 	return &DirectoryAttachmentStorage{
-		repoPath: repoPath,
+		repoPath:      repoPath,
+		pathValidator: security.NewPathValidator(repoPath),
 	}
 }
 
@@ -25,24 +28,51 @@ func NewDirectoryAttachmentStorage(repoPath string) *DirectoryAttachmentStorage 
 func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata AttachmentInfo) error {
 	// Create directory path: attachments/ab/abc123.../
 	dirPath := das.getAttachmentDirPath(hash)
-	fullDirPath := filepath.Join(das.repoPath, dirPath)
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
+	if err != nil {
+		return fmt.Errorf("invalid attachment directory path: %w", err)
+	}
+
+	fullDirPath, err := das.pathValidator.GetSafePath(validatedDirPath)
+	if err != nil {
+		return fmt.Errorf("failed to get safe directory path: %w", err)
+	}
 
 	// Create directory
 	if err := os.MkdirAll(fullDirPath, 0750); err != nil {
 		return fmt.Errorf("failed to create attachment directory: %w", err)
 	}
 
-	// Generate filename
+	// Generate filename and validate
 	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
-	attachmentPath := filepath.Join(fullDirPath, filename)
+	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
+	if err != nil {
+		return fmt.Errorf("invalid attachment file path: %w", err)
+	}
+
+	attachmentPath, err := das.pathValidator.GetSafePath(attachmentRelPath)
+	if err != nil {
+		return fmt.Errorf("failed to get safe attachment path: %w", err)
+	}
 
 	// Write attachment file
 	if err := os.WriteFile(attachmentPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write attachment file: %w", err)
 	}
 
-	// Write metadata file
-	metadataPath := filepath.Join(fullDirPath, "metadata.yaml")
+	// Write metadata file with validation
+	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
+	if err != nil {
+		return fmt.Errorf("invalid metadata file path: %w", err)
+	}
+
+	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
+	if err != nil {
+		return fmt.Errorf("failed to get safe metadata path: %w", err)
+	}
+
 	metadataData, err := yaml.Marshal(metadata)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
@@ -69,7 +99,17 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 // GetPath returns the path to the attachment file
 func (das *DirectoryAttachmentStorage) GetPath(hash string) (string, error) {
 	dirPath := das.getAttachmentDirPath(hash)
-	fullDirPath := filepath.Join(das.repoPath, dirPath)
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
+	if err != nil {
+		return "", fmt.Errorf("invalid attachment directory path: %w", err)
+	}
+
+	fullDirPath, err := das.pathValidator.GetSafePath(validatedDirPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get safe directory path: %w", err)
+	}
 
 	// Check if directory exists
 	if _, err := os.Stat(fullDirPath); os.IsNotExist(err) {
@@ -83,14 +123,36 @@ func (das *DirectoryAttachmentStorage) GetPath(hash string) (string, error) {
 	}
 
 	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
-	return filepath.Join(dirPath, filename), nil
+
+	// Validate and return the relative path
+	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
+	if err != nil {
+		return "", fmt.Errorf("invalid attachment file path: %w", err)
+	}
+
+	return attachmentRelPath, nil
 }
 
 // GetMetadata reads the metadata.yaml file
 func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo, error) {
 	dirPath := das.getAttachmentDirPath(hash)
-	fullDirPath := filepath.Join(das.repoPath, dirPath)
-	metadataPath := filepath.Join(fullDirPath, "metadata.yaml")
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
+	if err != nil {
+		return AttachmentInfo{}, fmt.Errorf("invalid attachment directory path: %w", err)
+	}
+
+	// Validate metadata file path
+	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
+	if err != nil {
+		return AttachmentInfo{}, fmt.Errorf("invalid metadata file path: %w", err)
+	}
+
+	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
+	if err != nil {
+		return AttachmentInfo{}, fmt.Errorf("failed to get safe metadata path: %w", err)
+	}
 
 	data, err := os.ReadFile(metadataPath)
 	if err != nil {
@@ -108,14 +170,33 @@ func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo,
 // Exists checks if an attachment directory exists
 func (das *DirectoryAttachmentStorage) Exists(hash string) bool {
 	dirPath := das.getAttachmentDirPath(hash)
-	fullDirPath := filepath.Join(das.repoPath, dirPath)
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
+	if err != nil {
+		return false // Invalid path means attachment doesn't exist securely
+	}
+
+	fullDirPath, err := das.pathValidator.GetSafePath(validatedDirPath)
+	if err != nil {
+		return false
+	}
 
 	if _, err := os.Stat(fullDirPath); os.IsNotExist(err) {
 		return false
 	}
 
-	// Check if metadata file exists
-	metadataPath := filepath.Join(fullDirPath, "metadata.yaml")
+	// Check if metadata file exists with validation
+	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
+	if err != nil {
+		return false
+	}
+
+	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
+	if err != nil {
+		return false
+	}
+
 	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
 		return false
 	}
@@ -142,9 +223,22 @@ func (das *DirectoryAttachmentStorage) GetAttachmentFilePath(hash string) (strin
 	}
 
 	dirPath := das.getAttachmentDirPath(hash)
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
+	if err != nil {
+		return "", fmt.Errorf("invalid attachment directory path: %w", err)
+	}
+
 	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
 
-	return filepath.Join(das.repoPath, dirPath, filename), nil
+	// Validate attachment file path
+	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
+	if err != nil {
+		return "", fmt.Errorf("invalid attachment file path: %w", err)
+	}
+
+	return das.pathValidator.GetSafePath(attachmentRelPath)
 }
 
 // ReadAttachment reads the attachment file content
