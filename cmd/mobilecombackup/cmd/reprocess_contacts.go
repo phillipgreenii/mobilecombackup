@@ -109,6 +109,33 @@ func runReprocessContacts(cmd *cobra.Command, args []string) error {
 		PrintInfo("  New unprocessed contacts found: %d", len(newUnprocessedEntries))
 	}
 
+	// Always update manifest at the end, even if no new contacts were found,
+	// in case the contacts.yaml file was modified externally
+	defer func() {
+		if !reprocessDryRun {
+			// Update manifest to reflect the current state of contacts.yaml file
+			if verbose && !quiet {
+				PrintVerbose("Updating manifest files after contacts reprocessing")
+			}
+
+			manifestGenerator := manifest.NewManifestGenerator(resolvedRepoRoot)
+			fileManifest, err := manifestGenerator.GenerateFileManifest()
+			if err != nil && !quiet {
+				PrintInfo("Warning: failed to generate updated file manifest: %v", err)
+				return
+			}
+
+			if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil && !quiet {
+				PrintInfo("Warning: failed to write updated manifest files: %v", err)
+				return
+			}
+
+			if !quiet {
+				PrintInfo("Updated manifest files (files.yaml, files.yaml.sha256)")
+			}
+		}
+	}()
+
 	if len(newUnprocessedEntries) == 0 {
 		if !quiet {
 			PrintInfo("No new contacts found to add")
@@ -146,28 +173,12 @@ func runReprocessContacts(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save updated contacts: %w", err)
 	}
 
-	// Update manifest to reflect the new contacts.yaml file
-	if verbose && !quiet {
-		PrintVerbose("Updating manifest files after contacts reprocessing")
-	}
-
-	manifestGenerator := manifest.NewManifestGenerator(resolvedRepoRoot)
-	fileManifest, err := manifestGenerator.GenerateFileManifest()
-	if err != nil {
-		return fmt.Errorf("failed to generate updated file manifest: %w", err)
-	}
-
-	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
-		return fmt.Errorf("failed to write updated manifest files: %w", err)
-	}
-
 	finalUnprocessedCount := len(contactsManager.GetUnprocessedEntries())
 	newContactsAdded := finalUnprocessedCount - initialUnprocessedCount
 
 	if !quiet {
 		PrintInfo("Successfully updated contacts.yaml")
 		PrintInfo("Added %d new unprocessed contact entries", newContactsAdded)
-		PrintInfo("Updated manifest files (files.yaml, files.yaml.sha256)")
 	}
 
 	return nil

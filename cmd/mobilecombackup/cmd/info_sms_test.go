@@ -58,16 +58,16 @@ func TestSMSMMSTypeCounting(t *testing.T) {
 func TestInfoSMSStatsWithTestData(t *testing.T) {
 	// Test with actual test data to ensure our fix works end-to-end
 	reader := sms.NewXMLSMSReader("../../../testdata/to_process")
-	
+
 	// Verify the reader can be created (basic smoke test)
 	if reader == nil {
 		t.Fatal("Failed to create SMS reader")
 	}
-	
+
 	// The key insight is that messages are passed as values (sms.SMS, sms.MMS)
 	// not pointers (*sms.SMS, *sms.MMS) to the callback function
 	// Our fix in info.go changes the type assertions to match this
-	
+
 	// The actual integration testing is done in the full command tests
 	// This test documents the core issue that was fixed
 }
