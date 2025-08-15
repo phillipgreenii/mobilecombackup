@@ -59,10 +59,7 @@ func FuzzXMLSMSReader_StreamMessages(f *testing.F) {
 
 		// The parser should either succeed or fail gracefully with an error
 		// It should never panic or crash
-		if err != nil {
-			// Error is acceptable for malformed input - just ignore it
-			// We only care that it doesn't panic
-		}
+		_ = err // Error is acceptable for malformed input - just ignore it
 
 		// Validate that any successfully parsed messages have reasonable values
 		for i, msg := range messages {

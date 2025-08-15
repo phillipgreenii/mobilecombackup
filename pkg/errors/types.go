@@ -9,14 +9,22 @@ type ErrorCode string
 
 const (
 	// ErrCodeValidation indicates a validation error
-	ErrCodeValidation    ErrorCode = "VALIDATION_ERROR"
-	ErrCodeFileNotFound  ErrorCode = "FILE_NOT_FOUND"
-	ErrCodeParsing       ErrorCode = "PARSE_ERROR"
-	ErrCodePermission    ErrorCode = "PERMISSION_ERROR"
-	ErrCodeStorage       ErrorCode = "STORAGE_ERROR"
-	ErrCodeIntegrity     ErrorCode = "INTEGRITY_ERROR"
-	ErrCodeProcessing    ErrorCode = "PROCESSING_ERROR"
-	ErrCodeImport        ErrorCode = "IMPORT_ERROR"
+	ErrCodeValidation ErrorCode = "VALIDATION_ERROR"
+	// ErrCodeFileNotFound indicates a file was not found
+	ErrCodeFileNotFound ErrorCode = "FILE_NOT_FOUND"
+	// ErrCodeParsing indicates a parsing error
+	ErrCodeParsing ErrorCode = "PARSE_ERROR"
+	// ErrCodePermission indicates a permission error
+	ErrCodePermission ErrorCode = "PERMISSION_ERROR"
+	// ErrCodeStorage indicates a storage error
+	ErrCodeStorage ErrorCode = "STORAGE_ERROR"
+	// ErrCodeIntegrity indicates a data integrity error
+	ErrCodeIntegrity ErrorCode = "INTEGRITY_ERROR"
+	// ErrCodeProcessing indicates a processing error
+	ErrCodeProcessing ErrorCode = "PROCESSING_ERROR"
+	// ErrCodeImport indicates an import error
+	ErrCodeImport ErrorCode = "IMPORT_ERROR"
+	// ErrCodeConfiguration indicates a configuration error
 	ErrCodeConfiguration ErrorCode = "CONFIG_ERROR"
 )
 

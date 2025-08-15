@@ -112,7 +112,9 @@ func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
 }
 
 // FixViolations attempts to fix the given validation violations
-func (a *AutofixerImpl) FixViolations(violations []validation.ValidationViolation, options AutofixOptions) (*AutofixReport, error) {
+func (a *AutofixerImpl) FixViolations(
+	violations []validation.ValidationViolation, options AutofixOptions,
+) (*AutofixReport, error) {
 	report := a.createInitialReport()
 
 	// In dry-run mode, perform permission checks
@@ -166,7 +168,9 @@ func (a *AutofixerImpl) performPermissionChecks(violations []validation.Validati
 }
 
 // fixDirectoryViolations handles directory creation violations
-func (a *AutofixerImpl) fixDirectoryViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+func (a *AutofixerImpl) fixDirectoryViolations(
+	violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport,
+) {
 	directoryViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.StructureViolation,
 	})
@@ -179,7 +183,9 @@ func (a *AutofixerImpl) fixDirectoryViolations(violations []validation.Validatio
 }
 
 // handleDirectoryViolation processes a single directory violation
-func (a *AutofixerImpl) handleDirectoryViolation(violation validation.ValidationViolation, dryRun bool, report *AutofixReport) {
+func (a *AutofixerImpl) handleDirectoryViolation(
+	violation validation.ValidationViolation, dryRun bool, report *AutofixReport,
+) {
 	if dryRun {
 		report.FixedViolations = append(report.FixedViolations, FixedViolation{
 			OriginalViolation: violation,

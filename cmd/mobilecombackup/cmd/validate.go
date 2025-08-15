@@ -379,7 +379,9 @@ func removeOrphanAttachmentsWithProgress(
 }
 
 // findOrphanedAttachments finds and returns orphaned attachments
-func findOrphanedAttachments(smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager) ([]*attachments.Attachment, int, error) {
+func findOrphanedAttachments(
+	smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager,
+) ([]*attachments.Attachment, int, error) {
 	// Get all attachment references from SMS messages
 	referencedHashes, err := smsReader.GetAllAttachmentRefs()
 	if err != nil {
@@ -418,7 +420,9 @@ func createOrphanRemovalResult(totalCount int, orphanedAttachments []*attachment
 }
 
 // handleDryRunOrphanRemoval handles dry run mode for orphan removal
-func handleDryRunOrphanRemoval(result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment) *OrphanRemovalResult {
+func handleDryRunOrphanRemoval(
+	result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment,
+) *OrphanRemovalResult {
 	// Calculate potential bytes freed
 	for _, attachment := range orphanedAttachments {
 		result.BytesFreed += attachment.Size
@@ -428,7 +432,11 @@ func handleDryRunOrphanRemoval(result *OrphanRemovalResult, orphanedAttachments 
 }
 
 // executeOrphanRemoval executes the actual removal of orphaned attachments
-func executeOrphanRemoval(result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment, attachmentReader *attachments.AttachmentManager) *OrphanRemovalResult {
+func executeOrphanRemoval(
+	result *OrphanRemovalResult,
+	orphanedAttachments []*attachments.Attachment,
+	attachmentReader *attachments.AttachmentManager,
+) *OrphanRemovalResult {
 	repoPath := attachmentReader.GetRepoPath()
 	emptyDirs := make(map[string]bool) // Track directories that might become empty
 
@@ -500,90 +508,18 @@ func outputTextResult(result ValidationResult, repoPath string) {
 		if !quiet {
 			fmt.Println("✓ Repository is valid")
 		}
-	} else {
-		if !quiet {
-			fmt.Printf("✗ Found %d violation(s)\n\n", len(result.Violations))
-		}
-
-		// Group violations by type
-		violationsByType := make(map[string][]validation.ValidationViolation)
-		for _, v := range result.Violations {
-			violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
-		}
-
-		// Display violations by type
-		for vType, violations := range violationsByType {
-			if !quiet {
-				fmt.Printf("%s (%d):\n", vType, len(violations))
-			}
-
-			for _, v := range violations {
-				fmt.Print("  ")
-				if v.File != "" {
-					fmt.Printf("%s: ", v.File)
-				}
-				fmt.Println(v.Message)
-			}
-
-			if !quiet {
-				fmt.Println()
-			}
-		}
+		return
 	}
+
+	// Handle invalid repository
+	if !quiet {
+		fmt.Printf("✗ Found %d violation(s)\n\n", len(result.Violations))
+	}
+	displayViolationsByType(result.Violations)
 
 	// Display autofix results if performed
 	if result.AutofixReport != nil {
-		if !quiet {
-			fmt.Println()
-			if validateDryRun {
-				fmt.Println("Autofix Report (dry-run mode):")
-			} else {
-				fmt.Println("Autofix Report:")
-			}
-			fmt.Println(strings.Repeat("=", 24))
-		}
-
-		// Display fixed violations
-		if len(result.AutofixReport.FixedViolations) > 0 {
-			if !quiet {
-				fmt.Println("\nFixed Violations:")
-			}
-			for _, fixed := range result.AutofixReport.FixedViolations {
-				if validateDryRun {
-					fmt.Printf("✓ Would fix: %s\n", fixed.Details)
-				} else {
-					fmt.Printf("✓ %s\n", fixed.Details)
-				}
-			}
-		}
-
-		// Display skipped violations
-		if len(result.AutofixReport.SkippedViolations) > 0 {
-			if !quiet {
-				fmt.Println("\nRemaining Violations:")
-			}
-			for _, skipped := range result.AutofixReport.SkippedViolations {
-				fmt.Printf("✗ %s: %s (%s)\n", skipped.OriginalViolation.File, skipped.OriginalViolation.Message, skipped.SkipReason)
-			}
-		}
-
-		// Display errors
-		if len(result.AutofixReport.Errors) > 0 {
-			if !quiet {
-				fmt.Println("\nErrors During Autofix:")
-			}
-			for _, autofixErr := range result.AutofixReport.Errors {
-				fmt.Printf("⚠ Failed %s on %s: %s\n", autofixErr.Operation, autofixErr.File, autofixErr.Error)
-			}
-		}
-
-		// Display summary
-		if !quiet {
-			fmt.Printf("\nSummary: %d violations fixed, %d remaining, %d errors\n",
-				result.AutofixReport.Summary.FixedCount,
-				result.AutofixReport.Summary.SkippedCount,
-				result.AutofixReport.Summary.ErrorCount)
-		}
+		displayAutofixReport(result.AutofixReport)
 	}
 
 	// Display orphan removal results if performed
@@ -613,5 +549,90 @@ func outputTextResult(result ValidationResult, repoPath string) {
 				}
 			}
 		}
+	}
+}
+
+// displayViolationsByType groups and displays violations by type
+func displayViolationsByType(violations []validation.ValidationViolation) {
+	// Group violations by type
+	violationsByType := make(map[string][]validation.ValidationViolation)
+	for _, v := range violations {
+		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
+	}
+
+	// Display violations by type
+	for vType, violations := range violationsByType {
+		if !quiet {
+			fmt.Printf("%s (%d):\n", vType, len(violations))
+		}
+
+		for _, v := range violations {
+			fmt.Print("  ")
+			if v.File != "" {
+				fmt.Printf("%s: ", v.File)
+			}
+			fmt.Println(v.Message)
+		}
+
+		if !quiet {
+			fmt.Println()
+		}
+	}
+}
+
+// displayAutofixReport displays the autofix report results
+func displayAutofixReport(report *autofix.AutofixReport) {
+	if !quiet {
+		fmt.Println()
+		if validateDryRun {
+			fmt.Println("Autofix Report (dry-run mode):")
+		} else {
+			fmt.Println("Autofix Report:")
+		}
+		fmt.Println(strings.Repeat("=", 24))
+	}
+
+	// Display fixed violations
+	if len(report.FixedViolations) > 0 {
+		if !quiet {
+			fmt.Println("\nFixed Violations:")
+		}
+		for _, fixed := range report.FixedViolations {
+			if validateDryRun {
+				fmt.Printf("✓ Would fix: %s\n", fixed.Details)
+			} else {
+				fmt.Printf("✓ %s\n", fixed.Details)
+			}
+		}
+	}
+
+	// Display skipped violations
+	if len(report.SkippedViolations) > 0 {
+		if !quiet {
+			fmt.Println("\nRemaining Violations:")
+		}
+		for _, skipped := range report.SkippedViolations {
+			fmt.Printf("✗ %s: %s (%s)\n", skipped.OriginalViolation.File,
+				skipped.OriginalViolation.Message, skipped.SkipReason)
+		}
+	}
+
+	// Display errors
+	if len(report.Errors) > 0 {
+		if !quiet {
+			fmt.Println("\nErrors During Autofix:")
+		}
+		for _, autofixErr := range report.Errors {
+			fmt.Printf("⚠ Failed %s on %s: %s\n", autofixErr.Operation,
+				autofixErr.File, autofixErr.Error)
+		}
+	}
+
+	// Display summary
+	if !quiet {
+		fmt.Printf("\nSummary: %d violations fixed, %d remaining, %d errors\n",
+			report.Summary.FixedCount,
+			report.Summary.SkippedCount,
+			report.Summary.ErrorCount)
 	}
 }

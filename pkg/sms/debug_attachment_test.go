@@ -45,7 +45,7 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 				t.Logf("    Part %d: CT=%s, DataLen=%d", i, part.ContentType, len(part.Data))
 				if part.ContentType == "image/png" && len(part.Data) > 0 {
 					hasAttachments = true
-					t.Logf("      Found PNG attachment! Data preview: %s...", part.Data[:min(50, len(part.Data))])
+					t.Logf("      Found PNG attachment! Data preview: %s...", part.Data[:minInt(50, len(part.Data))])
 				}
 			}
 
@@ -96,7 +96,7 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 	}
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

@@ -179,7 +179,9 @@ func (mm *MigrationManager) prepareMigrationData(
 }
 
 // handleDryRunMigration handles migration in dry run mode
-func (mm *MigrationManager) handleDryRunMigration(attachment *Attachment, storage *DirectoryAttachmentStorage, result MigrationResult) MigrationResult {
+func (mm *MigrationManager) handleDryRunMigration(
+	attachment *Attachment, storage *DirectoryAttachmentStorage, result MigrationResult,
+) MigrationResult {
 	// In dry run mode, just simulate the migration
 	filename := result.GeneratedName
 	result.NewPath = filepath.Join(storage.getAttachmentDirPath(attachment.Hash), filename)
@@ -191,7 +193,10 @@ func (mm *MigrationManager) handleDryRunMigration(attachment *Attachment, storag
 }
 
 // executeMigration performs the actual migration
-func (mm *MigrationManager) executeMigration(attachment *Attachment, storage *DirectoryAttachmentStorage, data []byte, metadata AttachmentInfo, result MigrationResult) MigrationResult {
+func (mm *MigrationManager) executeMigration(
+	attachment *Attachment, storage *DirectoryAttachmentStorage,
+	data []byte, metadata AttachmentInfo, result MigrationResult,
+) MigrationResult {
 	// Store with new format
 	if err := storage.Store(attachment.Hash, data, metadata); err != nil {
 		result.Error = fmt.Sprintf("failed to store in new format: %v", err)

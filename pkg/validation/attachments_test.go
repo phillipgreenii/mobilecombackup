@@ -79,7 +79,7 @@ func (m *mockAttachmentReader) GetAttachmentPath(hash string) string {
 	return fmt.Sprintf("attachments/%s/%s", hash[:2], hash)
 }
 
-func (m *mockAttachmentReader) FindOrphanedAttachments(referencedHashes map[string]bool) ([]*attachments.Attachment, error) {
+func (m *mockAttachmentReader) FindOrphanedAttachments(_ map[string]bool) ([]*attachments.Attachment, error) {
 	if m.orphanedError != nil {
 		return nil, m.orphanedError
 	}

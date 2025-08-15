@@ -95,40 +95,8 @@ func TestSMSValidatorImpl_ValidateSMSStructure(t *testing.T) {
 
 	validator := NewSMSValidator(tempDir, mockReader)
 
-	// Test missing SMS directory
-	violations := validator.ValidateSMSStructure()
-	if len(violations) != 1 {
-		t.Errorf("Expected 1 violation for missing SMS directory, got %d", len(violations))
-	}
-
-	// Create SMS directory
-	smsDir := filepath.Join(tempDir, "sms")
-	err := os.MkdirAll(smsDir, 0750)
-	if err != nil {
-		t.Fatalf("Failed to create SMS directory: %v", err)
-	}
-
-	// Test missing SMS files
-	violations = validator.ValidateSMSStructure()
-	if len(violations) != 2 { // Missing both year files
-		t.Errorf("Expected 2 violations for missing SMS files, got %d", len(violations))
-	}
-
-	// Create SMS files
-	for _, year := range mockReader.availableYears {
-		fileName := fmt.Sprintf("sms-%d.xml", year)
-		filePath := filepath.Join(smsDir, fileName)
-		err := os.WriteFile(filePath, []byte("<smses></smses>"), 0600)
-		if err != nil {
-			t.Fatalf("Failed to create SMS file: %v", err)
-		}
-	}
-
-	// Test with all files present
-	violations = validator.ValidateSMSStructure()
-	if len(violations) != 0 {
-		t.Errorf("Expected 0 violations with all files present, got %d: %v", len(violations), violations)
-	}
+	testSMSValidateStructure(t, tempDir, "sms", "sms", "<smses></smses>",
+		mockReader.availableYears, validator.ValidateSMSStructure)
 }
 
 func TestSMSValidatorImpl_ValidateSMSStructure_EmptyRepository(t *testing.T) {
@@ -470,5 +438,45 @@ func TestSMSValidatorImpl_AttachmentReferenceValidation(t *testing.T) {
 				t.Errorf("Expected %d warning violations, got %d: %v", tc.expectCount, warningCount, violations)
 			}
 		})
+	}
+}
+
+// testSMSValidateStructure is a helper for testing SMS structure validation
+func testSMSValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
+	availableYears []int, validateFunc func() []ValidationViolation) {
+	// Test missing directory
+	violations := validateFunc()
+	if len(violations) != 1 {
+		t.Errorf("Expected 1 violation for missing %s directory, got %d", dirName, len(violations))
+	}
+
+	// Create directory
+	dir := filepath.Join(tempDir, dirName)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create %s directory: %v", dirName, err)
+	}
+
+	// Test missing files
+	violations = validateFunc()
+	if len(violations) != len(availableYears) {
+		t.Errorf("Expected %d violations for missing %s files, got %d",
+			len(availableYears), fileName, len(violations))
+	}
+
+	// Create files
+	for _, year := range availableYears {
+		fileName := fmt.Sprintf("%s-%d.xml", fileName, year)
+		filePath := filepath.Join(dir, fileName)
+		err := os.WriteFile(filePath, []byte(xmlContent), 0600)
+		if err != nil {
+			t.Fatalf("Failed to create %s file: %v", fileName, err)
+		}
+	}
+
+	// Test with all files present
+	violations = validateFunc()
+	if len(violations) != 0 {
+		t.Errorf("Expected 0 violations with all files present, got %d: %v", len(violations), violations)
 	}
 }

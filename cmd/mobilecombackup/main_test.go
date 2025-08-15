@@ -11,7 +11,10 @@ import (
 func TestMainIntegration(t *testing.T) {
 	// Build the binary for testing
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
+	cmd := exec.Command(
+		"go", "build", "-o", binPath,
+		"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup",
+	) // #nosec G204
 
 	// Build the binary
 	output, err := cmd.CombinedOutput()
@@ -125,7 +128,10 @@ func TestVersionInjection(t *testing.T) {
 func TestHelpSubcommand(t *testing.T) {
 	// Build the binary
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
+	cmd := exec.Command(
+		"go", "build", "-o", binPath,
+		"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup",
+	) // #nosec G204
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {

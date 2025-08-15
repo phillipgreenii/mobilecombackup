@@ -6,8 +6,10 @@ import "time"
 type MessageType int
 
 const (
+	// ReceivedMessage represents a received message
 	ReceivedMessage MessageType = 1
-	SentMessage     MessageType = 2
+	// SentMessage represents a sent message
+	SentMessage MessageType = 2
 )
 
 // Message is the base interface for SMS and MMS

@@ -76,7 +76,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // handleHealth handles the main health check endpoint
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	if s.healthRegistry == nil {
 		s.writeError(w, http.StatusServiceUnavailable, "Health registry not configured")
 		return
@@ -138,7 +138,7 @@ func (s *Server) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleReadiness handles Kubernetes-style readiness probe
-func (s *Server) handleReadiness(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleReadiness(w http.ResponseWriter, _ *http.Request) {
 	if s.healthRegistry == nil {
 		s.writeError(w, http.StatusServiceUnavailable, "Health registry not configured")
 		return
@@ -163,7 +163,7 @@ func (s *Server) handleReadiness(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleLiveness handles Kubernetes-style liveness probe
-func (s *Server) handleLiveness(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleLiveness(w http.ResponseWriter, _ *http.Request) {
 	// Liveness is simpler - just check if the service is running
 	response := map[string]interface{}{
 		"alive":     true,

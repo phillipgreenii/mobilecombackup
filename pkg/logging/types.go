@@ -41,10 +41,14 @@ type LogLevel string
 const (
 	// LevelDebug enables debug-level logging
 	LevelDebug LogLevel = "debug"
-	LevelInfo  LogLevel = "info"
-	LevelWarn  LogLevel = "warn"
+	// LevelInfo enables info-level logging
+	LevelInfo LogLevel = "info"
+	// LevelWarn enables warn-level logging
+	LevelWarn LogLevel = "warn"
+	// LevelError enables error-level logging
 	LevelError LogLevel = "error"
-	LevelOff   LogLevel = "off"
+	// LevelOff disables all logging
+	LevelOff LogLevel = "off"
 )
 
 // LogFormat represents the output format for logs
@@ -53,7 +57,8 @@ type LogFormat string
 const (
 	// FormatConsole outputs human-readable console logs
 	FormatConsole LogFormat = "console"
-	FormatJSON    LogFormat = "json"
+	// FormatJSON outputs structured JSON logs
+	FormatJSON LogFormat = "json"
 )
 
 // LogConfig holds logging configuration
@@ -64,7 +69,7 @@ type LogConfig struct {
 	Color      bool      `yaml:"color" json:"color"`
 }
 
-// Context key types for proper type safety
+// ContextKey represents a context key type for proper type safety
 type ContextKey string
 
 const (

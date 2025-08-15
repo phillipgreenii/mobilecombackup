@@ -107,9 +107,12 @@ func DefaultConfig() *Config {
 type Environment string
 
 const (
+	// EnvironmentDevelopment represents the development environment
 	EnvironmentDevelopment Environment = "development"
-	EnvironmentTest        Environment = "test"
-	EnvironmentProduction  Environment = "production"
+	// EnvironmentTest represents the testing environment
+	EnvironmentTest Environment = "test"
+	// EnvironmentProduction represents the production environment
+	EnvironmentProduction Environment = "production"
 )
 
 // EnvConfig holds environment-specific configuration

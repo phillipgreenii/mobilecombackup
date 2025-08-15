@@ -335,7 +335,7 @@ func TestCleanupEmptyDirectory(t *testing.T) {
 		},
 		{
 			name: "non-existent directory",
-			setupDir: func(_ *testing.T, dirPath string) {
+			setupDir: func(_ *testing.T, _ string) {
 				// Don't create the directory
 			},
 			expectRemoved: false, // Can't remove what doesn't exist
@@ -385,7 +385,7 @@ func (m *mockSMSReader) ReadMessages(_ int) ([]sms.Message, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockSMSReader) StreamMessagesForYear(_ int, callback func(sms.Message) error) error {
+func (m *mockSMSReader) StreamMessagesForYear(_ int, _ func(sms.Message) error) error {
 	return fmt.Errorf("not implemented")
 }
 
@@ -404,11 +404,11 @@ func (m *mockSMSReader) GetAvailableYears() ([]int, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockSMSReader) GetMessageCount(year int) (int, error) {
+func (m *mockSMSReader) GetMessageCount(_ int) (int, error) {
 	return 0, fmt.Errorf("not implemented")
 }
 
-func (m *mockSMSReader) ValidateSMSFile(year int) error {
+func (m *mockSMSReader) ValidateSMSFile(_ int) error {
 	return fmt.Errorf("not implemented")
 }
 

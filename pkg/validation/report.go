@@ -14,8 +14,11 @@ import (
 type ReportFormat string
 
 const (
+	// FormatYAML outputs the report in YAML format
 	FormatYAML ReportFormat = "yaml"
+	// FormatJSON outputs the report in JSON format
 	FormatJSON ReportFormat = "json"
+	// FormatText outputs the report in plain text format
 	FormatText ReportFormat = "text"
 )
 

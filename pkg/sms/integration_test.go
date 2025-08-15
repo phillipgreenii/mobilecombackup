@@ -101,7 +101,7 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(2013, func(_ Message) error {
 		streamedCount++
 		return nil
 	})

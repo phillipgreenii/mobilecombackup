@@ -142,9 +142,8 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(ctx con
 
 	if options.ParallelValidation {
 		return v.validateParallel(ctx, report, options)
-	} else {
-		return v.validateSequential(ctx, report, options)
 	}
+	return v.validateSequential(ctx, report, options)
 }
 
 // ValidateAsync performs validation asynchronously with progress reporting

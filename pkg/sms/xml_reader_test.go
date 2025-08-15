@@ -386,7 +386,7 @@ func TestXMLSMSReader_GetMessageCount(t *testing.T) {
 
 			// For valid cases, test that we can parse the messages
 			messageCount := 0
-			err := tempReader.StreamMessagesFromReader(decoder, func(msg Message) error {
+			err := tempReader.StreamMessagesFromReader(decoder, func(_ Message) error {
 				messageCount++
 				return nil
 			})
@@ -414,7 +414,7 @@ func TestXMLSMSReader_ValidateSMSFile_CountMismatch(t *testing.T) {
 
 	// Count actual messages
 	actualCount := 0
-	err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(msg Message) error {
+	err := reader.StreamMessagesFromReader(strings.NewReader(xmlData), func(_ Message) error {
 		actualCount++
 		return nil
 	})

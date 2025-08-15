@@ -64,40 +64,8 @@ func TestCallsValidatorImpl_ValidateCallsStructure(t *testing.T) {
 
 	validator := NewCallsValidator(tempDir, mockReader)
 
-	// Test missing calls directory
-	violations := validator.ValidateCallsStructure()
-	if len(violations) != 1 {
-		t.Errorf("Expected 1 violation for missing calls directory, got %d", len(violations))
-	}
-
-	// Create calls directory
-	callsDir := filepath.Join(tempDir, "calls")
-	err := os.MkdirAll(callsDir, 0750)
-	if err != nil {
-		t.Fatalf("Failed to create calls directory: %v", err)
-	}
-
-	// Test missing call files
-	violations = validator.ValidateCallsStructure()
-	if len(violations) != 2 { // Missing both year files
-		t.Errorf("Expected 2 violations for missing call files, got %d", len(violations))
-	}
-
-	// Create call files
-	for _, year := range mockReader.availableYears {
-		fileName := fmt.Sprintf("calls-%d.xml", year)
-		filePath := filepath.Join(callsDir, fileName)
-		err := os.WriteFile(filePath, []byte("<calls></calls>"), 0600)
-		if err != nil {
-			t.Fatalf("Failed to create call file: %v", err)
-		}
-	}
-
-	// Test with all files present
-	violations = validator.ValidateCallsStructure()
-	if len(violations) != 0 {
-		t.Errorf("Expected 0 violations with all files present, got %d: %v", len(violations), violations)
-	}
+	testCallsValidateStructure(t, tempDir, "calls", "calls", "<calls></calls>",
+		mockReader.availableYears, validator.ValidateCallsStructure)
 }
 
 func TestCallsValidatorImpl_ValidateCallsContent(t *testing.T) {
@@ -295,5 +263,45 @@ func TestCallsValidatorImpl_ErrorHandling(t *testing.T) {
 	// Empty years should not cause violations (empty repository is valid)
 	if len(violations) != 0 {
 		t.Errorf("Expected 0 violations with empty years, got %d: %v", len(violations), violations)
+	}
+}
+
+// testCallsValidateStructure is a helper for testing calls structure validation
+func testCallsValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
+	availableYears []int, validateFunc func() []ValidationViolation) {
+	// Test missing directory
+	violations := validateFunc()
+	if len(violations) != 1 {
+		t.Errorf("Expected 1 violation for missing %s directory, got %d", dirName, len(violations))
+	}
+
+	// Create directory
+	dir := filepath.Join(tempDir, dirName)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create %s directory: %v", dirName, err)
+	}
+
+	// Test missing files
+	violations = validateFunc()
+	if len(violations) != len(availableYears) {
+		t.Errorf("Expected %d violations for missing %s files, got %d",
+			len(availableYears), fileName, len(violations))
+	}
+
+	// Create files
+	for _, year := range availableYears {
+		fileName := fmt.Sprintf("%s-%d.xml", fileName, year)
+		filePath := filepath.Join(dir, fileName)
+		err := os.WriteFile(filePath, []byte(xmlContent), 0600)
+		if err != nil {
+			t.Fatalf("Failed to create %s file: %v", fileName, err)
+		}
+	}
+
+	// Test with all files present
+	violations = validateFunc()
+	if len(violations) != 0 {
+		t.Errorf("Expected 0 violations with all files present, got %d: %v", len(violations), violations)
 	}
 }

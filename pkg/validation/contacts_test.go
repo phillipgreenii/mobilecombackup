@@ -113,7 +113,7 @@ func (m *mockContactsReader) GetContactsCount() int {
 	return len(m.contacts)
 }
 
-func (m *mockContactsReader) AddUnprocessedContacts(addresses, contactNames string) error {
+func (m *mockContactsReader) AddUnprocessedContacts(_, _ string) error {
 	// Mock implementation - do nothing for tests
 	return nil
 }
