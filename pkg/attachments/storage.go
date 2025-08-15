@@ -1,6 +1,8 @@
 package attachments
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -92,20 +94,128 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	return nil
 }
 
-// Store with io.Reader interface
+// StoreFromReader stores an attachment by streaming from io.Reader
+// This is memory-efficient for large attachments as it doesn't load all data into memory
 func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Reader, metadata AttachmentInfo) error {
-	// Validate hash first
+	// Validate hash first to prevent null byte injection before path construction
 	if err := das.validateHash(hash); err != nil {
-		return fmt.Errorf("invalid hash: %w", err)
+		return customerrors.WrapWithValidation("validate attachment hash", err)
 	}
 
-	// Read all data first
-	dataBytes, err := io.ReadAll(data)
+	// Create directory path: attachments/ab/abc123.../
+	dirPath := das.getAttachmentDirPath(hash)
+
+	// Validate directory path
+	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
 	if err != nil {
-		return fmt.Errorf("failed to read attachment data: %w", err)
+		return fmt.Errorf("invalid attachment directory path: %w", err)
 	}
 
-	return das.Store(hash, dataBytes, metadata)
+	fullDirPath, err := das.pathValidator.GetSafePath(validatedDirPath)
+	if err != nil {
+		return fmt.Errorf("failed to get safe directory path: %w", err)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(fullDirPath, 0750); err != nil {
+		// Check if it's a disk space issue
+		if strings.Contains(err.Error(), "no space left") {
+			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+		}
+		return fmt.Errorf("failed to create attachment directory: %w", err)
+	}
+
+	// Generate filename and validate
+	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
+	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
+	if err != nil {
+		return fmt.Errorf("invalid attachment file path: %w", err)
+	}
+
+	attachmentPath, err := das.pathValidator.GetSafePath(attachmentRelPath)
+	if err != nil {
+		return fmt.Errorf("failed to get safe attachment path: %w", err)
+	}
+
+	// Use temp file for atomic write operation
+	tempFile := attachmentPath + ".tmp"
+
+	// Create temp file
+	file, err := os.Create(tempFile)
+	if err != nil {
+		if strings.Contains(err.Error(), "no space left") {
+			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+		}
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	// Ensure cleanup on any error
+	defer func() {
+		file.Close()
+		os.Remove(tempFile) // Clean up temp file if something goes wrong
+	}()
+
+	// Create hash writer for verification
+	hasher := sha256.New()
+	multiWriter := io.MultiWriter(file, hasher)
+
+	// Stream with fixed buffer size for memory efficiency (32KB)
+	written, err := io.CopyBuffer(multiWriter, data, make([]byte, 32*1024))
+	if err != nil {
+		if strings.Contains(err.Error(), "no space left") {
+			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+		}
+		return fmt.Errorf("failed to write attachment data: %w", err)
+	}
+
+	// Verify hash matches expected
+	calculatedHash := hex.EncodeToString(hasher.Sum(nil))
+	if calculatedHash != hash {
+		return fmt.Errorf("%w: expected %s, got %s", ErrHashMismatch, hash, calculatedHash)
+	}
+
+	// Update metadata with actual size
+	metadata.Size = written
+
+	// Close temp file before renaming
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Atomic rename to final location
+	if err := os.Rename(tempFile, attachmentPath); err != nil {
+		return fmt.Errorf("failed to move temp file to final location: %w", err)
+	}
+
+	// Write metadata file with validation (same as before)
+	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
+	if err != nil {
+		// Clean up attachment file if metadata fails
+		os.Remove(attachmentPath)
+		return fmt.Errorf("invalid metadata file path: %w", err)
+	}
+
+	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
+	if err != nil {
+		os.Remove(attachmentPath)
+		return fmt.Errorf("failed to get safe metadata path: %w", err)
+	}
+
+	metadataData, err := yaml.Marshal(metadata)
+	if err != nil {
+		os.Remove(attachmentPath)
+		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	if err := os.WriteFile(metadataPath, metadataData, 0644); err != nil {
+		os.Remove(attachmentPath)
+		if strings.Contains(err.Error(), "no space left") {
+			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+		}
+		return fmt.Errorf("failed to write metadata file: %w", err)
+	}
+
+	return nil
 }
 
 // GetPath returns the path to the attachment file

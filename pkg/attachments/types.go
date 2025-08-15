@@ -1,8 +1,21 @@
 package attachments
 
 import (
+	"errors"
 	"strings"
 	"time"
+)
+
+// Streaming storage errors
+var (
+	// ErrHashMismatch indicates that the calculated hash doesn't match the expected hash
+	ErrHashMismatch = errors.New("hash mismatch: calculated hash does not match expected")
+
+	// ErrPartialWrite indicates that not all data was written to the attachment file
+	ErrPartialWrite = errors.New("partial write: not all data was written to file")
+
+	// ErrDiskFull indicates that there is insufficient disk space to store the attachment
+	ErrDiskFull = errors.New("disk full: insufficient space to store attachment")
 )
 
 // Attachment represents a stored attachment file

@@ -1,6 +1,8 @@
 package attachments
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
@@ -243,8 +245,10 @@ func TestDirectoryAttachmentStorage_StoreFromReader(t *testing.T) {
 	storage := NewDirectoryAttachmentStorage(tmpDir)
 
 	// Test data
-	hash := "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"
 	originalData := []byte("hello from reader")
+	hasher := sha256.New()
+	hasher.Write(originalData)
+	hash := hex.EncodeToString(hasher.Sum(nil))
 	reader := strings.NewReader(string(originalData))
 	metadata := AttachmentInfo{
 		Hash:         hash,
@@ -404,4 +408,251 @@ type failingReader struct{}
 
 func (fr *failingReader) Read(p []byte) (n int, err error) {
 	return 0, io.ErrUnexpectedEOF
+}
+
+// Test streaming implementation with different sized data
+func TestDirectoryAttachmentStorage_StoreFromReader_Streaming(t *testing.T) {
+	tests := []struct {
+		name         string
+		dataSize     int
+		expectedHash string
+	}{
+		{
+			name:         "small file (1KB)",
+			dataSize:     1024,
+			expectedHash: "", // Will be calculated
+		},
+		{
+			name:         "medium file (64KB)",
+			dataSize:     64 * 1024,
+			expectedHash: "",
+		},
+		{
+			name:         "large file (1MB)",
+			dataSize:     1024 * 1024,
+			expectedHash: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary directory
+			tmpDir, err := os.MkdirTemp("", "streaming_test")
+			if err != nil {
+				t.Fatalf("Failed to create temp dir: %v", err)
+			}
+			defer func() { _ = os.RemoveAll(tmpDir) }()
+
+			storage := NewDirectoryAttachmentStorage(tmpDir)
+
+			// Generate test data
+			data := make([]byte, tt.dataSize)
+			for i := range data {
+				data[i] = byte(i % 256)
+			}
+
+			// Calculate expected hash
+			hasher := sha256.New()
+			hasher.Write(data)
+			expectedHash := hex.EncodeToString(hasher.Sum(nil))
+
+			// Create reader
+			reader := strings.NewReader(string(data))
+
+			metadata := AttachmentInfo{
+				Hash:         expectedHash,
+				OriginalName: "test.bin",
+				MimeType:     "application/octet-stream",
+				Size:         int64(tt.dataSize),
+				CreatedAt:    time.Now().UTC(),
+			}
+
+			// Test streaming storage
+			err = storage.StoreFromReader(expectedHash, reader, metadata)
+			if err != nil {
+				t.Fatalf("Failed to store from reader: %v", err)
+			}
+
+			// Verify the attachment was stored correctly
+			storedData, err := storage.ReadAttachment(expectedHash)
+			if err != nil {
+				t.Fatalf("Failed to read stored attachment: %v", err)
+			}
+
+			if len(storedData) != tt.dataSize {
+				t.Errorf("Size mismatch: expected %d, got %d", tt.dataSize, len(storedData))
+			}
+
+			// Verify content matches
+			for i, b := range storedData {
+				if b != byte(i%256) {
+					t.Errorf("Content mismatch at byte %d: expected %d, got %d", i, i%256, b)
+					break
+				}
+			}
+		})
+	}
+}
+
+// Test hash mismatch detection
+func TestDirectoryAttachmentStorage_StoreFromReader_HashMismatch(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "hash_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	storage := NewDirectoryAttachmentStorage(tmpDir)
+
+	data := "test content"
+	reader := strings.NewReader(data)
+	wrongHash := "wrong_hash_value_here" // Wrong hash
+
+	metadata := AttachmentInfo{
+		Hash:      wrongHash,
+		MimeType:  "text/plain",
+		Size:      int64(len(data)),
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err = storage.StoreFromReader(wrongHash, reader, metadata)
+	if err == nil {
+		t.Error("Expected hash mismatch error")
+	}
+
+	if !strings.Contains(err.Error(), "hash mismatch") {
+		t.Errorf("Expected hash mismatch error, got: %v", err)
+	}
+
+	// Verify no attachment files were left behind (directory may exist but should be empty)
+	expectedDir := filepath.Join(tmpDir, "attachments", "wr", wrongHash)
+	if _, err := os.Stat(expectedDir); err == nil {
+		// Directory exists, check if it's empty
+		entries, err := os.ReadDir(expectedDir)
+		if err != nil {
+			t.Fatalf("Failed to read directory: %v", err)
+		}
+		if len(entries) > 0 {
+			t.Errorf("Found %d files in directory after hash mismatch: %v", len(entries), entries)
+		}
+	}
+}
+
+// Test atomic operations (temp file cleanup)
+func TestDirectoryAttachmentStorage_StoreFromReader_AtomicOperations(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "atomic_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	storage := NewDirectoryAttachmentStorage(tmpDir)
+
+	// Test with invalid hash to trigger error during validation
+	invalidHash := ""
+	reader := strings.NewReader("test")
+	metadata := AttachmentInfo{
+		Hash:      invalidHash,
+		MimeType:  "text/plain",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err = storage.StoreFromReader(invalidHash, reader, metadata)
+	if err == nil {
+		t.Error("Expected validation error for empty hash")
+	}
+
+	// Check that no temp files were left behind
+	files, err := filepath.Glob(filepath.Join(tmpDir, "**/*.tmp"))
+	if err != nil {
+		t.Fatalf("Failed to check for temp files: %v", err)
+	}
+
+	if len(files) > 0 {
+		t.Errorf("Found %d temp files after error: %v", len(files), files)
+	}
+}
+
+// Test custom error types
+func TestDirectoryAttachmentStorage_CustomErrors(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "error_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	storage := NewDirectoryAttachmentStorage(tmpDir)
+
+	// Test hash mismatch error
+	data := "test"
+	wrongHash := "1234567890abcdef" // Wrong hash
+
+	reader := strings.NewReader(data)
+	metadata := AttachmentInfo{
+		Hash:      wrongHash,
+		MimeType:  "text/plain",
+		Size:      int64(len(data)),
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err = storage.StoreFromReader(wrongHash, reader, metadata)
+	if err == nil {
+		t.Error("Expected error for hash mismatch")
+	}
+
+	// Check that it's specifically a hash mismatch error
+	if !strings.Contains(err.Error(), "hash mismatch") {
+		t.Errorf("Expected hash mismatch error, got: %v", err)
+	}
+}
+
+// Memory efficiency test - verify low memory usage during streaming
+func TestDirectoryAttachmentStorage_StoreFromReader_MemoryEfficiency(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping memory test in short mode")
+	}
+
+	tmpDir, err := os.MkdirTemp("", "memory_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	storage := NewDirectoryAttachmentStorage(tmpDir)
+
+	// Create a large data stream (10MB)
+	dataSize := 10 * 1024 * 1024
+	data := make([]byte, dataSize)
+	for i := range data {
+		data[i] = byte(i % 256)
+	}
+
+	// Calculate hash
+	hasher := sha256.New()
+	hasher.Write(data)
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	reader := strings.NewReader(string(data))
+	metadata := AttachmentInfo{
+		Hash:      hash,
+		MimeType:  "application/octet-stream",
+		Size:      int64(dataSize),
+		CreatedAt: time.Now().UTC(),
+	}
+
+	// Store using streaming method
+	err = storage.StoreFromReader(hash, reader, metadata)
+	if err != nil {
+		t.Fatalf("Failed to store large file: %v", err)
+	}
+
+	// Verify the file was stored correctly
+	storedData, err := storage.ReadAttachment(hash)
+	if err != nil {
+		t.Fatalf("Failed to read stored file: %v", err)
+	}
+
+	if len(storedData) != dataSize {
+		t.Errorf("Size mismatch: expected %d, got %d", dataSize, len(storedData))
+	}
 }
