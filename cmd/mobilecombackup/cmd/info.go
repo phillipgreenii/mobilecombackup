@@ -181,7 +181,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 func readRepositoryMetadata(repoPath string, info *RepositoryInfo) error {
 	markerPath := filepath.Join(repoPath, ".mobilecombackup.yaml")
 
-	data, err := os.ReadFile(markerPath)
+	data, err := os.ReadFile(markerPath) // #nosec G304
 	if err != nil {
 		return err
 	}

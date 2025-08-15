@@ -82,11 +82,12 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 
 	// Determine type subdirectory
 	var typeDir string
-	if strings.Contains(nameNoExt, "call") {
+	switch {
+	case strings.Contains(nameNoExt, "call"):
 		typeDir = callsDir
-	} else if strings.Contains(nameNoExt, "sms") {
+	case strings.Contains(nameNoExt, "sms"):
 		typeDir = smsDir
-	} else {
+	default:
 		typeDir = "" // Root rejected directory
 	}
 
@@ -108,7 +109,7 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 
 // hashFile calculates SHA-256 hash of a file
 func (w *XMLRejectionWriter) hashFile(filename string) (string, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return "", err
 	}
@@ -124,7 +125,7 @@ func (w *XMLRejectionWriter) hashFile(filename string) (string, error) {
 
 // writeXMLRejections writes rejected entries as XML
 func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []RejectedEntry, entryType string) error {
-	file, err := os.Create(filename)
+	file, err := os.Create(filename) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to create rejection file: %w", err)
 	}

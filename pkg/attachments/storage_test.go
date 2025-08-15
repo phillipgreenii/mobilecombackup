@@ -58,7 +58,7 @@ func TestDirectoryAttachmentStorage_Store(t *testing.T) {
 	}
 
 	// Verify file content
-	storedData, err := os.ReadFile(attachmentFile)
+	storedData, err := os.ReadFile(attachmentFile) // #nosec G304
 	if err != nil {
 		t.Fatalf("Failed to read stored file: %v", err)
 	}

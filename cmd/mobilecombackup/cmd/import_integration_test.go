@@ -28,7 +28,7 @@ func runTestMain(m *testing.M) int {
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	testBinPath = filepath.Join(tmpDir, "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBinPath, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBinPath, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to build test binary: %v\nOutput: %s\n", err, output)
 		return 1
@@ -248,7 +248,7 @@ creator: "mobilecombackup-test"
 			}
 
 			// Execute command
-			cmd := exec.Command(testBinPath, args...)
+			cmd := exec.Command(testBinPath, args...) // #nosec G204
 			output, err := cmd.CombinedOutput()
 
 			// Check exit code
@@ -324,7 +324,7 @@ func TestImportScanningLogic(t *testing.T) {
 	createTestFile(t, filepath.Join(importDir, "calls", "calls-2020.xml"), "<calls></calls>")
 
 	// Run import with verbose to see what files are processed
-	cmd := exec.Command(testBinPath, "import", "--repo-root", repoPath, "--verbose", "--no-error-on-rejects", importDir)
+	cmd := exec.Command(testBinPath, "import", "--repo-root", repoPath, "--verbose", "--no-error-on-rejects", importDir) // #nosec G204
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -364,7 +364,7 @@ func TestImportScanningLogic(t *testing.T) {
 // Helper functions
 
 func initRepo(t *testing.T, repoPath string) {
-	cmd := exec.Command(testBinPath, "init", "--repo-root", repoPath)
+	cmd := exec.Command(testBinPath, "init", "--repo-root", repoPath) // #nosec G204
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to init repository: %v\nOutput: %s", err, output)
 	}
@@ -377,7 +377,7 @@ func copyTestFile(t *testing.T, src, dst string) {
 		t.Fatalf("Failed to resolve source path: %v", err)
 	}
 
-	data, err := os.ReadFile(srcAbs)
+	data, err := os.ReadFile(srcAbs) // #nosec G304
 	if err != nil {
 		t.Fatalf("Failed to read test file %s: %v", src, err)
 	}

@@ -355,11 +355,9 @@ func (imp *Importer) findFiles() ([]string, error) {
 				return nil, fmt.Errorf("failed to scan directory %s: %w", path, err)
 			}
 			files = append(files, dirFiles...)
-		} else {
+		} else if imp.shouldProcessFile(path) {
 			// Single file
-			if imp.shouldProcessFile(path) {
-				files = append(files, path)
-			}
+			files = append(files, path)
 		}
 	}
 

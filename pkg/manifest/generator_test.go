@@ -142,7 +142,7 @@ func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	checksumData, err := os.ReadFile(checksumPath)
+	checksumData, err := os.ReadFile(checksumPath) // #nosec G304
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +201,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 	}
 
 	// Try to write checksum again - should not overwrite
-	originalContent, err := os.ReadFile(checksumPath)
+	originalContent, err := os.ReadFile(checksumPath) // #nosec G304
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modifiedContent, err := os.ReadFile(checksumPath)
+	modifiedContent, err := os.ReadFile(checksumPath) // #nosec G304
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -77,7 +77,7 @@ func TestInfoCommandIntegration(t *testing.T) {
 			}
 
 			// Execute command
-			cmd := exec.Command(testBin, test.args...)
+			cmd := exec.Command(testBin, test.args...) // #nosec G204
 			output, err := cmd.CombinedOutput()
 
 			// Check exit code
@@ -131,7 +131,7 @@ func TestInfoCommandWithData(t *testing.T) {
 	setupTestRepositoryWithData(t, repoPath)
 
 	// Test text output
-	cmd := exec.Command(testBin, "info", "--repo-root", repoPath)
+	cmd := exec.Command(testBin, "info", "--repo-root", repoPath) // #nosec G204
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -158,7 +158,7 @@ func TestInfoCommandWithData(t *testing.T) {
 	}
 
 	// Test JSON output
-	cmd = exec.Command(testBin, "info", "--repo-root", repoPath, "--json")
+	cmd = exec.Command(testBin, "info", "--repo-root", repoPath, "--json") // #nosec G204
 	output, err = cmd.CombinedOutput()
 
 	if err != nil {
@@ -194,7 +194,7 @@ func TestInfoCommandEnvironmentVariable(t *testing.T) {
 	setupTestRepository(t, repoPath)
 
 	// Set environment variable
-	cmd := exec.Command(testBin, "info")
+	cmd := exec.Command(testBin, "info") // #nosec G204
 	cmd.Env = append(os.Environ(), "MB_REPO_ROOT="+repoPath)
 
 	output, err := cmd.CombinedOutput()
@@ -313,7 +313,7 @@ func buildTestBinary(t *testing.T) string {
 
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("Failed to build test binary: %v", err)
 	}

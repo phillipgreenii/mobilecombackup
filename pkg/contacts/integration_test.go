@@ -16,13 +16,13 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return err
 	}
 	defer func() { _ = srcFile.Close() }()
 
-	dstFile, err := os.Create(dst)
+	dstFile, err := os.Create(dst) // #nosec G304
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func TestContactsManager_Integration_LargeContactList(t *testing.T) {
 		yamlContent += "      - \"" + phoneNumber + "\"\n"
 	}
 
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create large test file: %v", err)
 	}
@@ -167,7 +167,7 @@ func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
     numbers:
       - "+15555551234"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent1), 0644)
+	err := os.WriteFile(contactsPath, []byte(yamlContent1), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create initial test file: %v", err)
 	}

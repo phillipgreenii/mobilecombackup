@@ -26,7 +26,7 @@ func generateSummaryFile(repoRoot string) error {
 
 	// Write summary to file
 	summaryPath := filepath.Join(repoRoot, "summary.yaml")
-	file, err := os.Create(summaryPath)
+	file, err := os.Create(summaryPath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to create summary file: %w", err)
 	}

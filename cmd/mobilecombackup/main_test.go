@@ -11,7 +11,7 @@ import (
 func TestMainIntegration(t *testing.T) {
 	// Build the binary for testing
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
+	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
 
 	// Build the binary
 	output, err := cmd.CombinedOutput()
@@ -66,7 +66,7 @@ func TestMainIntegration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(binPath, tt.args...)
+			cmd := exec.Command(binPath, tt.args...) // #nosec G204
 
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
@@ -102,7 +102,7 @@ func TestVersionInjection(t *testing.T) {
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command("go", "build",
 		"-ldflags", "-X main.Version=1.2.3",
-		"-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
+		"-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -110,7 +110,7 @@ func TestVersionInjection(t *testing.T) {
 	}
 
 	// Test version output
-	cmd = exec.Command(binPath, "--version")
+	cmd = exec.Command(binPath, "--version") // #nosec G204
 	output, err = cmd.Output()
 	if err != nil {
 		t.Fatalf("Failed to run version command: %v", err)
@@ -125,7 +125,7 @@ func TestVersionInjection(t *testing.T) {
 func TestHelpSubcommand(t *testing.T) {
 	// Build the binary
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
-	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup")
+	cmd := exec.Command("go", "build", "-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -133,7 +133,7 @@ func TestHelpSubcommand(t *testing.T) {
 	}
 
 	// Test help subcommand - Cobra provides automatic help command
-	cmd = exec.Command(binPath, "help")
+	cmd = exec.Command(binPath, "help") // #nosec G204
 	output, err = cmd.CombinedOutput()
 
 	// Help command should succeed

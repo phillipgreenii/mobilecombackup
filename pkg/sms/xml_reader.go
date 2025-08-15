@@ -72,8 +72,7 @@ func (r *XMLSMSReader) StreamMessagesFromReader(reader io.Reader, callback func(
 			return fmt.Errorf("XML parsing error: %w", err)
 		}
 
-		switch se := token.(type) {
-		case xml.StartElement:
+		if se, ok := token.(xml.StartElement); ok {
 			switch se.Name.Local {
 			case "sms":
 				sms, err := r.parseSMSElement(decoder, se)

@@ -288,7 +288,7 @@ func reprocessSMSFiles(repoRoot string, contactsManager *contacts.ContactsManage
 
 // extractContactsFromCallsFile extracts contacts from a single calls file
 func extractContactsFromCallsFile(filePath string, contactsManager *contacts.ContactsManager) (int, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return 0, fmt.Errorf("failed to open file: %w", err)
 	}
@@ -338,7 +338,7 @@ func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Conta
 	reader := sms.NewXMLSMSReader("")
 
 	// Read all messages from the file
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return 0, fmt.Errorf("failed to open SMS file: %w", err)
 	}

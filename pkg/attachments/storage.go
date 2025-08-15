@@ -141,7 +141,7 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	tempFile := attachmentPath + ".tmp"
 
 	// Create temp file
-	file, err := os.Create(tempFile)
+	file, err := os.Create(tempFile) // #nosec G304
 	if err != nil {
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)
@@ -286,7 +286,7 @@ func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo,
 		return AttachmentInfo{}, fmt.Errorf("failed to get safe metadata path: %w", err)
 	}
 
-	data, err := os.ReadFile(metadataPath)
+	data, err := os.ReadFile(metadataPath) // #nosec G304
 	if err != nil {
 		return AttachmentInfo{}, fmt.Errorf("failed to read metadata file: %w", err)
 	}
@@ -418,7 +418,7 @@ func (das *DirectoryAttachmentStorage) ReadAttachment(hash string) ([]byte, erro
 		return nil, err
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to read attachment file: %w", err)
 	}

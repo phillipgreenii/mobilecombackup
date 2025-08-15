@@ -377,12 +377,11 @@ func (v *OptimizedRepositoryValidatorImpl) determineStatus(report *ValidationRep
 		}
 	}
 
-	if hasErrors {
+	switch {
+	case hasErrors:
 		report.Status = Invalid
-	} else if len(report.Violations) > 0 {
-		report.Status = Valid // Valid with warnings
-	} else {
-		report.Status = Valid
+	default:
+		report.Status = Valid // Valid with or without warnings
 	}
 }
 

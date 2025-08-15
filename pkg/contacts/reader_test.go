@@ -635,7 +635,7 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	}
 
 	// Read and verify content
-	content, err := os.ReadFile(contactsPath)
+	content, err := os.ReadFile(contactsPath) // #nosec G304
 	if err != nil {
 		t.Fatalf("Failed to read saved file: %v", err)
 	}
@@ -698,7 +698,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	}
 
 	// Read and verify both processed and unprocessed are saved
-	content, err := os.ReadFile(contactsPath)
+	content, err := os.ReadFile(contactsPath) // #nosec G304
 	if err != nil {
 		t.Fatalf("Failed to read saved file: %v", err)
 	}

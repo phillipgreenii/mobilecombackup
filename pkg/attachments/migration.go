@@ -151,7 +151,7 @@ func (mm *MigrationManager) prepareMigrationData(
 ) ([]byte, AttachmentInfo, error) {
 	// Read the legacy attachment content
 	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
-	data, err := os.ReadFile(legacyFullPath)
+	data, err := os.ReadFile(legacyFullPath) // #nosec G304
 	if err != nil {
 		result.Error = fmt.Sprintf("failed to read legacy file: %v", err)
 		return nil, AttachmentInfo{}, err

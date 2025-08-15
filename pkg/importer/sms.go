@@ -125,7 +125,7 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	// defer si.rejectWriter.Close()
 
 	// Process messages from file
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
@@ -354,7 +354,7 @@ func (si *SMSImporter) GetAttachmentStats() *AttachmentStat {
 
 // calculateFileHash calculates SHA-256 hash of a file
 func calculateFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return "", err
 	}

@@ -33,7 +33,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with .mobilecombackup.yaml",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml"))
+				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml")) // #nosec G304
 				_ = f.Close()
 				return dir
 			},
@@ -70,7 +70,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "non-empty directory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				f, _ := os.Create(filepath.Join(dir, "some-file.txt"))
+				f, _ := os.Create(filepath.Join(dir, "some-file.txt")) // #nosec G304
 				_ = f.Close()
 				return dir
 			},
@@ -81,7 +81,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				path := filepath.Join(dir, "file.txt")
-				f, _ := os.Create(path)
+				f, _ := os.Create(path) // #nosec G304
 				_ = f.Close()
 				return path
 			},
@@ -186,7 +186,7 @@ func TestInitializeRepository(t *testing.T) {
 
 				// Check marker file
 				markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
-				data, err := os.ReadFile(markerPath)
+				data, err := os.ReadFile(markerPath) // #nosec G304
 				if err != nil {
 					t.Errorf("marker file not created: %v", err)
 				} else {
@@ -208,7 +208,7 @@ func TestInitializeRepository(t *testing.T) {
 
 				// Check contacts.yaml
 				contactsPath := filepath.Join(repoRoot, "contacts.yaml")
-				data, err = os.ReadFile(contactsPath)
+				data, err = os.ReadFile(contactsPath) // #nosec G304
 				if err != nil {
 					t.Errorf("contacts file not created: %v", err)
 				} else if !strings.Contains(string(data), "contacts: []") {

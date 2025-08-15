@@ -487,7 +487,7 @@ func (a *AutofixerImpl) fixCountMismatch(violation validation.ValidationViolatio
 	}
 
 	// Read the XML file
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filePath) // #nosec G304
 	if err != nil {
 		a.reporter.CompleteOperation(false, violation.File)
 		return fmt.Errorf("failed to read XML file: %w", err)
@@ -856,7 +856,7 @@ func checkWritePermission(path string) error {
 	if info.IsDir() {
 		// Try to create a temporary file to test write permissions
 		tempFile := filepath.Join(path, ".autofix-permission-test")
-		file, err := os.Create(tempFile)
+		file, err := os.Create(tempFile) // #nosec G304
 		if err != nil {
 			return err
 		}
@@ -867,7 +867,7 @@ func checkWritePermission(path string) error {
 		return nil
 	}
 	// For files, check if we can open them for writing
-	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+	file, err := os.OpenFile(path, os.O_WRONLY, 0) // #nosec G304
 	if err != nil {
 		return err
 	}

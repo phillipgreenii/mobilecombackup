@@ -198,10 +198,10 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 
 	// Create valid attachment file with PNG signature for format recognition
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	_ = os.WriteFile(validHashPath, pngData, 0644)
+	_ = os.WriteFile(validHashPath, pngData, 0600)
 
 	// Create corrupted attachment file
-	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0644)
+	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0600)
 
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
@@ -479,7 +479,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test PNG detection
 	pngFile := filepath.Join(tempDir, "test.png")
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52} // PNG header
-	if err := os.WriteFile(pngFile, pngData, 0644); err != nil {
+	if err := os.WriteFile(pngFile, pngData, 0600); err != nil {
 		t.Fatalf("Failed to write PNG test file: %v", err)
 	}
 
@@ -494,7 +494,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test JPEG detection
 	jpegFile := filepath.Join(tempDir, "test.jpg")
 	jpegData := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46} // JPEG header
-	if err := os.WriteFile(jpegFile, jpegData, 0644); err != nil {
+	if err := os.WriteFile(jpegFile, jpegData, 0600); err != nil {
 		t.Fatalf("Failed to write JPEG test file: %v", err)
 	}
 
@@ -509,7 +509,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test GIF detection
 	gifFile := filepath.Join(tempDir, "test.gif")
 	gifData := []byte{0x47, 0x49, 0x46, 0x38, 0x39, 0x61} // GIF89a header
-	if err := os.WriteFile(gifFile, gifData, 0644); err != nil {
+	if err := os.WriteFile(gifFile, gifData, 0600); err != nil {
 		t.Fatalf("Failed to write GIF test file: %v", err)
 	}
 

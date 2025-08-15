@@ -11,7 +11,7 @@ import (
 func TestInfoCommandEmptyRepository(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -20,13 +20,13 @@ func TestInfoCommandEmptyRepository(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "empty-repo")
 
 	// Initialize repository first
-	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init")
+	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init") // #nosec G204
 	if output, err := initCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to initialize repository: %v\nOutput: %s", err, output)
 	}
 
 	// Run info command
-	infoCmd := exec.Command(testBin, "--repo-root", repoRoot, "info")
+	infoCmd := exec.Command(testBin, "--repo-root", repoRoot, "info") // #nosec G204
 	output, err := infoCmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Info command failed: %v\nOutput: %s", err, output)
@@ -67,7 +67,7 @@ func TestInfoCommandEmptyRepository(t *testing.T) {
 func TestInfoCommandEmptyRepositoryJSON(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -76,13 +76,13 @@ func TestInfoCommandEmptyRepositoryJSON(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "empty-repo")
 
 	// Initialize repository first
-	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init")
+	initCmd := exec.Command(testBin, "--repo-root", repoRoot, "init") // #nosec G204
 	if output, err := initCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to initialize repository: %v\nOutput: %s", err, output)
 	}
 
 	// Run info command with JSON output
-	infoCmd := exec.Command(testBin, "--repo-root", repoRoot, "info", "--json")
+	infoCmd := exec.Command(testBin, "--repo-root", repoRoot, "info", "--json") // #nosec G204
 	output, err := infoCmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Info command failed: %v\nOutput: %s", err, output)

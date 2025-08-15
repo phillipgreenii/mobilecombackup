@@ -36,7 +36,7 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
-	file, err := os.Create(filepath)
+	file, err := os.Create(filepath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}

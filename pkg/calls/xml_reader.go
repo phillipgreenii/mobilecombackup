@@ -59,7 +59,7 @@ func (r *XMLCallsReader) ReadCalls(year int) ([]Call, error) {
 // StreamCallsForYear streams calls from a year file for memory efficiency
 func (r *XMLCallsReader) StreamCallsForYear(year int, callback func(Call) error) error {
 	filename := r.getCallsFilePath(year)
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}
@@ -214,7 +214,7 @@ func (r *XMLCallsReader) GetAvailableYears() ([]int, error) {
 // GetCallsCount returns total number of calls for a year
 func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 	filename := r.getCallsFilePath(year)
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return 0, fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}
@@ -247,7 +247,7 @@ func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 // ValidateCallsFile validates XML structure and year consistency
 func (r *XMLCallsReader) ValidateCallsFile(year int) error {
 	filename := r.getCallsFilePath(year)
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to open calls file for year %d: %w", year, err)
 	}

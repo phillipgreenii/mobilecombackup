@@ -316,8 +316,8 @@ func TestAttachmentExtraction_LargeMessageBatch(t *testing.T) {
 		// Create unique attachment data for some variety
 		// Decode, modify, and re-encode to ensure valid base64
 		originalData, _ := base64.StdEncoding.DecodeString(createTestPNGData())
-		modifiedData := append(originalData, byte(i))
-		imageData := base64.StdEncoding.EncodeToString(modifiedData)
+		originalData = append(originalData, byte(i))
+		imageData := base64.StdEncoding.EncodeToString(originalData)
 
 		mms := &MMS{
 			Date:    time.Date(2024, 1, 15, 10, i, 0, 0, time.UTC).Unix() * 1000,

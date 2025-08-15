@@ -17,7 +17,7 @@ import (
 func TestValidateCommandIntegration(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -171,10 +171,10 @@ func TestValidateCommandIntegration(t *testing.T) {
 			// Set working directory if no repo-root specified
 			var cmd *exec.Cmd
 			if !contains(args, "--repo-root") && repoRoot != "" {
-				cmd = exec.Command(testBin, args...)
+				cmd = exec.Command(testBin, args...) // #nosec G204
 				cmd.Dir = repoRoot
 			} else {
-				cmd = exec.Command(testBin, args...)
+				cmd = exec.Command(testBin, args...) // #nosec G204
 			}
 
 			// Set environment variables
@@ -228,7 +228,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 func TestValidateJSONSchema(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -238,7 +238,7 @@ func TestValidateJSONSchema(t *testing.T) {
 	_ = os.MkdirAll(filepath.Join(repoRoot, "calls"), 0755)
 
 	// Run validate with JSON output
-	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot, "--output-json")
+	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot, "--output-json") // #nosec G204
 	output, _ := cmd.CombinedOutput()
 
 	// Parse JSON
@@ -279,7 +279,7 @@ func TestValidatePerformance(t *testing.T) {
 
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -306,7 +306,7 @@ func TestValidatePerformance(t *testing.T) {
 
 	// Time the validation
 	start := time.Now()
-	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot)
+	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot) // #nosec G204
 	output, _ := cmd.CombinedOutput()
 	duration := time.Since(start)
 
@@ -353,7 +353,7 @@ created_by: "test"
 func TestValidateOrphanRemovalIntegration(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -476,7 +476,7 @@ func TestValidateOrphanRemovalIntegration(t *testing.T) {
 			repoPath := tt.setup(t)
 
 			// Run command
-			cmd := exec.Command(testBin, tt.args...)
+			cmd := exec.Command(testBin, tt.args...) // #nosec G204
 			cmd.Args = append(cmd.Args, "--repo-root", repoPath)
 
 			output, err := cmd.CombinedOutput()

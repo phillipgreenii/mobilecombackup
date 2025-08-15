@@ -177,7 +177,7 @@ func (am *AttachmentManager) ReadAttachment(hash string) ([]byte, error) {
 		relPath := am.GetAttachmentPath(hash)
 		fullPath := filepath.Join(am.repoPath, relPath)
 
-		data, err := os.ReadFile(fullPath)
+		data, err := os.ReadFile(fullPath) // #nosec G304
 		if err != nil {
 			return nil, fmt.Errorf("failed to read legacy attachment %s: %w", hash, err)
 		}

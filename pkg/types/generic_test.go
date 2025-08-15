@@ -149,10 +149,8 @@ func TestParseOptionalInt(t *testing.T) {
 				if result.Unwrap() != tt.expected.Unwrap() {
 					t.Errorf("Expected %d, got %d", tt.expected.Unwrap(), result.Unwrap())
 				}
-			} else {
-				if result.IsSome() {
-					t.Errorf("Expected None for input %q, got Some(%d)", tt.input, result.Unwrap())
-				}
+			} else if result.IsSome() {
+				t.Errorf("Expected None for input %q, got Some(%d)", tt.input, result.Unwrap())
 			}
 		})
 	}
@@ -183,10 +181,8 @@ func TestParseOptionalInt64(t *testing.T) {
 				if result.Unwrap() != tt.expected {
 					t.Errorf("Expected %d, got %d", tt.expected, result.Unwrap())
 				}
-			} else {
-				if result.IsSome() {
-					t.Errorf("Expected None for input %q, got Some", tt.input)
-				}
+			} else if result.IsSome() {
+				t.Errorf("Expected None for input %q, got Some", tt.input)
 			}
 		})
 	}
@@ -216,10 +212,8 @@ func TestParseOptionalString(t *testing.T) {
 				if result.Unwrap() != tt.expected {
 					t.Errorf("Expected %q, got %q", tt.expected, result.Unwrap())
 				}
-			} else {
-				if result.IsSome() {
-					t.Errorf("Expected None for input %q, got Some", tt.input)
-				}
+			} else if result.IsSome() {
+				t.Errorf("Expected None for input %q, got Some", tt.input)
 			}
 		})
 	}

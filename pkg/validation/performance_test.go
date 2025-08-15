@@ -567,11 +567,9 @@ func TestConcurrentViolationAppend(t *testing.T) {
 		if report != nil {
 			if i == 0 {
 				totalViolations = len(report.Violations)
-			} else {
+			} else if len(report.Violations) != totalViolations {
 				// All runs should produce the same number of violations
-				if len(report.Violations) != totalViolations {
-					t.Errorf("Inconsistent violation counts: expected %d, got %d", totalViolations, len(report.Violations))
-				}
+				t.Errorf("Inconsistent violation counts: expected %d, got %d", totalViolations, len(report.Violations))
 			}
 		}
 	}

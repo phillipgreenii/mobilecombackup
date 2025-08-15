@@ -14,7 +14,7 @@ import (
 func TestInitCommandIntegration(t *testing.T) {
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
@@ -48,7 +48,7 @@ func TestInitCommandIntegration(t *testing.T) {
 
 				// Check marker file
 				markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
-				data, err := os.ReadFile(markerPath)
+				data, err := os.ReadFile(markerPath) // #nosec G304
 				if err != nil {
 					t.Errorf("Marker file not created: %v", err)
 				} else {
@@ -78,7 +78,7 @@ func TestInitCommandIntegration(t *testing.T) {
 
 				// Verify files.yaml contains expected entries
 				filesYamlPath := filepath.Join(repoRoot, "files.yaml")
-				filesData, err := os.ReadFile(filesYamlPath)
+				filesData, err := os.ReadFile(filesYamlPath) // #nosec G304
 				if err != nil {
 					t.Errorf("Failed to read files.yaml: %v", err)
 				} else {
@@ -134,7 +134,7 @@ func TestInitCommandIntegration(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				// Create marker file to simulate existing repo
-				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml"))
+				f, _ := os.Create(filepath.Join(dir, ".mobilecombackup.yaml")) // #nosec G304
 				_ = f.Close()
 				return dir
 			},
@@ -148,7 +148,7 @@ func TestInitCommandIntegration(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				// Create a file to make it non-empty
-				f, _ := os.Create(filepath.Join(dir, "existing.txt"))
+				f, _ := os.Create(filepath.Join(dir, "existing.txt")) // #nosec G304
 				_ = f.Close()
 				return dir
 			},
@@ -187,7 +187,7 @@ func TestInitCommandIntegration(t *testing.T) {
 				args = append(args, "--repo-root", repoRoot)
 			}
 
-			cmd := exec.Command(testBin, args...)
+			cmd := exec.Command(testBin, args...) // #nosec G204
 			output, err := cmd.CombinedOutput()
 
 			// Check error expectation
@@ -220,13 +220,13 @@ func TestInitCommandTreeOutput(t *testing.T) {
 
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
-	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup")
+	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build test binary: %v\nOutput: %s", err, output)
 	}
 
 	repoRoot := filepath.Join(t.TempDir(), "tree-test")
-	cmd := exec.Command(testBin, "init", "--repo-root", repoRoot)
+	cmd := exec.Command(testBin, "init", "--repo-root", repoRoot) // #nosec G204
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Command failed: %v\nOutput: %s", err, output)

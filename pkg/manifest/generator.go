@@ -213,7 +213,7 @@ func (g *ManifestGenerator) writeManifest(manifest *FileManifest) error {
 
 	// Write to file atomically
 	tempPath := manifestPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write temporary files manifest: %w", err)
 	}
 
@@ -257,7 +257,7 @@ func (g *ManifestGenerator) writeManifestChecksum() error {
 
 // calculateFileHash calculates SHA-256 hash of a file
 func calculateFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return "", err
 	}

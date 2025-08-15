@@ -269,7 +269,7 @@ unprocessed:
     contact_names: ["Jane Smith"]
 `
 
-	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 
 	manager := contacts.NewContactsManager(tempDir)
 	err := manager.LoadContacts()
@@ -304,7 +304,7 @@ func Example_knownContactFiltering() {
   - name: "Alice Johnson"
     numbers: ["5551234567"]
 `
-	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 
 	manager := contacts.NewContactsManager(tempDir)
 	_ = manager.LoadContacts()

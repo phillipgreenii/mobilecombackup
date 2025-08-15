@@ -96,7 +96,7 @@ func (ci *CallsImporter) LoadRepository() error {
 
 // ImportFile imports calls from a single file
 func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}

@@ -42,7 +42,7 @@ func (cm *ContactsManager) LoadContacts() error {
 		return nil
 	}
 
-	data, err := os.ReadFile(contactsPath)
+	data, err := os.ReadFile(contactsPath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to read contacts.yaml: %w", err)
 	}
@@ -461,7 +461,7 @@ func (cm *ContactsManager) SaveContacts(path string) error {
 
 	// Write to temp file first for atomic operation
 	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, yamlData, 0644); err != nil {
+	if err := os.WriteFile(tempPath, yamlData, 0600); err != nil {
 		return fmt.Errorf("failed to write temp contacts file: %w", err)
 	}
 

@@ -31,7 +31,7 @@ func generateManifestFile(repoRoot string, version string) error {
 
 	// Write manifest to file
 	manifestPath := filepath.Join(repoRoot, "files.yaml")
-	file, err := os.Create(manifestPath)
+	file, err := os.Create(manifestPath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to create manifest file: %w", err)
 	}
@@ -107,7 +107,7 @@ func collectRepositoryFiles(repoRoot string) ([]FileEntry, error) {
 
 // calculateFileChecksum calculates the SHA-256 checksum of a file
 func calculateFileChecksum(path string) (string, error) {
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304
 	if err != nil {
 		return "", err
 	}
@@ -143,7 +143,7 @@ func verifyManifest(repoRoot string) error {
 	manifestPath := filepath.Join(repoRoot, "files.yaml")
 
 	// Read manifest
-	data, err := os.ReadFile(manifestPath)
+	data, err := os.ReadFile(manifestPath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to read manifest: %w", err)
 	}

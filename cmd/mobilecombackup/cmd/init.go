@@ -227,7 +227,7 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 			rollback()
 			return nil, fmt.Errorf("failed to marshal marker file: %w", err)
 		}
-		if err := os.WriteFile(markerPath, data, 0644); err != nil {
+		if err := os.WriteFile(markerPath, data, 0600); err != nil {
 			rollback()
 			return nil, fmt.Errorf("failed to create marker file: %w", err)
 		}
@@ -239,7 +239,7 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	if !dryRun {
 		// Write empty YAML array
-		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0644); err != nil {
+		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0600); err != nil {
 			rollback()
 			return nil, fmt.Errorf("failed to create contacts file: %w", err)
 		}
@@ -259,7 +259,7 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 			rollback()
 			return nil, fmt.Errorf("failed to marshal summary file: %w", err)
 		}
-		if err := os.WriteFile(summaryPath, data, 0644); err != nil {
+		if err := os.WriteFile(summaryPath, data, 0600); err != nil {
 			rollback()
 			return nil, fmt.Errorf("failed to create summary file: %w", err)
 		}

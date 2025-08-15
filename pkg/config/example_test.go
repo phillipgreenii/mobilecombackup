@@ -52,7 +52,7 @@ logging:
   format: "json"
 `
 
-	_ = os.WriteFile(configFile, []byte(configContent), 0644)
+	_ = os.WriteFile(configFile, []byte(configContent), 0600)
 
 	// Load from specific file
 	cfg, err := loader.Load(configFile)
@@ -211,7 +211,7 @@ repository:
 import:
   batch_size: 3000
 `
-	_ = os.WriteFile(configFile, []byte(configContent), 0644)
+	_ = os.WriteFile(configFile, []byte(configContent), 0600)
 
 	// Set environment variable to override config file
 	_ = os.Setenv("MOBILECOMBACKUP_REPOSITORY_ROOT", "/env/override/repo")
