@@ -29,6 +29,9 @@
       "linter": [
               "golangci-lint run"
       ],
+      "linter-fix": [
+              "golangci-lint run --fix"
+      ],
       "build-cli": [
               "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
       ],
