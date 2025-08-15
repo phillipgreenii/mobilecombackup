@@ -47,6 +47,16 @@
       "test-hooks": [
               "echo '🧪 Testing pre-commit hooks...'",
               ".githooks/pre-commit"
+      ],
+      "coverage": [
+              "echo '📊 Running test coverage analysis...'",
+              "go test -coverprofile=coverage.out ./...",
+              "go tool cover -html=coverage.out -o coverage.html",
+              "echo '✅ Coverage report generated: coverage.html'"
+      ],
+      "coverage-summary": [
+              "echo '📈 Test Coverage Summary:'",
+              "go test -cover ./... | grep -E 'coverage|ok|FAIL' | sort"
       ]
     }
   }
