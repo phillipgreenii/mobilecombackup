@@ -119,7 +119,7 @@ func TestPathValidator_RealisticAttackScenarios(t *testing.T) {
 
 	// Create legitimate files and directories for the test
 	legitDir := filepath.Join(tempDir, "attachments", "ab")
-	err := os.MkdirAll(legitDir, 0755)
+	err := os.MkdirAll(legitDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}

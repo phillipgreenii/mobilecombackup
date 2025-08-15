@@ -149,7 +149,7 @@ logging:
   color: false
 `
 
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write test config file: %v", err)
 	}
@@ -342,7 +342,7 @@ repository:
   invalid: [ unclosed bracket
 `
 
-	err := os.WriteFile(configFile, []byte(invalidYAML), 0644)
+	err := os.WriteFile(configFile, []byte(invalidYAML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid config file: %v", err)
 	}

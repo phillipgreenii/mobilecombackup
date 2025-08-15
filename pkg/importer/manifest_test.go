@@ -71,7 +71,7 @@ func TestGenerateManifestFile(t *testing.T) {
 	}
 
 	// Read and parse manifest
-	data, err := os.ReadFile(manifestPath)
+	data, err := os.ReadFile(manifestPath) // #nosec G304 // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read manifest: %v", err)
 	}
@@ -285,7 +285,7 @@ func TestGenerateManifestChecksum(t *testing.T) {
 
 	// Read checksum file
 	checksumPath := manifestPath + ".sha256"
-	data, err := os.ReadFile(checksumPath)
+	data, err := os.ReadFile(checksumPath) // #nosec G304 // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read checksum file: %v", err)
 	}

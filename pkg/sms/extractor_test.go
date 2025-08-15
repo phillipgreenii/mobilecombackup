@@ -327,7 +327,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {
 	}
 
 	// Verify file content
-	content, err := os.ReadFile(fullPath)
+	content, err := os.ReadFile(fullPath) // #nosec G304 // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read attachment file: %v", err)
 	}

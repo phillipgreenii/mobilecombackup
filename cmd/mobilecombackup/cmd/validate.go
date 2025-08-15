@@ -353,7 +353,11 @@ func (r *AutofixProgressReporter) ReportProgress(current, total int) {
 	}
 }
 
-func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager, reporter ProgressReporter) (*OrphanRemovalResult, error) {
+func removeOrphanAttachmentsWithProgress(
+	smsReader sms.SMSReader,
+	attachmentReader *attachments.AttachmentManager,
+	reporter ProgressReporter,
+) (*OrphanRemovalResult, error) {
 	reporter.StartPhase("orphan attachment removal")
 	defer reporter.CompletePhase()
 

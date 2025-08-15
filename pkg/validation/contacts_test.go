@@ -146,7 +146,7 @@ func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {
 
 	// Create contacts.yaml file
 	contactsFile := filepath.Join(tempDir, "contacts.yaml")
-	err := os.WriteFile(contactsFile, []byte("contacts: []"), 0644)
+	err := os.WriteFile(contactsFile, []byte("contacts: []"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create contacts.yaml: %v", err)
 	}

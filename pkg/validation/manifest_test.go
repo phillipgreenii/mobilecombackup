@@ -34,7 +34,7 @@ func TestManifestValidatorImpl_LoadManifest(t *testing.T) {
 	}
 
 	manifestPath := filepath.Join(tempDir, "files.yaml")
-	err = os.WriteFile(manifestPath, manifestData, 0644)
+	err = os.WriteFile(manifestPath, manifestData, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write files.yaml: %v", err)
 	}
@@ -154,12 +154,12 @@ func TestManifestValidatorImpl_CheckManifestCompleteness(t *testing.T) {
 
 	for _, file := range testFiles {
 		fullPath := filepath.Join(tempDir, file)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0750)
 		if err != nil {
 			t.Fatalf("Failed to create directory: %v", err)
 		}
 
-		err = os.WriteFile(fullPath, []byte("test content"), 0644)
+		err = os.WriteFile(fullPath, []byte("test content"), 0600)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -233,7 +233,7 @@ func TestManifestValidatorImpl_VerifyManifestChecksum(t *testing.T) {
 	// Create files.yaml
 	manifestContent := []byte("test manifest content")
 	manifestPath := filepath.Join(tempDir, "files.yaml")
-	err = os.WriteFile(manifestPath, manifestContent, 0644)
+	err = os.WriteFile(manifestPath, manifestContent, 0600)
 	if err != nil {
 		t.Fatalf("Failed to create files.yaml: %v", err)
 	}
@@ -246,7 +246,7 @@ func TestManifestValidatorImpl_VerifyManifestChecksum(t *testing.T) {
 	// Test with correct checksum
 	checksumPath := filepath.Join(tempDir, "files.yaml.sha256")
 	checksumContent := fmt.Sprintf("%s  files.yaml", correctChecksum)
-	err = os.WriteFile(checksumPath, []byte(checksumContent), 0644)
+	err = os.WriteFile(checksumPath, []byte(checksumContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create files.yaml.sha256: %v", err)
 	}
@@ -258,7 +258,7 @@ func TestManifestValidatorImpl_VerifyManifestChecksum(t *testing.T) {
 
 	// Test with incorrect checksum
 	wrongChecksum := "0000000000000000000000000000000000000000000000000000000000000000"
-	err = os.WriteFile(checksumPath, []byte(wrongChecksum), 0644)
+	err = os.WriteFile(checksumPath, []byte(wrongChecksum), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write wrong checksum: %v", err)
 	}
@@ -270,7 +270,7 @@ func TestManifestValidatorImpl_VerifyManifestChecksum(t *testing.T) {
 
 	// Test with invalid checksum format
 	invalidChecksum := "invalid"
-	err = os.WriteFile(checksumPath, []byte(invalidChecksum), 0644)
+	err = os.WriteFile(checksumPath, []byte(invalidChecksum), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid checksum: %v", err)
 	}

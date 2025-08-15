@@ -15,18 +15,21 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 	// Create complete repository structure
 	setupTestRepository(t, repoRoot)
 
-	if err := os.MkdirAll(toProcess, 0755); err != nil {
+	if err := os.MkdirAll(toProcess, 0750); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create test SMS file with data from 2024
 	testData := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <smses count="1">
-  <sms protocol="0" address="5551234567" date="1704067200000" type="1" subject="null" body="Test message 2024" toa="null" sc_toa="null" service_center="null" read="1" status="-1" locked="0" date_sent="0" sub_id="-1" readable_date="Jan 1, 2024 12:00:00 AM" contact_name="Test Contact" />
+  <sms protocol="0" address="5551234567" date="1704067200000" type="1" subject="null" 
+       body="Test message 2024" toa="null" sc_toa="null" service_center="null" 
+       read="1" status="-1" locked="0" date_sent="0" sub_id="-1" 
+       readable_date="Jan 1, 2024 12:00:00 AM" contact_name="Test Contact" />
 </smses>`
 
 	smsFile := filepath.Join(toProcess, "sms-2024.xml")
-	if err := os.WriteFile(smsFile, []byte(testData), 0644); err != nil {
+	if err := os.WriteFile(smsFile, []byte(testData), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,7 +65,7 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 	}
 
 	// Read the file to ensure it has content
-	content, err := os.ReadFile(correctLocation)
+	content, err := os.ReadFile(correctLocation) // #nosec G304 // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read SMS file: %v", err)
 	}

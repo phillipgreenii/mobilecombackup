@@ -17,19 +17,25 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 	// Create complete repository structure
 	setupTestRepository(t, repoRoot)
 
-	if err := os.MkdirAll(toProcess, 0755); err != nil {
+	if err := os.MkdirAll(toProcess, 0750); err != nil {
 		t.Fatal(err)
 	}
 
 	// Copy test SMS file
 	testData := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <smses count="2">
-  <sms protocol="0" address="5551234567" date="1389830400000" type="1" subject="null" body="Hello world" toa="null" sc_toa="null" service_center="null" read="1" status="-1" locked="0" date_sent="0" sub_id="-1" readable_date="Jan 15, 2014 4:00:00 PM" contact_name="Test Contact" />
-  <sms protocol="0" address="5559876543" date="1389834000000" type="2" subject="null" body="Reply message" toa="null" sc_toa="null" service_center="null" read="1" status="-1" locked="0" date_sent="0" sub_id="-1" readable_date="Jan 15, 2014 5:00:00 PM" contact_name="Another Contact" />
+  <sms protocol="0" address="5551234567" date="1389830400000" type="1" subject="null" 
+       body="Hello world" toa="null" sc_toa="null" service_center="null" 
+       read="1" status="-1" locked="0" date_sent="0" sub_id="-1" 
+       readable_date="Jan 15, 2014 4:00:00 PM" contact_name="Test Contact" />
+  <sms protocol="0" address="5559876543" date="1389834000000" type="2" subject="null" 
+       body="Reply message" toa="null" sc_toa="null" service_center="null" 
+       read="1" status="-1" locked="0" date_sent="0" sub_id="-1" 
+       readable_date="Jan 15, 2014 5:00:00 PM" contact_name="Another Contact" />
 </smses>`
 
 	smsFile := filepath.Join(toProcess, "sms-test.xml")
-	if err := os.WriteFile(smsFile, []byte(testData), 0644); err != nil {
+	if err := os.WriteFile(smsFile, []byte(testData), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -75,7 +81,7 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 		t.Errorf("Expected 2 messages in repository, got %d", len(messages))
 
 		// Read the actual file content to debug
-		content, _ := os.ReadFile(smsRepoFile)
+		content, _ := os.ReadFile(smsRepoFile) // #nosec G304 // Test-controlled path
 		t.Logf("Actual file content:\n%s", string(content))
 	}
 

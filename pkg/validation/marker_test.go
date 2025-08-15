@@ -127,7 +127,7 @@ created_by: null
 			// Create marker file if content provided
 			if tt.markerContent != "" {
 				markerPath := filepath.Join(tempDir, ".mobilecombackup.yaml")
-				err := os.WriteFile(markerPath, []byte(tt.markerContent), 0644)
+				err := os.WriteFile(markerPath, []byte(tt.markerContent), 0600)
 				if err != nil {
 					t.Fatalf("Failed to create test marker file: %v", err)
 				}

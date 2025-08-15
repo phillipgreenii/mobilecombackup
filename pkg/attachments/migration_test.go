@@ -76,13 +76,13 @@ func TestMigrationManager_MigrateAllAttachments_WithLegacyAttachment(t *testing.
 	// Create a legacy attachment
 	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 	legacyPath := filepath.Join(tmpDir, "attachments", "e3", hash)
-	err = os.MkdirAll(filepath.Dir(legacyPath), 0755)
+	err = os.MkdirAll(filepath.Dir(legacyPath), 0750)
 	if err != nil {
 		t.Fatalf("Failed to create legacy directory: %v", err)
 	}
 
 	// Write test content (empty string has the hash above)
-	err = os.WriteFile(legacyPath, []byte(""), 0644)
+	err = os.WriteFile(legacyPath, []byte(""), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create legacy file: %v", err)
 	}
@@ -142,13 +142,13 @@ func TestMigrationManager_DryRun(t *testing.T) {
 	// Create a legacy attachment
 	hash := "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
 	legacyPath := filepath.Join(tmpDir, "attachments", "a6", hash)
-	err = os.MkdirAll(filepath.Dir(legacyPath), 0755)
+	err = os.MkdirAll(filepath.Dir(legacyPath), 0750)
 	if err != nil {
 		t.Fatalf("Failed to create legacy directory: %v", err)
 	}
 
 	// Write test content ("hello" has the hash above)
-	err = os.WriteFile(legacyPath, []byte("hello"), 0644)
+	err = os.WriteFile(legacyPath, []byte("hello"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create legacy file: %v", err)
 	}

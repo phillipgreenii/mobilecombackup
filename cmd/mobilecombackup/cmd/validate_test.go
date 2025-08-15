@@ -325,23 +325,23 @@ func TestValidateWithProgress(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create basic repository structure
-	_ = os.MkdirAll(filepath.Join(tempDir, "calls"), 0755)
-	_ = os.MkdirAll(filepath.Join(tempDir, "sms"), 0755)
-	_ = os.MkdirAll(filepath.Join(tempDir, "attachments"), 0755)
+	_ = os.MkdirAll(filepath.Join(tempDir, "calls"), 0750)
+	_ = os.MkdirAll(filepath.Join(tempDir, "sms"), 0750)
+	_ = os.MkdirAll(filepath.Join(tempDir, "attachments"), 0750)
 
 	// Create marker file with valid content
 	markerContent := `repository_structure_version: "1"
 created_at: "2024-01-01T10:00:00Z"
 created_by: "test"
 `
-	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
 
 	// Create empty contacts and summary files
-	_ = os.WriteFile(filepath.Join(tempDir, "contacts.yaml"), []byte("contacts: []\n"), 0644)
-	_ = os.WriteFile(filepath.Join(tempDir, "summary.yaml"), []byte("counts:\n  calls: 0\n  sms: 0\n"), 0644)
+	_ = os.WriteFile(filepath.Join(tempDir, "contacts.yaml"), []byte("contacts: []\n"), 0600)
+	_ = os.WriteFile(filepath.Join(tempDir, "summary.yaml"), []byte("counts:\n  calls: 0\n  sms: 0\n"), 0600)
 
 	// TODO: This test would be more complete with mocked readers
 	// For now, we're just testing that the function doesn't panic

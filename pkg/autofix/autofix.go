@@ -502,7 +502,7 @@ func (a *AutofixerImpl) fixCountMismatch(violation validation.ValidationViolatio
 
 	// Write the fixed content atomically
 	tempPath := filePath + ".tmp"
-	if err := os.WriteFile(tempPath, fixedContent, 0644); err != nil {
+	if err := os.WriteFile(tempPath, fixedContent, 0600); err != nil {
 		a.reporter.CompleteOperation(false, violation.File)
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}
@@ -558,7 +558,7 @@ func (a *AutofixerImpl) createMarkerFile() error {
 
 	// Write to file atomically
 	tempPath := markerPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write temporary marker file: %w", err)
 	}
 
@@ -597,7 +597,7 @@ func (a *AutofixerImpl) createEmptyContactsFile() error {
 
 	// Write to file atomically
 	tempPath := contactsPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write temporary contacts file: %w", err)
 	}
 
@@ -635,7 +635,7 @@ func (a *AutofixerImpl) createSummaryFile() error {
 
 	// Write to file atomically
 	tempPath := summaryPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write temporary summary file: %w", err)
 	}
 

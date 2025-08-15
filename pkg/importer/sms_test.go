@@ -17,7 +17,7 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 	repoRoot := filepath.Join(tempDir, "repo")
 
 	// Create repository structure
-	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(repoRoot, "sms"), 0750); err != nil {
 		t.Fatal(err)
 	}
 
@@ -75,17 +75,17 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 // copyFile copies a file from src to dst
 func copyFile(src, dst string) error {
 	// Create destination directory
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
 		return err
 	}
 
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304 // Test-controlled path
 	if err != nil {
 		return err
 	}
 	defer func() { _ = srcFile.Close() }()
 
-	dstFile, err := os.Create(dst)
+	dstFile, err := os.Create(dst) // #nosec G304 // Test-controlled path
 	if err != nil {
 		return err
 	}

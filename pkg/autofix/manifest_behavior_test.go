@@ -23,7 +23,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 	// Create basic repository structure
 	dirs := []string{"calls", "sms", "attachments"}
 	for _, dir := range dirs {
-		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0750); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -38,7 +38,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 
 	for file, content := range testFiles {
 		path := filepath.Join(tempDir, file)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -50,7 +50,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		// First, create files.yaml manually with different content
 		manifestPath := filepath.Join(tempDir, "files.yaml")
 		originalContent := "files:\n- file: fake.txt\n  sha256: abc123\n  size_bytes: 100\n"
-		if err := os.WriteFile(manifestPath, []byte(originalContent), 0644); err != nil {
+		if err := os.WriteFile(manifestPath, []byte(originalContent), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -134,7 +134,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 
 		// Now modify the checksum file
 		modifiedContent := "modified_checksum_content\n"
-		if err := os.WriteFile(checksumPath, []byte(modifiedContent), 0644); err != nil {
+		if err := os.WriteFile(checksumPath, []byte(modifiedContent), 0600); err != nil {
 			t.Fatal(err)
 		}
 

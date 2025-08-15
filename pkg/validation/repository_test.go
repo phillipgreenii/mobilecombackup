@@ -87,7 +87,7 @@ func TestRepositoryValidatorImpl_ValidateRepositoryWithMarkerFile(t *testing.T) 
 created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup v1.0.0"
 `
-	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestRepositoryValidatorImpl_UnsupportedVersion(t *testing.T) {
 created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup v2.0.0"
 `
-	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}

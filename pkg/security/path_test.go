@@ -122,7 +122,7 @@ func TestPathValidator_ValidatePath_SymlinkAttack(t *testing.T) {
 	// Create a directory outside the base
 	outsideDir := t.TempDir()
 	outsideFile := filepath.Join(outsideDir, "secret.txt")
-	err := os.WriteFile(outsideFile, []byte("secret"), 0644)
+	err := os.WriteFile(outsideFile, []byte("secret"), 0600)
 	if err != nil {
 		t.Skipf("Cannot create test file: %v", err)
 	}

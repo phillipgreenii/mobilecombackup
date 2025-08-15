@@ -67,7 +67,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	}
 
 	// Write attachment file
-	if err := os.WriteFile(attachmentPath, data, 0644); err != nil {
+	if err := os.WriteFile(attachmentPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write attachment file: %w", err)
 	}
 
@@ -87,7 +87,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := os.WriteFile(metadataPath, metadataData, 0644); err != nil {
+	if err := os.WriteFile(metadataPath, metadataData, 0600); err != nil {
 		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
@@ -207,7 +207,7 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := os.WriteFile(metadataPath, metadataData, 0644); err != nil {
+	if err := os.WriteFile(metadataPath, metadataData, 0600); err != nil {
 		_ = os.Remove(attachmentPath) // Cleanup attempt - ignore error
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)

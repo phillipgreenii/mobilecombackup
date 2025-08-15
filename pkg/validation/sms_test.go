@@ -103,7 +103,7 @@ func TestSMSValidatorImpl_ValidateSMSStructure(t *testing.T) {
 
 	// Create SMS directory
 	smsDir := filepath.Join(tempDir, "sms")
-	err := os.MkdirAll(smsDir, 0755)
+	err := os.MkdirAll(smsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create SMS directory: %v", err)
 	}
@@ -118,7 +118,7 @@ func TestSMSValidatorImpl_ValidateSMSStructure(t *testing.T) {
 	for _, year := range mockReader.availableYears {
 		fileName := fmt.Sprintf("sms-%d.xml", year)
 		filePath := filepath.Join(smsDir, fileName)
-		err := os.WriteFile(filePath, []byte("<smses></smses>"), 0644)
+		err := os.WriteFile(filePath, []byte("<smses></smses>"), 0600)
 		if err != nil {
 			t.Fatalf("Failed to create SMS file: %v", err)
 		}

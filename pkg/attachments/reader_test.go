@@ -98,13 +98,13 @@ func TestAttachmentManager_GetAttachment_Existing(t *testing.T) {
 
 	// Create attachment directory structure and file
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -138,13 +138,13 @@ func TestAttachmentManager_ReadAttachment(t *testing.T) {
 
 	// Create attachment directory structure and file
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -193,13 +193,13 @@ func TestAttachmentManager_VerifyAttachment(t *testing.T) {
 
 	// Create attachment directory structure and file
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -217,13 +217,13 @@ func TestAttachmentManager_VerifyAttachment(t *testing.T) {
 	wrongContent := []byte("different content")
 	wrongHash := "26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46"
 	wrongDir := filepath.Join(tempDir, "attachments", wrongHash[:2])
-	err = os.MkdirAll(wrongDir, 0755)
+	err = os.MkdirAll(wrongDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create wrong attachment directory: %v", err)
 	}
 
 	wrongPath := filepath.Join(wrongDir, wrongHash)
-	err = os.WriteFile(wrongPath, wrongContent, 0644)
+	err = os.WriteFile(wrongPath, wrongContent, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write wrong attachment file: %v", err)
 	}
@@ -256,13 +256,13 @@ func TestAttachmentManager_AttachmentExists(t *testing.T) {
 	// Create the attachment
 	content := []byte("test content")
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err = os.MkdirAll(attachmentDir, 0755)
+	err = os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -316,13 +316,13 @@ func TestAttachmentManager_StreamAttachments_WithAttachments(t *testing.T) {
 		testAttachments[i].hash = fmt.Sprintf("%x", hasher.Sum(nil))
 
 		attachmentDir := filepath.Join(tempDir, "attachments", testAttachments[i].hash[:2])
-		err := os.MkdirAll(attachmentDir, 0755)
+		err := os.MkdirAll(attachmentDir, 0750)
 		if err != nil {
 			t.Fatalf("Failed to create attachment directory: %v", err)
 		}
 
 		attachmentPath := filepath.Join(attachmentDir, testAttachments[i].hash)
-		err = os.WriteFile(attachmentPath, testAttachments[i].content, 0644)
+		err = os.WriteFile(attachmentPath, testAttachments[i].content, 0600)
 		if err != nil {
 			t.Fatalf("Failed to write attachment file: %v", err)
 		}
@@ -369,13 +369,13 @@ func TestAttachmentManager_ListAttachments(t *testing.T) {
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -422,13 +422,13 @@ func TestAttachmentManager_FindOrphanedAttachments(t *testing.T) {
 		hashes = append(hashes, hash)
 
 		attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-		err := os.MkdirAll(attachmentDir, 0755)
+		err := os.MkdirAll(attachmentDir, 0750)
 		if err != nil {
 			t.Fatalf("Failed to create attachment directory: %v", err)
 		}
 
 		attachmentPath := filepath.Join(attachmentDir, hash)
-		err = os.WriteFile(attachmentPath, content, 0644)
+		err = os.WriteFile(attachmentPath, content, 0600)
 		if err != nil {
 			t.Fatalf("Failed to write attachment file: %v", err)
 		}
@@ -477,13 +477,13 @@ func TestAttachmentManager_ValidateAttachmentStructure_ValidStructure(t *testing
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, content, 0644)
+	err = os.WriteFile(attachmentPath, content, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write attachment file: %v", err)
 	}
@@ -500,7 +500,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectory(t *testi
 
 	// Create invalid directory name (3 characters)
 	invalidDir := filepath.Join(tempDir, "attachments", "abc")
-	err := os.MkdirAll(invalidDir, 0755)
+	err := os.MkdirAll(invalidDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create invalid directory: %v", err)
 	}
@@ -517,7 +517,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectoryFormat(t 
 
 	// Create invalid directory name (uppercase)
 	invalidDir := filepath.Join(tempDir, "attachments", "AB")
-	err := os.MkdirAll(invalidDir, 0755)
+	err := os.MkdirAll(invalidDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create invalid directory: %v", err)
 	}
@@ -534,13 +534,13 @@ func TestAttachmentManager_ValidateAttachmentStructure_FileInRoot(t *testing.T) 
 
 	// Create file in attachments root (should be error)
 	attachmentsDir := filepath.Join(tempDir, "attachments")
-	err := os.MkdirAll(attachmentsDir, 0755)
+	err := os.MkdirAll(attachmentsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachments directory: %v", err)
 	}
 
 	invalidFile := filepath.Join(attachmentsDir, "invalid_file.txt")
-	err = os.WriteFile(invalidFile, []byte("should not be here"), 0644)
+	err = os.WriteFile(invalidFile, []byte("should not be here"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid file: %v", err)
 	}
@@ -557,14 +557,14 @@ func TestAttachmentManager_ValidateAttachmentStructure_MisplacedFile(t *testing.
 
 	// Create file in wrong directory (hash doesn't start with directory name)
 	wrongDir := filepath.Join(tempDir, "attachments", "ab")
-	err := os.MkdirAll(wrongDir, 0755)
+	err := os.MkdirAll(wrongDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
 	// Create file with hash that doesn't start with "ab"
 	wrongFile := filepath.Join(wrongDir, "cd1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd")
-	err = os.WriteFile(wrongFile, []byte("misplaced"), 0644)
+	err = os.WriteFile(wrongFile, []byte("misplaced"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write misplaced file: %v", err)
 	}
@@ -594,13 +594,13 @@ func TestAttachmentManager_GetAttachmentStats(t *testing.T) {
 		hashes = append(hashes, hash)
 
 		attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
-		err := os.MkdirAll(attachmentDir, 0755)
+		err := os.MkdirAll(attachmentDir, 0750)
 		if err != nil {
 			t.Fatalf("Failed to create attachment directory: %v", err)
 		}
 
 		attachmentPath := filepath.Join(attachmentDir, hash)
-		err = os.WriteFile(attachmentPath, content, 0644)
+		err = os.WriteFile(attachmentPath, content, 0600)
 		if err != nil {
 			t.Fatalf("Failed to write attachment file: %v", err)
 		}

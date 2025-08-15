@@ -89,7 +89,7 @@ func GenerateConfigFile(templateName string, outputPath string) error {
 
 	// Ensure output directory exists
 	dir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
 
@@ -105,7 +105,7 @@ func GenerateConfigFile(templateName string, outputPath string) error {
 	content := header + string(data)
 
 	// Write to file
-	if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write configuration file: %w", err)
 	}
 

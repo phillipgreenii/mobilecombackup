@@ -72,7 +72,7 @@ func TestCallsValidatorImpl_ValidateCallsStructure(t *testing.T) {
 
 	// Create calls directory
 	callsDir := filepath.Join(tempDir, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestCallsValidatorImpl_ValidateCallsStructure(t *testing.T) {
 	for _, year := range mockReader.availableYears {
 		fileName := fmt.Sprintf("calls-%d.xml", year)
 		filePath := filepath.Join(callsDir, fileName)
-		err := os.WriteFile(filePath, []byte("<calls></calls>"), 0644)
+		err := os.WriteFile(filePath, []byte("<calls></calls>"), 0600)
 		if err != nil {
 			t.Fatalf("Failed to create call file: %v", err)
 		}

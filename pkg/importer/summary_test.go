@@ -19,13 +19,13 @@ func TestGenerateSummaryFile(t *testing.T) {
 	smsDir := filepath.Join(tempDir, "sms")
 	attachmentsDir := filepath.Join(tempDir, "attachments", "ab")
 
-	if err := os.MkdirAll(callsDir, 0755); err != nil {
+	if err := os.MkdirAll(callsDir, 0750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(smsDir, 0755); err != nil {
+	if err := os.MkdirAll(smsDir, 0750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(attachmentsDir, 0755); err != nil {
+	if err := os.MkdirAll(attachmentsDir, 0750); err != nil {
 		t.Fatal(err)
 	}
 
@@ -75,7 +75,7 @@ func TestGenerateSummaryFile(t *testing.T) {
 		filepath.Join(attachmentsDir, "def456"),
 	}
 	for _, file := range attachmentFiles {
-		if err := os.WriteFile(file, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(file, []byte("test"), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -92,7 +92,7 @@ func TestGenerateSummaryFile(t *testing.T) {
 	}
 
 	// Read and verify summary content
-	data, err := os.ReadFile(summaryPath)
+	data, err := os.ReadFile(summaryPath) // #nosec G304 // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read summary file: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestCountAttachmentFiles(t *testing.T) {
 
 	// Create directory structure
 	subDir := filepath.Join(attachmentsDir, "ab")
-	if err := os.MkdirAll(subDir, 0755); err != nil {
+	if err := os.MkdirAll(subDir, 0750); err != nil {
 		t.Fatal(err)
 	}
 
@@ -186,7 +186,7 @@ func TestCountAttachmentFiles(t *testing.T) {
 	}
 
 	for _, file := range files {
-		if err := os.WriteFile(file, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(file, []byte("test"), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

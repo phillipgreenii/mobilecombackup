@@ -245,7 +245,7 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 
 	// Create a read-only directory
 	readOnlyDir := filepath.Join(tempDir, "readonly")
-	if err := os.Mkdir(readOnlyDir, 0555); err != nil {
+	if err := os.Mkdir(readOnlyDir, 0500); err != nil {
 		t.Fatalf("Failed to create read-only directory: %v", err)
 	}
 	defer func() {
@@ -353,7 +353,7 @@ func TestAutofixer_Integration_ErrorRecovery(t *testing.T) {
 func setupRepositoryWithViolations(t *testing.T, repoDir string) {
 	// Create SMS directory and file with count mismatch
 	smsDir := filepath.Join(repoDir, "sms")
-	if err := os.MkdirAll(smsDir, 0755); err != nil {
+	if err := os.MkdirAll(smsDir, 0750); err != nil {
 		t.Fatalf("Failed to create SMS directory: %v", err)
 	}
 
@@ -365,7 +365,7 @@ func setupRepositoryWithViolations(t *testing.T, repoDir string) {
 </smses>`
 
 	smsFile := filepath.Join(smsDir, "sms-2024.xml")
-	if err := os.WriteFile(smsFile, []byte(smsContent), 0644); err != nil {
+	if err := os.WriteFile(smsFile, []byte(smsContent), 0600); err != nil {
 		t.Fatalf("Failed to write SMS file: %v", err)
 	}
 
@@ -388,14 +388,14 @@ func createTestFilesForManifest(t *testing.T, repoDir string, count int) {
 		}
 
 		dir := filepath.Join(repoDir, subdir)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 
 		fileName := filepath.Join(dir, fmt.Sprintf("test-file-%d.txt", i))
 		content := fmt.Sprintf("Test file content %d", i)
 
-		if err := os.WriteFile(fileName, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(fileName, []byte(content), 0600); err != nil {
 			t.Fatalf("Failed to write test file %s: %v", fileName, err)
 		}
 	}

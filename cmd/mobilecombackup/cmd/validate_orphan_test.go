@@ -309,7 +309,7 @@ func TestCleanupEmptyDirectory(t *testing.T) {
 		{
 			name: "empty directory is removed",
 			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0755)
+				err := os.MkdirAll(dirPath, 0750)
 				if err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
@@ -319,14 +319,14 @@ func TestCleanupEmptyDirectory(t *testing.T) {
 		{
 			name: "non-empty directory is not removed",
 			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0755)
+				err := os.MkdirAll(dirPath, 0750)
 				if err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
 
 				// Add a file to make it non-empty
 				filePath := filepath.Join(dirPath, "test.txt")
-				err = os.WriteFile(filePath, []byte("test"), 0644)
+				err = os.WriteFile(filePath, []byte("test"), 0600)
 				if err != nil {
 					t.Fatalf("Failed to create test file: %v", err)
 				}
@@ -420,14 +420,14 @@ func createTestAttachment(t *testing.T, repoPath, hash, content string) {
 	// Create directory structure
 	prefix := hash[:2]
 	attachmentDir := filepath.Join(repoPath, "attachments", prefix)
-	err := os.MkdirAll(attachmentDir, 0755)
+	err := os.MkdirAll(attachmentDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	// Create attachment file
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, []byte(content), 0644)
+	err = os.WriteFile(attachmentPath, []byte(content), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create attachment file: %v", err)
 	}
