@@ -77,7 +77,7 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamCallsForYear(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(2014, func(_ Call) error {
 		streamedCount++
 		return nil
 	})

@@ -43,7 +43,8 @@ func init() {
 	rootCmd.AddCommand(reprocessContactsCmd)
 
 	// Local flags
-	reprocessContactsCmd.Flags().BoolVar(&reprocessDryRun, "dry-run", false, "Preview what would be reprocessed without making changes")
+	reprocessContactsCmd.Flags().BoolVar(&reprocessDryRun, "dry-run", false,
+		"Preview what would be reprocessed without making changes")
 }
 
 func runReprocessContacts(cmd *cobra.Command, args []string) error {

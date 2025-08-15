@@ -114,22 +114,41 @@ func (mm *MigrationManager) MigrateAllAttachments() (*MigrationSummary, error) {
 
 // migrateAttachment migrates a single attachment from legacy to new format
 func (mm *MigrationManager) migrateAttachment(attachment *Attachment, storage *DirectoryAttachmentStorage) MigrationResult {
-	result := MigrationResult{
-		Hash:       attachment.Hash,
-		LegacyPath: attachment.Path,
-		Size:       attachment.Size,
-	}
+	result := mm.initializeMigrationResult(attachment)
 
 	if mm.logOutput {
 		log.Printf("[MIGRATION] Migrating attachment: %s", attachment.Hash)
 	}
 
+	data, metadata, err := mm.prepareMigrationData(attachment, &result)
+	if err != nil {
+		return result
+	}
+
+	if mm.dryRun {
+		return mm.handleDryRunMigration(attachment, storage, result)
+	}
+
+	return mm.executeMigration(attachment, storage, data, metadata, result)
+}
+
+// initializeMigrationResult creates an initial migration result
+func (mm *MigrationManager) initializeMigrationResult(attachment *Attachment) MigrationResult {
+	return MigrationResult{
+		Hash:       attachment.Hash,
+		LegacyPath: attachment.Path,
+		Size:       attachment.Size,
+	}
+}
+
+// prepareMigrationData reads legacy file and prepares metadata
+func (mm *MigrationManager) prepareMigrationData(attachment *Attachment, result *MigrationResult) ([]byte, AttachmentInfo, error) {
 	// Read the legacy attachment content
 	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
 	data, err := os.ReadFile(legacyFullPath)
 	if err != nil {
 		result.Error = fmt.Sprintf("failed to read legacy file: %v", err)
-		return result
+		return nil, AttachmentInfo{}, err
 	}
 
 	// Detect MIME type from content (simple detection)
@@ -150,16 +169,23 @@ func (mm *MigrationManager) migrateAttachment(attachment *Attachment, storage *D
 		SourceMMS:    "", // Unknown for migrated attachments
 	}
 
-	if mm.dryRun {
-		// In dry run mode, just simulate the migration
-		result.NewPath = filepath.Join(storage.getAttachmentDirPath(attachment.Hash), filename)
-		result.Success = true
-		if mm.logOutput {
-			log.Printf("[MIGRATION] [DRY RUN] Would migrate %s -> %s", result.LegacyPath, result.NewPath)
-		}
-		return result
-	}
+	return data, metadata, nil
+}
 
+// handleDryRunMigration handles migration in dry run mode
+func (mm *MigrationManager) handleDryRunMigration(attachment *Attachment, storage *DirectoryAttachmentStorage, result MigrationResult) MigrationResult {
+	// In dry run mode, just simulate the migration
+	filename := result.GeneratedName
+	result.NewPath = filepath.Join(storage.getAttachmentDirPath(attachment.Hash), filename)
+	result.Success = true
+	if mm.logOutput {
+		log.Printf("[MIGRATION] [DRY RUN] Would migrate %s -> %s", result.LegacyPath, result.NewPath)
+	}
+	return result
+}
+
+// executeMigration performs the actual migration
+func (mm *MigrationManager) executeMigration(attachment *Attachment, storage *DirectoryAttachmentStorage, data []byte, metadata AttachmentInfo, result MigrationResult) MigrationResult {
 	// Store with new format
 	if err := storage.Store(attachment.Hash, data, metadata); err != nil {
 		result.Error = fmt.Sprintf("failed to store in new format: %v", err)
@@ -175,6 +201,7 @@ func (mm *MigrationManager) migrateAttachment(attachment *Attachment, storage *D
 	result.NewPath = newPath
 
 	// Remove the legacy file
+	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
 	if err := os.Remove(legacyFullPath); err != nil {
 		result.Error = fmt.Sprintf("failed to remove legacy file: %v", err)
 		return result

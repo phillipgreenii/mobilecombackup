@@ -15,6 +15,12 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
 
+const (
+	// Test hash constants
+	testHash1 = "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
+	testHash2 = "b223456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
+)
+
 func TestOrphanRemovalIntegration(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -28,8 +34,8 @@ func TestOrphanRemovalIntegration(t *testing.T) {
 			name: "no orphans found",
 			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
 				// Create some attachments
-				hash1 := "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-				hash2 := "b223456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
+				hash1 := testHash1
+				hash2 := testHash2
 
 				createTestAttachment(t, repoPath, hash1, "test data 1")
 				createTestAttachment(t, repoPath, hash2, "test data 2")
@@ -50,8 +56,8 @@ func TestOrphanRemovalIntegration(t *testing.T) {
 			name: "some orphans found and removed",
 			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
 				// Create some attachments
-				hash1 := "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-				hash2 := "b223456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
+				hash1 := testHash1
+				hash2 := testHash2
 				hash3 := "c323456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
 
 				createTestAttachment(t, repoPath, hash1, "test data 1")
@@ -77,8 +83,8 @@ func TestOrphanRemovalIntegration(t *testing.T) {
 			dryRun: true,
 			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
 				// Create some attachments
-				hash1 := "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-				hash2 := "b223456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
+				hash1 := testHash1
+				hash2 := testHash2
 
 				createTestAttachment(t, repoPath, hash1, "test data 1")
 				createTestAttachment(t, repoPath, hash2, "test data 2")

@@ -196,7 +196,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 
 // ValidateAttachmentReferences checks attachment references against SMS data
 func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes map[string]bool) []ValidationViolation {
-	var violations []ValidationViolation
+	violations := make([]ValidationViolation, 0, len(referencedHashes))
 
 	// Check for referenced attachments that don't exist
 	for referencedHash := range referencedHashes {

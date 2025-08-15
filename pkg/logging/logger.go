@@ -1,3 +1,6 @@
+// Package logging provides structured logging functionality for the mobilecombackup application.
+// It includes configurable loggers with different output formats and levels, supporting
+// both console and JSON output formats with proper error context tracking.
 package logging
 
 import (

@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+const (
+	// XMLNullValue represents the null value in XML attributes
+	XMLNullValue = "null"
+)
+
 // Result represents a generic operation result that can either contain a value or an error
 type Result[T any] struct {
 	Value T
@@ -96,7 +101,7 @@ func (o Optional[T]) UnwrapOr(defaultValue T) T {
 // ParseOptionalInt parses a string to an optional integer
 // Returns None if the string is empty, "null", or invalid
 func ParseOptionalInt(s string) Optional[int] {
-	if s == "" || s == "null" {
+	if s == "" || s == XMLNullValue {
 		return None[int]()
 	}
 
@@ -111,7 +116,7 @@ func ParseOptionalInt(s string) Optional[int] {
 // ParseOptionalInt64 parses a string to an optional int64
 // Returns None if the string is empty, "null", or invalid
 func ParseOptionalInt64(s string) Optional[int64] {
-	if s == "" || s == "null" {
+	if s == "" || s == XMLNullValue {
 		return None[int64]()
 	}
 
@@ -126,7 +131,7 @@ func ParseOptionalInt64(s string) Optional[int64] {
 // ParseOptionalString parses a string to an optional string
 // Returns None if the string is empty or "null"
 func ParseOptionalString(s string) Optional[string] {
-	if s == "" || s == "null" {
+	if s == "" || s == XMLNullValue {
 		return None[string]()
 	}
 

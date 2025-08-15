@@ -251,52 +251,77 @@ func gatherSMSStats(reader sms.SMSReader, info *RepositoryInfo) error {
 	}
 
 	for _, year := range years {
-		messageStats := MessageInfo{}
-
-		// Get total count
-		totalCount, err := reader.GetMessageCount(year)
+		messageStats, err := gatherSMSStatsForYear(reader, year)
 		if err != nil {
 			return err
 		}
-		messageStats.TotalCount = totalCount
-
-		// Count SMS vs MMS and get date range by streaming messages
-		var earliest, latest time.Time
-		err = reader.StreamMessagesForYear(year, func(msg sms.Message) error {
-			timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
-
-			if earliest.IsZero() || timestamp.Before(earliest) {
-				earliest = timestamp
-			}
-			if latest.IsZero() || timestamp.After(latest) {
-				latest = timestamp
-			}
-
-			// Count SMS vs MMS by type assertion
-			switch msg.(type) {
-			case sms.SMS:
-				messageStats.SMSCount++
-			case sms.MMS:
-				messageStats.MMSCount++
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-
-		if !earliest.IsZero() {
-			messageStats.Earliest = earliest
-			messageStats.Latest = latest
-		}
-
 		info.SMS[fmt.Sprintf("%d", year)] = messageStats
 	}
 
 	return nil
 }
 
-func gatherAttachmentStats(attachmentReader attachments.AttachmentReader, smsReader sms.SMSReader, info *RepositoryInfo) error {
+// gatherSMSStatsForYear gathers SMS statistics for a specific year
+func gatherSMSStatsForYear(reader sms.SMSReader, year int) (MessageInfo, error) {
+	messageStats := MessageInfo{}
+
+	// Get total count
+	totalCount, err := reader.GetMessageCount(year)
+	if err != nil {
+		return messageStats, err
+	}
+	messageStats.TotalCount = totalCount
+
+	// Count SMS vs MMS and get date range by streaming messages
+	var earliest, latest time.Time
+	err = reader.StreamMessagesForYear(year, func(msg sms.Message) error {
+		timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
+
+		updateDateRange(&earliest, &latest, timestamp)
+		countMessageType(msg, &messageStats)
+		return nil
+	})
+	if err != nil {
+		return messageStats, err
+	}
+
+	setDateRange(&messageStats, earliest, latest)
+	return messageStats, nil
+}
+
+// updateDateRange updates the earliest and latest timestamps
+func updateDateRange(earliest, latest *time.Time, timestamp time.Time) {
+	if earliest.IsZero() || timestamp.Before(*earliest) {
+		*earliest = timestamp
+	}
+	if latest.IsZero() || timestamp.After(*latest) {
+		*latest = timestamp
+	}
+}
+
+// countMessageType counts SMS vs MMS messages
+func countMessageType(msg sms.Message, messageStats *MessageInfo) {
+	switch msg.(type) {
+	case sms.SMS:
+		messageStats.SMSCount++
+	case sms.MMS:
+		messageStats.MMSCount++
+	}
+}
+
+// setDateRange sets the earliest and latest dates in message stats
+func setDateRange(messageStats *MessageInfo, earliest, latest time.Time) {
+	if !earliest.IsZero() {
+		messageStats.Earliest = earliest
+		messageStats.Latest = latest
+	}
+}
+
+func gatherAttachmentStats(
+	attachmentReader attachments.AttachmentReader,
+	smsReader sms.SMSReader,
+	info *RepositoryInfo,
+) error {
 	attachmentInfo := AttachmentInfo{
 		ByType: make(map[string]int),
 	}
@@ -408,6 +433,17 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		return
 	}
 
+	printRepositoryHeader(info, repoPath)
+	printCallsStatistics(info)
+	printMessagesStatistics(info)
+	printAttachmentsStatistics(info)
+	printContacts(info)
+	printIssues(info)
+	printValidationStatus(info)
+}
+
+// printRepositoryHeader prints the repository header information
+func printRepositoryHeader(info *RepositoryInfo, repoPath string) {
 	fmt.Printf("Repository: %s\n", repoPath)
 	if info.Version != "" {
 		fmt.Printf("Version: %s\n", info.Version)
@@ -416,26 +452,20 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		fmt.Printf("Created: %s\n", info.CreatedAt.Format(time.RFC3339))
 	}
 	fmt.Println()
+}
 
-	// Calls statistics
+// printCallsStatistics prints call statistics
+func printCallsStatistics(info *RepositoryInfo) {
 	fmt.Println("Calls:")
 	if len(info.Calls) > 0 {
 		var totalCalls int
-		var years []string
-		for year := range info.Calls {
-			years = append(years, year)
-		}
-		sort.Strings(years)
+		years := getSortedYears(info.Calls)
 
 		for _, year := range years {
 			yearInfo := info.Calls[year]
 			totalCalls += yearInfo.Count
 			fmt.Printf("  %s: %s calls", year, formatNumber(yearInfo.Count))
-			if !yearInfo.Earliest.IsZero() && !yearInfo.Latest.IsZero() {
-				fmt.Printf(" (%s - %s)",
-					yearInfo.Earliest.Format("Jan 2"),
-					yearInfo.Latest.Format("Jan 2"))
-			}
+			printDateRange(yearInfo.Earliest, yearInfo.Latest)
 			fmt.Println()
 		}
 		fmt.Printf("  Total: %s calls\n", formatNumber(totalCalls))
@@ -443,32 +473,23 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		fmt.Println("  Total: 0 calls")
 	}
 	fmt.Println()
+}
 
-	// SMS/MMS statistics
+// printMessagesStatistics prints SMS/MMS statistics
+func printMessagesStatistics(info *RepositoryInfo) {
 	fmt.Println("Messages:")
 	if len(info.SMS) > 0 {
-		var totalMessages, totalSMS, totalMMS int
-		var years []string
-		for year := range info.SMS {
-			years = append(years, year)
-		}
-		sort.Strings(years)
+		totalMessages, totalSMS, totalMMS := calculateMessageTotals(info)
+		years := getSortedMessageYears(info.SMS)
 
 		for _, year := range years {
 			msgInfo := info.SMS[year]
-			totalMessages += msgInfo.TotalCount
-			totalSMS += msgInfo.SMSCount
-			totalMMS += msgInfo.MMSCount
 			fmt.Printf("  %s: %s messages (%s SMS, %s MMS)",
 				year,
 				formatNumber(msgInfo.TotalCount),
 				formatNumber(msgInfo.SMSCount),
 				formatNumber(msgInfo.MMSCount))
-			if !msgInfo.Earliest.IsZero() && !msgInfo.Latest.IsZero() {
-				fmt.Printf(" (%s - %s)",
-					msgInfo.Earliest.Format("Jan 2"),
-					msgInfo.Latest.Format("Jan 2"))
-			}
+			printDateRange(msgInfo.Earliest, msgInfo.Latest)
 			fmt.Println()
 		}
 		fmt.Printf("  Total: %s messages (%s SMS, %s MMS)\n",
@@ -479,43 +500,101 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		fmt.Println("  Total: 0 messages (0 SMS, 0 MMS)")
 	}
 	fmt.Println()
+}
 
-	// Attachments statistics
+// printAttachmentsStatistics prints attachment statistics
+func printAttachmentsStatistics(info *RepositoryInfo) {
 	fmt.Println("Attachments:")
 	if info.Attachments.Count > 0 {
 		fmt.Printf("  Count: %s\n", formatNumber(info.Attachments.Count))
 		fmt.Printf("  Total Size: %s\n", formatBytes(info.Attachments.TotalSize))
 
-		if len(info.Attachments.ByType) > 0 {
-			fmt.Println("  Types:")
-			// Sort types by count (descending)
-			var types []string
-			for mimeType := range info.Attachments.ByType {
-				types = append(types, mimeType)
-			}
-			sort.Slice(types, func(i, j int) bool {
-				return info.Attachments.ByType[types[i]] > info.Attachments.ByType[types[j]]
-			})
-
-			for _, mimeType := range types {
-				count := info.Attachments.ByType[mimeType]
-				fmt.Printf("    %s: %s\n", mimeType, formatNumber(count))
-			}
-		}
-
-		if info.Attachments.OrphanedCount > 0 {
-			fmt.Printf("  Orphaned: %s\n", formatNumber(info.Attachments.OrphanedCount))
-		}
+		printAttachmentTypes(info)
+		printOrphanedAttachments(info)
 	} else {
 		fmt.Println("  Count: 0")
 		fmt.Println("  Total Size: 0 B")
 	}
 	fmt.Println()
+}
 
-	// Contacts
+// getSortedYears returns sorted years from calls data
+func getSortedYears(calls map[string]YearInfo) []string {
+	years := make([]string, 0, len(calls))
+	for year := range calls {
+		years = append(years, year)
+	}
+	sort.Strings(years)
+	return years
+}
+
+// getSortedMessageYears returns sorted years from SMS data
+func getSortedMessageYears(sms map[string]MessageInfo) []string {
+	years := make([]string, 0, len(sms))
+	for year := range sms {
+		years = append(years, year)
+	}
+	sort.Strings(years)
+	return years
+}
+
+// calculateMessageTotals calculates total message counts
+func calculateMessageTotals(info *RepositoryInfo) (totalMessages, totalSMS, totalMMS int) {
+	for _, msgInfo := range info.SMS {
+		totalMessages += msgInfo.TotalCount
+		totalSMS += msgInfo.SMSCount
+		totalMMS += msgInfo.MMSCount
+	}
+	return
+}
+
+// printDateRange prints date range if available
+func printDateRange(earliest, latest time.Time) {
+	if !earliest.IsZero() && !latest.IsZero() {
+		fmt.Printf(" (%s - %s)",
+			earliest.Format("Jan 2"),
+			latest.Format("Jan 2"))
+	}
+}
+
+// printAttachmentTypes prints attachment types breakdown
+func printAttachmentTypes(info *RepositoryInfo) {
+	if len(info.Attachments.ByType) > 0 {
+		fmt.Println("  Types:")
+		types := getSortedAttachmentTypes(info.Attachments.ByType)
+		for _, mimeType := range types {
+			count := info.Attachments.ByType[mimeType]
+			fmt.Printf("    %s: %s\n", mimeType, formatNumber(count))
+		}
+	}
+}
+
+// getSortedAttachmentTypes returns attachment types sorted by count
+func getSortedAttachmentTypes(byType map[string]int) []string {
+	types := make([]string, 0, len(byType))
+	for mimeType := range byType {
+		types = append(types, mimeType)
+	}
+	sort.Slice(types, func(i, j int) bool {
+		return byType[types[i]] > byType[types[j]]
+	})
+	return types
+}
+
+// printOrphanedAttachments prints orphaned attachment count
+func printOrphanedAttachments(info *RepositoryInfo) {
+	if info.Attachments.OrphanedCount > 0 {
+		fmt.Printf("  Orphaned: %s\n", formatNumber(info.Attachments.OrphanedCount))
+	}
+}
+
+// printContacts prints contact count
+func printContacts(info *RepositoryInfo) {
 	fmt.Printf("Contacts: %s\n\n", formatNumber(info.Contacts))
+}
 
-	// Rejections and errors
+// printIssues prints rejection and error statistics
+func printIssues(info *RepositoryInfo) {
 	if len(info.Rejections) > 0 || len(info.Errors) > 0 {
 		fmt.Println("Issues:")
 		for component, count := range info.Rejections {
@@ -526,8 +605,10 @@ func outputTextInfo(info *RepositoryInfo, repoPath string) {
 		}
 		fmt.Println()
 	}
+}
 
-	// Validation status
+// printValidationStatus prints validation status
+func printValidationStatus(info *RepositoryInfo) {
 	if info.ValidationOK {
 		fmt.Println("Validation: OK")
 	} else {

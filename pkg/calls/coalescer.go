@@ -1,3 +1,5 @@
+// Package calls provides functionality for processing call log data from mobile phone backups.
+// It includes features for reading, coalescing, and validating call entries from XML format.
 package calls
 
 import (

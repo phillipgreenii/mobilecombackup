@@ -12,6 +12,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// Repository directory names
+	callsDir       = "calls"
+	smsDir         = "sms"
+	attachmentsDir = "attachments"
+)
+
 var (
 	dryRun bool
 )
@@ -101,31 +108,34 @@ func runInit(cmd *cobra.Command, args []string) error {
 func validateTargetDirectory(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			// Directory doesn't exist - this is OK, we'll create it
-			return nil
-		}
-		return fmt.Errorf("failed to check directory: %w", err)
+		return handleStatError(err, path)
 	}
 
 	if !info.IsDir() {
 		return fmt.Errorf("path exists but is not a directory: %s", path)
 	}
 
-	// Check if directory is empty
+	return validateDirectoryContents(path)
+}
+
+// handleStatError handles errors from os.Stat
+func handleStatError(err error, path string) error {
+	if os.IsNotExist(err) {
+		// Directory doesn't exist - this is OK, we'll create it
+		return nil
+	}
+	return fmt.Errorf("failed to check directory: %w", err)
+}
+
+// validateDirectoryContents validates that the directory is suitable for initialization
+func validateDirectoryContents(path string) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	// Check for existing repository
-	for _, entry := range entries {
-		if entry.Name() == ".mobilecombackup.yaml" {
-			return fmt.Errorf("directory already contains a mobilecombackup repository")
-		}
-		if entry.Name() == "calls" || entry.Name() == "sms" || entry.Name() == "attachments" {
-			return fmt.Errorf("directory appears to be a repository (found %s/ directory)", entry.Name())
-		}
+	if err := checkForExistingRepository(entries); err != nil {
+		return err
 	}
 
 	// Warn if directory is not empty
@@ -134,6 +144,24 @@ func validateTargetDirectory(path string) error {
 	}
 
 	return nil
+}
+
+// checkForExistingRepository checks if directory already contains a repository
+func checkForExistingRepository(entries []os.DirEntry) error {
+	for _, entry := range entries {
+		if entry.Name() == ".mobilecombackup.yaml" {
+			return fmt.Errorf("directory already contains a mobilecombackup repository")
+		}
+		if isRepositoryDirectory(entry.Name()) {
+			return fmt.Errorf("directory appears to be a repository (found %s/ directory)", entry.Name())
+		}
+	}
+	return nil
+}
+
+// isRepositoryDirectory checks if a directory name indicates a repository structure
+func isRepositoryDirectory(name string) bool {
+	return name == callsDir || name == smsDir || name == attachmentsDir
 }
 
 func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult, error) {

@@ -50,7 +50,6 @@ func FuzzXMLSMSReader_StreamMessages(f *testing.F) {
 
 		// Try to stream messages - this should handle any input gracefully
 		var messages []Message
-		var readErrors []error
 
 		// Use callback to collect messages and errors
 		err := xmlReader.StreamMessagesFromReader(reader, func(msg Message) error {
@@ -61,8 +60,8 @@ func FuzzXMLSMSReader_StreamMessages(f *testing.F) {
 		// The parser should either succeed or fail gracefully with an error
 		// It should never panic or crash
 		if err != nil {
-			// Error is acceptable for malformed input
-			readErrors = append(readErrors, err)
+			// Error is acceptable for malformed input - just ignore it
+			// We only care that it doesn't panic
 		}
 
 		// Validate that any successfully parsed messages have reasonable values

@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+const (
+	// Directory names for data organization
+	callsDir = "calls"
+	smsDir   = "sms"
+)
+
 // XMLRejectionWriter writes rejected entries to XML files
 type XMLRejectionWriter struct {
 	repoRoot string
@@ -77,9 +83,9 @@ func (w *XMLRejectionWriter) WriteRejections(originalFile string, rejections []R
 	// Determine type subdirectory
 	var typeDir string
 	if strings.Contains(nameNoExt, "call") {
-		typeDir = "calls"
+		typeDir = callsDir
 	} else if strings.Contains(nameNoExt, "sms") {
-		typeDir = "sms"
+		typeDir = smsDir
 	} else {
 		typeDir = "" // Root rejected directory
 	}

@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+const (
+	// XML element names
+	callsElementName = "calls"
+)
+
 // XMLCallsReader implements CallsReader for XML-based repository
 type XMLCallsReader struct {
 	repoRoot string
@@ -69,7 +74,7 @@ func (r *XMLCallsReader) StreamCallsForYear(year int, callback func(Call) error)
 			return fmt.Errorf("failed to parse XML: %w", err)
 		}
 
-		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == "calls" {
+		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == callsElementName {
 			// We found the calls element, now stream the call elements
 			return r.streamCallElements(decoder, callback)
 		}
@@ -224,7 +229,7 @@ func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 			return 0, fmt.Errorf("failed to parse XML: %w", err)
 		}
 
-		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == "calls" {
+		if se, ok := tok.(xml.StartElement); ok && se.Name.Local == callsElementName {
 			for _, attr := range se.Attr {
 				if attr.Name.Local == "count" {
 					count, err := strconv.Atoi(attr.Value)

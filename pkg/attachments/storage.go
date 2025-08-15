@@ -151,8 +151,8 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 
 	// Ensure cleanup on any error
 	defer func() {
-		file.Close()
-		os.Remove(tempFile) // Clean up temp file if something goes wrong
+		_ = file.Close()
+		_ = os.Remove(tempFile) // Clean up temp file if something goes wrong
 	}()
 
 	// Create hash writer for verification
@@ -191,24 +191,24 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
 	if err != nil {
 		// Clean up attachment file if metadata fails
-		os.Remove(attachmentPath)
+		_ = os.Remove(attachmentPath)
 		return fmt.Errorf("invalid metadata file path: %w", err)
 	}
 
 	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
 	if err != nil {
-		os.Remove(attachmentPath)
+		_ = os.Remove(attachmentPath)
 		return fmt.Errorf("failed to get safe metadata path: %w", err)
 	}
 
 	metadataData, err := yaml.Marshal(metadata)
 	if err != nil {
-		os.Remove(attachmentPath)
+		_ = os.Remove(attachmentPath) // Cleanup attempt - ignore error
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
 	if err := os.WriteFile(metadataPath, metadataData, 0644); err != nil {
-		os.Remove(attachmentPath)
+		_ = os.Remove(attachmentPath) // Cleanup attempt - ignore error
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)
 		}

@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/types"
 )
 
 // XMLSMSReader implements SMSReader interface for XML files
@@ -102,7 +104,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 		case "address":
 			sms.Address = attr.Value
 		case "date":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return sms, fmt.Errorf("invalid date format: %s", attr.Value)
@@ -110,7 +112,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.Date = timestamp
 			}
 		case "type":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				typeVal, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return sms, fmt.Errorf("invalid type format: %s", attr.Value)
@@ -134,7 +136,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.Read = 0
 			}
 		case "status":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				status, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return sms, fmt.Errorf("invalid status format: %s", attr.Value)
@@ -186,7 +188,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 	for _, attr := range startElement.Attr {
 		switch attr.Name.Local {
 		case "date":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return mms, fmt.Errorf("invalid date format: %s", attr.Value)
@@ -194,7 +196,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Date = timestamp
 			}
 		case "msg_box":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				msgBox, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid msg_box format: %s", attr.Value)
@@ -204,7 +206,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 		case "address":
 			mms.Address = attr.Value
 		case "m_type":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				mType, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid m_type format: %s", attr.Value)
@@ -276,7 +278,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Creator = attr.Value
 			}
 		case "sub_id":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				subId, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid sub_id format: %s", attr.Value)
@@ -284,7 +286,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.SubId = subId
 			}
 		case "sim_slot":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				simSlot, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid sim_slot format: %s", attr.Value)
@@ -311,7 +313,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.CallbackSet = 0
 			}
 		case "retr_st":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				retrSt, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid retr_st format: %s", attr.Value)
@@ -323,7 +325,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.CtCls = attr.Value
 			}
 		case "sub_cs":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				subCs, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid sub_cs format: %s", attr.Value)
@@ -339,7 +341,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.TrId = attr.Value
 			}
 		case "st":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				st, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid st format: %s", attr.Value)
@@ -359,7 +361,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.DTm = timestamp
 			}
 		case "read_status":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				readStatus, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid read_status format: %s", attr.Value)
@@ -371,7 +373,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.CtT = attr.Value
 			}
 		case "retr_txt_cs":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				retrTxtCs, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid retr_txt_cs format: %s", attr.Value)
@@ -379,7 +381,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.RetrTxtCs = retrTxtCs
 			}
 		case "d_rpt":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				drpt, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid d_rpt format: %s", attr.Value)
@@ -387,7 +389,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.DRpt = drpt
 			}
 		case "reserved":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				reserved, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid reserved format: %s", attr.Value)
@@ -395,7 +397,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Reserved = reserved
 			}
 		case "v":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				v, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid v format: %s", attr.Value)
@@ -411,7 +413,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Exp = timestamp
 			}
 		case "pri":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				pri, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid pri format: %s", attr.Value)
@@ -419,7 +421,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Pri = pri
 			}
 		case "msg_id":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				msgId, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid msg_id format: %s", attr.Value)
@@ -427,7 +429,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.MsgId = msgId
 			}
 		case "rr":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				rr, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid rr format: %s", attr.Value)
@@ -435,7 +437,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Rr = rr
 			}
 		case "app_id":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				appId, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid app_id format: %s", attr.Value)
@@ -447,7 +449,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.RespTxt = attr.Value
 			}
 		case "rpt_a":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				rptA, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid rpt_a format: %s", attr.Value)
@@ -455,7 +457,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.RptA = rptA
 			}
 		case "m_size":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				mSize, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid m_size format: %s", attr.Value)
@@ -541,7 +543,7 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 	for _, attr := range startElement.Attr {
 		switch attr.Name.Local {
 		case "seq":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				seq, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return part, fmt.Errorf("invalid seq format: %s", attr.Value)
@@ -575,7 +577,7 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 				part.ContentLoc = attr.Value
 			}
 		case "ctt_s":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				cttS, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return part, fmt.Errorf("invalid ctt_s format: %s", attr.Value)
@@ -583,7 +585,7 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 				part.CttS = cttS
 			}
 		case "ctt_t":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				cttT, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return part, fmt.Errorf("invalid ctt_t format: %s", attr.Value)
@@ -673,7 +675,7 @@ func (r *XMLSMSReader) parseMMSAddress(decoder *xml.Decoder, startElement xml.St
 		case "address":
 			addr.Address = attr.Value
 		case "type":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				addrType, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return addr, fmt.Errorf("invalid address type format: %s", attr.Value)
@@ -681,7 +683,7 @@ func (r *XMLSMSReader) parseMMSAddress(decoder *xml.Decoder, startElement xml.St
 				addr.Type = addrType
 			}
 		case "charset":
-			if attr.Value != "" && attr.Value != "null" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue {
 				charset, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return addr, fmt.Errorf("invalid charset format: %s", attr.Value)

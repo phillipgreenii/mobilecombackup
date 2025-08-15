@@ -1,3 +1,4 @@
+// Package contacts provides integration tests for contact management functionality.
 package contacts
 
 import (

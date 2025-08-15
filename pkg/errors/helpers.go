@@ -1,3 +1,6 @@
+// Package errors provides custom error types and utility functions for error handling
+// across the mobilecombackup application. It includes structured error types with
+// categorization, wrapping capabilities, and contextual information.
 package errors
 
 import (

@@ -1,3 +1,4 @@
+// Package metrics provides functionality for collecting and managing application metrics.
 package metrics
 
 import (
@@ -321,17 +322,31 @@ func NewNullMetrics() *NullMetrics {
 	return &NullMetrics{}
 }
 
-// All methods are no-ops for NullMetrics
-func (n *NullMetrics) RecordImportDuration(fileType, status string, duration time.Duration) {}
-func (n *NullMetrics) IncrementFilesProcessed(fileType string)                              {}
-func (n *NullMetrics) IncrementRecordsProcessed(recordType string, count int)               {}
-func (n *NullMetrics) RecordBatchSize(operation string, size int)                           {}
-func (n *NullMetrics) IncrementValidationErrors(violationType string)                       {}
-func (n *NullMetrics) IncrementValidationRules(ruleType string)                             {}
-func (n *NullMetrics) RecordValidationDuration(operation string, duration time.Duration)    {}
-func (n *NullMetrics) RecordFileSize(fileType string, size int64)                           {}
-func (n *NullMetrics) RecordAttachmentSize(size int64)                                      {}
-func (n *NullMetrics) SetActiveOperations(operation string, count int)                      {}
-func (n *NullMetrics) IncrementOperationErrors(operation, errorType string)                 {}
-func (n *NullMetrics) RecordMemoryUsage(operation string, bytes int64)                      {}
-func (n *NullMetrics) RecordCPUUsage(operation string, percentage float64)                  {}
+// RecordImportDuration records the duration of an import operation (no-op for NullMetrics).
+func (n *NullMetrics) RecordImportDuration(_, _ string, _ time.Duration) {}
+
+// IncrementFilesProcessed increments the count of processed files (no-op for NullMetrics).
+func (n *NullMetrics) IncrementFilesProcessed(_ string) {}
+
+// IncrementRecordsProcessed increments the count of processed records (no-op for NullMetrics).
+func (n *NullMetrics) IncrementRecordsProcessed(_ string, _ int) {}
+
+// RecordBatchSize records the size of a batch operation (no-op for NullMetrics).
+func (n *NullMetrics) RecordBatchSize(_ string, _ int) {}
+
+// IncrementValidationErrors increments the count of validation errors (no-op for NullMetrics).
+func (n *NullMetrics) IncrementValidationErrors(_ string) {}
+
+// IncrementValidationRules increments the count of validation rules (no-op for NullMetrics).
+func (n *NullMetrics) IncrementValidationRules(_ string) {}
+
+// RecordValidationDuration records the duration of a validation operation (no-op for NullMetrics).
+func (n *NullMetrics) RecordValidationDuration(_ string, _ time.Duration) {}
+
+// RecordFileSize records the size of a file (no-op for NullMetrics).
+func (n *NullMetrics) RecordFileSize(_ string, _ int64)                     {}
+func (n *NullMetrics) RecordAttachmentSize(size int64)                      {}
+func (n *NullMetrics) SetActiveOperations(operation string, count int)      {}
+func (n *NullMetrics) IncrementOperationErrors(operation, errorType string) {}
+func (n *NullMetrics) RecordMemoryUsage(operation string, bytes int64)      {}
+func (n *NullMetrics) RecordCPUUsage(operation string, percentage float64)  {}

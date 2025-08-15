@@ -93,7 +93,7 @@ func (yt *YearTracker) GetAllYears() []int {
 		yearsMap[year] = true
 	}
 
-	var years []int
+	years := make([]int, 0, len(yearsMap))
 	for year := range yearsMap {
 		years = append(years, year)
 	}

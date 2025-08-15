@@ -113,188 +113,24 @@ func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
 
 // FixViolations attempts to fix the given validation violations
 func (a *AutofixerImpl) FixViolations(violations []validation.ValidationViolation, options AutofixOptions) (*AutofixReport, error) {
-	report := &AutofixReport{
-		Timestamp:         time.Now().UTC(),
-		RepositoryPath:    a.repositoryRoot,
-		FixedViolations:   []FixedViolation{},
-		SkippedViolations: []SkippedViolation{},
-		Errors:            []AutofixError{},
-	}
+	report := a.createInitialReport()
 
 	// In dry-run mode, perform permission checks
 	if options.DryRun {
-		if err := a.checkPermissions(violations); err != nil {
-			report.Errors = append(report.Errors, AutofixError{
-				ViolationType: "",
-				File:          a.repositoryRoot,
-				Operation:     "permission_check",
-				Error:         err.Error(),
-			})
-		}
+		a.performPermissionChecks(violations, report)
 	}
 
 	// Phase 1: Create directories (must come first)
-	directoryViolations := filterViolationsByTypes(violations, []validation.ViolationType{
-		validation.StructureViolation,
-	})
-
-	for _, violation := range directoryViolations {
-		if isDirectoryMissing(violation) {
-			if options.DryRun {
-				report.FixedViolations = append(report.FixedViolations, FixedViolation{
-					OriginalViolation: violation,
-					FixAction:         OperationCreateDirectory,
-					Details:           fmt.Sprintf("Would create directory: %s", extractDirectoryFromViolation(violation)),
-				})
-				continue
-			}
-
-			if err := a.fixMissingDirectory(violation); err != nil {
-				report.Errors = append(report.Errors, AutofixError{
-					ViolationType: violation.Type,
-					File:          violation.File,
-					Operation:     OperationCreateDirectory,
-					Error:         err.Error(),
-				})
-			} else {
-				report.FixedViolations = append(report.FixedViolations, FixedViolation{
-					OriginalViolation: violation,
-					FixAction:         OperationCreateDirectory,
-					Details:           fmt.Sprintf("Created directory: %s", extractDirectoryFromViolation(violation)),
-				})
-			}
-		}
-	}
+	a.fixDirectoryViolations(violations, options, report)
 
 	// Phase 2: Create missing files
-	fileViolations := filterViolationsByTypes(violations, []validation.ViolationType{
-		validation.MissingFile,
-		validation.MissingMarkerFile,
-	})
-
-	for _, violation := range fileViolations {
-		if !a.CanFix(violation.Type) {
-			report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
-				OriginalViolation: violation,
-				SkipReason:        "Not a safe autofix operation",
-			})
-			continue
-		}
-
-		if options.DryRun {
-			report.FixedViolations = append(report.FixedViolations, FixedViolation{
-				OriginalViolation: violation,
-				FixAction:         OperationCreateFile,
-				Details:           fmt.Sprintf("Would create file: %s", violation.File),
-			})
-			continue
-		}
-
-		if err := a.fixMissingFile(violation); err != nil {
-			report.Errors = append(report.Errors, AutofixError{
-				ViolationType: violation.Type,
-				File:          violation.File,
-				Operation:     OperationCreateFile,
-				Error:         err.Error(),
-			})
-		} else {
-			report.FixedViolations = append(report.FixedViolations, FixedViolation{
-				OriginalViolation: violation,
-				FixAction:         OperationCreateFile,
-				Details:           fmt.Sprintf("Created file: %s", violation.File),
-			})
-		}
-	}
+	a.fixFileViolations(violations, options, report)
 
 	// Phase 3: Update existing files and content
-	contentViolations := filterViolationsByTypes(violations, []validation.ViolationType{
-		validation.CountMismatch,
-		validation.SizeMismatch,
-	})
-
-	for _, violation := range contentViolations {
-		if !a.CanFix(violation.Type) {
-			report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
-				OriginalViolation: violation,
-				SkipReason:        "Not a safe autofix operation",
-			})
-			continue
-		}
-
-		var err error
-		var fixAction string
-
-		if options.DryRun {
-			switch violation.Type {
-			case validation.CountMismatch:
-				fixAction = OperationUpdateXMLCount
-				details := fmt.Sprintf("Would update count attribute in %s", violation.File)
-				if violation.Expected != "" && violation.Actual != "" {
-					details = fmt.Sprintf("Would update count attribute in %s (from %s to %s)", violation.File, violation.Actual, violation.Expected)
-				}
-				report.FixedViolations = append(report.FixedViolations, FixedViolation{
-					OriginalViolation: violation,
-					FixAction:         fixAction,
-					Details:           details,
-				})
-			case validation.SizeMismatch:
-				fixAction = OperationUpdateFile
-				report.FixedViolations = append(report.FixedViolations, FixedViolation{
-					OriginalViolation: violation,
-					FixAction:         fixAction,
-					Details:           "Would regenerate files.yaml with correct file sizes",
-				})
-			}
-			continue
-		}
-
-		switch violation.Type {
-		case validation.CountMismatch:
-			err = a.fixCountMismatch(violation)
-			fixAction = OperationUpdateXMLCount
-		case validation.SizeMismatch:
-			err = a.fixSizeMismatch(violation)
-			fixAction = OperationUpdateFile
-		}
-
-		if err != nil {
-			report.Errors = append(report.Errors, AutofixError{
-				ViolationType: violation.Type,
-				File:          violation.File,
-				Operation:     fixAction,
-				Error:         err.Error(),
-			})
-		} else {
-			report.FixedViolations = append(report.FixedViolations, FixedViolation{
-				OriginalViolation: violation,
-				FixAction:         fixAction,
-				Details:           fmt.Sprintf("Fixed %s in %s", violation.Type, violation.File),
-			})
-		}
-	}
+	a.fixContentViolations(violations, options, report)
 
 	// Skip violations that cannot be safely fixed
-	unsafeViolations := filterViolationsByTypes(violations, []validation.ViolationType{
-		validation.ChecksumMismatch,
-		validation.OrphanedAttachment,
-	})
-
-	for _, violation := range unsafeViolations {
-		var reason string
-		switch violation.Type {
-		case validation.ChecksumMismatch:
-			reason = "Autofix preserves existing checksums to detect corruption"
-		case validation.OrphanedAttachment:
-			reason = "Use --remove-orphan-attachments flag"
-		default:
-			reason = "Not a safe autofix operation"
-		}
-
-		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
-			OriginalViolation: violation,
-			SkipReason:        reason,
-		})
-	}
+	a.handleUnsafeViolations(violations, report)
 
 	// Calculate summary
 	report.Summary = AutofixSummary{
@@ -304,6 +140,227 @@ func (a *AutofixerImpl) FixViolations(violations []validation.ValidationViolatio
 	}
 
 	return report, nil
+}
+
+// createInitialReport creates a new autofix report
+func (a *AutofixerImpl) createInitialReport() *AutofixReport {
+	return &AutofixReport{
+		Timestamp:         time.Now().UTC(),
+		RepositoryPath:    a.repositoryRoot,
+		FixedViolations:   []FixedViolation{},
+		SkippedViolations: []SkippedViolation{},
+		Errors:            []AutofixError{},
+	}
+}
+
+// performPermissionChecks performs permission checks during dry-run mode
+func (a *AutofixerImpl) performPermissionChecks(violations []validation.ValidationViolation, report *AutofixReport) {
+	if err := a.checkPermissions(violations); err != nil {
+		report.Errors = append(report.Errors, AutofixError{
+			ViolationType: "",
+			File:          a.repositoryRoot,
+			Operation:     "permission_check",
+			Error:         err.Error(),
+		})
+	}
+}
+
+// fixDirectoryViolations handles directory creation violations
+func (a *AutofixerImpl) fixDirectoryViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+	directoryViolations := filterViolationsByTypes(violations, []validation.ViolationType{
+		validation.StructureViolation,
+	})
+
+	for _, violation := range directoryViolations {
+		if isDirectoryMissing(violation) {
+			a.handleDirectoryViolation(violation, options.DryRun, report)
+		}
+	}
+}
+
+// handleDirectoryViolation processes a single directory violation
+func (a *AutofixerImpl) handleDirectoryViolation(violation validation.ValidationViolation, dryRun bool, report *AutofixReport) {
+	if dryRun {
+		report.FixedViolations = append(report.FixedViolations, FixedViolation{
+			OriginalViolation: violation,
+			FixAction:         OperationCreateDirectory,
+			Details:           fmt.Sprintf("Would create directory: %s", extractDirectoryFromViolation(violation)),
+		})
+		return
+	}
+
+	if err := a.fixMissingDirectory(violation); err != nil {
+		report.Errors = append(report.Errors, AutofixError{
+			ViolationType: violation.Type,
+			File:          violation.File,
+			Operation:     OperationCreateDirectory,
+			Error:         err.Error(),
+		})
+	} else {
+		report.FixedViolations = append(report.FixedViolations, FixedViolation{
+			OriginalViolation: violation,
+			FixAction:         OperationCreateDirectory,
+			Details:           fmt.Sprintf("Created directory: %s", extractDirectoryFromViolation(violation)),
+		})
+	}
+}
+
+// fixFileViolations handles missing file violations
+func (a *AutofixerImpl) fixFileViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+	fileViolations := filterViolationsByTypes(violations, []validation.ViolationType{
+		validation.MissingFile,
+		validation.MissingMarkerFile,
+	})
+
+	for _, violation := range fileViolations {
+		a.handleFileViolation(violation, options.DryRun, report)
+	}
+}
+
+// handleFileViolation processes a single file violation
+func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViolation, dryRun bool, report *AutofixReport) {
+	if !a.CanFix(violation.Type) {
+		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
+			OriginalViolation: violation,
+			SkipReason:        "Not a safe autofix operation",
+		})
+		return
+	}
+
+	if dryRun {
+		report.FixedViolations = append(report.FixedViolations, FixedViolation{
+			OriginalViolation: violation,
+			FixAction:         OperationCreateFile,
+			Details:           fmt.Sprintf("Would create file: %s", violation.File),
+		})
+		return
+	}
+
+	if err := a.fixMissingFile(violation); err != nil {
+		report.Errors = append(report.Errors, AutofixError{
+			ViolationType: violation.Type,
+			File:          violation.File,
+			Operation:     OperationCreateFile,
+			Error:         err.Error(),
+		})
+	} else {
+		report.FixedViolations = append(report.FixedViolations, FixedViolation{
+			OriginalViolation: violation,
+			FixAction:         OperationCreateFile,
+			Details:           fmt.Sprintf("Created file: %s", violation.File),
+		})
+	}
+}
+
+// fixContentViolations handles content-related violations
+func (a *AutofixerImpl) fixContentViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+	contentViolations := filterViolationsByTypes(violations, []validation.ViolationType{
+		validation.CountMismatch,
+		validation.SizeMismatch,
+	})
+
+	for _, violation := range contentViolations {
+		a.handleContentViolation(violation, options.DryRun, report)
+	}
+}
+
+// handleContentViolation processes a single content violation
+func (a *AutofixerImpl) handleContentViolation(violation validation.ValidationViolation, dryRun bool, report *AutofixReport) {
+	if !a.CanFix(violation.Type) {
+		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
+			OriginalViolation: violation,
+			SkipReason:        "Not a safe autofix operation",
+		})
+		return
+	}
+
+	if dryRun {
+		a.handleContentViolationDryRun(violation, report)
+		return
+	}
+
+	a.handleContentViolationExecute(violation, report)
+}
+
+// handleContentViolationDryRun handles content violations in dry-run mode
+func (a *AutofixerImpl) handleContentViolationDryRun(violation validation.ValidationViolation, report *AutofixReport) {
+	var fixAction, details string
+
+	switch violation.Type {
+	case validation.CountMismatch:
+		fixAction = OperationUpdateXMLCount
+		details = fmt.Sprintf("Would update count attribute in %s", violation.File)
+		if violation.Expected != "" && violation.Actual != "" {
+			details = fmt.Sprintf("Would update count attribute in %s (from %s to %s)", violation.File, violation.Actual, violation.Expected)
+		}
+	case validation.SizeMismatch:
+		fixAction = OperationUpdateFile
+		details = "Would regenerate files.yaml with correct file sizes"
+	}
+
+	report.FixedViolations = append(report.FixedViolations, FixedViolation{
+		OriginalViolation: violation,
+		FixAction:         fixAction,
+		Details:           details,
+	})
+}
+
+// handleContentViolationExecute executes content violation fixes
+func (a *AutofixerImpl) handleContentViolationExecute(violation validation.ValidationViolation, report *AutofixReport) {
+	var err error
+	var fixAction string
+
+	switch violation.Type {
+	case validation.CountMismatch:
+		err = a.fixCountMismatch(violation)
+		fixAction = OperationUpdateXMLCount
+	case validation.SizeMismatch:
+		err = a.fixSizeMismatch(violation)
+		fixAction = OperationUpdateFile
+	}
+
+	if err != nil {
+		report.Errors = append(report.Errors, AutofixError{
+			ViolationType: violation.Type,
+			File:          violation.File,
+			Operation:     fixAction,
+			Error:         err.Error(),
+		})
+	} else {
+		report.FixedViolations = append(report.FixedViolations, FixedViolation{
+			OriginalViolation: violation,
+			FixAction:         fixAction,
+			Details:           fmt.Sprintf("Fixed %s in %s", violation.Type, violation.File),
+		})
+	}
+}
+
+// handleUnsafeViolations handles violations that cannot be safely fixed
+func (a *AutofixerImpl) handleUnsafeViolations(violations []validation.ValidationViolation, report *AutofixReport) {
+	unsafeViolations := filterViolationsByTypes(violations, []validation.ViolationType{
+		validation.ChecksumMismatch,
+		validation.OrphanedAttachment,
+	})
+
+	for _, violation := range unsafeViolations {
+		reason := a.getSkipReason(violation.Type)
+		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
+			OriginalViolation: violation,
+			SkipReason:        reason,
+		})
+	}
+}
+
+// getSkipReason returns the appropriate skip reason for violation types
+func (a *AutofixerImpl) getSkipReason(violationType validation.ViolationType) string {
+	switch violationType {
+	case validation.ChecksumMismatch:
+		return "Autofix preserves existing checksums to detect corruption"
+	case validation.OrphanedAttachment:
+		return "Use --remove-orphan-attachments flag"
+	default:
+		return "Not a safe autofix operation"
+	}
 }
 
 // CanFix returns true if the violation type can be automatically fixed
@@ -694,68 +751,93 @@ func (a *AutofixerImpl) checkPermissions(violations []validation.ValidationViola
 	}
 
 	// Check for files that would need to be modified
+	filesToCheck := a.collectPathsToCheck(violations)
+
+	// Check write permissions for all identified paths
+	return a.validateWritePermissions(filesToCheck)
+}
+
+// collectPathsToCheck collects all paths that need write permission checks
+func (a *AutofixerImpl) collectPathsToCheck(violations []validation.ValidationViolation) map[string]bool {
 	filesToCheck := make(map[string]bool)
 
 	for _, violation := range violations {
-		switch violation.Type {
-		case validation.MissingFile, validation.MissingMarkerFile:
-			// Check if parent directory is writable with path validation
-			validatedPath, err := a.pathValidator.ValidatePath(violation.File)
-			if err != nil {
-				// Skip invalid paths for permission checking
-				continue
-			}
-
-			filePath, err := a.pathValidator.GetSafePath(validatedPath)
-			if err != nil {
-				continue
-			}
-
-			parentDir := filepath.Dir(filePath)
-			filesToCheck[parentDir] = true
-
-		case validation.CountMismatch, validation.SizeMismatch:
-			// Check if existing file is writable with path validation
-			validatedPath, err := a.pathValidator.ValidatePath(violation.File)
-			if err != nil {
-				// Skip invalid paths for permission checking
-				continue
-			}
-
-			filePath, err := a.pathValidator.GetSafePath(validatedPath)
-			if err != nil {
-				continue
-			}
-
-			filesToCheck[filePath] = true
-
-		case validation.StructureViolation:
-			// Check if we can create directories with path validation
-			if isDirectoryMissing(violation) {
-				validatedPath, err := a.pathValidator.ValidatePath(extractDirectoryFromViolation(violation))
-				if err != nil {
-					// Skip invalid paths for permission checking
-					continue
-				}
-
-				dirPath, err := a.pathValidator.GetSafePath(validatedPath)
-				if err != nil {
-					continue
-				}
-
-				parentDir := filepath.Dir(dirPath)
-				filesToCheck[parentDir] = true
-			}
-		}
+		a.addPathForViolation(violation, filesToCheck)
 	}
 
-	// Check write permissions for all identified paths
+	return filesToCheck
+}
+
+// addPathForViolation adds the appropriate path to check for a violation
+func (a *AutofixerImpl) addPathForViolation(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+	switch violation.Type {
+	case validation.MissingFile, validation.MissingMarkerFile:
+		a.addMissingFilePathToCheck(violation, filesToCheck)
+	case validation.CountMismatch, validation.SizeMismatch:
+		a.addExistingFilePathToCheck(violation, filesToCheck)
+	case validation.StructureViolation:
+		a.addStructureViolationPathToCheck(violation, filesToCheck)
+	}
+}
+
+// addMissingFilePathToCheck adds parent directory for missing file violations
+func (a *AutofixerImpl) addMissingFilePathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+	validatedPath, err := a.pathValidator.ValidatePath(violation.File)
+	if err != nil {
+		return // Skip invalid paths for permission checking
+	}
+
+	filePath, err := a.pathValidator.GetSafePath(validatedPath)
+	if err != nil {
+		return
+	}
+
+	parentDir := filepath.Dir(filePath)
+	filesToCheck[parentDir] = true
+}
+
+// addExistingFilePathToCheck adds file path for existing file violations
+func (a *AutofixerImpl) addExistingFilePathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+	validatedPath, err := a.pathValidator.ValidatePath(violation.File)
+	if err != nil {
+		return // Skip invalid paths for permission checking
+	}
+
+	filePath, err := a.pathValidator.GetSafePath(validatedPath)
+	if err != nil {
+		return
+	}
+
+	filesToCheck[filePath] = true
+}
+
+// addStructureViolationPathToCheck adds parent directory for structure violations
+func (a *AutofixerImpl) addStructureViolationPathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+	if !isDirectoryMissing(violation) {
+		return
+	}
+
+	validatedPath, err := a.pathValidator.ValidatePath(extractDirectoryFromViolation(violation))
+	if err != nil {
+		return // Skip invalid paths for permission checking
+	}
+
+	dirPath, err := a.pathValidator.GetSafePath(validatedPath)
+	if err != nil {
+		return
+	}
+
+	parentDir := filepath.Dir(dirPath)
+	filesToCheck[parentDir] = true
+}
+
+// validateWritePermissions checks write permissions for all collected paths
+func (a *AutofixerImpl) validateWritePermissions(filesToCheck map[string]bool) error {
 	for path := range filesToCheck {
 		if err := checkWritePermission(path); err != nil {
 			return fmt.Errorf("path not writable: %s (%w)", path, err)
 		}
 	}
-
 	return nil
 }
 

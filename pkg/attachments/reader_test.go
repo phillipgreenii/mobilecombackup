@@ -414,7 +414,7 @@ func TestAttachmentManager_FindOrphanedAttachments(t *testing.T) {
 		[]byte("orphaned content"),
 	}
 
-	var hashes []string
+	hashes := make([]string, 0, len(testContents))
 	for _, content := range testContents {
 		hasher := sha256.New()
 		hasher.Write(content)
@@ -586,7 +586,7 @@ func TestAttachmentManager_GetAttachmentStats(t *testing.T) {
 		[]byte("orphaned content"),
 	}
 
-	var hashes []string
+	hashes := make([]string, 0, len(testContents))
 	for _, content := range testContents {
 		hasher := sha256.New()
 		hasher.Write(content)

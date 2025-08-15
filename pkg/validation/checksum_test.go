@@ -95,7 +95,7 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 		"subdir/file3.txt": "Content of file 3",
 	}
 
-	var manifestEntries []FileEntry
+	manifestEntries := make([]FileEntry, 0, len(files))
 	for fileName, content := range files {
 		fullPath := filepath.Join(tempDir, fileName)
 

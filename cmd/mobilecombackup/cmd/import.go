@@ -69,44 +69,74 @@ func init() {
 	importCmd.Flags().BoolVar(&importDryRun, "dry-run", false, "Preview import without making changes")
 	importCmd.Flags().BoolVar(&importJSON, "json", false, "Output summary in JSON format")
 	importCmd.Flags().StringVar(&importFilter, "filter", "", "Process only specific type: calls, sms")
-	importCmd.Flags().BoolVar(&noErrorOnRejects, "no-error-on-rejects", false, "Don't exit with error code if rejects found")
+	importCmd.Flags().BoolVar(&noErrorOnRejects, "no-error-on-rejects", false,
+		"Don't exit with error code if rejects found")
 	importCmd.Flags().StringVar(&maxXMLSizeStr, "max-xml-size", "500MB", "Maximum XML file size (e.g., 500MB, 1GB)")
 	importCmd.Flags().StringVar(&maxMessageSizeStr, "max-message-size", "10MB", "Maximum message size (e.g., 10MB, 100MB)")
 }
 
 func runImport(cmd *cobra.Command, args []string) error {
-	// Determine repository root
 	resolvedRepoRoot := resolveImportRepoRoot()
+	paths, err := validateAndPreparePaths(cmd, args, resolvedRepoRoot)
+	if err != nil {
+		return err
+	}
 
-	// Get paths to import
+	options, err := createImportOptions(resolvedRepoRoot, paths)
+	if err != nil {
+		return err
+	}
+
+	imp, err := createImporter(options)
+	if err != nil {
+		return err
+	}
+
+	summary, err := imp.Import()
+	if err != nil {
+		handleImportError(err)
+		return err
+	}
+
+	displayResults(summary)
+	handleExitCode(summary)
+	return nil
+}
+
+// validateAndPreparePaths validates the import arguments and prepares the paths list
+func validateAndPreparePaths(cmd *cobra.Command, args []string, resolvedRepoRoot string) ([]string, error) {
 	paths := args
 	if len(paths) == 0 {
 		// No paths specified
 		if resolvedRepoRoot == "." && os.Getenv("MB_REPO_ROOT") == "" && repoRoot == "." {
 			// No repository specified anywhere - error
-			return fmt.Errorf("no repository specified and no files to import\n\n%s", cmd.UsageString())
+			return nil, fmt.Errorf("no repository specified and no files to import\n\n%s", cmd.UsageString())
 		}
 		// Use current directory as import source
 		paths = []string{"."}
 	}
 
 	// Validate filter
-	if importFilter != "" && importFilter != "calls" && importFilter != "sms" {
-		return fmt.Errorf("invalid filter value: %s (must be 'calls' or 'sms')", importFilter)
+	if importFilter != "" && importFilter != callsDir && importFilter != smsDir {
+		return nil, fmt.Errorf("invalid filter value: %s (must be '%s' or '%s')", importFilter, callsDir, smsDir)
 	}
 
+	return paths, nil
+}
+
+// createImportOptions creates and configures the import options
+func createImportOptions(resolvedRepoRoot string, paths []string) (*importer.ImportOptions, error) {
 	// Parse size limits
 	maxXMLSize, err := security.ParseSize(maxXMLSizeStr)
 	if err != nil {
-		return fmt.Errorf("invalid max-xml-size: %w", err)
+		return nil, fmt.Errorf("invalid max-xml-size: %w", err)
 	}
 
 	maxMessageSize, err := security.ParseSize(maxMessageSizeStr)
 	if err != nil {
-		return fmt.Errorf("invalid max-message-size: %w", err)
+		return nil, fmt.Errorf("invalid max-message-size: %w", err)
 	}
 
-	// Create import options
 	// JSON mode forces quiet to ensure clean JSON output
 	effectiveQuiet := quiet || importJSON
 	options := &importer.ImportOptions{
@@ -125,9 +155,14 @@ func runImport(cmd *cobra.Command, args []string) error {
 		options.ProgressReporter = &consoleProgressReporter{}
 	}
 
-	// Create importer
+	return options, nil
+}
+
+// createImporter creates and validates the importer instance
+func createImporter(options *importer.ImportOptions) (*importer.Importer, error) {
 	imp, err := importer.NewImporter(options)
 	if err != nil {
+		effectiveQuiet := options.Quiet
 		if !effectiveQuiet {
 			PrintError("Failed to initialize importer: %v", err)
 		}
@@ -135,32 +170,35 @@ func runImport(cmd *cobra.Command, args []string) error {
 		if !testing.Testing() {
 			os.Exit(2)
 		}
-		return err
+		return nil, err
 	}
+	return imp, nil
+}
 
-	// Run import
-	summary, err := imp.Import()
-	if err != nil {
-		if !quiet {
-			PrintError("Import failed: %v", err)
-		}
-		os.Exit(2)
+// handleImportError handles errors from the import process
+func handleImportError(err error) {
+	if !quiet {
+		PrintError("Import failed: %v", err)
 	}
+	os.Exit(2)
+}
 
-	// Display results
+// displayResults displays the import results based on the output format
+func displayResults(summary *importer.ImportSummary) {
+	effectiveQuiet := quiet || importJSON
 	if importJSON {
 		displayJSONSummary(summary)
 	} else if !effectiveQuiet {
 		displaySummary(summary, importDryRun)
 	}
+}
 
-	// Determine exit code
+// handleExitCode determines and sets the appropriate exit code
+func handleExitCode(summary *importer.ImportSummary) {
 	totalRejected := summary.Calls.Total.Rejected + summary.SMS.Total.Rejected
 	if totalRejected > 0 && !noErrorOnRejects {
 		os.Exit(1)
 	}
-
-	return nil
 }
 
 // resolveImportRepoRoot determines the repository root directory
@@ -211,107 +249,146 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 
 	fmt.Println("\nImport Summary:")
 
-	// Display calls statistics
-	if importFilter == "" || importFilter == "calls" {
-		fmt.Println("\nCalls:")
-		if len(summary.Calls.YearStats) > 0 {
-			// Sort years in ascending order for consistent display
-			var years []int
-			for year := range summary.Calls.YearStats {
-				years = append(years, year)
-			}
-			sort.Ints(years)
+	displayCallsStatistics(summary)
+	displaySMSStatistics(summary)
+	displayAttachmentStatistics(summary)
+	displayRejectionStatistics(summary)
+	displayRejectionFiles(summary)
+	displayTiming(summary)
+}
 
-			for _, year := range years {
-				stats := summary.Calls.YearStats[year]
-				fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
-					year, stats.Final, stats.Added, stats.Duplicates)
-			}
-			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
-				summary.Calls.Total.Final, summary.Calls.Total.Added, summary.Calls.Total.Duplicates)
-		}
+// displayCallsStatistics displays call statistics in the summary
+func displayCallsStatistics(summary *importer.ImportSummary) {
+	if importFilter != "" && importFilter != "calls" {
+		return
 	}
 
-	// Display SMS statistics
-	if importFilter == "" || importFilter == "sms" {
-		fmt.Println("SMS:")
-		if len(summary.SMS.YearStats) > 0 {
-			// Sort years in ascending order for consistent display
-			var years []int
-			for year := range summary.SMS.YearStats {
-				years = append(years, year)
-			}
-			sort.Ints(years)
+	fmt.Println("\nCalls:")
+	if len(summary.Calls.YearStats) > 0 {
+		displayYearStats(summary.Calls.YearStats)
+		fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
+			summary.Calls.Total.Final, summary.Calls.Total.Added, summary.Calls.Total.Duplicates)
+	}
+}
 
-			for _, year := range years {
-				stats := summary.SMS.YearStats[year]
-				fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
-					year, stats.Final, stats.Added, stats.Duplicates)
-			}
-			fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
-				summary.SMS.Total.Final, summary.SMS.Total.Added, summary.SMS.Total.Duplicates)
-		}
+// displaySMSStatistics displays SMS statistics in the summary
+func displaySMSStatistics(summary *importer.ImportSummary) {
+	if importFilter != "" && importFilter != smsDir {
+		return
 	}
 
-	// Display attachment statistics
+	fmt.Println("SMS:")
+	if len(summary.SMS.YearStats) > 0 {
+		displayYearStats(summary.SMS.YearStats)
+		fmt.Printf("  Total: %d entries (%d new, %d duplicates)\n",
+			summary.SMS.Total.Final, summary.SMS.Total.Added, summary.SMS.Total.Duplicates)
+	}
+}
+
+// displayYearStats displays year-by-year statistics
+func displayYearStats(yearStats map[int]*importer.YearStat) {
+	// Sort years in ascending order for consistent display
+	years := make([]int, 0, len(yearStats))
+	for year := range yearStats {
+		years = append(years, year)
+	}
+	sort.Ints(years)
+
+	for _, year := range years {
+		stats := yearStats[year]
+		fmt.Printf("  %d: %d entries (%d new, %d duplicates)\n",
+			year, stats.Final, stats.Added, stats.Duplicates)
+	}
+}
+
+// displayAttachmentStatistics displays attachment statistics in the summary
+func displayAttachmentStatistics(summary *importer.ImportSummary) {
 	if (importFilter == "" || importFilter == "sms") && summary.Attachments.Total.Total > 0 {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
 			summary.Attachments.Total.Total, summary.Attachments.Total.New,
 			summary.Attachments.Total.Duplicates)
 	}
+}
 
-	// Display rejection statistics
+// displayRejectionStatistics displays rejection statistics in the summary
+func displayRejectionStatistics(summary *importer.ImportSummary) {
+	totalRejections := calculateTotalRejections(summary)
+	if totalRejections == 0 {
+		return
+	}
+
+	fmt.Println("Rejections:")
+	displayCallsRejections(summary)
+	displaySMSRejections()
+	fmt.Printf("  Total: %d\n", totalRejections)
+}
+
+// calculateTotalRejections calculates the total number of rejections
+func calculateTotalRejections(summary *importer.ImportSummary) int {
 	totalRejections := 0
 	for _, stats := range summary.Rejections {
 		totalRejections += stats.Count
 	}
+	return totalRejections
+}
 
-	if totalRejections > 0 {
-		fmt.Println("Rejections:")
-		if importFilter == "" || importFilter == "calls" {
-			callsRej := 0
-			for _, stats := range summary.Rejections {
-				if stats.Count > 0 {
-					callsRej += stats.Count
-				}
-			}
-			if callsRej > 0 {
-				fmt.Printf("  Calls: %d", callsRej)
-				// Show breakdown by reason
-				first := true
-				for reason, stats := range summary.Rejections {
-					if stats.Count > 0 {
-						if first {
-							fmt.Printf(" (%s: %d", reason, stats.Count)
-							first = false
-						} else {
-							fmt.Printf(", %s: %d", reason, stats.Count)
-						}
-					}
-				}
-				if !first {
-					fmt.Println(")")
-				} else {
-					fmt.Println()
-				}
-			}
-		}
-
-		if importFilter == "" || importFilter == "sms" {
-			// TODO: Track SMS-specific rejections separately
-			fmt.Printf("  SMS: 0\n")
-		}
-
-		fmt.Printf("  Total: %d\n", totalRejections)
+// displayCallsRejections displays call-specific rejection statistics
+func displayCallsRejections(summary *importer.ImportSummary) {
+	if importFilter != "" && importFilter != "calls" {
+		return
 	}
 
-	// Display rejection files if any
+	callsRej := 0
+	for _, stats := range summary.Rejections {
+		if stats.Count > 0 {
+			callsRej += stats.Count
+		}
+	}
+
+	if callsRej > 0 {
+		fmt.Printf("  Calls: %d", callsRej)
+		displayRejectionBreakdown(summary.Rejections)
+	}
+}
+
+// displayRejectionBreakdown displays rejection breakdown by reason
+func displayRejectionBreakdown(rejections map[string]*importer.RejectionStats) {
+	first := true
+	for reason, stats := range rejections {
+		if stats.Count > 0 {
+			if first {
+				fmt.Printf(" (%s: %d", reason, stats.Count)
+				first = false
+			} else {
+				fmt.Printf(", %s: %d", reason, stats.Count)
+			}
+		}
+	}
+	if !first {
+		fmt.Println(")")
+	} else {
+		fmt.Println()
+	}
+}
+
+// displaySMSRejections displays SMS-specific rejection statistics
+func displaySMSRejections() {
+	if importFilter == "" || importFilter == "sms" {
+		// TODO: Track SMS-specific rejections separately
+		fmt.Printf("  SMS: 0\n")
+	}
+}
+
+// displayRejectionFiles displays information about rejection files
+func displayRejectionFiles(summary *importer.ImportSummary) {
 	if len(summary.RejectionFiles) > 0 {
 		fmt.Println("\nRejected entries saved to: rejected/")
 	}
+}
 
-	// Display timing
+// displayTiming displays timing information
+func displayTiming(summary *importer.ImportSummary) {
 	fmt.Printf("\nFiles processed: %d\n", summary.FilesProcessed)
 	fmt.Printf("Time taken: %.1fs\n", summary.Duration.Seconds())
 }
@@ -323,7 +400,7 @@ func sortYearStatsForJSON(yearStats map[int]*importer.YearStat) map[string]inter
 	}
 
 	// Sort years in ascending order
-	var years []int
+	years := make([]int, 0, len(yearStats))
 	for year := range yearStats {
 		years = append(years, year)
 	}

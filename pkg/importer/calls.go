@@ -1,3 +1,6 @@
+// Package importer provides orchestration functionality for importing mobile backup data.
+// It coordinates the processing of calls, SMS/MMS, and attachment data, handling
+// deduplication, validation, and repository organization during the import process.
 package importer
 
 import (

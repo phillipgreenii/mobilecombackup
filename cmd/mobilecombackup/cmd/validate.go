@@ -43,7 +43,8 @@ func init() {
 
 	// Local flags
 	validateCmd.Flags().BoolVar(&outputJSON, "output-json", false, "Output results in JSON format")
-	validateCmd.Flags().BoolVar(&removeOrphanAttachments, "remove-orphan-attachments", false, "Remove orphaned attachment files")
+	validateCmd.Flags().BoolVar(&removeOrphanAttachments, "remove-orphan-attachments", false,
+		"Remove orphaned attachment files")
 	validateCmd.Flags().BoolVar(&validateDryRun, "dry-run", false, "Show what would be done without making changes")
 	validateCmd.Flags().BoolVar(&autofixEnabled, "autofix", false, "Automatically fix safe validation violations")
 }
@@ -341,16 +342,32 @@ func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentRead
 	reporter.StartPhase("orphan attachment removal")
 	defer reporter.CompletePhase()
 
+	orphanedAttachments, totalCount, err := findOrphanedAttachments(smsReader, attachmentReader)
+	if err != nil {
+		return nil, err
+	}
+
+	result := createOrphanRemovalResult(totalCount, orphanedAttachments)
+
+	if validateDryRun {
+		return handleDryRunOrphanRemoval(result, orphanedAttachments), nil
+	}
+
+	return executeOrphanRemoval(result, orphanedAttachments, attachmentReader), nil
+}
+
+// findOrphanedAttachments finds and returns orphaned attachments
+func findOrphanedAttachments(smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager) ([]*attachments.Attachment, int, error) {
 	// Get all attachment references from SMS messages
 	referencedHashes, err := smsReader.GetAllAttachmentRefs()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get attachment references: %w", err)
+		return nil, 0, fmt.Errorf("failed to get attachment references: %w", err)
 	}
 
 	// Find orphaned attachments
 	orphanedAttachments, err := attachmentReader.FindOrphanedAttachments(referencedHashes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find orphaned attachments: %w", err)
+		return nil, 0, fmt.Errorf("failed to find orphaned attachments: %w", err)
 	}
 
 	// Count total attachments scanned
@@ -360,10 +377,15 @@ func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentRead
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to count attachments: %w", err)
+		return nil, 0, fmt.Errorf("failed to count attachments: %w", err)
 	}
 
-	result := &OrphanRemovalResult{
+	return orphanedAttachments, totalCount, nil
+}
+
+// createOrphanRemovalResult creates an initial orphan removal result
+func createOrphanRemovalResult(totalCount int, orphanedAttachments []*attachments.Attachment) *OrphanRemovalResult {
+	return &OrphanRemovalResult{
 		AttachmentsScanned: totalCount,
 		OrphansFound:       len(orphanedAttachments),
 		OrphansRemoved:     0,
@@ -371,39 +393,25 @@ func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentRead
 		RemovalFailures:    0,
 		FailedRemovals:     []FailedRemoval{},
 	}
+}
 
-	// If dry run, don't actually remove files
-	if validateDryRun {
-		// Calculate potential bytes freed
-		for _, attachment := range orphanedAttachments {
-			result.BytesFreed += attachment.Size
-		}
-		result.OrphansRemoved = len(orphanedAttachments) // Would be removed
-		return result, nil
+// handleDryRunOrphanRemoval handles dry run mode for orphan removal
+func handleDryRunOrphanRemoval(result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment) *OrphanRemovalResult {
+	// Calculate potential bytes freed
+	for _, attachment := range orphanedAttachments {
+		result.BytesFreed += attachment.Size
 	}
+	result.OrphansRemoved = len(orphanedAttachments) // Would be removed
+	return result
+}
 
-	// Remove orphaned attachments
+// executeOrphanRemoval executes the actual removal of orphaned attachments
+func executeOrphanRemoval(result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment, attachmentReader *attachments.AttachmentManager) *OrphanRemovalResult {
 	repoPath := attachmentReader.GetRepoPath()
 	emptyDirs := make(map[string]bool) // Track directories that might become empty
 
 	for _, attachment := range orphanedAttachments {
-		fullPath := filepath.Join(repoPath, attachment.Path)
-
-		// Track the directory for potential cleanup
-		dir := filepath.Dir(attachment.Path)
-		emptyDirs[dir] = true
-
-		// Attempt to remove the file
-		if err := os.Remove(fullPath); err != nil {
-			result.RemovalFailures++
-			result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
-				Path:  attachment.Path,
-				Error: err.Error(),
-			})
-		} else {
-			result.OrphansRemoved++
-			result.BytesFreed += attachment.Size
-		}
+		removeOrphanedAttachment(attachment, repoPath, result, emptyDirs)
 	}
 
 	// Clean up empty directories
@@ -411,7 +419,28 @@ func removeOrphanAttachmentsWithProgress(smsReader sms.SMSReader, attachmentRead
 		cleanupEmptyDirectory(filepath.Join(repoPath, dir))
 	}
 
-	return result, nil
+	return result
+}
+
+// removeOrphanedAttachment removes a single orphaned attachment
+func removeOrphanedAttachment(attachment *attachments.Attachment, repoPath string, result *OrphanRemovalResult, emptyDirs map[string]bool) {
+	fullPath := filepath.Join(repoPath, attachment.Path)
+
+	// Track the directory for potential cleanup
+	dir := filepath.Dir(attachment.Path)
+	emptyDirs[dir] = true
+
+	// Attempt to remove the file
+	if err := os.Remove(fullPath); err != nil {
+		result.RemovalFailures++
+		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
+			Path:  attachment.Path,
+			Error: err.Error(),
+		})
+	} else {
+		result.OrphansRemoved++
+		result.BytesFreed += attachment.Size
+	}
 }
 
 // cleanupEmptyDirectory removes a directory if it's empty

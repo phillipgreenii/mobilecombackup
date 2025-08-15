@@ -244,7 +244,7 @@ func TestAttachmentManager_Integration_CrossReference(t *testing.T) {
 		"orphaned content",
 	}
 
-	var hashes []string
+	hashes := make([]string, 0, len(testContents))
 	for _, content := range testContents {
 		hasher := sha256.New()
 		hasher.Write([]byte(content))
