@@ -65,11 +65,11 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 	}
 
 	// 6. Resolve symlinks to real path (prevents symlink attacks)
-	real, err := filepath.EvalSymlinks(absPath)
+	realPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
 		// If EvalSymlinks fails, the path might not exist, which is often OK
 		// Fall back to Abs for non-existing paths
-		real, err = filepath.Abs(absPath)
+		realPath, err = filepath.Abs(absPath)
 		if err != nil {
 			return "", fmt.Errorf("%w: failed to resolve path: %v", ErrInvalidPath, err)
 		}
@@ -82,15 +82,15 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 	}
 
 	// Ensure both paths have trailing separators for accurate prefix checking
-	realWithSep := real + string(filepath.Separator)
+	realWithSep := realPath + string(filepath.Separator)
 	baseWithSep := absBase + string(filepath.Separator)
 
 	if !strings.HasPrefix(realWithSep, baseWithSep) {
-		return "", fmt.Errorf("%w: resolved path %q is outside base directory %q", ErrPathOutsideRepository, real, absBase)
+		return "", fmt.Errorf("%w: resolved path %q is outside base directory %q", ErrPathOutsideRepository, realPath, absBase)
 	}
 
 	// 8. Return path relative to base directory
-	relPath, err := filepath.Rel(absBase, real)
+	relPath, err := filepath.Rel(absBase, realPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to make path relative: %w", err)
 	}

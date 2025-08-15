@@ -48,7 +48,7 @@ type OptimizedRepositoryValidator interface {
 	ValidateAsync(options *PerformanceOptions) (<-chan *ValidationReport, <-chan error)
 
 	// GetMetrics returns current validation performance metrics
-	GetMetrics() *ValidationMetrics
+	GetMetrics() *Metrics
 
 	// ClearCache clears the validation cache
 	ClearCache()
@@ -58,11 +58,11 @@ type OptimizedRepositoryValidator interface {
 type OptimizedRepositoryValidatorImpl struct {
 	*RepositoryValidatorImpl
 	cache   *validationCache
-	metrics *ValidationMetrics
+	metrics *Metrics
 }
 
-// ValidationMetrics tracks validation performance statistics
-type ValidationMetrics struct {
+// Metrics tracks validation performance statistics
+type Metrics struct {
 	mu                  sync.RWMutex
 	TotalDuration       time.Duration
 	StructureDuration   time.Duration
@@ -109,7 +109,7 @@ func NewOptimizedRepositoryValidator(base RepositoryValidator) OptimizedReposito
 			enabled:      true,
 			maxSize:      1000,
 		},
-		metrics: &ValidationMetrics{},
+		metrics: &Metrics{},
 	}
 }
 
@@ -386,12 +386,12 @@ func (v *OptimizedRepositoryValidatorImpl) determineStatus(report *ValidationRep
 }
 
 // GetMetrics returns current validation performance metrics
-func (v *OptimizedRepositoryValidatorImpl) GetMetrics() *ValidationMetrics {
+func (v *OptimizedRepositoryValidatorImpl) GetMetrics() *Metrics {
 	v.metrics.mu.RLock()
 	defer v.metrics.mu.RUnlock()
 
 	// Return a copy to avoid race conditions
-	return &ValidationMetrics{
+	return &Metrics{
 		TotalDuration:       v.metrics.TotalDuration,
 		StructureDuration:   v.metrics.StructureDuration,
 		ManifestDuration:    v.metrics.ManifestDuration,
@@ -423,11 +423,11 @@ func (e *EarlyTerminationError) Error() string {
 	return fmt.Sprintf("validation terminated early at stage '%s' due to critical errors", e.Stage)
 }
 
-// ValidationTimeout indicates validation exceeded the specified timeout
-type ValidationTimeout struct {
+// Timeout indicates validation exceeded the specified timeout
+type Timeout struct {
 	Timeout time.Duration
 }
 
-func (e *ValidationTimeout) Error() string {
+func (e *Timeout) Error() string {
 	return fmt.Sprintf("validation timed out after %v", e.Timeout)
 }

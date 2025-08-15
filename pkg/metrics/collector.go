@@ -9,18 +9,18 @@ import (
 
 // PrometheusMetrics implements the Metrics interface using Prometheus
 type PrometheusMetrics struct {
-	registry     *MetricsRegistry
+	registry     *Registry
 	promRegistry *prometheus.Registry
 	enabled      bool
 }
 
 // NewPrometheusMetrics creates a new Prometheus metrics collector
-func NewPrometheusMetrics(config *MetricsConfig) *PrometheusMetrics {
+func NewPrometheusMetrics(config *Config) *PrometheusMetrics {
 	if config == nil {
-		config = DefaultMetricsConfig()
+		config = DefaultConfig()
 	}
 
-	registry := &MetricsRegistry{}
+	registry := &Registry{}
 	promRegistry := prometheus.NewRegistry()
 
 	// Only create metrics if enabled
@@ -36,8 +36,8 @@ func NewPrometheusMetrics(config *MetricsConfig) *PrometheusMetrics {
 }
 
 // createMetricsRegistry creates and registers all Prometheus metrics
-func createMetricsRegistry(config *MetricsConfig, promRegistry *prometheus.Registry) *MetricsRegistry {
-	registry := &MetricsRegistry{}
+func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *Registry {
+	registry := &Registry{}
 
 	// Import metrics
 	registry.ImportDuration = prometheus.NewHistogramVec(

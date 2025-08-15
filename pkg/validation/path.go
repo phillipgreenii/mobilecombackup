@@ -13,7 +13,7 @@ import (
 	customerrors "github.com/phillipgreen/mobilecombackup/pkg/errors"
 )
 
-// Maximum path length to prevent resource exhaustion attacks
+// MaxPathLength defines the maximum allowed path length to prevent resource exhaustion attacks
 const MaxPathLength = 4096
 
 // PathValidator provides secure path validation to prevent directory traversal attacks.

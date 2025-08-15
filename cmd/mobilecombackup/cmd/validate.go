@@ -118,15 +118,15 @@ func (r *ConsoleProgressReporter) CompletePhase() {
 type NullProgressReporter struct{}
 
 // StartPhase is a no-op for the null reporter
-func (r *NullProgressReporter) StartPhase(phase string) {}
+func (r *NullProgressReporter) StartPhase(_ string) {}
 
 // UpdateProgress is a no-op for the null reporter
-func (r *NullProgressReporter) UpdateProgress(current, total int) {}
+func (r *NullProgressReporter) UpdateProgress(_, _ int) {}
 
 // CompletePhase is a no-op for the null reporter
 func (r *NullProgressReporter) CompletePhase() {}
 
-func runValidate(_ *cobra.Command, args []string) error {
+func runValidate(_ *cobra.Command, _ []string) error {
 	// Resolve repository root
 	repoPath := resolveRepoRoot()
 
@@ -310,6 +310,7 @@ type AutofixProgressReporter struct {
 	operationsTotal int
 }
 
+// StartOperation reports the start of an autofix operation
 func (r *AutofixProgressReporter) StartOperation(operation string, details string) {
 	r.operationCount++
 
@@ -325,6 +326,7 @@ func (r *AutofixProgressReporter) StartOperation(operation string, details strin
 	fmt.Printf("  [%d/%d] Starting %s: %s\n", r.operationCount, r.operationsTotal, operation, details)
 }
 
+// CompleteOperation reports the completion of an autofix operation
 func (r *AutofixProgressReporter) CompleteOperation(success bool, details string) {
 	if !r.verbose {
 		// In non-verbose mode, just update the progress counter
@@ -339,6 +341,7 @@ func (r *AutofixProgressReporter) CompleteOperation(success bool, details string
 	fmt.Printf("    %s %s\n", status, details)
 }
 
+// ReportProgress reports overall progress of autofix operations
 func (r *AutofixProgressReporter) ReportProgress(current, total int) {
 	// Update the total count if we get more accurate information
 	if total > 0 && r.operationsTotal == 0 {

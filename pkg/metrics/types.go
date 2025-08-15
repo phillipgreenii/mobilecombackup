@@ -32,8 +32,8 @@ type Metrics interface {
 	RecordCPUUsage(operation string, percentage float64)
 }
 
-// MetricsRegistry holds all Prometheus metrics
-type MetricsRegistry struct {
+// Registry holds all Prometheus metrics
+type Registry struct {
 	// Import metrics
 	ImportDuration   *prometheus.HistogramVec
 	FilesProcessed   *prometheus.CounterVec
@@ -58,8 +58,8 @@ type MetricsRegistry struct {
 	CPUUsage    *prometheus.GaugeVec
 }
 
-// MetricsConfig holds metrics configuration
-type MetricsConfig struct {
+// Config holds metrics configuration
+type Config struct {
 	Enabled   bool   `yaml:"enabled" mapstructure:"enabled"`
 	Namespace string `yaml:"namespace" mapstructure:"namespace"`
 	Subsystem string `yaml:"subsystem" mapstructure:"subsystem"`
@@ -68,9 +68,9 @@ type MetricsConfig struct {
 	Detailed  bool   `yaml:"detailed" mapstructure:"detailed"` // Enable detailed metrics collection
 }
 
-// DefaultMetricsConfig returns the default metrics configuration
-func DefaultMetricsConfig() *MetricsConfig {
-	return &MetricsConfig{
+// DefaultConfig returns the default metrics configuration
+func DefaultConfig() *Config {
+	return &Config{
 		Enabled:   false, // Disabled by default
 		Namespace: "mobilecombackup",
 		Subsystem: "",
@@ -84,9 +84,12 @@ func DefaultMetricsConfig() *MetricsConfig {
 type HealthStatus string
 
 const (
-	HealthStatusHealthy   HealthStatus = "healthy"
+	// HealthStatusHealthy indicates all systems are functioning normally
+	HealthStatusHealthy HealthStatus = "healthy"
+	// HealthStatusUnhealthy indicates critical systems are failing
 	HealthStatusUnhealthy HealthStatus = "unhealthy"
-	HealthStatusDegraded  HealthStatus = "degraded"
+	// HealthStatusDegraded indicates some systems are impaired but still functional
+	HealthStatusDegraded HealthStatus = "degraded"
 )
 
 // HealthCheck represents a health check result

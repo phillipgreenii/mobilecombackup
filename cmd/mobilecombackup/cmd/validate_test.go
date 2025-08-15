@@ -117,7 +117,7 @@ func TestProgressReporter(t *testing.T) {
 		}
 	})
 
-	t.Run("NullProgressReporter", func(t *testing.T) {
+	t.Run("NullProgressReporter", func(_ *testing.T) {
 		// Should not panic or produce output
 		reporter := &NullProgressReporter{}
 		reporter.StartPhase("test")

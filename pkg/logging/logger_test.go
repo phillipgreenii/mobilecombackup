@@ -191,7 +191,7 @@ func TestWithContext(t *testing.T) {
 	}
 }
 
-func TestNullLogger(t *testing.T) {
+func TestNullLogger(_ *testing.T) {
 	// Null logger should not produce any output
 	logger := NewNullLogger()
 

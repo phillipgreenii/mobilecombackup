@@ -19,11 +19,16 @@ var (
 type SizeUnit int64
 
 const (
+	// Byte represents one byte
 	Byte SizeUnit = 1
-	KB   SizeUnit = 1024
-	MB   SizeUnit = 1024 * KB
-	GB   SizeUnit = 1024 * MB
-	TB   SizeUnit = 1024 * GB
+	// KB represents one kilobyte (1024 bytes)
+	KB SizeUnit = 1024
+	// MB represents one megabyte (1024 KB)
+	MB SizeUnit = 1024 * KB
+	// GB represents one gigabyte (1024 MB)
+	GB SizeUnit = 1024 * MB
+	// TB represents one terabyte (1024 GB)
+	TB SizeUnit = 1024 * GB
 )
 
 // Size limits for validation

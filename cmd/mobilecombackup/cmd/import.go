@@ -237,7 +237,7 @@ func (r *consoleProgressReporter) UpdateProgress(processed, _ int) {
 	}
 }
 
-func (r *consoleProgressReporter) EndFile(_ string, stat *importer.YearStat) {
+func (r *consoleProgressReporter) EndFile(_ string, _ *importer.YearStat) {
 	fmt.Println("done")
 }
 

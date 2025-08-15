@@ -11,7 +11,7 @@ import (
 // Example of using Prometheus metrics for import operations
 func ExamplePrometheusMetrics() {
 	// Create metrics configuration
-	config := &metrics.MetricsConfig{
+	config := &metrics.Config{
 		Enabled:   true,
 		Namespace: "mobilecombackup",
 		Subsystem: "import",
@@ -56,15 +56,15 @@ func ExampleHealthRegistry() {
 }
 
 // Example of running metrics server with health checks
-func ExampleMetricsServerManager() {
-	config := &metrics.MetricsConfig{
+func ExampleServerManager() {
+	config := &metrics.Config{
 		Enabled: true,
 		Listen:  ":9090",
 		Path:    "/metrics",
 	}
 
 	// Create server manager with default health checks
-	manager := metrics.NewMetricsServerManager(config)
+	manager := metrics.NewServerManager(config)
 
 	// Start the server (in production, handle errors appropriately)
 	if err := manager.Start(); err != nil {
@@ -133,9 +133,9 @@ func ExampleCustomHealthChecker() {
 }
 
 // Example of using default metrics configuration
-func ExampleDefaultMetricsConfig() {
+func ExampleDefaultConfig() {
 	// Get default configuration (metrics disabled by default)
-	config := metrics.DefaultMetricsConfig()
+	config := metrics.DefaultConfig()
 
 	fmt.Printf("Enabled: %t\n", config.Enabled)
 	fmt.Printf("Namespace: %s\n", config.Namespace)

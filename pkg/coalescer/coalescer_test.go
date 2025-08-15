@@ -231,7 +231,7 @@ func TestGenericCoalescer_Reset(t *testing.T) {
 	}
 }
 
-func TestGenericCoalescer_ThreadSafety(t *testing.T) {
+func TestGenericCoalescer_ThreadSafety(_ *testing.T) {
 	coalescer := NewCoalescer[mockEntry]()
 
 	// Run concurrent operations

@@ -424,7 +424,7 @@ func TestEarlyTerminationError(t *testing.T) {
 
 func TestValidationTimeout(t *testing.T) {
 	timeout := 5 * time.Minute
-	err := &ValidationTimeout{Timeout: timeout}
+	err := &Timeout{Timeout: timeout}
 
 	expectedMsg := "validation timed out after 5m0s"
 	if err.Error() != expectedMsg {

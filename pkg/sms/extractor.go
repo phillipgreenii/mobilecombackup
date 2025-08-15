@@ -149,7 +149,7 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 }
 
 // shouldExtractContentType determines if a content type should be extracted with detailed decision logging
-func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isExplicitAttachment bool, config ContentTypeConfig) ContentDecision {
+func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isExplicitAttachment bool, _ ContentTypeConfig) ContentDecision {
 	decision := ContentDecision{
 		ContentType: contentType,
 	}

@@ -32,8 +32,11 @@ type ValidationReport struct {
 type ValidationStatus string
 
 const (
-	Valid       ValidationStatus = "valid"
-	Invalid     ValidationStatus = "invalid"
+	// Valid indicates the repository passed all validation checks
+	Valid ValidationStatus = "valid"
+	// Invalid indicates the repository has validation violations
+	Invalid ValidationStatus = "invalid"
+	// ErrorStatus indicates validation could not be completed due to errors
 	ErrorStatus ValidationStatus = "error"
 )
 
@@ -51,25 +54,39 @@ type ValidationViolation struct {
 type ViolationType string
 
 const (
-	MissingFile        ViolationType = "missing_file"
-	ExtraFile          ViolationType = "extra_file"
-	ChecksumMismatch   ViolationType = "checksum_mismatch"
-	InvalidFormat      ViolationType = "invalid_format"
+	// MissingFile indicates a file referenced in the manifest is missing
+	MissingFile ViolationType = "missing_file"
+	// ExtraFile indicates a file exists but is not in the manifest
+	ExtraFile ViolationType = "extra_file"
+	// ChecksumMismatch indicates file content doesn't match expected checksum
+	ChecksumMismatch ViolationType = "checksum_mismatch"
+	// InvalidFormat indicates a file has invalid structure or format
+	InvalidFormat ViolationType = "invalid_format"
+	// OrphanedAttachment indicates an attachment file has no references
 	OrphanedAttachment ViolationType = "orphaned_attachment"
-	CountMismatch      ViolationType = "count_mismatch"
-	SizeMismatch       ViolationType = "size_mismatch"
+	// CountMismatch indicates record count doesn't match expected value
+	CountMismatch ViolationType = "count_mismatch"
+	// SizeMismatch indicates file size doesn't match manifest entry
+	SizeMismatch ViolationType = "size_mismatch"
+	// StructureViolation indicates repository structure is invalid
 	StructureViolation ViolationType = "structure_violation"
-	MissingMarkerFile  ViolationType = "missing_marker_file"
+	// MissingMarkerFile indicates the repository marker file is missing
+	MissingMarkerFile ViolationType = "missing_marker_file"
+	// UnsupportedVersion indicates the repository uses an unsupported format version
 	UnsupportedVersion ViolationType = "unsupported_version"
-	FormatMismatch     ViolationType = "format_mismatch"
-	UnknownFormat      ViolationType = "unknown_format"
+	// FormatMismatch indicates file format doesn't match expected format
+	FormatMismatch ViolationType = "format_mismatch"
+	// UnknownFormat indicates file format cannot be determined
+	UnknownFormat ViolationType = "unknown_format"
 )
 
 // Severity indicates the importance of a validation issue
 type Severity string
 
 const (
-	SeverityError   Severity = "error"
+	// SeverityError indicates a critical validation failure
+	SeverityError Severity = "error"
+	// SeverityWarning indicates a non-critical validation issue
 	SeverityWarning Severity = "warning"
 )
 

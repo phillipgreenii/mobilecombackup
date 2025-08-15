@@ -17,7 +17,7 @@ func TestNewPrometheusMetrics(t *testing.T) {
 	}
 
 	// Test with enabled config
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -34,7 +34,7 @@ func TestNewPrometheusMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_RecordImportDuration(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -48,7 +48,7 @@ func TestPrometheusMetrics_RecordImportDuration(t *testing.T) {
 }
 
 func TestPrometheusMetrics_IncrementFilesProcessed(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -62,7 +62,7 @@ func TestPrometheusMetrics_IncrementFilesProcessed(t *testing.T) {
 }
 
 func TestPrometheusMetrics_IncrementRecordsProcessed(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -76,7 +76,7 @@ func TestPrometheusMetrics_IncrementRecordsProcessed(t *testing.T) {
 }
 
 func TestPrometheusMetrics_RecordBatchSize(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -90,7 +90,7 @@ func TestPrometheusMetrics_RecordBatchSize(t *testing.T) {
 }
 
 func TestPrometheusMetrics_ValidationMetrics(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -105,7 +105,7 @@ func TestPrometheusMetrics_ValidationMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_FileMetrics(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -119,7 +119,7 @@ func TestPrometheusMetrics_FileMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_OperationMetrics(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -133,7 +133,7 @@ func TestPrometheusMetrics_OperationMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_PerformanceMetrics(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled:   true,
 		Namespace: "test",
 		Subsystem: "unit",
@@ -148,7 +148,7 @@ func TestPrometheusMetrics_PerformanceMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_DisabledMetrics(t *testing.T) {
-	config := &MetricsConfig{
+	config := &Config{
 		Enabled: false,
 	}
 
@@ -191,8 +191,8 @@ func TestNullMetrics(t *testing.T) {
 	// Test passes if no panic occurs
 }
 
-func TestDefaultMetricsConfig(t *testing.T) {
-	config := DefaultMetricsConfig()
+func TestDefaultConfig(t *testing.T) {
+	config := DefaultConfig()
 
 	if config.Enabled {
 		t.Error("Expected metrics to be disabled by default")

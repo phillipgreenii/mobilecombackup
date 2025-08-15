@@ -13,16 +13,16 @@ import (
 
 // Server provides HTTP endpoints for metrics and health checks
 type Server struct {
-	config         *MetricsConfig
+	config         *Config
 	healthRegistry HealthRegistry
 	promRegistry   *prometheus.Registry
 	server         *http.Server
 }
 
 // NewServer creates a new metrics server
-func NewServer(config *MetricsConfig, healthRegistry HealthRegistry, promRegistry *prometheus.Registry) *Server {
+func NewServer(config *Config, healthRegistry HealthRegistry, promRegistry *prometheus.Registry) *Server {
 	if config == nil {
-		config = DefaultMetricsConfig()
+		config = DefaultConfig()
 	}
 
 	if promRegistry == nil {
@@ -209,14 +209,14 @@ func (s *Server) writeError(w http.ResponseWriter, statusCode int, message strin
 	s.writeJSON(w, statusCode, response)
 }
 
-// MetricsServerManager manages the metrics server lifecycle
-type MetricsServerManager struct {
+// ServerManager manages the metrics server lifecycle
+type ServerManager struct {
 	server  *Server
 	started bool
 }
 
-// NewMetricsServerManager creates a new metrics server manager
-func NewMetricsServerManager(config *MetricsConfig) *MetricsServerManager {
+// NewServerManager creates a new metrics server manager
+func NewServerManager(config *Config) *ServerManager {
 	healthRegistry := NewHealthRegistry()
 
 	// Register default health checks
@@ -228,13 +228,13 @@ func NewMetricsServerManager(config *MetricsConfig) *MetricsServerManager {
 
 	server := NewServer(config, healthRegistry, promRegistry)
 
-	return &MetricsServerManager{
+	return &ServerManager{
 		server: server,
 	}
 }
 
 // Start starts the metrics server in a goroutine
-func (m *MetricsServerManager) Start() error {
+func (m *ServerManager) Start() error {
 	if m.started {
 		return fmt.Errorf("metrics server already started")
 	}
@@ -255,7 +255,7 @@ func (m *MetricsServerManager) Start() error {
 }
 
 // Stop stops the metrics server
-func (m *MetricsServerManager) Stop() error {
+func (m *ServerManager) Stop() error {
 	if !m.started {
 		return nil
 	}
@@ -272,7 +272,7 @@ func (m *MetricsServerManager) Stop() error {
 }
 
 // RegisterHealthCheck registers a custom health check
-func (m *MetricsServerManager) RegisterHealthCheck(checker HealthChecker) {
+func (m *ServerManager) RegisterHealthCheck(checker HealthChecker) {
 	if m.server.healthRegistry != nil {
 		m.server.healthRegistry.Register(checker)
 	}
