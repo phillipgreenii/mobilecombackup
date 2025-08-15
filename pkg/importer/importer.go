@@ -171,13 +171,13 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		return nil, fmt.Errorf("failed to load contacts: %w", err)
 	}
 
-	if imp.options.Filter == "" || imp.options.Filter == "calls" {
+	if imp.options.Filter == "" || imp.options.Filter == callsDir {
 		if err := imp.callsImporter.LoadRepository(); err != nil {
 			return nil, fmt.Errorf("failed to load calls repository: %w", err)
 		}
 	}
 
-	if imp.options.Filter == "" || imp.options.Filter == "sms" {
+	if imp.options.Filter == "" || imp.options.Filter == smsDir {
 		if err := imp.smsImporter.LoadRepository(); err != nil {
 			return nil, fmt.Errorf("failed to load SMS repository: %w", err)
 		}
@@ -224,13 +224,13 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 			fmt.Println("\nWriting repository...")
 		}
 
-		if imp.options.Filter == "" || imp.options.Filter == "calls" {
+		if imp.options.Filter == "" || imp.options.Filter == callsDir {
 			if err := imp.callsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write calls repository: %w", err)
 			}
 		}
 
-		if imp.options.Filter == "" || imp.options.Filter == "sms" {
+		if imp.options.Filter == "" || imp.options.Filter == smsDir {
 			if err := imp.smsImporter.WriteRepository(); err != nil {
 				return nil, fmt.Errorf("failed to write SMS repository: %w", err)
 			}
@@ -450,7 +450,7 @@ func (imp *Importer) updateSMSSummary(stats *EntityStats, stat *YearStat) {
 
 // finalizeSummary calculates final statistics
 func (imp *Importer) finalizeSummary(summary *ImportSummary) {
-	if imp.options.Filter == "" || imp.options.Filter == "calls" {
+	if imp.options.Filter == "" || imp.options.Filter == callsDir {
 		// Get statistics from calls coalescer
 		coalSummary := imp.callsImporter.GetSummary()
 		summary.Calls.Total.Initial = coalSummary.Initial
@@ -505,7 +505,7 @@ func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 		}
 	}
 
-	if imp.options.Filter == "" || imp.options.Filter == "sms" {
+	if imp.options.Filter == "" || imp.options.Filter == smsDir {
 		// Get statistics from SMS coalescer
 		coalSummary := imp.smsImporter.GetSummary()
 		summary.SMS.Total.Initial = coalSummary.Initial

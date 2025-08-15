@@ -344,9 +344,19 @@ func (n *NullMetrics) IncrementValidationRules(_ string) {}
 func (n *NullMetrics) RecordValidationDuration(_ string, _ time.Duration) {}
 
 // RecordFileSize records the size of a file (no-op for NullMetrics).
-func (n *NullMetrics) RecordFileSize(_ string, _ int64)                     {}
-func (n *NullMetrics) RecordAttachmentSize(size int64)                      {}
-func (n *NullMetrics) SetActiveOperations(operation string, count int)      {}
-func (n *NullMetrics) IncrementOperationErrors(operation, errorType string) {}
-func (n *NullMetrics) RecordMemoryUsage(operation string, bytes int64)      {}
-func (n *NullMetrics) RecordCPUUsage(operation string, percentage float64)  {}
+func (n *NullMetrics) RecordFileSize(_ string, _ int64) {}
+
+// RecordAttachmentSize records attachment size (no-op for NullMetrics)
+func (n *NullMetrics) RecordAttachmentSize(_ int64) {}
+
+// SetActiveOperations sets active operation count (no-op for NullMetrics)
+func (n *NullMetrics) SetActiveOperations(_ string, _ int) {}
+
+// IncrementOperationErrors increments operation error counts (no-op for NullMetrics)
+func (n *NullMetrics) IncrementOperationErrors(_, _ string) {}
+
+// RecordMemoryUsage records memory usage (no-op for NullMetrics)
+func (n *NullMetrics) RecordMemoryUsage(_ string, _ int64) {}
+
+// RecordCPUUsage records CPU usage (no-op for NullMetrics)
+func (n *NullMetrics) RecordCPUUsage(_ string, _ float64) {}

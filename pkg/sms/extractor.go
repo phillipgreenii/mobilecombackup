@@ -11,6 +11,18 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
 )
 
+// Action constants for attachment extraction results
+const (
+	ActionExtracted  = "extracted"
+	ActionReferenced = "referenced"
+	ActionSkipped    = "skipped"
+)
+
+// Content type category constants
+const (
+	CategoryUnknown = "unknown"
+)
+
 // AttachmentExtractor handles extraction of attachments from SMS/MMS messages
 type AttachmentExtractor struct {
 	attachmentManager *attachments.AttachmentManager
@@ -100,7 +112,7 @@ type ContentDecision struct {
 	ShouldExtract bool
 	Reason        string
 	ContentType   string
-	Category      string // "binary", "text", "unknown"
+	Category      string // "binary", "text", CategoryUnknown
 }
 
 // ContentTypeConfig defines which content types to extract vs skip (maintained for backward compatibility)
@@ -146,7 +158,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isEx
 	if contentType == "" {
 		decision.ShouldExtract = false
 		decision.Reason = "missing content type header"
-		decision.Category = "unknown"
+		decision.Category = CategoryUnknown
 		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
 		return decision
 	}
@@ -157,7 +169,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isEx
 	if normalizedType == "" {
 		decision.ShouldExtract = false
 		decision.Reason = "empty content type after normalization"
-		decision.Category = "unknown"
+		decision.Category = CategoryUnknown
 		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
 		return decision
 	}
@@ -183,7 +195,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(contentType string, isEx
 	// Unknown content type - reject with detailed logging for manual review
 	decision.ShouldExtract = false
 	decision.Reason = fmt.Sprintf("unknown content type: %s", normalizedType)
-	decision.Category = "unknown"
+	decision.Category = CategoryUnknown
 	log.Printf("[ATTACHMENT] Content type decision: %+v (ExplicitAttachment: %t)", decision, isExplicitAttachment)
 	return decision
 }
@@ -216,7 +228,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
 			part.Data, part.Text, isExplicitAttachment)
 		return &AttachmentExtractionResult{
-			Action:     "skipped",
+			Action:     ActionSkipped,
 			Reason:     "no-data",
 			UpdatePart: false,
 		}, nil
@@ -228,7 +240,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		log.Printf("[ATTACHMENT] Content type filtering: %s - %s (category: %s)",
 			decision.Reason, part.ContentType, decision.Category)
 		return &AttachmentExtractionResult{
-			Action:     "skipped",
+			Action:     ActionSkipped,
 			Reason:     "content-type-filtered",
 			UpdatePart: false,
 		}, nil
@@ -243,7 +255,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 		// Too small - skip
 		log.Printf("[ATTACHMENT] Skipping small binary content: %d bytes (threshold: 1024)", len(contentToExtract))
 		return &AttachmentExtractionResult{
-			Action:     "skipped",
+			Action:     ActionSkipped,
 			Reason:     "too-small",
 			UpdatePart: false,
 		}, nil
@@ -295,7 +307,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 		log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachment.Path)
 		return &AttachmentExtractionResult{
-			Action:         "referenced",
+			Action:         ActionReferenced,
 			Hash:           hash,
 			Path:           attachment.Path,
 			OriginalSize:   int64(len(decodedData)),
@@ -332,7 +344,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
 	return &AttachmentExtractionResult{
-		Action:         "extracted",
+		Action:         ActionExtracted,
 		Hash:           hash,
 		Path:           attachmentPath,
 		OriginalSize:   int64(len(decodedData)),
@@ -343,7 +355,7 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 
 // AttachmentExtractionResult contains the result of an attachment extraction attempt
 type AttachmentExtractionResult struct {
-	Action         string    // "extracted", "referenced", "skipped"
+	Action         string    // ActionExtracted, "referenced", ActionSkipped
 	Reason         string    // For skipped actions: "no-data", "content-type-filtered", "too-small"
 	Hash           string    // SHA-256 hash of content (if extracted/referenced)
 	Path           string    // Repository-relative path (if extracted/referenced)
@@ -393,13 +405,13 @@ func (ae *AttachmentExtractor) ExtractAttachmentsFromMMS(mms *MMS, config Conten
 
 		// Update counters
 		switch result.Action {
-		case "extracted":
+		case ActionExtracted:
 			summary.ExtractedCount++
 			summary.TotalExtractedSize += result.OriginalSize
-		case "referenced":
+		case ActionReferenced:
 			summary.ReferencedCount++
 			summary.TotalReferencedSize += result.OriginalSize
-		case "skipped":
+		case ActionSkipped:
 			summary.SkippedCount++
 		}
 	}

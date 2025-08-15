@@ -461,8 +461,17 @@ func TestDisplaySummaryYearOrdering(t *testing.T) {
 	output := buf.String()
 
 	// Verify years appear in ascending order for Calls
-	callsSection := output[strings.Index(output, "Calls:"):]
-	smsSection := callsSection[strings.Index(callsSection, "SMS:"):]
+	callsIndex := strings.Index(output, "Calls:")
+	if callsIndex == -1 {
+		t.Fatal("Expected 'Calls:' section in output")
+	}
+	callsSection := output[callsIndex:]
+
+	smsIndex := strings.Index(callsSection, "SMS:")
+	if smsIndex == -1 {
+		t.Fatal("Expected 'SMS:' section in output")
+	}
+	smsSection := callsSection[smsIndex:]
 
 	// For calls section, verify 2020 appears before 2022, which appears before 2024
 	index2020 := strings.Index(callsSection, "2020: 200 entries")

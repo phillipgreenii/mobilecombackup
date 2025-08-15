@@ -24,7 +24,7 @@ func TestEdgeCase_EmptyAttachment(t *testing.T) {
 		t.Fatalf("Expected no error for empty data, got: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected skipped action for empty data, got: %s", result.Action)
 	}
 	if result.Reason != "no-data" {
@@ -46,7 +46,7 @@ func TestEdgeCase_NullAttachment(t *testing.T) {
 		t.Fatalf("Expected no error for null data, got: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected skipped action for null data, got: %s", result.Action)
 	}
 	if result.Reason != "no-data" {
@@ -79,7 +79,7 @@ func TestEdgeCase_CorruptBase64(t *testing.T) {
 			// Some invalid base64 may be skipped due to size, others may fail to decode
 			if err == nil {
 				// If no error, it should have been skipped for another reason
-				if result.Action != "skipped" {
+				if result.Action != ActionSkipped {
 					t.Errorf("Expected corrupt data to be skipped or error, got action: %s", result.Action)
 				}
 			} else {
@@ -114,7 +114,7 @@ func TestEdgeCase_VeryLargeAttachment(t *testing.T) {
 		t.Fatalf("Large attachment extraction failed: %v", err)
 	}
 
-	if result.Action != "extracted" {
+	if result.Action != ActionExtracted {
 		t.Errorf("Expected large attachment to be extracted, got: %s", result.Action)
 	}
 	if result.OriginalSize != int64(len(largeData)) {
@@ -236,7 +236,7 @@ func TestEdgeCase_ExtremelySmallAttachment(t *testing.T) {
 	}
 
 	// Should be skipped due to size filter
-	if result.Action != "skipped" {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected tiny attachment to be skipped, got: %s", result.Action)
 	}
 	if result.Reason != "too-small" {
@@ -319,10 +319,10 @@ func TestEdgeCase_InvalidContentTypeHandling(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			if tt.expectSkip && result.Action != "skipped" {
+			if tt.expectSkip && result.Action != ActionSkipped {
 				t.Errorf("Expected %s to be skipped, got: %s", tt.contentType, result.Action)
 			}
-			if !tt.expectSkip && result.Action == "skipped" && result.Reason == "content-type-filtered" {
+			if !tt.expectSkip && result.Action == ActionSkipped && result.Reason == "content-type-filtered" {
 				t.Errorf("Expected %s to not be skipped for content type, but it was", tt.contentType)
 			}
 		})
@@ -381,9 +381,9 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 
 		result := results[i]
 		switch result.Action {
-		case "extracted":
+		case ActionExtracted:
 			extractedCount++
-		case "referenced":
+		case ActionReferenced:
 			referencedCount++
 		}
 

@@ -378,11 +378,10 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 				if _, err := os.Stat(metadataPath); err == nil {
 					// Valid new format directory - no further validation needed here
 					continue
-				} else {
-					// Directory without metadata.yaml is invalid
-					errors = append(errors, fmt.Sprintf("hash directory missing metadata.yaml: %s/%s", name, entryName))
-					continue
 				}
+				// Directory without metadata.yaml is invalid
+				errors = append(errors, fmt.Sprintf("hash directory missing metadata.yaml: %s/%s", name, entryName))
+				continue
 			}
 
 			// Legacy format: direct file in prefix directory

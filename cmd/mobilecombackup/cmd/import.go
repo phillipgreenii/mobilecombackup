@@ -231,13 +231,13 @@ func (r *consoleProgressReporter) StartFile(path string, totalFiles, currentFile
 	fmt.Printf("  Processing: %s ", r.currentFile)
 }
 
-func (r *consoleProgressReporter) UpdateProgress(processed, rejected int) {
+func (r *consoleProgressReporter) UpdateProgress(processed, _ int) {
 	if processed > 0 && processed%100 == 0 {
 		fmt.Printf("(%d records)... ", processed)
 	}
 }
 
-func (r *consoleProgressReporter) EndFile(path string, stat *importer.YearStat) {
+func (r *consoleProgressReporter) EndFile(_ string, stat *importer.YearStat) {
 	fmt.Println("done")
 }
 

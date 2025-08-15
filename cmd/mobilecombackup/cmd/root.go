@@ -33,10 +33,12 @@ mobile phone backup files, removing duplicates and organizing by year.`,
 	SilenceUsage:  false,
 }
 
+// Execute runs the root command for the CLI
 func Execute() error {
 	return rootCmd.Execute()
 }
 
+// SetVersion sets the version for the CLI
 func SetVersion(v string) {
 	version = v
 	rootCmd.Version = v
@@ -64,11 +66,12 @@ func initLogger() {
 	}
 
 	// Set log level based on flags
-	if quiet {
+	switch {
+	case quiet:
 		config.Level = logging.LevelError
-	} else if verbose {
+	case verbose:
 		config.Level = logging.LevelDebug
-	} else {
+	default:
 		config.Level = logging.LevelInfo
 	}
 
@@ -94,7 +97,7 @@ func UpdateLogger() {
 	initLogger()
 }
 
-// Helper functions for output and logging
+// PrintError prints an error message to the logger
 // Deprecated: Use GetLogger().Error() instead
 func PrintError(format string, args ...interface{}) {
 	logger.Error().Msgf(format, args...)

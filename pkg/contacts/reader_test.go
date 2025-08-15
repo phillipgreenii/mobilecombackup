@@ -12,6 +12,13 @@ const (
 	testContactJohnDoe   = "John Doe"
 	testContactJaneSmith = "Jane Smith"
 	testContactModified  = "Modified"
+
+	// Common test YAML content
+	bobRossBasicYAML = `contacts:
+  - name: "Bob Ross"
+    numbers:
+      - "+15555551234"
+`
 )
 
 func TestContactsManager_LoadContacts_ValidFile(t *testing.T) {
@@ -226,11 +233,7 @@ func TestContactsManager_ContactExists(t *testing.T) {
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
-	yamlContent := `contacts:
-  - name: "Bob Ross"
-    numbers:
-      - "+15555551234"
-`
+	yamlContent := bobRossBasicYAML
 	err := os.WriteFile(contactsPath, []byte(yamlContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
@@ -254,11 +257,7 @@ func TestContactsManager_IsKnownNumber(t *testing.T) {
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
-	yamlContent := `contacts:
-  - name: "Bob Ross"
-    numbers:
-      - "+15555551234"
-`
+	yamlContent := bobRossBasicYAML
 	err := os.WriteFile(contactsPath, []byte(yamlContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)

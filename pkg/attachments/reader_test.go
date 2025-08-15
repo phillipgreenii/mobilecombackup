@@ -282,7 +282,7 @@ func TestAttachmentManager_StreamAttachments_EmptyRepository(t *testing.T) {
 	manager := NewAttachmentManager(tempDir)
 
 	var attachmentCount int
-	err := manager.StreamAttachments(func(attachment *Attachment) error {
+	err := manager.StreamAttachments(func(_ *Attachment) error {
 		attachmentCount++
 		return nil
 	})

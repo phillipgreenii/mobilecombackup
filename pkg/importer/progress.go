@@ -30,7 +30,7 @@ func (r *ConsoleProgressReporter) StartFile(filename string, totalFiles int, cur
 }
 
 // UpdateProgress is called periodically during file processing
-func (r *ConsoleProgressReporter) UpdateProgress(processed, total int) {
+func (r *ConsoleProgressReporter) UpdateProgress(processed, _ int) {
 	if r.quiet {
 		return
 	}
@@ -41,7 +41,7 @@ func (r *ConsoleProgressReporter) UpdateProgress(processed, total int) {
 }
 
 // EndFile is called when finished processing a file
-func (r *ConsoleProgressReporter) EndFile(filename string, summary *YearStat) {
+func (r *ConsoleProgressReporter) EndFile(_ string, summary *YearStat) {
 	if r.quiet {
 		return
 	}

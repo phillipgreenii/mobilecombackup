@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	// Test content type categories
+	categoryUnknown = "unknown"
+)
+
 // Helper to create test PNG data (make it large enough to pass size filter)
 func createTestPNGData() string {
 	// Create a larger PNG-like file (> 1KB when base64 encoded)
@@ -83,8 +88,8 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 		{"WAP container", "application/vnd.wap.multipart.related", false, "text", "text content - keeping inline"},
 
 		// Should not extract - unknown types
-		{"Unknown type", "application/unknown", false, "unknown", "unknown content type: application/unknown"},
-		{"Empty content type", "", false, "unknown", "missing content type header"},
+		{"Unknown type", "application/unknown", false, categoryUnknown, "unknown content type: application/unknown"},
+		{"Empty content type", "", false, categoryUnknown, "missing content type header"},
 	}
 
 	for _, tt := range tests {
@@ -121,7 +126,7 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 		if decision.ShouldExtract {
 			t.Errorf("shouldExtractContentType('application/unknown', true, config).ShouldExtract = true, expected false (unknown types should be rejected)")
 		}
-		if decision.Category != "unknown" {
+		if decision.Category != categoryUnknown {
 			t.Errorf("Expected category 'unknown', got %q", decision.Category)
 		}
 
@@ -140,7 +145,7 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 			expectedCat    string
 			expectedReason string
 		}{
-			{"Whitespace content type", "  \t  ", "unknown", "empty content type after normalization"},
+			{"Whitespace content type", "  \t  ", categoryUnknown, "empty content type after normalization"},
 			{"Content type with semicolon", "image/png;", "binary", "whitelisted binary type"},
 			{"Case insensitive", "IMAGE/JPEG", "binary", "whitelisted binary type"},
 		}
@@ -172,7 +177,7 @@ func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
 		expectedReason   string
 	}{
 		// Malformed content types
-		{"Malformed semicolon only", ";", false, "unknown", "empty content type after normalization"},
+		{"Malformed semicolon only", ";", false, categoryUnknown, "empty content type after normalization"},
 		{"Multiple semicolons", "image/png;;charset=utf-8;", true, "binary", "whitelisted binary type"},
 		{"Content type with trailing space", "image/jpeg ", true, "binary", "whitelisted binary type"},
 		{"Content type with leading space", " image/jpeg", true, "binary", "whitelisted binary type"},
@@ -185,11 +190,11 @@ func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
 		{"Mixed case with charset", "Image/PNG; Charset=UTF-8", true, "binary", "whitelisted binary type"},
 
 		// Boundary conditions
-		{"Just whitespace", "   \t\n  ", false, "unknown", "empty content type after normalization"},
-		{"Single character", "x", false, "unknown", "unknown content type: x"},
-		{"Slash without subtype", "image/", false, "unknown", "unknown content type: image/"},
-		{"Subtype without main type", "/jpeg", false, "unknown", "unknown content type: /jpeg"},
-		{"Double slash", "image//jpeg", false, "unknown", "unknown content type: image//jpeg"},
+		{"Just whitespace", "   \t\n  ", false, categoryUnknown, "empty content type after normalization"},
+		{"Single character", "x", false, categoryUnknown, "unknown content type: x"},
+		{"Slash without subtype", "image/", false, categoryUnknown, "unknown content type: image/"},
+		{"Subtype without main type", "/jpeg", false, categoryUnknown, "unknown content type: /jpeg"},
+		{"Double slash", "image//jpeg", false, categoryUnknown, "unknown content type: image//jpeg"},
 
 		// Common variations and alternatives
 		{"JPEG alt spelling", "image/jpg", true, "binary", "whitelisted binary type"},
@@ -198,10 +203,10 @@ func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
 		{"TIFF short form", "image/tif", true, "binary", "whitelisted binary type"},
 
 		// Common unknown types that should be rejected
-		{"Adobe Flash", "application/x-shockwave-flash", false, "unknown", "unknown content type: application/x-shockwave-flash"},
-		{"Custom application", "application/x-custom-format", false, "unknown", "unknown content type: application/x-custom-format"},
-		{"Binary stream", "application/binary", false, "unknown", "unknown content type: application/binary"},
-		{"Generic data", "application/data", false, "unknown", "unknown content type: application/data"},
+		{"Adobe Flash", "application/x-shockwave-flash", false, categoryUnknown, "unknown content type: application/x-shockwave-flash"},
+		{"Custom application", "application/x-custom-format", false, categoryUnknown, "unknown content type: application/x-custom-format"},
+		{"Binary stream", "application/binary", false, categoryUnknown, "unknown content type: application/binary"},
+		{"Generic data", "application/data", false, categoryUnknown, "unknown content type: application/data"},
 
 		// Text variations that should remain inline
 		{"Rich text format", "text/rtf", false, "text", "text content - keeping inline"},
@@ -372,7 +377,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Duplicate(t *testing.T) {
 		t.Fatalf("Second extraction failed: %v", err)
 	}
 
-	if result2.Action != "referenced" {
+	if result2.Action != ActionReferenced {
 		t.Errorf("Expected second action 'referenced', got %q", result2.Action)
 	}
 

@@ -78,7 +78,7 @@ type node struct {
 	children []string
 }
 
-func runInit(cmd *cobra.Command, args []string) error {
+func runInit(_ *cobra.Command, args []string) error {
 	// Get repository root (from global flag or current directory)
 	targetDir := repoRoot
 	absPath, err := filepath.Abs(targetDir)
@@ -119,7 +119,7 @@ func validateTargetDirectory(path string) error {
 }
 
 // handleStatError handles errors from os.Stat
-func handleStatError(err error, path string) error {
+func handleStatError(err error, _ string) error {
 	if os.IsNotExist(err) {
 		// Directory doesn't exist - this is OK, we'll create it
 		return nil
@@ -164,7 +164,7 @@ func isRepositoryDirectory(name string) bool {
 	return name == callsDir || name == smsDir || name == attachmentsDir
 }
 
-func initializeRepository(repoRoot string, dryRun bool, quiet bool) (*InitResult, error) {
+func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, error) {
 	result := &InitResult{
 		RepoRoot: repoRoot,
 		DryRun:   dryRun,
@@ -337,7 +337,7 @@ func displayInitResult(result *InitResult) {
 	printTree("", root, tree, true, "", true)
 }
 
-func printTree(indent string, node *node, tree map[string]*node, isLast bool, parentPath string, isRoot bool) {
+func printTree(indent string, node *node, tree map[string]*node, isLast bool, _ string, isRoot bool) {
 	// Print current node
 	if isRoot {
 		// Root node - just print name

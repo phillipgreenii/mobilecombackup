@@ -406,7 +406,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_ErrorHandling(t *testing.T) 
 // failingReader is a test helper that always returns an error
 type failingReader struct{}
 
-func (fr *failingReader) Read(p []byte) (n int, err error) {
+func (fr *failingReader) Read(_ []byte) (n int, err error) {
 	return 0, io.ErrUnexpectedEOF
 }
 

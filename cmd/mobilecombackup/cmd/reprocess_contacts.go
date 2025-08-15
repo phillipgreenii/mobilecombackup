@@ -47,7 +47,7 @@ func init() {
 		"Preview what would be reprocessed without making changes")
 }
 
-func runReprocessContacts(cmd *cobra.Command, args []string) error {
+func runReprocessContacts(_ *cobra.Command, args []string) error {
 	// Determine repository root
 	resolvedRepoRoot, err := filepath.Abs(repoRoot)
 	if err != nil {

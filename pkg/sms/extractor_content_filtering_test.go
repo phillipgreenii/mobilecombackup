@@ -7,9 +7,6 @@ import (
 )
 
 const (
-	// Test action constants
-	actionSkipped   = "skipped"
-	actionExtracted = "extracted"
 	// Test reason constants
 	reasonContentTypeFiltered = "content-type-filtered"
 )
@@ -46,7 +43,7 @@ func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != actionSkipped {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected SMIL to be skipped, got action: %s", result.Action)
 	}
 	if result.Reason != reasonContentTypeFiltered {
@@ -84,7 +81,7 @@ func TestContentTypeFiltering_TextPlainNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != actionSkipped {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected text/plain to be skipped, got action: %s", result.Action)
 	}
 	if result.Reason != reasonContentTypeFiltered {
@@ -127,7 +124,7 @@ END:VCARD` + strings.Repeat("\nEXTRA:padding", 50)
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != actionSkipped {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected vCard to be skipped, got action: %s", result.Action)
 	}
 	if result.Reason != reasonContentTypeFiltered {
@@ -153,7 +150,7 @@ func TestContentTypeFiltering_WAPContainerNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != actionSkipped {
+	if result.Action != ActionSkipped {
 		t.Errorf("Expected WAP container to be skipped, got action: %s", result.Action)
 	}
 	if result.Reason != reasonContentTypeFiltered {
@@ -180,7 +177,7 @@ func TestContentTypeFiltering_ImageExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != actionExtracted {
+	if result.Action != ActionExtracted {
 		t.Errorf("Expected image to be extracted, got action: %s", result.Action)
 	}
 	if !result.UpdatePart {
@@ -225,12 +222,12 @@ func TestContentTypeFiltering_ContentTypeWithParameters(t *testing.T) {
 			}
 
 			if tt.shouldSkip {
-				if result.Action != actionSkipped || result.Reason != reasonContentTypeFiltered {
+				if result.Action != ActionSkipped || result.Reason != reasonContentTypeFiltered {
 					t.Errorf("Expected %s to be skipped due to content type, got action: %s, reason: %s",
 						tt.contentType, result.Action, result.Reason)
 				}
 			} else {
-				if result.Action == actionSkipped && result.Reason == reasonContentTypeFiltered {
+				if result.Action == ActionSkipped && result.Reason == reasonContentTypeFiltered {
 					t.Errorf("Expected %s to not be filtered by content type, but it was skipped",
 						tt.contentType)
 				}

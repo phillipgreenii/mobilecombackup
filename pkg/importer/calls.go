@@ -29,7 +29,11 @@ type CallsImporter struct {
 }
 
 // NewCallsImporter creates a new calls importer
-func NewCallsImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) (*CallsImporter, error) {
+func NewCallsImporter(
+	options *ImportOptions,
+	contactsManager *contacts.ContactsManager,
+	yearTracker *YearTracker,
+) (*CallsImporter, error) {
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 

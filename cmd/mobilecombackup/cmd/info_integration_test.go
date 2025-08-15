@@ -253,8 +253,10 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 	// Create test calls data
 	callsContent := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="2">
-  <call number="555-1234" duration="120" date="1388534400000" type="2" readable_date="Jan 1, 2014 12:00:00 AM" contact_name="John Doe" />
-  <call number="555-5678" duration="60" date="1420070400000" type="1" readable_date="Jan 1, 2015 12:00:00 AM" contact_name="Jane Smith" />
+  <call number="555-1234" duration="120" date="1388534400000" type="2" ` +
+		`readable_date="Jan 1, 2014 12:00:00 AM" contact_name="John Doe" />
+  <call number="555-5678" duration="60" date="1420070400000" type="1" ` +
+		`readable_date="Jan 1, 2015 12:00:00 AM" contact_name="Jane Smith" />
 </calls>`
 
 	callsPath := filepath.Join(repoPath, "calls", "calls-2014.xml")
@@ -265,7 +267,8 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 	// Create another calls file for 2015
 	calls2015Content := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="1">
-  <call number="555-9999" duration="90" date="1451606400000" type="1" readable_date="Jan 1, 2016 12:00:00 AM" contact_name="Bob Wilson" />
+  <call number="555-9999" duration="90" date="1451606400000" type="1" ` +
+		`readable_date="Jan 1, 2016 12:00:00 AM" contact_name="Bob Wilson" />
 </calls>`
 
 	calls2015Path := filepath.Join(repoPath, "calls", "calls-2015.xml")
@@ -276,8 +279,11 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 	// Create test SMS data
 	smsContent := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <smses count="2">
-  <sms protocol="0" address="555-1111" date="1388534400000" type="1" subject="null" body="Hello World" read="1" status="-1" locked="0" date_sent="1388534400000" readable_date="Jan 1, 2014 12:00:00 AM" contact_name="Test Contact" />
-  <mms date="1420070400000" msg_box="1" address="555-2222" m_type="132" thread_id="1" text_only="0" read="1" readable_date="Jan 1, 2015 12:00:00 AM" contact_name="MMS Contact">
+  <sms protocol="0" address="555-1111" date="1388534400000" type="1" subject="null" body="Hello World" ` +
+		`read="1" status="-1" locked="0" date_sent="1388534400000" ` +
+		`readable_date="Jan 1, 2014 12:00:00 AM" contact_name="Test Contact" />
+  <mms date="1420070400000" msg_box="1" address="555-2222" m_type="132" thread_id="1" text_only="0" ` +
+		`read="1" readable_date="Jan 1, 2015 12:00:00 AM" contact_name="MMS Contact">
     <parts>
       <part seq="0" ct="text/plain" text="Hello MMS World" />
     </parts>

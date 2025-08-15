@@ -1,3 +1,4 @@
+// Package cmd contains the command-line interface for mobilecombackup
 package cmd
 
 import (

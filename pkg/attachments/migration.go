@@ -113,7 +113,10 @@ func (mm *MigrationManager) MigrateAllAttachments() (*MigrationSummary, error) {
 }
 
 // migrateAttachment migrates a single attachment from legacy to new format
-func (mm *MigrationManager) migrateAttachment(attachment *Attachment, storage *DirectoryAttachmentStorage) MigrationResult {
+func (mm *MigrationManager) migrateAttachment(
+	attachment *Attachment,
+	storage *DirectoryAttachmentStorage,
+) MigrationResult {
 	result := mm.initializeMigrationResult(attachment)
 
 	if mm.logOutput {
@@ -142,7 +145,10 @@ func (mm *MigrationManager) initializeMigrationResult(attachment *Attachment) Mi
 }
 
 // prepareMigrationData reads legacy file and prepares metadata
-func (mm *MigrationManager) prepareMigrationData(attachment *Attachment, result *MigrationResult) ([]byte, AttachmentInfo, error) {
+func (mm *MigrationManager) prepareMigrationData(
+	attachment *Attachment,
+	result *MigrationResult,
+) ([]byte, AttachmentInfo, error) {
 	// Read the legacy attachment content
 	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
 	data, err := os.ReadFile(legacyFullPath)

@@ -14,11 +14,16 @@ import (
 var testBinPath string
 
 func TestMain(m *testing.M) {
+	code := runTestMain(m)
+	os.Exit(code)
+}
+
+func runTestMain(m *testing.M) int {
 	// Build test binary once for all tests
 	tmpDir, err := os.MkdirTemp("", "mobilecombackup-test-*")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create temp dir: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
@@ -26,11 +31,11 @@ func TestMain(m *testing.M) {
 	buildCmd := exec.Command("go", "build", "-o", testBinPath, "../../../cmd/mobilecombackup")
 	if output, err := buildCmd.CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to build test binary: %v\nOutput: %s\n", err, output)
-		os.Exit(1)
+		return 1
 	}
 
 	// Run tests
-	os.Exit(m.Run())
+	return m.Run()
 }
 
 func TestImportIntegration(t *testing.T) {
@@ -135,7 +140,7 @@ func TestImportIntegration(t *testing.T) {
 			},
 			args:         []string{"--json"},
 			wantExitCode: 0,
-			checkFunc: func(t *testing.T, repoPath string) {
+			checkFunc: func(_ *testing.T, repoPath string) {
 				// JSON output is checked in test body
 			},
 		},

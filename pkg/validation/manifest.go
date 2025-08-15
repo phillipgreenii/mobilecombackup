@@ -12,6 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// Manifest file names
+	manifestFileName         = "files.yaml"
+	manifestChecksumFileName = "files.yaml.sha256"
+)
+
 // ManifestValidatorImpl implements ManifestValidator interface
 type ManifestValidatorImpl struct {
 	repositoryRoot string
@@ -26,7 +32,7 @@ func NewManifestValidator(repositoryRoot string) ManifestValidator {
 
 // LoadManifest reads and parses files.yaml
 func (v *ManifestValidatorImpl) LoadManifest() (*FileManifest, error) {
-	manifestPath := filepath.Join(v.repositoryRoot, "files.yaml")
+	manifestPath := filepath.Join(v.repositoryRoot, manifestFileName)
 
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
@@ -59,7 +65,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
-				File:     "files.yaml",
+				File:     manifestFileName,
 				Message:  fmt.Sprintf("Duplicate file entry: %s", entry.Name),
 			})
 		}
@@ -105,7 +111,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 		}
 
 		// Validate file path doesn't include files.yaml or files.yaml.sha256
-		if entry.Name == "files.yaml" || entry.Name == "files.yaml.sha256" {
+		if entry.Name == manifestFileName || entry.Name == manifestChecksumFileName {
 			violations = append(violations, ValidationViolation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
@@ -146,7 +152,7 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 		}
 
 		// Skip files.yaml and files.yaml.sha256
-		if relPath == "files.yaml" || relPath == "files.yaml.sha256" {
+		if relPath == manifestFileName || relPath == manifestChecksumFileName {
 			return nil
 		}
 
@@ -198,8 +204,8 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 
 // VerifyManifestChecksum validates files.yaml.sha256
 func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
-	manifestPath := filepath.Join(v.repositoryRoot, "files.yaml")
-	checksumPath := filepath.Join(v.repositoryRoot, "files.yaml.sha256")
+	manifestPath := filepath.Join(v.repositoryRoot, manifestFileName)
+	checksumPath := filepath.Join(v.repositoryRoot, manifestChecksumFileName)
 
 	// Check if checksum file exists
 	if _, err := os.Stat(checksumPath); os.IsNotExist(err) {
@@ -224,7 +230,7 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 	expectedFilename := parts[1]
 
 	// Validate that it's checking the correct file
-	if expectedFilename != "files.yaml" {
+	if expectedFilename != manifestFileName {
 		return fmt.Errorf("files.yaml.sha256 should reference files.yaml, but references: %s", expectedFilename)
 	}
 

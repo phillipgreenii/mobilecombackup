@@ -249,7 +249,10 @@ func resolveRepoRoot() string {
 	return "."
 }
 
-func validateWithProgress(validator validation.RepositoryValidator, reporter ProgressReporter) ([]validation.ValidationViolation, error) {
+func validateWithProgress(
+	validator validation.RepositoryValidator,
+	reporter ProgressReporter,
+) ([]validation.ValidationViolation, error) {
 	// For now, just run validation without progress reporting
 	// Progress reporting will be added in the validation package in a future enhancement
 	reporter.StartPhase("repository")
@@ -263,7 +266,11 @@ func validateWithProgress(validator validation.RepositoryValidator, reporter Pro
 	return report.Violations, nil
 }
 
-func runAutofixWithProgress(violations []validation.ValidationViolation, repoPath string, reporter ProgressReporter) (*autofix.AutofixReport, error) {
+func runAutofixWithProgress(
+	violations []validation.ValidationViolation,
+	repoPath string,
+	reporter ProgressReporter,
+) (*autofix.AutofixReport, error) {
 	reporter.StartPhase("autofix")
 	defer reporter.CompletePhase()
 

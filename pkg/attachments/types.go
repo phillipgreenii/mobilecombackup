@@ -153,7 +153,7 @@ type AttachmentStats struct {
 	CorruptedCount int   // Number of attachments with hash mismatches
 }
 
-// MIME type to extension mapping
+// MimeExtensions maps MIME types to file extensions
 var MimeExtensions = map[string]string{
 	// Images
 	"image/png":  "png",

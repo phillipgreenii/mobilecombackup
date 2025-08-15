@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	// XML null value constant
+	xmlNullValue = "null"
+)
+
 func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 	reader := NewXMLSMSReader("/test/repo")
 
@@ -44,7 +49,7 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 			name: "SMS with null values",
 			xmlData: `<smses count="1">
 				<sms protocol="0" address="+15555550000" date="1373942505322" type="1" 
-				     subject="null" body="Test message" service_center="null" 
+				     subject=xmlNullValue body="Test message" service_center=xmlNullValue 
 				     read="1" status="-1" locked="0" date_sent="0" 
 				     readable_date="Jul 15, 2013 10:41:45 PM" contact_name="(Unknown)" />
 			</smses>`,
@@ -69,7 +74,7 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 			name: "SMS with escaped characters",
 			xmlData: `<smses count="1">
 				<sms protocol="0" address="7535" date="1373929642000" type="1" 
-				     subject="null" body="Free AT&amp;T msg: Your account # ending in XXXX." 
+				     subject=xmlNullValue body="Free AT&amp;T msg: Your account # ending in XXXX." 
 				     service_center="+13123149623" read="1" status="-1" locked="0" 
 				     date_sent="1373929642000" readable_date="Jul 15, 2013 7:07:22 PM" 
 				     contact_name="(Unknown)" />
@@ -149,7 +154,7 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 				     read="1" msg_box="2" address="+15555550001" m_type="128" 
 				     readable_date="Oct 30, 2014 3:29:04 PM" contact_name="Ted Turner">
 					<parts>
-						<part seq="0" ct="text/plain" name="null" chset="106" 
+						<part seq="0" ct="text/plain" name=xmlNullValue chset="106" 
 						      text="I'm in" />
 					</parts>
 				</mms>
@@ -179,7 +184,7 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 		{
 			name: "MMS with SMIL and text parts",
 			xmlData: `<smses count="1">
-				<mms callback_set="0" text_only="1" sub="null" date="1414712124000" 
+				<mms callback_set="0" text_only="1" sub=xmlNullValue date="1414712124000" 
 				     read="1" msg_box="1" address="+15555550001" m_type="132" 
 				     readable_date="Oct 30, 2014 7:35:24 PM" contact_name="Ted Turner">
 					<parts>
@@ -454,7 +459,7 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 		},
 		{
 			name:     "null date",
-			dateAttr: "null",
+			dateAttr: xmlNullValue,
 			wantErr:  false, // Should handle gracefully with zero time
 		},
 		{
@@ -485,7 +490,7 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && tt.dateAttr != "null" && tt.dateAttr != "" {
+			if !tt.wantErr && tt.dateAttr != xmlNullValue && tt.dateAttr != "" {
 				// Convert epoch milliseconds to time for comparison
 				resultTime := time.Unix(result.Date/1000, (result.Date%1000)*int64(time.Millisecond)).UTC()
 				if resultTime.Year() != tt.expectedYear {

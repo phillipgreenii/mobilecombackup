@@ -140,7 +140,7 @@ func TestInitCommandIntegration(t *testing.T) {
 			},
 			wantError: true,
 			wantText:  "already contains a mobilecombackup repository",
-			validate:  func(_ *testing.T, repoRoot string) {},
+			validate:  func(_ *testing.T, _ string) {},
 		},
 		{
 			name: "init in non-empty directory",
@@ -154,7 +154,7 @@ func TestInitCommandIntegration(t *testing.T) {
 			},
 			wantError: true,
 			wantText:  "directory is not empty",
-			validate:  func(_ *testing.T, repoRoot string) {},
+			validate:  func(_ *testing.T, _ string) {},
 		},
 		{
 			name: "init with custom repo-root",

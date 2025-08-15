@@ -80,7 +80,8 @@ type ImportError struct {
 
 func (e *ImportError) Error() string {
 	if e.Count > 0 {
-		return fmt.Sprintf("import failed during '%s' phase for %s after processing %d items: %v", e.Phase, e.Entity, e.Count, e.Err)
+		return fmt.Sprintf("import failed during '%s' phase for %s after processing %d items: %v",
+			e.Phase, e.Entity, e.Count, e.Err)
 	}
 	return fmt.Sprintf("import failed during '%s' phase for %s: %v", e.Phase, e.Entity, e.Err)
 }

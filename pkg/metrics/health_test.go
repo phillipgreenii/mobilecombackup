@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	testHealthCheckName = "system"
+)
+
 func TestNewHealthRegistry(t *testing.T) {
 	registry := NewHealthRegistry()
 	if registry == nil {
@@ -20,12 +24,12 @@ func TestHealthRegistry_Register(t *testing.T) {
 	registry.Register(checker)
 
 	// Check that the checker was registered
-	result := registry.CheckOne("system")
+	result := registry.CheckOne(testHealthCheckName)
 	if result == nil {
 		t.Fatal("Expected health check result, got nil")
 	}
 
-	if result.Name != "system" {
+	if result.Name != testHealthCheckName {
 		t.Errorf("Expected health check name 'system', got %s", result.Name)
 	}
 }
@@ -42,7 +46,7 @@ func TestHealthRegistry_CheckAll(t *testing.T) {
 		t.Errorf("Expected 2 health check results, got %d", len(results))
 	}
 
-	if _, exists := results["system"]; !exists {
+	if _, exists := results[testHealthCheckName]; !exists {
 		t.Error("Expected 'system' health check in results")
 	}
 
@@ -56,12 +60,12 @@ func TestHealthRegistry_CheckOne(t *testing.T) {
 	registry.Register(NewSystemHealthChecker())
 
 	// Test existing checker
-	result := registry.CheckOne("system")
+	result := registry.CheckOne(testHealthCheckName)
 	if result == nil {
 		t.Fatal("Expected health check result, got nil")
 	}
 
-	if result.Name != "system" {
+	if result.Name != testHealthCheckName {
 		t.Errorf("Expected name 'system', got %s", result.Name)
 	}
 
@@ -97,7 +101,7 @@ func TestHealthRegistry_OverallStatus(t *testing.T) {
 func TestSystemHealthChecker(t *testing.T) {
 	checker := NewSystemHealthChecker()
 
-	if checker.Name() != "system" {
+	if checker.Name() != testHealthCheckName {
 		t.Errorf("Expected name 'system', got %s", checker.Name())
 	}
 
@@ -106,7 +110,7 @@ func TestSystemHealthChecker(t *testing.T) {
 		t.Fatal("Expected health check result, got nil")
 	}
 
-	if result.Name != "system" {
+	if result.Name != testHealthCheckName {
 		t.Errorf("Expected result name 'system', got %s", result.Name)
 	}
 

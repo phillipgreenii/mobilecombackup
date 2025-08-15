@@ -259,7 +259,7 @@ func TestInitializeRepositoryPermissions(t *testing.T) {
 	}
 }
 
-func TestPrintTree(t *testing.T) {
+func TestPrintTree(_ *testing.T) {
 	// This is a display function, so we just ensure it doesn't panic
 	tree := map[string]*node{
 		"": {

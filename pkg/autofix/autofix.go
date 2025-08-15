@@ -865,15 +865,14 @@ func checkWritePermission(path string) error {
 			_ = os.Remove(tempFile)
 		}()
 		return nil
-	} else {
-		// For files, check if we can open them for writing
-		file, err := os.OpenFile(path, os.O_WRONLY, 0)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = file.Close()
-		}()
-		return nil
 	}
+	// For files, check if we can open them for writing
+	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	return nil
 }
