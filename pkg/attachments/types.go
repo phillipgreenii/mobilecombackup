@@ -1,3 +1,73 @@
+// Package attachments provides hash-based storage and management for MMS attachment files.
+//
+// The attachments package implements a content-addressable storage system using SHA-256
+// hashes for organizing attachment files extracted from MMS messages. It supports
+// streaming operations for memory-efficient handling of large files, deduplication
+// through hash-based storage, and metadata management for file attribution.
+//
+// # Storage Architecture
+//
+// Attachments are stored using a two-level directory structure based on SHA-256 hashes:
+//   - First 2 characters of hash form the subdirectory (e.g., "ab/")
+//   - Full hash forms the final directory containing the actual file
+//   - Each attachment has an associated metadata.yaml with file information
+//
+// Example structure:
+//
+//	attachments/
+//	├── ab/
+//	│   └── abc123.../
+//	│       ├── image.png        # The actual attachment file
+//	│       └── metadata.yaml    # File metadata and attribution
+//
+// # Key Features
+//
+//   - Content-addressable storage with SHA-256 hashing
+//   - Automatic deduplication of identical attachments
+//   - Streaming I/O for memory-efficient large file handling
+//   - Atomic operations with temporary files and hash verification
+//   - MIME type detection and filename generation
+//   - Thread-safe concurrent operations
+//   - Migration support for legacy storage formats
+//
+// # Usage Example
+//
+// Basic attachment storage:
+//
+//	storage := NewDirectoryAttachmentStorage("/repo/attachments")
+//
+//	// Store attachment with metadata
+//	info := AttachmentInfo{
+//		Hash:         "abc123...",
+//		OriginalName: "photo.jpg",
+//		MimeType:     "image/jpeg",
+//		Size:         12345,
+//		CreatedAt:    time.Now().UTC(),
+//	}
+//
+//	data := []byte("binary image data...")
+//	err := storage.Store("abc123...", data, info)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Stream large files efficiently
+//	reader := getDataReader() // io.Reader with file data
+//	err = storage.StoreFromReader("def456...", reader, info)
+//
+// # Security Considerations
+//
+//   - Path validation prevents directory traversal attacks
+//   - Hash verification ensures data integrity
+//   - Atomic operations prevent partial writes
+//   - MIME type validation for content filtering
+//
+// # Performance Characteristics
+//
+//   - O(1) lookup and storage operations
+//   - Streaming operations support files larger than available memory
+//   - Parallel processing safe with concurrent goroutines
+//   - Deduplication reduces storage requirements
 package attachments
 
 import (

@@ -1,3 +1,49 @@
+// Package autofix provides automatic repair capabilities for repository validation violations.
+//
+// The autofix package implements intelligent repair strategies for common validation
+// issues found in mobile communication backup repositories. It can automatically
+// fix XML count mismatches, missing marker files, invalid contacts data, and other
+// structural inconsistencies.
+//
+// # Supported Violation Types
+//
+// The autofix system supports automatic repair for these validation violations:
+//   - XML count attribute mismatches (fix count attributes in SMS/call XML files)
+//   - Missing repository marker files (create .mobilecombackup.yaml)
+//   - Invalid contacts data (repair malformed contacts.yaml)
+//   - File structure inconsistencies (correct directory layouts)
+//
+// # Usage Example
+//
+// Basic autofix workflow:
+//
+//	violations := []validation.ValidationViolation{
+//		{Type: validation.XMLCountMismatch, File: "sms/sms-2024.xml"},
+//	}
+//
+//	autofixer := NewAutofixerImpl("/path/to/repository")
+//	options := AutofixOptions{DryRun: true, Verbose: true}
+//
+//	report, err := autofixer.FixViolations(violations, options)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	fmt.Printf("Fixed: %d, Skipped: %d, Errors: %d\n",
+//		report.Summary.FixedCount,
+//		report.Summary.SkippedCount,
+//		report.Summary.ErrorCount)
+//
+// # Safety and Dry-Run Mode
+//
+// All autofix operations support dry-run mode for safe validation of repair
+// strategies before making actual changes. The system creates backups of
+// modified files and validates repairs after application.
+//
+// # Security Considerations
+//
+// Autofix operations include path validation to prevent directory traversal
+// attacks and limit modifications to repository-relative paths only.
 package autofix
 
 import (

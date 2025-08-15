@@ -1,3 +1,69 @@
+// Package coalescer provides generic deduplication and merging capabilities for backup entries.
+//
+// The coalescer package implements a thread-safe, hash-based deduplication system
+// that can work with any entry type implementing the Entry interface. It's designed
+// to efficiently merge multiple backup sources while eliminating duplicates and
+// maintaining chronological order.
+//
+// # Features
+//
+//   - Generic implementation using Go 1.18+ generics
+//   - Thread-safe concurrent operations with RWMutex
+//   - Hash-based O(1) deduplication
+//   - Year-based partitioning support
+//   - Comprehensive summary reporting
+//   - Memory-efficient streaming processing
+//
+// # Entry Interface
+//
+// Any type can be coalesced by implementing the Entry interface:
+//
+//	type MyEntry struct {
+//		ID   string
+//		Data string
+//		Date time.Time
+//	}
+//
+//	func (e MyEntry) Hash() string { return e.ID }
+//	func (e MyEntry) Timestamp() time.Time { return e.Date }
+//	func (e MyEntry) Year() int { return e.Date.Year() }
+//
+// # Usage Example
+//
+// Basic coalescing workflow:
+//
+//	// Create coalescer for specific entry type
+//	coalescer := NewCoalescer[SMS]()
+//
+//	// Load existing entries from repository
+//	existing := []SMS{...}
+//	coalescer.LoadExisting(existing)
+//
+//	// Add new entries (duplicates are automatically filtered)
+//	newEntries := []SMS{...}
+//	for _, entry := range newEntries {
+//		coalescer.Add(entry)
+//	}
+//
+//	// Get deduplicated results sorted by timestamp
+//	results := coalescer.GetSorted()
+//	summary := coalescer.GetSummary()
+//
+//	fmt.Printf("Added %d new entries, found %d duplicates\n",
+//		summary.Added, summary.Duplicates)
+//
+// # Thread Safety
+//
+// All coalescer operations are thread-safe and can be called concurrently
+// from multiple goroutines. The implementation uses read-write locks to
+// optimize for the common case of concurrent reads.
+//
+// # Performance Characteristics
+//
+//   - Add operation: O(1) average case
+//   - Lookup operation: O(1) average case
+//   - GetSorted operation: O(n log n) for sorting
+//   - Memory usage: O(n) where n is unique entries
 package coalescer
 
 import (

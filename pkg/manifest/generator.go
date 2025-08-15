@@ -1,3 +1,64 @@
+// Package manifest provides file manifest generation and verification capabilities.
+//
+// The manifest package creates and manages YAML-based file manifests (files.yaml)
+// that track all files in a repository with their checksums, sizes, and modification
+// times. This enables data integrity verification and change detection across
+// repository operations.
+//
+// # File Manifest Structure
+//
+// The generated files.yaml contains:
+//   - Version information for compatibility tracking
+//   - Generation timestamp and tool information
+//   - Complete file listing with SHA-256 checksums
+//   - File sizes and modification timestamps
+//   - Exclusion of manifest files themselves and rejected/ directories
+//
+// # Usage Example
+//
+// Basic manifest generation:
+//
+//	generator := NewManifestGenerator("/path/to/repository")
+//
+//	// Generate manifest from current repository state
+//	manifest, err := generator.GenerateFileManifest()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Save manifest to files.yaml
+//	err = generator.SaveFileManifest(manifest)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Generate checksum file for the manifest
+//	err = generator.GenerateManifestChecksum()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+// # Security Features
+//
+//   - SHA-256 checksums for strong integrity verification
+//   - Path traversal protection using security package
+//   - Atomic file operations with temporary files
+//   - Exclusion of sensitive or temporary files
+//
+// # File Exclusions
+//
+// The manifest automatically excludes:
+//   - files.yaml (the manifest itself)
+//   - files.yaml.sha256 (the manifest checksum)
+//   - rejected/ directory contents
+//   - Temporary and backup files
+//
+// # Performance Considerations
+//
+// Manifest generation performs full repository scans and calculates checksums
+// for all files. For large repositories, this can be I/O intensive. The operation
+// is designed to be memory-efficient, processing files individually rather than
+// loading entire contents into memory.
 package manifest
 
 import (
