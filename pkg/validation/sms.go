@@ -39,53 +39,13 @@ func NewSMSValidator(repositoryRoot string, smsReader sms.SMSReader) SMSValidato
 
 // ValidateSMSStructure validates SMS directory structure
 func (v *SMSValidatorImpl) ValidateSMSStructure() []ValidationViolation {
-	var violations []ValidationViolation
-
-	// Get available years from reader first
-	years, err := v.smsReader.GetAvailableYears()
-	if err != nil {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "sms/",
-			Message:  fmt.Sprintf("Failed to read available SMS years: %v", err),
-		})
-		return violations
+	adapter := NewSMSReaderAdapter(v.smsReader)
+	config := StructureValidationConfig{
+		DirectoryName: "sms",
+		FilePrefix:    "sms",
+		ContentType:   "SMS",
 	}
-
-	// If no years available, SMS directory is optional
-	if len(years) == 0 {
-		return violations
-	}
-
-	// Check if SMS directory exists (only if we have years)
-	smsDir := filepath.Join(v.repositoryRoot, "sms")
-	if !dirExists(smsDir) {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "sms/",
-			Message:  "Required sms directory not found",
-		})
-		return violations
-	}
-
-	// Validate each year file exists and has correct naming
-	for _, year := range years {
-		expectedFileName := fmt.Sprintf("sms-%d.xml", year)
-		expectedPath := filepath.Join(smsDir, expectedFileName)
-
-		if !fileExists(expectedPath) {
-			violations = append(violations, ValidationViolation{
-				Type:     MissingFile,
-				Severity: SeverityError,
-				File:     filepath.Join("sms", expectedFileName),
-				Message:  fmt.Sprintf("SMS file for year %d not found: %s", year, expectedFileName),
-			})
-		}
-	}
-
-	return violations
+	return ValidateDirectoryStructure(adapter, v.repositoryRoot, config)
 }
 
 // ValidateSMSContent validates SMS file content and consistency
@@ -215,73 +175,13 @@ func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []ValidationVi
 
 // ValidateSMSCounts verifies message counts match manifest/summary
 func (v *SMSValidatorImpl) ValidateSMSCounts(expectedCounts map[int]int) []ValidationViolation {
-	var violations []ValidationViolation
-
-	// Get available years
-	years, err := v.smsReader.GetAvailableYears()
-	if err != nil {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "sms/",
-			Message:  fmt.Sprintf("Failed to read available SMS years: %v", err),
-		})
-		return violations
+	adapter := NewSMSReaderAdapter(v.smsReader)
+	config := StructureValidationConfig{
+		DirectoryName: "sms",
+		FilePrefix:    "sms",
+		ContentType:   "SMS",
 	}
-
-	// Check counts for each year
-	for _, year := range years {
-		fileName := fmt.Sprintf("sms-%d.xml", year)
-		filePath := filepath.Join("sms", fileName)
-
-		// Get actual count from reader
-		actualCount, err := v.smsReader.GetMessageCount(year)
-		if err != nil {
-			violations = append(violations, ValidationViolation{
-				Type:     CountMismatch,
-				Severity: SeverityError,
-				File:     filePath,
-				Message:  fmt.Sprintf("Failed to get message count for year %d: %v", year, err),
-			})
-			continue
-		}
-
-		// Check against expected count if provided
-		if expectedCount, exists := expectedCounts[year]; exists {
-			if actualCount != expectedCount {
-				violations = append(violations, ValidationViolation{
-					Type:     CountMismatch,
-					Severity: SeverityError,
-					File:     filePath,
-					Message:  fmt.Sprintf("Message count mismatch for year %d", year),
-					Expected: fmt.Sprintf("%d", expectedCount),
-					Actual:   fmt.Sprintf("%d", actualCount),
-				})
-			}
-		}
-	}
-
-	// Check for expected years that don't exist
-	for expectedYear := range expectedCounts {
-		found := false
-		for _, year := range years {
-			if year == expectedYear {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			violations = append(violations, ValidationViolation{
-				Type:     MissingFile,
-				Severity: SeverityError,
-				File:     fmt.Sprintf("sms/sms-%d.xml", expectedYear),
-				Message:  fmt.Sprintf("Expected SMS file for year %d not found", expectedYear),
-			})
-		}
-	}
-
-	return violations
+	return ValidateDataCounts(adapter, expectedCounts, config)
 }
 
 // GetAllAttachmentReferences returns all attachment references for cross-validation

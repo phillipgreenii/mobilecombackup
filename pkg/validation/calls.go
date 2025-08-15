@@ -35,53 +35,13 @@ func NewCallsValidator(repositoryRoot string, callsReader calls.CallsReader) Cal
 
 // ValidateCallsStructure validates calls directory structure
 func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
-	var violations []ValidationViolation
-
-	// Get available years from reader first
-	years, err := v.callsReader.GetAvailableYears()
-	if err != nil {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "calls/",
-			Message:  fmt.Sprintf("Failed to read available call years: %v", err),
-		})
-		return violations
+	adapter := NewCallsReaderAdapter(v.callsReader)
+	config := StructureValidationConfig{
+		DirectoryName: "calls",
+		FilePrefix:    "calls",
+		ContentType:   "call",
 	}
-
-	// If no years available, calls directory is optional
-	if len(years) == 0 {
-		return violations
-	}
-
-	// Check if calls directory exists (only if we have years)
-	callsDir := filepath.Join(v.repositoryRoot, "calls")
-	if !dirExists(callsDir) {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "calls/",
-			Message:  "Required calls directory not found",
-		})
-		return violations
-	}
-
-	// Validate each year file exists and has correct naming
-	for _, year := range years {
-		expectedFileName := fmt.Sprintf("calls-%d.xml", year)
-		expectedPath := filepath.Join(callsDir, expectedFileName)
-
-		if !fileExists(expectedPath) {
-			violations = append(violations, ValidationViolation{
-				Type:     MissingFile,
-				Severity: SeverityError,
-				File:     filepath.Join("calls", expectedFileName),
-				Message:  fmt.Sprintf("Call file for year %d not found: %s", year, expectedFileName),
-			})
-		}
-	}
-
-	return violations
+	return ValidateDirectoryStructure(adapter, v.repositoryRoot, config)
 }
 
 // ValidateCallsContent validates calls file content and consistency
@@ -160,71 +120,11 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 
 // ValidateCallsCounts verifies call counts match manifest/summary
 func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []ValidationViolation {
-	var violations []ValidationViolation
-
-	// Get available years
-	years, err := v.callsReader.GetAvailableYears()
-	if err != nil {
-		violations = append(violations, ValidationViolation{
-			Type:     StructureViolation,
-			Severity: SeverityError,
-			File:     "calls/",
-			Message:  fmt.Sprintf("Failed to read available call years: %v", err),
-		})
-		return violations
+	adapter := NewCallsReaderAdapter(v.callsReader)
+	config := StructureValidationConfig{
+		DirectoryName: "calls",
+		FilePrefix:    "calls",
+		ContentType:   "call",
 	}
-
-	// Check counts for each year
-	for _, year := range years {
-		fileName := fmt.Sprintf("calls-%d.xml", year)
-		filePath := filepath.Join("calls", fileName)
-
-		// Get actual count from reader
-		actualCount, err := v.callsReader.GetCallsCount(year)
-		if err != nil {
-			violations = append(violations, ValidationViolation{
-				Type:     CountMismatch,
-				Severity: SeverityError,
-				File:     filePath,
-				Message:  fmt.Sprintf("Failed to get call count for year %d: %v", year, err),
-			})
-			continue
-		}
-
-		// Check against expected count if provided
-		if expectedCount, exists := expectedCounts[year]; exists {
-			if actualCount != expectedCount {
-				violations = append(violations, ValidationViolation{
-					Type:     CountMismatch,
-					Severity: SeverityError,
-					File:     filePath,
-					Message:  fmt.Sprintf("Call count mismatch for year %d", year),
-					Expected: fmt.Sprintf("%d", expectedCount),
-					Actual:   fmt.Sprintf("%d", actualCount),
-				})
-			}
-		}
-	}
-
-	// Check for expected years that don't exist
-	for expectedYear := range expectedCounts {
-		found := false
-		for _, year := range years {
-			if year == expectedYear {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			violations = append(violations, ValidationViolation{
-				Type:     MissingFile,
-				Severity: SeverityError,
-				File:     fmt.Sprintf("calls/calls-%d.xml", expectedYear),
-				Message:  fmt.Sprintf("Expected call file for year %d not found", expectedYear),
-			})
-		}
-	}
-
-	return violations
+	return ValidateDataCounts(adapter, expectedCounts, config)
 }
