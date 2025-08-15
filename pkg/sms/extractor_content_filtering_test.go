@@ -6,6 +6,14 @@ import (
 	"testing"
 )
 
+const (
+	// Test action constants
+	actionSkipped   = "skipped"
+	actionExtracted = "extracted"
+	// Test reason constants
+	reasonContentTypeFiltered = "content-type-filtered"
+)
+
 func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
 	extractor := NewAttachmentExtractor(t.TempDir())
 	config := GetDefaultContentTypeConfig()
@@ -38,10 +46,10 @@ func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != actionSkipped {
 		t.Errorf("Expected SMIL to be skipped, got action: %s", result.Action)
 	}
-	if result.Reason != "content-type-filtered" {
+	if result.Reason != reasonContentTypeFiltered {
 		t.Errorf("Expected reason 'content-type-filtered', got: %s", result.Reason)
 	}
 	if result.UpdatePart {
@@ -76,10 +84,10 @@ func TestContentTypeFiltering_TextPlainNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != actionSkipped {
 		t.Errorf("Expected text/plain to be skipped, got action: %s", result.Action)
 	}
-	if result.Reason != "content-type-filtered" {
+	if result.Reason != reasonContentTypeFiltered {
 		t.Errorf("Expected reason 'content-type-filtered', got: %s", result.Reason)
 	}
 
@@ -119,10 +127,10 @@ END:VCARD` + strings.Repeat("\nEXTRA:padding", 50)
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != actionSkipped {
 		t.Errorf("Expected vCard to be skipped, got action: %s", result.Action)
 	}
-	if result.Reason != "content-type-filtered" {
+	if result.Reason != reasonContentTypeFiltered {
 		t.Errorf("Expected reason 'content-type-filtered', got: %s", result.Reason)
 	}
 }
@@ -145,10 +153,10 @@ func TestContentTypeFiltering_WAPContainerNotExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != "skipped" {
+	if result.Action != actionSkipped {
 		t.Errorf("Expected WAP container to be skipped, got action: %s", result.Action)
 	}
-	if result.Reason != "content-type-filtered" {
+	if result.Reason != reasonContentTypeFiltered {
 		t.Errorf("Expected reason 'content-type-filtered', got: %s", result.Reason)
 	}
 }
@@ -172,7 +180,7 @@ func TestContentTypeFiltering_ImageExtracted(t *testing.T) {
 		t.Fatalf("ExtractAttachmentFromPart failed: %v", err)
 	}
 
-	if result.Action != "extracted" {
+	if result.Action != actionExtracted {
 		t.Errorf("Expected image to be extracted, got action: %s", result.Action)
 	}
 	if !result.UpdatePart {
@@ -217,12 +225,12 @@ func TestContentTypeFiltering_ContentTypeWithParameters(t *testing.T) {
 			}
 
 			if tt.shouldSkip {
-				if result.Action != "skipped" || result.Reason != "content-type-filtered" {
+				if result.Action != actionSkipped || result.Reason != reasonContentTypeFiltered {
 					t.Errorf("Expected %s to be skipped due to content type, got action: %s, reason: %s",
 						tt.contentType, result.Action, result.Reason)
 				}
 			} else {
-				if result.Action == "skipped" && result.Reason == "content-type-filtered" {
+				if result.Action == actionSkipped && result.Reason == reasonContentTypeFiltered {
 					t.Errorf("Expected %s to not be filtered by content type, but it was skipped",
 						tt.contentType)
 				}

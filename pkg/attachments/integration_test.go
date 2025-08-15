@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+const (
+	// Test constants for integration tests
+	testWrongContentHash = "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+)
+
 // copyFile copies a file from src to dst, creating directories as needed
 func copyFile(src, dst string) error {
 	// Create destination directory
@@ -198,7 +203,7 @@ func TestAttachmentManager_Integration_LargeRepository(t *testing.T) {
 
 	// Test streaming performance
 	var streamedCount int
-	err = manager.StreamAttachments(func(attachment *Attachment) error {
+	err = manager.StreamAttachments(func(_ *Attachment) error {
 		streamedCount++
 		return nil
 	})
@@ -309,7 +314,7 @@ func TestAttachmentManager_Integration_CorruptedFiles(t *testing.T) {
 
 	// Create a corrupted attachment (content doesn't match hash)
 	content := []byte("correct content")
-	wrongHash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781" // Hash for different content
+	wrongHash := testWrongContentHash // Hash for different content
 
 	attachmentDir := filepath.Join(tempDir, "attachments", wrongHash[:2])
 	err := os.MkdirAll(attachmentDir, 0755)

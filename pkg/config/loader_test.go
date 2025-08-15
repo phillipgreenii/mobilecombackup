@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	// Test constants
+	debugLevel = "debug"
+)
+
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
@@ -72,7 +77,7 @@ func TestGetEnvironmentDefaults(t *testing.T) {
 
 			switch tt.env {
 			case EnvironmentDevelopment:
-				if config.Logging.Level != "debug" {
+				if config.Logging.Level != debugLevel {
 					t.Errorf("Expected debug level for development, got %s", config.Logging.Level)
 				}
 				if !config.Logging.Color {
@@ -138,7 +143,7 @@ validation:
   autofix_enabled: false
 
 logging:
-  level: "debug"
+  level: debugLevel
   format: "json"
   timestamps: false
   color: false
@@ -180,7 +185,7 @@ logging:
 		t.Error("Expected autofix to be disabled")
 	}
 
-	if config.Logging.Level != "debug" {
+	if config.Logging.Level != debugLevel {
 		t.Errorf("Expected debug level, got %s", config.Logging.Level)
 	}
 
@@ -276,7 +281,7 @@ func TestViperConfigLoader_LoadFromEnvironment(t *testing.T) {
 	}
 
 	// Should have development-specific defaults
-	if config.Logging.Level != "debug" {
+	if config.Logging.Level != debugLevel {
 		t.Errorf("Expected debug level for development environment, got %s", config.Logging.Level)
 	}
 

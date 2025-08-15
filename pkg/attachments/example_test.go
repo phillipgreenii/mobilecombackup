@@ -8,13 +8,19 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
 )
 
+const (
+	// Test hash constants used in examples
+	testAttachmentHash = "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	emptyFileHash      = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+)
+
 // Example demonstrates basic usage of the AttachmentManager
 func ExampleAttachmentManager() {
 	// Create a manager for a repository
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
 	// Get attachment by hash
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	attachment, err := manager.GetAttachment(hash)
 	if err != nil {
 		log.Fatal(err)
@@ -31,7 +37,7 @@ func ExampleAttachmentManager() {
 func ExampleAttachmentManager_ReadAttachment() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	content, err := manager.ReadAttachment(hash)
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +51,7 @@ func ExampleAttachmentManager_ReadAttachment() {
 func ExampleAttachmentManager_VerifyAttachment() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	verified, err := manager.VerifyAttachment(hash)
 	if err != nil {
 		log.Fatal(err)
@@ -102,7 +108,7 @@ func ExampleAttachmentManager_FindOrphanedAttachments() {
 
 	// Get referenced hashes from SMS reader (example)
 	referencedHashes := map[string]bool{
-		"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781": true,
+		testAttachmentHash: true,
 		"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46": true,
 	}
 
@@ -137,7 +143,7 @@ func ExampleAttachmentManager_GetAttachmentStats() {
 
 	// Get referenced hashes from SMS reader
 	referencedHashes := map[string]bool{
-		"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781": true,
+		testAttachmentHash: true,
 		"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46": true,
 	}
 
@@ -157,7 +163,7 @@ func ExampleAttachmentManager_AttachmentExists() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
 	hashes := []string{
-		"3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781",
+		testAttachmentHash,
 		"26fdc315fadc05db9f8f3236fc30b9f0ca044e56ec1e9450ccd5fdab900e9e46",
 		"nonexistent1234567890abcdef1234567890abcdef1234567890abcdef123456",
 	}
@@ -181,7 +187,7 @@ func ExampleAttachmentManager_AttachmentExists() {
 func ExampleAttachmentManager_GetAttachmentPath() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	path := manager.GetAttachmentPath(hash)
 
 	fmt.Printf("Attachment path for hash %s:\n", hash[:8])
@@ -204,7 +210,7 @@ func ExampleAttachmentManager_errorHandling() {
 	}
 
 	// Example 2: Non-existent attachment
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	attachment, err := manager.GetAttachment(hash)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -225,7 +231,7 @@ func ExampleAttachmentManager_errorHandling() {
 func ExampleAttachment() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
-	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
+	hash := testAttachmentHash
 	attachment, err := manager.GetAttachment(hash)
 	if err != nil {
 		log.Fatal(err)
@@ -256,7 +262,7 @@ func ExampleDirectoryAttachmentStorage() {
 	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
 
 	// Store a new attachment
-	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	hash := emptyFileHash
 	data := []byte("Hello, world!")
 	metadata := attachments.AttachmentInfo{
 		Hash:         hash,
@@ -284,7 +290,7 @@ func ExampleDirectoryAttachmentStorage() {
 func ExampleDirectoryAttachmentStorage_GetMetadata() {
 	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
 
-	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	hash := emptyFileHash
 	metadata, err := storage.GetMetadata(hash)
 	if err != nil {
 		log.Fatal(err)
@@ -411,7 +417,7 @@ func ExampleMigrationManager_dryRun() {
 func ExampleAttachmentManager_formatDetection() {
 	manager := attachments.NewAttachmentManager("/path/to/repository")
 
-	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	hash := emptyFileHash
 
 	// Check which format this attachment uses
 	if manager.IsNewFormat(hash) {

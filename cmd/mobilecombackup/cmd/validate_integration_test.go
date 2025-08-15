@@ -45,7 +45,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 		{
 			name: "non-existent repository",
 			args: []string{"validate", "--repo-root", "/path/that/does/not/exist"},
-			setup: func(t *testing.T) string {
+			setup: func(_ *testing.T) string {
 				return ""
 			},
 			wantExitCode: 2,

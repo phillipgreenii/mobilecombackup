@@ -1,3 +1,5 @@
+// Package config provides configuration loading and management for the mobilecombackup application.
+// It handles loading configuration from environment variables, config files, and command-line flags.
 package config
 
 import (

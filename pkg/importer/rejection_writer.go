@@ -136,9 +136,9 @@ func (w *XMLRejectionWriter) writeXMLRejections(filename string, rejections []Re
 	// Determine root element name based on type
 	var rootName string
 	switch entryType {
-	case "calls":
-		rootName = "calls"
-	case "sms":
+	case callsDir:
+		rootName = callsDir
+	case smsDir:
 		rootName = "smses"
 	default:
 		rootName = "entries" // Generic fallback

@@ -9,6 +9,11 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
+const (
+	// Test constants
+	exampleTempDir = "/tmp/example"
+)
+
 // Example demonstrates basic usage of the ContactsManager
 func ExampleContactsManager() {
 	// Create a manager for a repository
@@ -197,7 +202,7 @@ func Example_phoneNumberNormalization() {
 // ExampleContactsManager_AddUnprocessedContacts demonstrates the new multi-address parsing functionality
 func ExampleContactsManager_AddUnprocessedContacts() {
 	// Create a manager for a temporary directory
-	tempDir := "/tmp/example"
+	tempDir := exampleTempDir
 	_ = os.MkdirAll(tempDir, 0755)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
@@ -246,7 +251,7 @@ func ExampleContactsManager_AddUnprocessedContacts_countMismatch() {
 
 // ExampleContactsManager_GetUnprocessedEntries demonstrates the new structured format
 func ExampleContactsManager_GetUnprocessedEntries() {
-	tempDir := "/tmp/example"
+	tempDir := exampleTempDir
 	_ = os.MkdirAll(tempDir, 0755)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
@@ -288,7 +293,7 @@ unprocessed:
 
 // Example_knownContactFiltering demonstrates how known contacts are excluded during processing
 func Example_knownContactFiltering() {
-	tempDir := "/tmp/example"
+	tempDir := exampleTempDir
 	_ = os.MkdirAll(tempDir, 0755)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 

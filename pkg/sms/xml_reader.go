@@ -14,6 +14,12 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/types"
 )
 
+const (
+	// XML attribute and element names
+	attrAddress = "address"
+	attrText    = "text"
+)
+
 // XMLSMSReader implements SMSReader interface for XML files
 type XMLSMSReader struct {
 	repoRoot string
@@ -101,7 +107,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 		switch attr.Name.Local {
 		case "protocol":
 			sms.Protocol = attr.Value
-		case "address":
+		case attrAddress:
 			sms.Address = attr.Value
 		case "date":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -120,13 +126,13 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.Type = MessageType(typeVal)
 			}
 		case "subject":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				sms.Subject = attr.Value
 			}
 		case "body":
 			sms.Body = attr.Value
 		case "service_center":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				sms.ServiceCenter = attr.Value
 			}
 		case "read":
@@ -150,7 +156,7 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 				sms.Locked = 0
 			}
 		case "date_sent":
-			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return sms, fmt.Errorf("invalid date_sent format: %s", attr.Value)
@@ -162,11 +168,11 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 		case "contact_name":
 			sms.ContactName = attr.Value
 		case "toa":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				sms.Toa = attr.Value
 			}
 		case "sc_toa":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				sms.ScToa = attr.Value
 			}
 		}
@@ -203,7 +209,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				}
 				mms.MsgBox = msgBox
 			}
-		case "address":
+		case attrAddress:
 			mms.Address = attr.Value
 		case "m_type":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -224,7 +230,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.TextOnly = 0
 			}
 		case "sub":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.Sub = attr.Value
 			}
 		case "readable_date":
@@ -244,7 +250,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Locked = 0
 			}
 		case "date_sent":
-			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return mms, fmt.Errorf("invalid date_sent format: %s", attr.Value)
@@ -270,20 +276,20 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.Hidden = 0
 			}
 		case "sim_imsi":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.SimImsi = attr.Value
 			}
 		case "creator":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.Creator = attr.Value
 			}
 		case "sub_id":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				subId, err := strconv.Atoi(attr.Value)
+				subID, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid sub_id format: %s", attr.Value)
 				}
-				mms.SubId = subId
+				mms.SubId = subID
 			}
 		case "sim_slot":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -321,7 +327,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.RetrSt = retrSt
 			}
 		case "ct_cls":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.CtCls = attr.Value
 			}
 		case "sub_cs":
@@ -333,11 +339,11 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.SubCs = subCs
 			}
 		case "ct_l":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.CtL = attr.Value
 			}
 		case "tr_id":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.TrId = attr.Value
 			}
 		case "st":
@@ -349,11 +355,11 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.St = st
 			}
 		case "m_cls":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.MCls = attr.Value
 			}
 		case "d_tm":
-			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return mms, fmt.Errorf("invalid d_tm format: %s", attr.Value)
@@ -369,7 +375,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.ReadStatus = readStatus
 			}
 		case "ct_t":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.CtT = attr.Value
 			}
 		case "retr_txt_cs":
@@ -405,7 +411,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				mms.V = v
 			}
 		case "exp":
-			if attr.Value != "" && attr.Value != "null" && attr.Value != "0" {
+			if attr.Value != "" && attr.Value != types.XMLNullValue && attr.Value != "0" {
 				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
 				if err != nil {
 					return mms, fmt.Errorf("invalid exp format: %s", attr.Value)
@@ -422,11 +428,11 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 			}
 		case "msg_id":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				msgId, err := strconv.Atoi(attr.Value)
+				msgID, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid msg_id format: %s", attr.Value)
 				}
-				mms.MsgId = msgId
+				mms.MsgId = msgID
 			}
 		case "rr":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -438,14 +444,14 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 			}
 		case "app_id":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				appId, err := strconv.Atoi(attr.Value)
+				appID, err := strconv.Atoi(attr.Value)
 				if err != nil {
 					return mms, fmt.Errorf("invalid app_id format: %s", attr.Value)
 				}
-				mms.AppId = appId
+				mms.AppId = appID
 			}
 		case "resp_txt":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				mms.RespTxt = attr.Value
 			}
 		case "rpt_a":
@@ -553,27 +559,27 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 		case "ct":
 			part.ContentType = attr.Value
 		case "name":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.Name = attr.Value
 			}
 		case "chset":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.Charset = attr.Value
 			}
 		case "cd":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.ContentDisp = attr.Value
 			}
 		case "fn":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.Filename = attr.Value
 			}
 		case "cid":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.ContentId = attr.Value
 			}
 		case "cl":
-			if attr.Value != "null" {
+			if attr.Value != types.XMLNullValue {
 				part.ContentLoc = attr.Value
 			}
 		case "ctt_s":
@@ -592,11 +598,11 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 				}
 				part.CttT = cttT
 			}
-		case "text":
+		case attrText:
 			part.Text = attr.Value
 		case "data":
 			// Store the base64 data reference for attachment extraction
-			if attr.Value != "null" && attr.Value != "" {
+			if attr.Value != types.XMLNullValue && attr.Value != "" {
 				part.Data = attr.Value
 			}
 		}
@@ -672,7 +678,7 @@ func (r *XMLSMSReader) parseMMSAddress(decoder *xml.Decoder, startElement xml.St
 	// Parse address attributes
 	for _, attr := range startElement.Attr {
 		switch attr.Name.Local {
-		case "address":
+		case attrAddress:
 			addr.Address = attr.Value
 		case "type":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {

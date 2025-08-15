@@ -6,9 +6,14 @@ import (
 	"testing"
 )
 
+const (
+	// Test constants
+	testOperation = "test operation"
+)
+
 func TestNewValidationError(t *testing.T) {
 	underlyingErr := errors.New("test error")
-	err := NewValidationError("test operation", underlyingErr)
+	err := NewValidationError(testOperation, underlyingErr)
 
 	// Check that it's a ValidationError
 	if err == nil {
@@ -16,8 +21,8 @@ func TestNewValidationError(t *testing.T) {
 	}
 
 	// Check operation
-	if err.Operation != "test operation" {
-		t.Errorf("Operation = %q, want %q", err.Operation, "test operation")
+	if err.Operation != testOperation {
+		t.Errorf("Operation = %q, want %q", err.Operation, testOperation)
 	}
 
 	// Check underlying error
@@ -47,7 +52,7 @@ func TestNewValidationError(t *testing.T) {
 
 func TestNewValidationErrorWithCode(t *testing.T) {
 	underlyingErr := errors.New("test error")
-	err := NewValidationErrorWithCode("test operation", ErrCodeParsing, underlyingErr)
+	err := NewValidationErrorWithCode(testOperation, ErrCodeParsing, underlyingErr)
 
 	// Check that the custom error code is set
 	if err.Code != ErrCodeParsing {
@@ -55,8 +60,8 @@ func TestNewValidationErrorWithCode(t *testing.T) {
 	}
 
 	// Check other fields
-	if err.Operation != "test operation" {
-		t.Errorf("Operation = %q, want %q", err.Operation, "test operation")
+	if err.Operation != testOperation {
+		t.Errorf("Operation = %q, want %q", err.Operation, testOperation)
 	}
 	if err.Err != underlyingErr {
 		t.Errorf("Err = %v, want %v", err.Err, underlyingErr)
@@ -178,10 +183,10 @@ func TestWrapperFunctions(t *testing.T) {
 	underlyingErr := errors.New("test error")
 
 	// Test WrapWithValidation
-	err := WrapWithValidation("test operation", underlyingErr)
+	err := WrapWithValidation(testOperation, underlyingErr)
 	if validationErr, ok := err.(*ValidationError); ok {
-		if validationErr.Operation != "test operation" {
-			t.Errorf("WrapWithValidation operation = %q, want %q", validationErr.Operation, "test operation")
+		if validationErr.Operation != testOperation {
+			t.Errorf("WrapWithValidation operation = %q, want %q", validationErr.Operation, testOperation)
 		}
 		if validationErr.Err != underlyingErr {
 			t.Errorf("WrapWithValidation err = %v, want %v", validationErr.Err, underlyingErr)

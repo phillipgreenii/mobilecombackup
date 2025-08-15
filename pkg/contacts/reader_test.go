@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+const (
+	// Test contact names
+	testContactJohnDoe   = "John Doe"
+	testContactJaneSmith = "Jane Smith"
+	testContactModified  = "Modified"
+)
+
 func TestContactsManager_LoadContacts_ValidFile(t *testing.T) {
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
@@ -17,7 +24,7 @@ func TestContactsManager_LoadContacts_ValidFile(t *testing.T) {
     numbers:
       - "+15555551234"
       - "5555551234"
-  - name: "Jane Smith"
+  - name: testContactJaneSmith
     numbers:
       - "+15555555678"
   - name: "<unknown>"
@@ -114,7 +121,7 @@ func TestContactsManager_LoadContacts_DuplicateNumbers(t *testing.T) {
   - name: "Bob Ross"
     numbers:
       - "+15555551234"
-  - name: "Jane Smith"
+  - name: testContactJaneSmith
     numbers:
       - "5555551234"  # Same number as Bob, normalized
 `
@@ -184,7 +191,7 @@ func TestContactsManager_GetNumbersByContact(t *testing.T) {
     numbers:
       - "+15555551234"
       - "5555555678"
-  - name: "Jane Smith"
+  - name: testContactJaneSmith
     numbers:
       - "+15555559999"
 `
@@ -279,7 +286,7 @@ func TestContactsManager_GetAllContacts(t *testing.T) {
   - name: "Bob Ross"
     numbers:
       - "+15555551234"
-  - name: "Jane Smith"
+  - name: testContactJaneSmith
     numbers:
       - "+15555559999"
 `
@@ -300,10 +307,10 @@ func TestContactsManager_GetAllContacts(t *testing.T) {
 
 	// Verify we get copies, not references
 	if len(contacts) > 0 {
-		contacts[0].Name = "Modified"
+		contacts[0].Name = testContactModified
 		// Original should be unchanged
 		originalName, _ := manager.GetContactByNumber("+15555551234")
-		if originalName == "Modified" {
+		if originalName == testContactModified {
 			t.Error("GetAllContacts should return copies, not references")
 		}
 	}
@@ -431,8 +438,8 @@ func TestContactsManager_AddUnprocessedContact(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Test adding valid contacts
-	manager.AddUnprocessedContact("5551234567", "John Doe")
-	manager.AddUnprocessedContact("+1-555-987-6543", "Jane Smith")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
+	manager.AddUnprocessedContact("+1-555-987-6543", testContactJaneSmith)
 	manager.AddUnprocessedContact("(555) 111-2222", "Bob Ross")
 
 	unprocessed := manager.GetUnprocessedContacts()
@@ -457,7 +464,7 @@ func TestContactsManager_AddUnprocessedContact_EmptyValues(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Test adding empty/invalid values - should be ignored
-	manager.AddUnprocessedContact("", "John Doe")
+	manager.AddUnprocessedContact("", testContactJohnDoe)
 	manager.AddUnprocessedContact("5551234567", "")
 	manager.AddUnprocessedContact("", "")
 
@@ -472,9 +479,9 @@ func TestContactsManager_AddUnprocessedContact_Duplicates(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Add the same contact multiple times
-	manager.AddUnprocessedContact("5551234567", "John Doe")
-	manager.AddUnprocessedContact("5551234567", "John Doe")   // Exact duplicate
-	manager.AddUnprocessedContact("+15551234567", "John Doe") // Different format, same number and name
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)   // Exact duplicate
+	manager.AddUnprocessedContact("+15551234567", testContactJohnDoe) // Different format, same number and name
 
 	unprocessed := manager.GetUnprocessedContacts()
 	if len(unprocessed) != 1 {
@@ -485,7 +492,7 @@ func TestContactsManager_AddUnprocessedContact_Duplicates(t *testing.T) {
 	if len(names) != 1 {
 		t.Errorf("Expected 1 name for phone number, got %d", len(names))
 	}
-	if names[0] != "John Doe" {
+	if names[0] != testContactJohnDoe {
 		t.Errorf("Expected 'John Doe', got '%s'", names[0])
 	}
 }
@@ -495,7 +502,7 @@ func TestContactsManager_AddUnprocessedContact_MultipleNames(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Add multiple names for the same number
-	manager.AddUnprocessedContact("5551234567", "John Doe")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 	manager.AddUnprocessedContact("5551234567", "Johnny")
 	manager.AddUnprocessedContact("5551234567", "J. Doe")
 	manager.AddUnprocessedContact("5551234567", "John") // Different name
@@ -516,7 +523,7 @@ func TestContactsManager_AddUnprocessedContact_MultipleNames(t *testing.T) {
 		nameSet[name] = true
 	}
 
-	expectedNames := []string{"John Doe", "Johnny", "J. Doe", "John"}
+	expectedNames := []string{testContactJohnDoe, "Johnny", "J. Doe", "John"}
 	for _, expected := range expectedNames {
 		if !nameSet[expected] {
 			t.Errorf("Expected name '%s' not found in results", expected)
@@ -528,7 +535,7 @@ func TestContactsManager_GetUnprocessedContacts_Copy(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewContactsManager(tempDir)
 
-	manager.AddUnprocessedContact("5551234567", "John Doe")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 	manager.AddUnprocessedContact("5551234567", "Johnny")
 
 	// Get unprocessed contacts
@@ -536,11 +543,11 @@ func TestContactsManager_GetUnprocessedContacts_Copy(t *testing.T) {
 	unprocessed2 := manager.GetUnprocessedContacts()
 
 	// Modify first result
-	unprocessed1["5551234567"][0] = "Modified"
+	unprocessed1["5551234567"][0] = testContactModified
 	unprocessed1["9999999999"] = []string{"New Contact"}
 
 	// Verify second result is unaffected (deep copy)
-	if unprocessed2["5551234567"][0] != "John Doe" {
+	if unprocessed2["5551234567"][0] != testContactJohnDoe {
 		t.Error("GetUnprocessedContacts should return deep copies")
 	}
 	if _, exists := unprocessed2["9999999999"]; exists {
@@ -593,7 +600,7 @@ unprocessed:
 	if len(names) != 2 {
 		t.Errorf("Expected 2 names for 5551234567, got %d", len(names))
 	}
-	if names[0] != "John Doe" || names[1] != "Johnny" {
+	if names[0] != testContactJohnDoe || names[1] != "Johnny" {
 		t.Errorf("Expected 'John Doe' and 'Johnny', got %v", names)
 	}
 
@@ -602,7 +609,7 @@ unprocessed:
 	if len(names) != 1 {
 		t.Errorf("Expected 1 name for 5559876543, got %d", len(names))
 	}
-	if names[0] != "Jane Smith" {
+	if names[0] != testContactJaneSmith {
 		t.Errorf("Expected 'Jane Smith', got '%s'", names[0])
 	}
 }
@@ -613,9 +620,9 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Add some test data
-	manager.AddUnprocessedContact("5551234567", "John Doe")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 	manager.AddUnprocessedContact("5551234567", "Johnny")
-	manager.AddUnprocessedContact("5559876543", "Jane Smith")
+	manager.AddUnprocessedContact("5559876543", testContactJaneSmith)
 
 	// Save contacts
 	err := manager.SaveContacts(contactsPath)
@@ -642,13 +649,13 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	if !strings.Contains(yamlStr, "contact_names:") {
 		t.Error("Saved file should contain contact_names field in new format")
 	}
-	if !strings.Contains(yamlStr, "John Doe") {
+	if !strings.Contains(yamlStr, testContactJohnDoe) {
 		t.Error("Saved file should contain 'John Doe'")
 	}
 	if !strings.Contains(yamlStr, "Johnny") {
 		t.Error("Saved file should contain 'Johnny'")
 	}
-	if !strings.Contains(yamlStr, "Jane Smith") {
+	if !strings.Contains(yamlStr, testContactJaneSmith) {
 		t.Error("Saved file should contain 'Jane Smith'")
 	}
 	if !strings.Contains(yamlStr, "contacts: []") {
@@ -666,7 +673,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
     numbers:
       - "+15555551234"
       - "5555551234"
-  - name: "Jane Smith"
+  - name: testContactJaneSmith
     numbers:
       - "+15555555678"
 `
@@ -682,7 +689,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	}
 
 	// Add unprocessed contacts
-	manager.AddUnprocessedContact("5551234567", "John Doe")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 	manager.AddUnprocessedContact("5559876543", "New Contact")
 
 	// Save
@@ -709,7 +716,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	if !strings.Contains(yamlStr, "phone_number: \"5551234567\"") {
 		t.Error("Should include new unprocessed contacts with phone_number field")
 	}
-	if !strings.Contains(yamlStr, "John Doe") {
+	if !strings.Contains(yamlStr, testContactJohnDoe) {
 		t.Error("Should include 'John Doe' in contact_names")
 	}
 	if !strings.Contains(yamlStr, "New Contact") {
@@ -721,7 +728,7 @@ func TestContactsManager_AddUnprocessedContacts_SingleAddress(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Test single address and name
-	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
+	err := manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -738,7 +745,7 @@ func TestContactsManager_AddUnprocessedContacts_SingleAddress(t *testing.T) {
 	if len(entry.ContactNames) != 1 {
 		t.Errorf("Expected 1 contact name, got %d", len(entry.ContactNames))
 	}
-	if entry.ContactNames[0] != "John Doe" {
+	if entry.ContactNames[0] != testContactJohnDoe {
 		t.Errorf("Expected contact name 'John Doe', got '%s'", entry.ContactNames[0])
 	}
 }
@@ -768,10 +775,10 @@ func TestContactsManager_AddUnprocessedContacts_MultipleAddresses(t *testing.T) 
 		t.Errorf("Expected second phone number '5559876543', got '%s'", entry2.PhoneNumber)
 	}
 
-	if entry1.ContactNames[0] != "John Doe" {
+	if entry1.ContactNames[0] != testContactJohnDoe {
 		t.Errorf("Expected first contact name 'John Doe', got '%s'", entry1.ContactNames[0])
 	}
-	if entry2.ContactNames[0] != "Jane Smith" {
+	if entry2.ContactNames[0] != testContactJaneSmith {
 		t.Errorf("Expected second contact name 'Jane Smith', got '%s'", entry2.ContactNames[0])
 	}
 }
@@ -780,7 +787,7 @@ func TestContactsManager_AddUnprocessedContacts_CountMismatch(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Test count mismatch - should return error
-	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe")
+	err := manager.AddUnprocessedContacts("5551234567~5559876543", testContactJohnDoe)
 	if err == nil {
 		t.Fatal("Expected error for count mismatch, got nil")
 	}
@@ -815,7 +822,7 @@ func TestContactsManager_AddUnprocessedContacts_EmptyValues(t *testing.T) {
 	if entry.PhoneNumber != "5551234567" {
 		t.Errorf("Expected phone number '5551234567', got '%s'", entry.PhoneNumber)
 	}
-	if entry.ContactNames[0] != "John Doe" {
+	if entry.ContactNames[0] != testContactJohnDoe {
 		t.Errorf("Expected contact name 'John Doe', got '%s'", entry.ContactNames[0])
 	}
 }
@@ -855,7 +862,7 @@ contacts:
 	if entry.PhoneNumber != "5559876543" {
 		t.Errorf("Expected phone number '5559876543', got '%s'", entry.PhoneNumber)
 	}
-	if entry.ContactNames[0] != "Jane Smith" {
+	if entry.ContactNames[0] != testContactJaneSmith {
 		t.Errorf("Expected contact name 'Jane Smith', got '%s'", entry.ContactNames[0])
 	}
 }
@@ -864,7 +871,7 @@ func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) 
 	manager := NewContactsManager("")
 
 	// Add same phone number with different names
-	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
+	err := manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("First AddUnprocessedContacts failed: %v", err)
 	}
@@ -889,7 +896,7 @@ func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) 
 
 	// Check both names are present (order may vary)
 	names := entry.ContactNames
-	if !contains(names, "John Doe") {
+	if !contains(names, testContactJohnDoe) {
 		t.Error("Expected 'John Doe' in contact names")
 	}
 	if !contains(names, "Johnny") {
@@ -901,12 +908,12 @@ func TestContactsManager_GetUnprocessedEntries_Sorting(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Add entries in reverse order
-	err := manager.AddUnprocessedContacts("5559876543", "Jane Smith")
+	err := manager.AddUnprocessedContacts("5559876543", testContactJaneSmith)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
 
-	err = manager.AddUnprocessedContacts("5551234567", "John Doe")
+	err = manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -940,7 +947,7 @@ func TestContactsManager_SaveContacts_AtomicOperation(t *testing.T) {
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 	manager := NewContactsManager(tempDir)
 
-	manager.AddUnprocessedContact("5551234567", "John Doe")
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 
 	// Save contacts
 	err := manager.SaveContacts(contactsPath)

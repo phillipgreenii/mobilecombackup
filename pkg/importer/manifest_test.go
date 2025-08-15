@@ -9,6 +9,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// Manifest file constants
+	manifestFileName     = "files.yaml"
+	manifestFileChecksum = "files.yaml.sha256"
+)
+
 func TestGenerateManifestFile(t *testing.T) {
 	// Create temp directory with test files
 	tempDir := t.TempDir()
@@ -53,13 +59,13 @@ func TestGenerateManifestFile(t *testing.T) {
 	}
 
 	// Verify files.yaml exists
-	manifestPath := filepath.Join(tempDir, "files.yaml")
+	manifestPath := filepath.Join(tempDir, manifestFileName)
 	if _, err := os.Stat(manifestPath); err != nil {
 		t.Fatalf("Manifest file not created: %v", err)
 	}
 
 	// Verify files.yaml.sha256 exists
-	checksumPath := filepath.Join(tempDir, "files.yaml.sha256")
+	checksumPath := filepath.Join(tempDir, manifestFileChecksum)
 	if _, err := os.Stat(checksumPath); err != nil {
 		t.Fatalf("Checksum file not created: %v", err)
 	}
@@ -134,7 +140,7 @@ func TestGenerateManifestFile(t *testing.T) {
 
 	// Verify files.yaml and files.yaml.sha256 are NOT in manifest
 	for _, entry := range manifest.Files {
-		if entry.Name == "files.yaml" || entry.Name == "files.yaml.sha256" {
+		if entry.Name == manifestFileName || entry.Name == manifestFileChecksum {
 			t.Errorf("File %s should not be in manifest", entry.Name)
 		}
 	}
@@ -186,8 +192,8 @@ func TestCollectRepositoryFiles(t *testing.T) {
 		"a/file2.txt",
 		"a/b/file3.txt",
 		"c/file4.txt",
-		"files.yaml",        // Should be excluded
-		"files.yaml.sha256", // Should be excluded
+		manifestFileName,     // Should be excluded
+		manifestFileChecksum, // Should be excluded
 	}
 
 	for _, file := range files {
@@ -217,7 +223,7 @@ func TestCollectRepositoryFiles(t *testing.T) {
 
 	// Verify excluded files are not present
 	for _, entry := range entries {
-		if entry.Name == "files.yaml" || entry.Name == "files.yaml.sha256" {
+		if entry.Name == manifestFileName || entry.Name == manifestFileChecksum {
 			t.Errorf("File %s should be excluded", entry.Name)
 		}
 	}
@@ -264,7 +270,7 @@ func TestVerifyManifest(t *testing.T) {
 func TestGenerateManifestChecksum(t *testing.T) {
 	// Create temp directory
 	tempDir := t.TempDir()
-	manifestPath := filepath.Join(tempDir, "files.yaml")
+	manifestPath := filepath.Join(tempDir, manifestFileName)
 
 	// Create a test manifest file
 	testContent := "test manifest content"

@@ -216,7 +216,7 @@ func (mm *MigrationManager) executeMigration(attachment *Attachment, storage *Di
 }
 
 // detectMimeTypeFromContent performs basic MIME type detection
-func detectMimeTypeFromContent(data []byte, hash string) string {
+func detectMimeTypeFromContent(data []byte, _ string) string {
 	if len(data) == 0 {
 		return "application/octet-stream"
 	}

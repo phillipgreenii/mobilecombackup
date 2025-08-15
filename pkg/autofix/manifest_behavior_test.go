@@ -9,6 +9,13 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
 
+const (
+	// Repository configuration files
+	repoMarkerFile = ".mobilecombackup.yaml"
+	contactsFile   = "contacts.yaml"
+	summaryFile    = "summary.yaml"
+)
+
 func TestAutofixer_ManifestBehavior(t *testing.T) {
 	// Create temporary repository
 	tempDir := t.TempDir()
@@ -23,10 +30,10 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 
 	// Create test files
 	testFiles := map[string]string{
-		".mobilecombackup.yaml": "repository_structure_version: '1'\ncreated_at: '2023-01-01T00:00:00Z'\ncreated_by: 'test'\n",
-		"contacts.yaml":         "contacts: []\n",
-		"summary.yaml":          "counts:\n  calls: 0\n  sms: 0\n",
-		"calls/calls-2023.xml":  "<calls count='0'></calls>",
+		repoMarkerFile:         "repository_structure_version: '1'\ncreated_at: '2023-01-01T00:00:00Z'\ncreated_by: 'test'\n",
+		contactsFile:           "contacts: []\n",
+		summaryFile:            "counts:\n  calls: 0\n  sms: 0\n",
+		"calls/calls-2023.xml": "<calls count='0'></calls>",
 	}
 
 	for file, content := range testFiles {
@@ -94,7 +101,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Should contain actual repository files
-		if !containsFile(string(newContent), ".mobilecombackup.yaml") {
+		if !containsFile(string(newContent), repoMarkerFile) {
 			t.Error("Regenerated files.yaml does not contain .mobilecombackup.yaml")
 		}
 	})
@@ -154,5 +161,5 @@ func containsFile(content, filename string) bool {
 	// Simple check - look for the filename in the YAML content
 	// This is not a full YAML parser but sufficient for testing
 	return len(content) > 0 && // Basic check that content exists
-		(filename == ".mobilecombackup.yaml" || filename == "contacts.yaml" || filename == "summary.yaml")
+		(filename == repoMarkerFile || filename == contactsFile || filename == summaryFile)
 }

@@ -6,9 +6,13 @@ import "time"
 type CallType int
 
 const (
-	Incoming  CallType = 1
-	Outgoing  CallType = 2
-	Missed    CallType = 3
+	// Incoming represents an incoming call
+	Incoming CallType = 1
+	// Outgoing represents an outgoing call
+	Outgoing CallType = 2
+	// Missed represents a missed call
+	Missed CallType = 3
+	// Voicemail represents a voicemail call
 	Voicemail CallType = 4
 )
 
