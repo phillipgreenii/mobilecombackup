@@ -246,11 +246,12 @@ func ExampleAttachment() {
 
 	// Convert size to human readable format
 	var sizeStr string
-	if attachment.Size < 1024 {
+	switch {
+	case attachment.Size < 1024:
 		sizeStr = fmt.Sprintf("%d B", attachment.Size)
-	} else if attachment.Size < 1024*1024 {
+	case attachment.Size < 1024*1024:
 		sizeStr = fmt.Sprintf("%.1f KB", float64(attachment.Size)/1024)
-	} else {
+	default:
 		sizeStr = fmt.Sprintf("%.1f MB", float64(attachment.Size)/(1024*1024))
 	}
 	fmt.Printf("  Human size: %s\n", sizeStr)
@@ -420,7 +421,8 @@ func ExampleAttachmentManager_formatDetection() {
 	hash := emptyFileHash
 
 	// Check which format this attachment uses
-	if manager.IsNewFormat(hash) {
+	switch {
+	case manager.IsNewFormat(hash):
 		fmt.Printf("Attachment %s uses new directory format\n", hash[:8])
 
 		// Access metadata
@@ -430,9 +432,9 @@ func ExampleAttachmentManager_formatDetection() {
 			fmt.Printf("  Original name: %s\n", metadata.OriginalName)
 			fmt.Printf("  MIME type: %s\n", metadata.MimeType)
 		}
-	} else if manager.IsLegacyFormat(hash) {
+	case manager.IsLegacyFormat(hash):
 		fmt.Printf("Attachment %s uses legacy file format\n", hash[:8])
-	} else {
+	default:
 		fmt.Printf("Attachment %s not found\n", hash[:8])
 	}
 }

@@ -368,7 +368,7 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 	}
 	defer func() {
 		// Restore permissions for cleanup
-		_ = os.Chmod(readOnlyDir, 0755)
+		_ = os.Chmod(readOnlyDir, 0750) // nolint:gosec // Cleanup permissions
 	}()
 
 	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})
@@ -458,7 +458,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 	}
 
 	// Read the fixed file and verify the count was updated
-	fixedContent, err := os.ReadFile(xmlFile)
+	fixedContent, err := os.ReadFile(xmlFile) // nolint:gosec // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read fixed XML file: %v", err)
 	}
@@ -655,7 +655,7 @@ func TestCheckWritePermission_ResourceCleanup(t *testing.T) {
 	}
 
 	// Verify file is still accessible (not corrupted by permission test)
-	content, err := os.ReadFile(testFile)
+	content, err := os.ReadFile(testFile) // nolint:gosec // Test-controlled path
 	if err != nil {
 		t.Errorf("Test file was corrupted after permission check: %v", err)
 	}

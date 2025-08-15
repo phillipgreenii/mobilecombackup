@@ -131,7 +131,7 @@ func generateManifestChecksum(manifestPath string) error {
 	checksumPath := manifestPath + ".sha256"
 	content := fmt.Sprintf("%s  %s\n", checksum, filepath.Base(manifestPath))
 
-	if err := os.WriteFile(checksumPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(checksumPath, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write checksum file: %w", err)
 	}
 

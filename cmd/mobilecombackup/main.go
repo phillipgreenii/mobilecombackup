@@ -1,3 +1,4 @@
+// Package main provides the mobilecombackup CLI application.
 package main
 
 import (

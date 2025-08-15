@@ -89,7 +89,7 @@ type InfoMarkerFileContent struct {
 	CreatedBy                  string `yaml:"created_by" json:"created_by"`
 }
 
-func runInfo(cmd *cobra.Command, args []string) error {
+func runInfo(_ *cobra.Command, args []string) error {
 	// Resolve repository root
 	repoPath := resolveRepoRoot()
 

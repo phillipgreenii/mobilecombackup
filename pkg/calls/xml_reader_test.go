@@ -12,7 +12,7 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 </calls>`
 
 	testFile := filepath.Join(callsDir, "calls-2014.xml")
-	err = os.WriteFile(testFile, []byte(testXML), 0644)
+	err = os.WriteFile(testFile, []byte(testXML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 </calls>`
 
 	testFile := filepath.Join(callsDir, "calls-2014.xml")
-	err = os.WriteFile(testFile, []byte(testXML), 0644)
+	err = os.WriteFile(testFile, []byte(testXML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestXMLCallsReader_GetAvailableYears(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -163,14 +163,14 @@ func TestXMLCallsReader_GetAvailableYears(t *testing.T) {
 <calls count="0">
 </calls>`
 		fileName := filepath.Join(callsDir, fmt.Sprintf("calls-%d.xml", year))
-		err = os.WriteFile(fileName, []byte(testXML), 0644)
+		err = os.WriteFile(fileName, []byte(testXML), 0600)
 		if err != nil {
 			t.Fatalf("Failed to create test file for year %d: %v", year, err)
 		}
 	}
 
 	// Create a non-call file that should be ignored
-	err = os.WriteFile(filepath.Join(callsDir, "sms-2014.xml"), []byte("dummy"), 0644)
+	err = os.WriteFile(filepath.Join(callsDir, "sms-2014.xml"), []byte("dummy"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create dummy file: %v", err)
 	}
@@ -198,7 +198,7 @@ func TestXMLCallsReader_GetCallsCount(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -210,7 +210,7 @@ func TestXMLCallsReader_GetCallsCount(t *testing.T) {
 </calls>`
 
 	testFile := filepath.Join(callsDir, "calls-2014.xml")
-	err = os.WriteFile(testFile, []byte(testXML), 0644)
+	err = os.WriteFile(testFile, []byte(testXML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -232,7 +232,7 @@ func TestXMLCallsReader_ValidateCallsFile(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestXMLCallsReader_ValidateCallsFile(t *testing.T) {
 </calls>`
 
 	testFile := filepath.Join(callsDir, "calls-2014.xml")
-	err = os.WriteFile(testFile, []byte(testXML), 0644)
+	err = os.WriteFile(testFile, []byte(testXML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -263,7 +263,7 @@ func TestXMLCallsReader_ValidateCallsFile_CountMismatch(t *testing.T) {
 	tempDir := t.TempDir()
 	repoRoot := tempDir
 	callsDir := filepath.Join(repoRoot, "calls")
-	err := os.MkdirAll(callsDir, 0755)
+	err := os.MkdirAll(callsDir, 0750)
 	if err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestXMLCallsReader_ValidateCallsFile_CountMismatch(t *testing.T) {
 </calls>`
 
 	testFile := filepath.Join(callsDir, "calls-2014.xml")
-	err = os.WriteFile(testFile, []byte(testXML), 0644)
+	err = os.WriteFile(testFile, []byte(testXML), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

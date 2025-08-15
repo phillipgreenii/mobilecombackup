@@ -8,6 +8,7 @@ import (
 type ErrorCode string
 
 const (
+	// ErrCodeValidation indicates a validation error
 	ErrCodeValidation    ErrorCode = "VALIDATION_ERROR"
 	ErrCodeFileNotFound  ErrorCode = "FILE_NOT_FOUND"
 	ErrCodeParsing       ErrorCode = "PARSE_ERROR"
@@ -40,6 +41,7 @@ func (e *ValidationError) Unwrap() error {
 	return e.Err
 }
 
+// ErrorCode returns the error code for this validation error
 func (e *ValidationError) ErrorCode() ErrorCode {
 	return e.Code
 }
@@ -64,6 +66,7 @@ func (e *ProcessingError) Unwrap() error {
 	return e.Err
 }
 
+// ErrorCode returns the error code for this processing error
 func (e *ProcessingError) ErrorCode() ErrorCode {
 	return e.Code
 }
@@ -90,6 +93,7 @@ func (e *ImportError) Unwrap() error {
 	return e.Err
 }
 
+// ErrorCode returns the error code for this import error
 func (e *ImportError) ErrorCode() ErrorCode {
 	return e.Code
 }
@@ -111,6 +115,7 @@ func (e *FileError) Unwrap() error {
 	return e.Err
 }
 
+// ErrorCode returns the error code for this file error
 func (e *FileError) ErrorCode() ErrorCode {
 	return e.Code
 }
@@ -135,6 +140,7 @@ func (e *ConfigurationError) Unwrap() error {
 	return e.Err
 }
 
+// ErrorCode returns the error code for this configuration error
 func (e *ConfigurationError) ErrorCode() ErrorCode {
 	return e.Code
 }

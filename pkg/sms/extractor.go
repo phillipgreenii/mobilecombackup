@@ -213,17 +213,18 @@ func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config C
 	var contentToExtract string
 	var isBase64 bool
 
-	if part.Data != "" && part.Data != "null" {
+	switch {
+	case part.Data != "" && part.Data != "null":
 		// Binary data (base64 encoded)
 		contentToExtract = part.Data
 		isBase64 = true
 		log.Printf("[ATTACHMENT] Found base64 data, size: %d bytes", len(contentToExtract))
-	} else if part.Text != "" && part.Text != "null" && isExplicitAttachment {
+	case part.Text != "" && part.Text != "null" && isExplicitAttachment:
 		// Text content marked as attachment
 		contentToExtract = part.Text
 		isBase64 = false
 		log.Printf("[ATTACHMENT] Found text content marked as attachment, size: %d bytes", len(contentToExtract))
-	} else {
+	default:
 		// No extractable content - skip
 		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
 			part.Data, part.Text, isExplicitAttachment)

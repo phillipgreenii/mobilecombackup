@@ -16,7 +16,7 @@ type XMLSMSWriter struct {
 // NewXMLSMSWriter creates a new XML SMS writer
 func NewXMLSMSWriter(repoPath string) (*XMLSMSWriter, error) {
 	// Ensure the sms directory exists
-	if err := os.MkdirAll(repoPath, 0755); err != nil {
+	if err := os.MkdirAll(repoPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create sms directory: %w", err)
 	}
 
@@ -44,7 +44,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
-	file, err := os.Create(filepath)
+	file, err := os.Create(filepath) // nolint:gosec // Core functionality requires file creation
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}

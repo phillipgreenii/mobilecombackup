@@ -191,22 +191,22 @@ type ReprocessingStats struct {
 	RecordsProcessed int
 }
 
-// reprocessCallsFiles processes all calls files in the repository
-func reprocessCallsFiles(repoRoot string, contactsManager *contacts.ContactsManager) (*ReprocessingStats, error) {
+// extractorFunc defines the signature for file processing functions
+type extractorFunc func(string, *contacts.ContactsManager) (int, error)
+
+// reprocessFiles is a generic function to process XML files in a directory
+func reprocessFiles(repoRoot, dirName string, contactsManager *contacts.ContactsManager, extractor extractorFunc) (*ReprocessingStats, error) {
 	stats := &ReprocessingStats{}
 
-	callsDir := filepath.Join(repoRoot, "calls")
-	if _, err := os.Stat(callsDir); os.IsNotExist(err) {
-		return stats, nil // No calls directory
+	dataDir := filepath.Join(repoRoot, dirName)
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		return stats, nil // No directory
 	}
 
-	// Note: We don't use CallsImporter here since we only need contact extraction
-	// without the full import pipeline. Instead we directly parse XML files.
-
-	// Find all calls files
-	entries, err := os.ReadDir(callsDir)
+	// Find all XML files
+	entries, err := os.ReadDir(dataDir)
 	if err != nil {
-		return stats, fmt.Errorf("failed to read calls directory: %w", err)
+		return stats, fmt.Errorf("failed to read %s directory: %w", dirName, err)
 	}
 
 	for _, entry := range entries {
@@ -219,13 +219,13 @@ func reprocessCallsFiles(repoRoot string, contactsManager *contacts.ContactsMana
 			continue
 		}
 
-		filePath := filepath.Join(callsDir, filename)
+		filePath := filepath.Join(dataDir, filename)
 
 		// Process the file for contact extraction only
-		recordsCount, err := extractContactsFromCallsFile(filePath, contactsManager)
+		recordsCount, err := extractor(filePath, contactsManager)
 		if err != nil {
 			if verbose && !quiet {
-				PrintVerbose("Warning: failed to process calls file %s: %v", filename, err)
+				PrintVerbose("Warning: failed to process %s file %s: %v", dirName, filename, err)
 			}
 			continue
 		}
@@ -233,57 +233,21 @@ func reprocessCallsFiles(repoRoot string, contactsManager *contacts.ContactsMana
 		stats.FilesProcessed++
 		stats.RecordsProcessed += recordsCount
 		if verbose && !quiet {
-			PrintVerbose("Processed calls file: %s (%d records)", filename, recordsCount)
+			PrintVerbose("Processed %s file: %s (%d records)", dirName, filename, recordsCount)
 		}
 	}
 
 	return stats, nil
 }
 
+// reprocessCallsFiles processes all calls files in the repository
+func reprocessCallsFiles(repoRoot string, contactsManager *contacts.ContactsManager) (*ReprocessingStats, error) {
+	return reprocessFiles(repoRoot, "calls", contactsManager, extractContactsFromCallsFile)
+}
+
 // reprocessSMSFiles processes all SMS files in the repository
 func reprocessSMSFiles(repoRoot string, contactsManager *contacts.ContactsManager) (*ReprocessingStats, error) {
-	stats := &ReprocessingStats{}
-
-	smsDir := filepath.Join(repoRoot, "sms")
-	if _, err := os.Stat(smsDir); os.IsNotExist(err) {
-		return stats, nil // No SMS directory
-	}
-
-	// Find all SMS files
-	entries, err := os.ReadDir(smsDir)
-	if err != nil {
-		return stats, fmt.Errorf("failed to read SMS directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		filename := entry.Name()
-		if filepath.Ext(filename) != ".xml" {
-			continue
-		}
-
-		filePath := filepath.Join(smsDir, filename)
-
-		// Process the file for contact extraction only
-		recordsCount, err := extractContactsFromSMSFile(filePath, contactsManager)
-		if err != nil {
-			if verbose && !quiet {
-				PrintVerbose("Warning: failed to process SMS file %s: %v", filename, err)
-			}
-			continue
-		}
-
-		stats.FilesProcessed++
-		stats.RecordsProcessed += recordsCount
-		if verbose && !quiet {
-			PrintVerbose("Processed SMS file: %s (%d records)", filename, recordsCount)
-		}
-	}
-
-	return stats, nil
+	return reprocessFiles(repoRoot, "sms", contactsManager, extractContactsFromSMSFile)
 }
 
 // extractContactsFromCallsFile extracts contacts from a single calls file

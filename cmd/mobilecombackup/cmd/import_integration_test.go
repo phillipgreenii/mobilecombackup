@@ -140,7 +140,7 @@ func TestImportIntegration(t *testing.T) {
 			},
 			args:         []string{"--json"},
 			wantExitCode: 0,
-			checkFunc: func(_ *testing.T, repoPath string) {
+			checkFunc: func(_ *testing.T, _ string) {
 				// JSON output is checked in test body
 			},
 		},
@@ -152,8 +152,8 @@ func TestImportIntegration(t *testing.T) {
 				importPath := t.TempDir()
 
 				// Create subdirectories but no marker file
-				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
-				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
+				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0750)
+				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0750)
 
 				return repoPath, importPath
 			},
@@ -173,7 +173,7 @@ func TestImportIntegration(t *testing.T) {
 created: "2024-01-01T00:00:00Z"
 creator: "mobilecombackup-test"
 `
-				_ = os.WriteFile(filepath.Join(repoPath, ".mobilecombackup.yaml"), []byte(markerContent), 0644)
+				_ = os.WriteFile(filepath.Join(repoPath, ".mobilecombackup.yaml"), []byte(markerContent), 0600)
 
 				return repoPath, importPath
 			},
@@ -201,8 +201,8 @@ creator: "mobilecombackup-test"
 				importPath := t.TempDir()
 
 				// Create subdirectories but no marker file
-				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0755)
-				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0755)
+				_ = os.MkdirAll(filepath.Join(repoPath, "calls"), 0750)
+				_ = os.MkdirAll(filepath.Join(repoPath, "sms"), 0750)
 
 				return repoPath, importPath
 			},
@@ -320,7 +320,7 @@ func TestImportScanningLogic(t *testing.T) {
 	createTestFile(t, filepath.Join(importDir, "subdir", "sms-2.xml"), "<sms></sms>")
 
 	// Also create files that should be excluded (already in repo structure)
-	_ = os.MkdirAll(filepath.Join(importDir, "calls"), 0755)
+	_ = os.MkdirAll(filepath.Join(importDir, "calls"), 0750)
 	createTestFile(t, filepath.Join(importDir, "calls", "calls-2020.xml"), "<calls></calls>")
 
 	// Run import with verbose to see what files are processed
@@ -382,21 +382,21 @@ func copyTestFile(t *testing.T, src, dst string) {
 		t.Fatalf("Failed to read test file %s: %v", src, err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
-	if err := os.WriteFile(dst, data, 0644); err != nil {
+	if err := os.WriteFile(dst, data, 0600); err != nil {
 		t.Fatalf("Failed to write test file: %v", err)
 	}
 }
 
 func createTestFile(t *testing.T, path, content string) {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 }

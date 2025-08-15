@@ -78,7 +78,7 @@ type node struct {
 	children []string
 }
 
-func runInit(_ *cobra.Command, args []string) error {
+func runInit(_ *cobra.Command, _ []string) error {
 	// Get repository root (from global flag or current directory)
 	targetDir := repoRoot
 	absPath, err := filepath.Abs(targetDir)

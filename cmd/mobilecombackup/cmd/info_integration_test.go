@@ -232,14 +232,14 @@ created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup v1.0.0"
 `
 	markerPath := filepath.Join(repoPath, ".mobilecombackup.yaml")
-	if err := os.WriteFile(markerPath, []byte(markerContent), 0644); err != nil {
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0600); err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
 
 	// Create empty contacts file
 	contactsPath := filepath.Join(repoPath, "contacts.yaml")
 	contactsContent := "contacts: []\n"
-	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0644); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 }
@@ -260,7 +260,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </calls>`
 
 	callsPath := filepath.Join(repoPath, "calls", "calls-2014.xml")
-	if err := os.WriteFile(callsPath, []byte(callsContent), 0644); err != nil {
+	if err := os.WriteFile(callsPath, []byte(callsContent), 0600); err != nil {
 		t.Fatalf("Failed to create calls file: %v", err)
 	}
 
@@ -272,7 +272,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </calls>`
 
 	calls2015Path := filepath.Join(repoPath, "calls", "calls-2015.xml")
-	if err := os.WriteFile(calls2015Path, []byte(calls2015Content), 0644); err != nil {
+	if err := os.WriteFile(calls2015Path, []byte(calls2015Content), 0600); err != nil {
 		t.Fatalf("Failed to create 2015 calls file: %v", err)
 	}
 
@@ -291,7 +291,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </smses>`
 
 	smsPath := filepath.Join(repoPath, "sms", "sms-2014.xml")
-	if err := os.WriteFile(smsPath, []byte(smsContent), 0644); err != nil {
+	if err := os.WriteFile(smsPath, []byte(smsContent), 0600); err != nil {
 		t.Fatalf("Failed to create SMS file: %v", err)
 	}
 
@@ -303,7 +303,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
     numbers: ["555-5678"]
 `
 	contactsPath := filepath.Join(repoPath, "contacts.yaml")
-	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0644); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 }

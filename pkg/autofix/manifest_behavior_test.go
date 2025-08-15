@@ -91,7 +91,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Verify content is different (should contain actual repository files)
-		newContent, err := os.ReadFile(manifestPath)
+		newContent, err := os.ReadFile(manifestPath) // nolint:gosec // Test-controlled path
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,7 +145,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Verify checksum file was NOT overwritten
-		currentContent, err := os.ReadFile(checksumPath)
+		currentContent, err := os.ReadFile(checksumPath) // nolint:gosec // Test-controlled path
 		if err != nil {
 			t.Fatal(err)
 		}

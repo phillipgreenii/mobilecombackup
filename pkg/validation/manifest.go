@@ -34,7 +34,7 @@ func NewManifestValidator(repositoryRoot string) ManifestValidator {
 func (v *ManifestValidatorImpl) LoadManifest() (*FileManifest, error) {
 	manifestPath := filepath.Join(v.repositoryRoot, manifestFileName)
 
-	data, err := os.ReadFile(manifestPath)
+	data, err := os.ReadFile(manifestPath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		return nil, fmt.Errorf("failed to read files.yaml: %w", err)
 	}
@@ -213,7 +213,7 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 	}
 
 	// Read expected checksum
-	expectedData, err := os.ReadFile(checksumPath)
+	expectedData, err := os.ReadFile(checksumPath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		return fmt.Errorf("failed to read files.yaml.sha256: %w", err)
 	}
@@ -241,7 +241,7 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 	}
 
 	// Calculate actual checksum
-	file, err := os.Open(manifestPath)
+	file, err := os.Open(manifestPath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		return fmt.Errorf("failed to open files.yaml: %w", err)
 	}

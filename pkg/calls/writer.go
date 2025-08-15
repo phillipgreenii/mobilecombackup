@@ -16,7 +16,7 @@ type XMLCallsWriter struct {
 // NewXMLCallsWriter creates a new XML calls writer
 func NewXMLCallsWriter(repoPath string) (*XMLCallsWriter, error) {
 	// Ensure the calls directory exists
-	if err := os.MkdirAll(repoPath, 0755); err != nil {
+	if err := os.MkdirAll(repoPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create calls directory: %w", err)
 	}
 

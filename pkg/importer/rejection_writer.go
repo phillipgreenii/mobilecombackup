@@ -37,7 +37,7 @@ func (w *XMLRejectionWriter) ensureRejectedDirectory() error {
 	w.dirOnce.Do(func() {
 		// Create main rejected directory
 		rejectedDir := filepath.Join(w.repoRoot, "rejected")
-		if err := os.MkdirAll(rejectedDir, 0755); err != nil {
+		if err := os.MkdirAll(rejectedDir, 0750); err != nil {
 			w.dirErr = fmt.Errorf("failed to create rejected directory: %w", err)
 			return
 		}
@@ -45,7 +45,7 @@ func (w *XMLRejectionWriter) ensureRejectedDirectory() error {
 		// Create subdirectories for calls and sms
 		for _, subdir := range []string{"calls", "sms"} {
 			path := filepath.Join(rejectedDir, subdir)
-			if err := os.MkdirAll(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0750); err != nil {
 				w.dirErr = fmt.Errorf("failed to create rejected/%s directory: %w", subdir, err)
 				return
 			}

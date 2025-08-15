@@ -71,10 +71,10 @@ type ProgressReporter interface {
 type NullProgressReporter struct{}
 
 // StartOperation starts an operation (no-op for null reporter)
-func (r *NullProgressReporter) StartOperation(operation string, details string) {}
+func (r *NullProgressReporter) StartOperation(_ string, _ string) {}
 
 // CompleteOperation completes an operation (no-op for null reporter)
-func (r *NullProgressReporter) CompleteOperation(success bool, details string) {}
+func (r *NullProgressReporter) CompleteOperation(_ bool, _ string) {}
 
 // ReportProgress reports progress (no-op for null reporter)
-func (r *NullProgressReporter) ReportProgress(current, total int) {}
+func (r *NullProgressReporter) ReportProgress(_, _ int) {}

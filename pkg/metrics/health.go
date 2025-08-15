@@ -136,7 +136,7 @@ func (s *SystemHealthChecker) Check() *HealthCheck {
 	// Check if we can write to temp directory
 	tempDir := os.TempDir()
 	testFile := fmt.Sprintf("%s/health_check_%d", tempDir, time.Now().UnixNano())
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		status = HealthStatusUnhealthy
 		message = fmt.Sprintf("Cannot write to temp directory: %v", err)
 		details["temp_dir_error"] = err.Error()

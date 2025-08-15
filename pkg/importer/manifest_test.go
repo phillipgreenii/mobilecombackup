@@ -27,7 +27,7 @@ func TestGenerateManifestFile(t *testing.T) {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -45,10 +45,10 @@ func TestGenerateManifestFile(t *testing.T) {
 	for path, content := range testFiles {
 		fullPath := filepath.Join(tempDir, path)
 		dir := filepath.Dir(fullPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(fullPath, []byte(content), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -152,7 +152,7 @@ func TestCalculateFileChecksum(t *testing.T) {
 	testFile := filepath.Join(tempDir, "test.txt")
 	testContent := "Hello, World!"
 
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(testContent), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -181,7 +181,7 @@ func TestCollectRepositoryFiles(t *testing.T) {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -198,7 +198,7 @@ func TestCollectRepositoryFiles(t *testing.T) {
 
 	for _, file := range files {
 		path := filepath.Join(tempDir, file)
-		if err := os.WriteFile(path, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("test"), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -241,7 +241,7 @@ func TestVerifyManifest(t *testing.T) {
 
 	for name, content := range testFiles {
 		path := filepath.Join(tempDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -257,7 +257,7 @@ func TestVerifyManifest(t *testing.T) {
 	}
 
 	// Modify a file
-	if err := os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("modified"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("modified"), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -274,7 +274,7 @@ func TestGenerateManifestChecksum(t *testing.T) {
 
 	// Create a test manifest file
 	testContent := "test manifest content"
-	if err := os.WriteFile(manifestPath, []byte(testContent), 0644); err != nil {
+	if err := os.WriteFile(manifestPath, []byte(testContent), 0600); err != nil {
 		t.Fatal(err)
 	}
 

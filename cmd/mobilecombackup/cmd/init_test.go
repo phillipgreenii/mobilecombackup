@@ -43,7 +43,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with calls subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				_ = os.Mkdir(filepath.Join(dir, "calls"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "calls"), 0750)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -52,7 +52,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with sms subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				_ = os.Mkdir(filepath.Join(dir, "sms"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "sms"), 0750)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -61,7 +61,7 @@ func TestValidateTargetDirectory(t *testing.T) {
 			name: "directory with attachments subdirectory",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				_ = os.Mkdir(filepath.Join(dir, "attachments"), 0755)
+				_ = os.Mkdir(filepath.Join(dir, "attachments"), 0750)
 				return dir
 			},
 			wantError: "appears to be a repository",
@@ -217,7 +217,7 @@ func TestInitializeRepository(t *testing.T) {
 
 				// Check summary.yaml
 				summaryPath := filepath.Join(repoRoot, "summary.yaml")
-				data, err = os.ReadFile(summaryPath)
+				data, err = os.ReadFile(summaryPath) // nolint:gosec // Test-controlled path
 				if err != nil {
 					t.Errorf("summary file not created: %v", err)
 				} else {
@@ -251,7 +251,7 @@ func TestInitializeRepositoryPermissions(t *testing.T) {
 	// Create a directory without write permission
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "no-write")
-	_ = os.Mkdir(repoRoot, 0555) // read+execute only
+	_ = os.Mkdir(repoRoot, 0555) // nolint:gosec // Intentionally restrictive for testing
 
 	_, err := initializeRepository(repoRoot, false, true)
 	if err == nil {

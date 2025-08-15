@@ -367,11 +367,9 @@ func TestValidateOrphanRemovalIntegration(t *testing.T) {
 		checkFiles   func(t *testing.T, repoPath string)
 	}{
 		{
-			name: "dry run orphan removal",
-			args: []string{"validate", "--remove-orphan-attachments", "--dry-run"},
-			setup: func(t *testing.T) string {
-				return createRepoWithOrphans(t)
-			},
+			name:         "dry run orphan removal",
+			args:         []string{"validate", "--remove-orphan-attachments", "--dry-run"},
+			setup:        createRepoWithOrphans,
 			wantExitCode: 1, // Validation violations exist
 			checkOutput: func(t *testing.T, output string) {
 				if !strings.Contains(output, "Orphan attachment removal:") {
@@ -390,11 +388,9 @@ func TestValidateOrphanRemovalIntegration(t *testing.T) {
 			},
 		},
 		{
-			name: "actual orphan removal",
-			args: []string{"validate", "--remove-orphan-attachments"},
-			setup: func(t *testing.T) string {
-				return createRepoWithOrphans(t)
-			},
+			name:         "actual orphan removal",
+			args:         []string{"validate", "--remove-orphan-attachments"},
+			setup:        createRepoWithOrphans,
 			wantExitCode: 1, // Validation violations exist
 			checkOutput: func(t *testing.T, output string) {
 				if !strings.Contains(output, "Orphan attachment removal:") {
@@ -413,11 +409,9 @@ func TestValidateOrphanRemovalIntegration(t *testing.T) {
 			},
 		},
 		{
-			name: "JSON output with orphan removal",
-			args: []string{"validate", "--remove-orphan-attachments", "--output-json"},
-			setup: func(t *testing.T) string {
-				return createRepoWithOrphans(t)
-			},
+			name:         "JSON output with orphan removal",
+			args:         []string{"validate", "--remove-orphan-attachments", "--output-json"},
+			setup:        createRepoWithOrphans,
 			wantExitCode: 1, // Validation violations exist
 			checkOutput: func(t *testing.T, output string) {
 				// Filter out log messages to get pure JSON

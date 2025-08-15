@@ -26,7 +26,7 @@ func TestReprocessContactsManifestUpdate(t *testing.T) {
 
 	// Create a test calls.xml file with contact information
 	callsDir := filepath.Join(tempDir, "calls")
-	if err := os.MkdirAll(callsDir, 0755); err != nil {
+	if err := os.MkdirAll(callsDir, 0750); err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
 
@@ -37,7 +37,7 @@ func TestReprocessContactsManifestUpdate(t *testing.T) {
 </calls>`
 
 	callsFile := filepath.Join(callsDir, "calls_2022.xml")
-	if err := os.WriteFile(callsFile, []byte(testCallsXML), 0644); err != nil {
+	if err := os.WriteFile(callsFile, []byte(testCallsXML), 0600); err != nil {
 		t.Fatalf("Failed to write test calls file: %v", err)
 	}
 
@@ -82,7 +82,7 @@ func TestReprocessContactsManifestUpdate(t *testing.T) {
 	}
 
 	// Verify checksum file contains proper format
-	checksumContent, err := os.ReadFile(manifestChecksumPath)
+	checksumContent, err := os.ReadFile(manifestChecksumPath) // nolint:gosec // Test-controlled path
 	if err != nil {
 		t.Fatalf("Failed to read checksum file: %v", err)
 	}
@@ -103,12 +103,12 @@ func setupBasicRepository(dir string) error {
 created_at: "2024-01-01T00:00:00Z"
 created_by: "test"`
 
-	if err := os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0600); err != nil {
 		return err
 	}
 
 	// Create empty contacts.yaml
-	if err := os.WriteFile(filepath.Join(dir, "contacts.yaml"), []byte("contacts: []\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "contacts.yaml"), []byte("contacts: []\n"), 0600); err != nil {
 		return err
 	}
 
@@ -117,13 +117,13 @@ created_by: "test"`
   calls: 0
   sms: 0`
 
-	if err := os.WriteFile(filepath.Join(dir, "summary.yaml"), []byte(summaryContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "summary.yaml"), []byte(summaryContent), 0600); err != nil {
 		return err
 	}
 
 	// Create required directories
 	for _, subdir := range []string{"calls", "sms", "attachments"} {
-		if err := os.MkdirAll(filepath.Join(dir, subdir), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(dir, subdir), 0750); err != nil {
 			return err
 		}
 	}
@@ -177,7 +177,7 @@ func getFileInfoFromManifest(t *testing.T, repoRoot, filename string) *manifest.
 // readManifestFile reads and parses the files.yaml manifest
 func readManifestFile(repoRoot string) (*manifest.FileManifest, error) {
 	manifestPath := filepath.Join(repoRoot, "files.yaml")
-	data, err := os.ReadFile(manifestPath)
+	data, err := os.ReadFile(manifestPath) // nolint:gosec // Test-controlled path
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}

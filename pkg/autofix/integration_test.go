@@ -93,7 +93,7 @@ func TestAutofixer_Integration_FullRepository(t *testing.T) {
 
 	// Verify XML count was fixed
 	smsPath := filepath.Join(tempDir, "sms", "sms-2024.xml")
-	if content, err := os.ReadFile(smsPath); err == nil {
+	if content, err := os.ReadFile(smsPath); err == nil { // nolint:gosec // Test-controlled path
 		if !strings.Contains(string(content), `count="2"`) {
 			t.Error("Expected SMS count to be fixed to 2")
 		}
@@ -225,7 +225,7 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 
 	// Verify files.yaml was created and contains all test files
 	filesPath := filepath.Join(tempDir, "files.yaml")
-	if content, err := os.ReadFile(filesPath); err == nil {
+	if content, err := os.ReadFile(filesPath); err == nil { // nolint:gosec // Test-controlled path
 		// Should contain references to the test files
 		if !strings.Contains(string(content), "test-file-") {
 			t.Error("Expected files.yaml to contain test files")
@@ -250,7 +250,7 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 	}
 	defer func() {
 		// Restore permissions for cleanup
-		_ = os.Chmod(readOnlyDir, 0755)
+		_ = os.Chmod(readOnlyDir, 0750) // nolint:gosec // Cleanup permissions
 	}()
 
 	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})

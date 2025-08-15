@@ -35,7 +35,7 @@ func NewChecksumValidator(repositoryRoot string) ChecksumValidator {
 
 // CalculateFileChecksum calculates SHA-256 for a file
 func (v *ChecksumValidatorImpl) CalculateFileChecksum(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		return "", fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}

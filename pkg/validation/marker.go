@@ -48,7 +48,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	markerPath := filepath.Join(v.repositoryRoot, ".mobilecombackup.yaml")
 
 	// Check if file exists
-	file, err := os.Open(markerPath)
+	file, err := os.Open(markerPath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		if os.IsNotExist(err) {
 			violations = append(violations, ValidationViolation{

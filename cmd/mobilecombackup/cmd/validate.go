@@ -87,6 +87,7 @@ type ConsoleProgressReporter struct {
 	phase   string
 }
 
+// StartPhase begins a new validation phase
 func (r *ConsoleProgressReporter) StartPhase(phase string) {
 	r.phase = phase
 	if !r.quiet {
@@ -97,12 +98,14 @@ func (r *ConsoleProgressReporter) StartPhase(phase string) {
 	}
 }
 
+// UpdateProgress reports progress during validation
 func (r *ConsoleProgressReporter) UpdateProgress(current, total int) {
 	if !r.quiet && r.verbose {
 		fmt.Printf("  Progress: %d/%d\r", current, total)
 	}
 }
 
+// CompletePhase marks the current validation phase as complete
 func (r *ConsoleProgressReporter) CompletePhase() {
 	if !r.quiet && !r.verbose {
 		fmt.Println(" done")
@@ -114,11 +117,16 @@ func (r *ConsoleProgressReporter) CompletePhase() {
 // NullProgressReporter discards all progress updates
 type NullProgressReporter struct{}
 
-func (r *NullProgressReporter) StartPhase(phase string)           {}
-func (r *NullProgressReporter) UpdateProgress(current, total int) {}
-func (r *NullProgressReporter) CompletePhase()                    {}
+// StartPhase is a no-op for the null reporter
+func (r *NullProgressReporter) StartPhase(phase string) {}
 
-func runValidate(cmd *cobra.Command, args []string) error {
+// UpdateProgress is a no-op for the null reporter
+func (r *NullProgressReporter) UpdateProgress(current, total int) {}
+
+// CompletePhase is a no-op for the null reporter
+func (r *NullProgressReporter) CompletePhase() {}
+
+func runValidate(_ *cobra.Command, args []string) error {
 	// Resolve repository root
 	repoPath := resolveRepoRoot()
 

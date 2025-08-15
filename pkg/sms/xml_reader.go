@@ -50,7 +50,7 @@ func (r *XMLSMSReader) ReadMessages(year int) ([]Message, error) {
 // StreamMessagesForYear streams messages for memory efficiency
 func (r *XMLSMSReader) StreamMessagesForYear(year int, callback func(Message) error) error {
 	filePath := r.getSMSFilePath(year)
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // nolint:gosec // Core functionality requires file reading
 	if err != nil {
 		return fmt.Errorf("failed to open SMS file %s: %w", filePath, err)
 	}
@@ -221,7 +221,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 		case "m_id":
 			mms.MId = attr.Value
 		case "thread_id":
-			mms.ThreadId = attr.Value
+			mms.ThreadID = attr.Value
 		case "text_only":
 			if attr.Value == "1" {
 				mms.TextOnly = 1
@@ -288,7 +288,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				if err != nil {
 					return mms, fmt.Errorf("invalid sub_id format: %s", attr.Value)
 				}
-				mms.SubId = subID
+				mms.SubID = subID
 			}
 		case "sim_slot":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -343,7 +343,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 			}
 		case "tr_id":
 			if attr.Value != types.XMLNullValue {
-				mms.TrId = attr.Value
+				mms.TrID = attr.Value
 			}
 		case "st":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -431,7 +431,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				if err != nil {
 					return mms, fmt.Errorf("invalid msg_id format: %s", attr.Value)
 				}
-				mms.MsgId = msgID
+				mms.MsgID = msgID
 			}
 		case "rr":
 			if attr.Value != "" && attr.Value != types.XMLNullValue {
@@ -447,7 +447,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 				if err != nil {
 					return mms, fmt.Errorf("invalid app_id format: %s", attr.Value)
 				}
-				mms.AppId = appID
+				mms.AppID = appID
 			}
 		case "resp_txt":
 			if attr.Value != types.XMLNullValue {
@@ -575,7 +575,7 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 			}
 		case "cid":
 			if attr.Value != types.XMLNullValue {
-				part.ContentId = attr.Value
+				part.ContentID = attr.Value
 			}
 		case "cl":
 			if attr.Value != types.XMLNullValue {
@@ -764,7 +764,7 @@ func (r *XMLSMSReader) GetAvailableYears() ([]int, error) {
 // GetMessageCount returns total number of messages for a year
 func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
 	filePath := r.getSMSFilePath(year)
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // nolint:gosec // Core functionality requires file reading
 	if err != nil {
 		return 0, fmt.Errorf("failed to open SMS file %s: %w", filePath, err)
 	}

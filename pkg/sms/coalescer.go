@@ -1,3 +1,4 @@
+// Package sms provides SMS and MMS message processing capabilities.
 package sms
 
 import (

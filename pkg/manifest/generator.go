@@ -242,7 +242,7 @@ func (g *ManifestGenerator) writeManifestChecksum() error {
 
 	// Write to file atomically
 	tempPath := checksumPath + ".tmp"
-	if err := os.WriteFile(tempPath, []byte(checksumContent), 0644); err != nil {
+	if err := os.WriteFile(tempPath, []byte(checksumContent), 0600); err != nil {
 		return fmt.Errorf("failed to write temporary checksum file: %w", err)
 	}
 

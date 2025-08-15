@@ -12,7 +12,7 @@ import (
 // copyFile copies a file from src to dst, creating directories as needed
 func copyFile(src, dst string) error {
 	// Create destination directory
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
 		return err
 	}
 
@@ -191,7 +191,7 @@ func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
     numbers:
       - "+15555555678"
 `
-	err = os.WriteFile(contactsPath, []byte(yamlContent2), 0644)
+	err = os.WriteFile(contactsPath, []byte(yamlContent2), 0600)
 	if err != nil {
 		t.Fatalf("Failed to update test file: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestContactsManager_Integration_PhoneNumberVariations(t *testing.T) {
       - "555.555.9999"
       - "5551234567"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -270,7 +270,7 @@ func TestContactsManager_Integration_UnknownContact(t *testing.T) {
       - "8888888888"
       - "9999999999"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

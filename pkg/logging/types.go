@@ -39,6 +39,7 @@ type ContextLogger interface {
 type LogLevel string
 
 const (
+	// LevelDebug enables debug-level logging
 	LevelDebug LogLevel = "debug"
 	LevelInfo  LogLevel = "info"
 	LevelWarn  LogLevel = "warn"
@@ -50,6 +51,7 @@ const (
 type LogFormat string
 
 const (
+	// FormatConsole outputs human-readable console logs
 	FormatConsole LogFormat = "console"
 	FormatJSON    LogFormat = "json"
 )

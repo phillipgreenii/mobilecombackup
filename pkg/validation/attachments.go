@@ -278,7 +278,7 @@ var formatSignatures = []formatSignature{
 
 // DetectFileFormat reads the file header and detects the MIME type based on magic bytes
 func DetectFileFormat(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}

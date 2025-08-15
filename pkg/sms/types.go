@@ -75,7 +75,7 @@ type MMS struct {
 	Address      string       `xml:"address,attr"` // Primary address
 	MType        int          `xml:"m_type,attr"`
 	MId          string       `xml:"m_id,attr"`
-	ThreadId     string       `xml:"thread_id,attr"`
+	ThreadID     string       `xml:"thread_id,attr"`
 	TextOnly     int          `xml:"text_only,attr"`
 	Sub          string       `xml:"sub,attr"`
 	Parts        []MMSPart    `xml:"parts>part"`
@@ -88,7 +88,7 @@ type MMS struct {
 	SubCs        int          `xml:"sub_cs,attr"`
 	Read         int          `xml:"read,attr"`
 	CtL          string       `xml:"ct_l,attr"`
-	TrId         string       `xml:"tr_id,attr"`
+	TrID         string       `xml:"tr_id,attr"`
 	St           int          `xml:"st,attr"`
 	MCls         string       `xml:"m_cls,attr"`
 	DTm          int64        `xml:"d_tm,attr"`
@@ -104,9 +104,9 @@ type MMS struct {
 	Exp          int64        `xml:"exp,attr"`
 	Pri          int          `xml:"pri,attr"`
 	Hidden       int          `xml:"hidden,attr"`
-	MsgId        int          `xml:"msg_id,attr"`
+	MsgID        int          `xml:"msg_id,attr"`
 	Rr           int          `xml:"rr,attr"`
-	AppId        int          `xml:"app_id,attr"`
+	AppID        int          `xml:"app_id,attr"`
 	RespTxt      string       `xml:"resp_txt,attr"`
 	RptA         int          `xml:"rpt_a,attr"`
 	Locked       int          `xml:"locked,attr"`
@@ -115,7 +115,7 @@ type MMS struct {
 	MSize        int          `xml:"m_size,attr"`
 	SimImsi      string       `xml:"sim_imsi,attr"`
 	Creator      string       `xml:"creator,attr"`
-	SubId        int          `xml:"sub_id,attr"`
+	SubID        int          `xml:"sub_id,attr"`
 	SimSlot      int          `xml:"sim_slot,attr"`
 	SpamReport   int          `xml:"spam_report,attr"`
 	SafeMessage  int          `xml:"safe_message,attr"`
@@ -162,7 +162,7 @@ type MMSPart struct {
 	Charset        string `xml:"chset,attr"`
 	ContentDisp    string `xml:"cd,attr"`
 	Filename       string `xml:"fn,attr"`
-	ContentId      string `xml:"cid,attr"`
+	ContentID      string `xml:"cid,attr"`
 	ContentLoc     string `xml:"cl,attr"`
 	CttS           int    `xml:"ctt_s,attr"`
 	CttT           int    `xml:"ctt_t,attr"`
