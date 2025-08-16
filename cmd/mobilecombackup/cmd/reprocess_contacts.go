@@ -48,94 +48,93 @@ func init() {
 }
 
 func runReprocessContacts(_ *cobra.Command, args []string) error {
+	// Setup and validation
+	resolvedRepoRoot, contactsManager, initialStats, err := setupReprocessContacts()
+	if err != nil {
+		return err
+	}
+
+	// Set up manifest update to run at the end
+	defer updateManifestAfterReprocess(resolvedRepoRoot)
+
+	// Process files and collect new contacts
+	newUnprocessedEntries, err := processFilesForContacts(resolvedRepoRoot, initialStats)
+	if err != nil {
+		return err
+	}
+
+	// Handle results based on what was found
+	return handleReprocessResults(resolvedRepoRoot, contactsManager, newUnprocessedEntries, initialStats)
+}
+
+// setupReprocessContacts handles initial setup and validation
+func setupReprocessContacts() (string, *contacts.Manager, reprocessInitialStats, error) {
 	// Determine repository root
 	resolvedRepoRoot, err := filepath.Abs(repoRoot)
 	if err != nil {
-		return fmt.Errorf("failed to resolve repository root: %w", err)
+		return "", nil, reprocessInitialStats{}, fmt.Errorf("failed to resolve repository root: %w", err)
 	}
 
 	// Check if this is a valid repository
 	markerFile := filepath.Join(resolvedRepoRoot, ".mobilecombackup.yaml")
 	if _, err := os.Stat(markerFile); os.IsNotExist(err) {
-		return fmt.Errorf("not a mobilecombackup repository (missing %s)", markerFile)
+		return "", nil, reprocessInitialStats{}, fmt.Errorf("not a mobilecombackup repository (missing %s)", markerFile)
 	}
 
-	if !quiet {
-		PrintInfo("Reprocessing contacts in repository: %s", resolvedRepoRoot)
-		if reprocessDryRun {
-			PrintInfo("Running in dry-run mode - no changes will be made")
-		}
-	}
+	// Print initial status
+	printReprocessStartMessage(resolvedRepoRoot)
 
 	// Initialize contacts manager
 	contactsManager := contacts.NewContactsManager(resolvedRepoRoot)
 
 	// Load existing contacts
 	if err := contactsManager.LoadContacts(); err != nil {
-		return fmt.Errorf("failed to load existing contacts: %w", err)
+		return "", nil, reprocessInitialStats{}, fmt.Errorf("failed to load existing contacts: %w", err)
 	}
 
-	initialContactsCount := contactsManager.GetContactsCount()
-	initialUnprocessedCount := len(contactsManager.GetUnprocessedEntries())
+	// Collect initial statistics
+	initialStats := reprocessInitialStats{
+		ContactsCount:    contactsManager.GetContactsCount(),
+		UnprocessedCount: len(contactsManager.GetUnprocessedEntries()),
+	}
 
 	if verbose && !quiet {
 		PrintVerbose("Initial state: %d processed contacts, %d unprocessed entries",
-			initialContactsCount, initialUnprocessedCount)
+			initialStats.ContactsCount, initialStats.UnprocessedCount)
 	}
 
+	return resolvedRepoRoot, contactsManager, initialStats, nil
+}
+
+// processFilesForContacts processes all files and collects new contacts
+func processFilesForContacts(resolvedRepoRoot string, initialStats reprocessInitialStats) ([]contacts.UnprocessedEntry, error) {
 	// Create a temporary contacts manager for reprocessing
 	tempContactsManager := contacts.NewContactsManager("")
 
 	// Process calls files
 	callsStats, err := reprocessCallsFiles(resolvedRepoRoot, tempContactsManager)
 	if err != nil {
-		return fmt.Errorf("failed to reprocess calls files: %w", err)
+		return nil, fmt.Errorf("failed to reprocess calls files: %w", err)
 	}
 
 	// Process SMS files
 	smsStats, err := reprocessSMSFiles(resolvedRepoRoot, tempContactsManager)
 	if err != nil {
-		return fmt.Errorf("failed to reprocess SMS files: %w", err)
+		return nil, fmt.Errorf("failed to reprocess SMS files: %w", err)
 	}
 
 	// Get newly discovered contacts
 	newUnprocessedEntries := tempContactsManager.GetUnprocessedEntries()
 
-	if !quiet {
-		PrintInfo("Reprocessing complete:")
-		PrintInfo("  Calls files processed: %d", callsStats.FilesProcessed)
-		PrintInfo("  Calls records processed: %d", callsStats.RecordsProcessed)
-		PrintInfo("  SMS files processed: %d", smsStats.FilesProcessed)
-		PrintInfo("  SMS records processed: %d", smsStats.RecordsProcessed)
-		PrintInfo("  New unprocessed contacts found: %d", len(newUnprocessedEntries))
-	}
+	// Report processing results
+	printReprocessResults(callsStats, smsStats, newUnprocessedEntries)
 
-	// Always update manifest at the end, even if no new contacts were found,
-	// in case the contacts.yaml file was modified externally
-	defer func() {
-		if !reprocessDryRun {
-			// Update manifest to reflect the current state of contacts.yaml file
-			if verbose && !quiet {
-				PrintVerbose("Updating manifest files after contacts reprocessing")
-			}
+	return newUnprocessedEntries, nil
+}
 
-			manifestGenerator := manifest.NewManifestGenerator(resolvedRepoRoot)
-			fileManifest, err := manifestGenerator.GenerateFileManifest()
-			if err != nil && !quiet {
-				PrintInfo("Warning: failed to generate updated file manifest: %v", err)
-				return
-			}
-
-			if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil && !quiet {
-				PrintInfo("Warning: failed to write updated manifest files: %v", err)
-				return
-			}
-
-			if !quiet {
-				PrintInfo("Updated manifest files (files.yaml, files.yaml.sha256)")
-			}
-		}
-	}()
+// handleReprocessResults handles the results and performs final operations
+func handleReprocessResults(resolvedRepoRoot string, contactsManager *contacts.Manager,
+	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats) error {
 
 	if len(newUnprocessedEntries) == 0 {
 		if !quiet {
@@ -145,14 +144,7 @@ func runReprocessContacts(_ *cobra.Command, args []string) error {
 	}
 
 	// Display new contacts that would be added
-	if verbose && !quiet {
-		PrintVerbose("New contacts found:")
-		for _, entry := range newUnprocessedEntries {
-			for _, name := range entry.ContactNames {
-				PrintVerbose("  %s -> %s", entry.PhoneNumber, name)
-			}
-		}
-	}
+	printNewContactsDetails(newUnprocessedEntries)
 
 	if reprocessDryRun {
 		if !quiet {
@@ -160,6 +152,14 @@ func runReprocessContacts(_ *cobra.Command, args []string) error {
 		}
 		return nil
 	}
+
+	// Merge and save new contacts
+	return mergeAndSaveContacts(resolvedRepoRoot, contactsManager, newUnprocessedEntries, initialStats)
+}
+
+// mergeAndSaveContacts merges new contacts and saves them
+func mergeAndSaveContacts(resolvedRepoRoot string, contactsManager *contacts.Manager,
+	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats) error {
 
 	// Merge new contacts with existing ones
 	for _, entry := range newUnprocessedEntries {
@@ -174,8 +174,9 @@ func runReprocessContacts(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save updated contacts: %w", err)
 	}
 
+	// Report final results
 	finalUnprocessedCount := len(contactsManager.GetUnprocessedEntries())
-	newContactsAdded := finalUnprocessedCount - initialUnprocessedCount
+	newContactsAdded := finalUnprocessedCount - initialStats.UnprocessedCount
 
 	if !quiet {
 		PrintInfo("Successfully updated contacts.yaml")
@@ -183,6 +184,72 @@ func runReprocessContacts(_ *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// printReprocessStartMessage prints the initial reprocess message
+func printReprocessStartMessage(resolvedRepoRoot string) {
+	if !quiet {
+		PrintInfo("Reprocessing contacts in repository: %s", resolvedRepoRoot)
+		if reprocessDryRun {
+			PrintInfo("Running in dry-run mode - no changes will be made")
+		}
+	}
+}
+
+// printReprocessResults prints the file processing results
+func printReprocessResults(callsStats, smsStats *ReprocessingStats, newUnprocessedEntries []contacts.UnprocessedEntry) {
+	if !quiet {
+		PrintInfo("Reprocessing complete:")
+		PrintInfo("  Calls files processed: %d", callsStats.FilesProcessed)
+		PrintInfo("  Calls records processed: %d", callsStats.RecordsProcessed)
+		PrintInfo("  SMS files processed: %d", smsStats.FilesProcessed)
+		PrintInfo("  SMS records processed: %d", smsStats.RecordsProcessed)
+		PrintInfo("  New unprocessed contacts found: %d", len(newUnprocessedEntries))
+	}
+}
+
+// printNewContactsDetails prints details of newly found contacts
+func printNewContactsDetails(newUnprocessedEntries []contacts.UnprocessedEntry) {
+	if verbose && !quiet {
+		PrintVerbose("New contacts found:")
+		for _, entry := range newUnprocessedEntries {
+			for _, name := range entry.ContactNames {
+				PrintVerbose("  %s -> %s", entry.PhoneNumber, name)
+			}
+		}
+	}
+}
+
+// updateManifestAfterReprocess updates the manifest files after reprocessing
+func updateManifestAfterReprocess(resolvedRepoRoot string) {
+	if !reprocessDryRun {
+		// Update manifest to reflect the current state of contacts.yaml file
+		if verbose && !quiet {
+			PrintVerbose("Updating manifest files after contacts reprocessing")
+		}
+
+		manifestGenerator := manifest.NewManifestGenerator(resolvedRepoRoot)
+		fileManifest, err := manifestGenerator.GenerateFileManifest()
+		if err != nil && !quiet {
+			PrintInfo("Warning: failed to generate updated file manifest: %v", err)
+			return
+		}
+
+		if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil && !quiet {
+			PrintInfo("Warning: failed to write updated manifest files: %v", err)
+			return
+		}
+
+		if !quiet {
+			PrintInfo("Updated manifest files (files.yaml, files.yaml.sha256)")
+		}
+	}
+}
+
+// reprocessInitialStats holds initial statistics before reprocessing
+type reprocessInitialStats struct {
+	ContactsCount    int
+	UnprocessedCount int
 }
 
 // ReprocessingStats holds statistics about the reprocessing operation
