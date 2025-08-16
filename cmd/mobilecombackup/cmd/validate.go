@@ -528,31 +528,48 @@ func outputTextResult(result ValidationResult, repoPath string) {
 	}
 
 	// Display orphan removal results if performed
-	if result.OrphanRemoval != nil {
-		if !quiet {
-			fmt.Println()
-			fmt.Println("Orphan attachment removal:")
-		}
+	displayOrphanRemovalResults(result.OrphanRemoval, validateDryRun, quiet)
+}
 
-		if validateDryRun {
-			fmt.Printf("  Attachments scanned: %d\n", result.OrphanRemoval.AttachmentsScanned)
-			fmt.Printf("  Orphans found: %d\n", result.OrphanRemoval.OrphansFound)
-			fmt.Printf("  Would remove: %d (%.1f MB)\n",
-				result.OrphanRemoval.OrphansRemoved,
-				float64(result.OrphanRemoval.BytesFreed)/1024/1024)
-		} else {
-			fmt.Printf("  Attachments scanned: %d\n", result.OrphanRemoval.AttachmentsScanned)
-			fmt.Printf("  Orphans found: %d\n", result.OrphanRemoval.OrphansFound)
-			fmt.Printf("  Orphans removed: %d (%.1f MB freed)\n",
-				result.OrphanRemoval.OrphansRemoved,
-				float64(result.OrphanRemoval.BytesFreed)/1024/1024)
+// displayOrphanRemovalResults displays the results of orphan attachment removal
+func displayOrphanRemovalResults(orphanRemoval *OrphanRemovalResult, isDryRun bool, quiet bool) {
+	if orphanRemoval == nil {
+		return
+	}
 
-			if result.OrphanRemoval.RemovalFailures > 0 {
-				fmt.Printf("  Removal failures: %d\n", result.OrphanRemoval.RemovalFailures)
-				for _, failure := range result.OrphanRemoval.FailedRemovals {
-					fmt.Printf("    - %s: %s\n", failure.Path, failure.Error)
-				}
-			}
+	if !quiet {
+		fmt.Println()
+		fmt.Println("Orphan attachment removal:")
+	}
+
+	if isDryRun {
+		displayOrphanRemovalDryRun(orphanRemoval)
+	} else {
+		displayOrphanRemovalActual(orphanRemoval)
+	}
+}
+
+// displayOrphanRemovalDryRun displays dry-run results for orphan removal
+func displayOrphanRemovalDryRun(orphanRemoval *OrphanRemovalResult) {
+	fmt.Printf("  Attachments scanned: %d\n", orphanRemoval.AttachmentsScanned)
+	fmt.Printf("  Orphans found: %d\n", orphanRemoval.OrphansFound)
+	fmt.Printf("  Would remove: %d (%.1f MB)\n",
+		orphanRemoval.OrphansRemoved,
+		float64(orphanRemoval.BytesFreed)/1024/1024)
+}
+
+// displayOrphanRemovalActual displays actual results for orphan removal
+func displayOrphanRemovalActual(orphanRemoval *OrphanRemovalResult) {
+	fmt.Printf("  Attachments scanned: %d\n", orphanRemoval.AttachmentsScanned)
+	fmt.Printf("  Orphans found: %d\n", orphanRemoval.OrphansFound)
+	fmt.Printf("  Orphans removed: %d (%.1f MB freed)\n",
+		orphanRemoval.OrphansRemoved,
+		float64(orphanRemoval.BytesFreed)/1024/1024)
+
+	if orphanRemoval.RemovalFailures > 0 {
+		fmt.Printf("  Removal failures: %d\n", orphanRemoval.RemovalFailures)
+		for _, failure := range orphanRemoval.FailedRemovals {
+			fmt.Printf("    - %s: %s\n", failure.Path, failure.Error)
 		}
 	}
 }

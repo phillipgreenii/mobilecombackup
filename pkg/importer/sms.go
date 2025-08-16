@@ -389,55 +389,42 @@ func (si *SMSImporter) extractContacts(msg sms.Message) {
 
 // extractSMSContact extracts contact from SMS message
 func (si *SMSImporter) extractSMSContact(smsMsg sms.SMS) {
-	// Extract primary address contact, handling multiple addresses and contact names
-	if smsMsg.Address != "" && smsMsg.ContactName != "" {
-		// Check if this is a multi-address SMS (contains ~ separator)
-		if strings.Contains(smsMsg.Address, "~") {
-			// Use the multi-address parsing method that handles ~ and , separators
-			err := si.contactsManager.AddUnprocessedContacts(smsMsg.Address, smsMsg.ContactName)
-			if err != nil {
-				// If multi-address parsing fails, don't use fallback - this prevents double processing
-				// Just skip this contact extraction
-				return
-			}
-		} else {
-			// Single address - split contact names by comma and process each separately
-			contactNames := strings.Split(smsMsg.ContactName, ",")
-			for _, name := range contactNames {
-				name = strings.TrimSpace(name)
-				if name != "" && !isUnknownContact(name) {
-					si.contactsManager.AddUnprocessedContact(smsMsg.Address, name)
-				}
-			}
-		}
-	}
+	si.processContactInfo(smsMsg.Address, smsMsg.ContactName)
 }
 
 // extractMMSContacts extracts contacts from MMS message
 func (si *SMSImporter) extractMMSContacts(mmsMsg sms.MMS) {
-	// Extract primary address contact, handling multiple addresses and contact names
-	if mmsMsg.Address != "" && mmsMsg.ContactName != "" {
-		// Check if this is a multi-address MMS (contains ~ separator)
-		if strings.Contains(mmsMsg.Address, "~") {
-			// Use the multi-address parsing method that handles ~ and , separators
-			err := si.contactsManager.AddUnprocessedContacts(mmsMsg.Address, mmsMsg.ContactName)
-			if err != nil {
-				// If multi-address parsing fails, don't use fallback - this prevents double processing
-				// Just skip this contact extraction
-				return
-			}
-		} else {
-			// Single address - split contact names by comma and process each separately
-			contactNames := strings.Split(mmsMsg.ContactName, ",")
-			for _, name := range contactNames {
-				name = strings.TrimSpace(name)
-				if name != "" && !isUnknownContact(name) {
-					si.contactsManager.AddUnprocessedContact(mmsMsg.Address, name)
-				}
-			}
-		}
-	}
+	si.processContactInfo(mmsMsg.Address, mmsMsg.ContactName)
 
 	// Note: MMSAddress does not contain ContactName fields,
 	// so additional addresses cannot be processed for contact extraction
+}
+
+// processContactInfo processes contact information from address and contact name
+func (si *SMSImporter) processContactInfo(address, contactName string) {
+	// Extract primary address contact, handling multiple addresses and contact names
+	if address == "" || contactName == "" {
+		return
+	}
+
+	// Check if this is a multi-address message (contains ~ separator)
+	if strings.Contains(address, "~") {
+		// Use the multi-address parsing method that handles ~ and , separators
+		err := si.contactsManager.AddUnprocessedContacts(address, contactName)
+		if err != nil {
+			// If multi-address parsing fails, don't use fallback - this prevents double processing
+			// Just skip this contact extraction
+			return
+		}
+		return
+	}
+
+	// Single address - split contact names by comma and process each separately
+	contactNames := strings.Split(contactName, ",")
+	for _, name := range contactNames {
+		name = strings.TrimSpace(name)
+		if name != "" && !isUnknownContact(name) {
+			si.contactsManager.AddUnprocessedContact(address, name)
+		}
+	}
 }

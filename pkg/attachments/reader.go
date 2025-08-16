@@ -3,6 +3,7 @@ package attachments
 import (
 	"crypto/sha256"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -261,34 +262,11 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 			}
 
 			if prefixEntry.IsDir() {
-				// New format: directory with metadata.yaml
-				metadataPath := filepath.Join(prefixDir, hash, "metadata.yaml")
-				if _, err := os.Stat(metadataPath); err == nil {
-					// This is a new format attachment
-					attachment, err := am.GetAttachment(hash)
-					if err != nil {
-						continue // Skip attachments we can't process
-					}
-
-					if err := callback(attachment); err != nil {
-						return err
-					}
+				if err := am.processNewFormatAttachment(prefixDir, hash, callback); err != nil {
+					return err
 				}
 			} else {
-				// Legacy format: direct file
-				info, err := prefixEntry.Info()
-				if err != nil {
-					continue // Skip files we can't read
-				}
-
-				attachment := &Attachment{
-					Hash:   hash,
-					Path:   am.GetAttachmentPath(hash),
-					Size:   info.Size(),
-					Exists: true,
-				}
-
-				if err := callback(attachment); err != nil {
+				if err := am.processLegacyFormatAttachment(hash, prefixEntry, callback); err != nil {
 					return err
 				}
 			}
@@ -296,6 +274,38 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 	}
 
 	return nil
+}
+
+// processNewFormatAttachment processes a new format attachment directory
+func (am *AttachmentManager) processNewFormatAttachment(prefixDir, hash string, callback func(*Attachment) error) error {
+	metadataPath := filepath.Join(prefixDir, hash, "metadata.yaml")
+	if _, err := os.Stat(metadataPath); err != nil {
+		return nil // Skip if no metadata file
+	}
+
+	attachment, err := am.GetAttachment(hash)
+	if err != nil {
+		return nil // Skip attachments we can't process
+	}
+
+	return callback(attachment)
+}
+
+// processLegacyFormatAttachment processes a legacy format attachment file
+func (am *AttachmentManager) processLegacyFormatAttachment(hash string, entry fs.DirEntry, callback func(*Attachment) error) error {
+	info, err := entry.Info()
+	if err != nil {
+		return nil // Skip files we can't read
+	}
+
+	attachment := &Attachment{
+		Hash:   hash,
+		Path:   am.GetAttachmentPath(hash),
+		Size:   info.Size(),
+		Exists: true,
+	}
+
+	return callback(attachment)
 }
 
 // FindOrphanedAttachments returns attachments not referenced by any messages

@@ -311,39 +311,8 @@ func (mm *MigrationManager) ValidateMigration() error {
 		}
 
 		if attachmentManager.IsNewFormat(attachment.Hash) {
-			// Validate new format attachment
-			metadata, err := storage.GetMetadata(attachment.Hash)
-			if err != nil {
+			if mm.validateNewFormatAttachment(storage, attachment.Hash) {
 				hasErrors = true
-				if mm.logOutput {
-					log.Printf("[VALIDATION] Failed to read metadata for %s: %v", attachment.Hash, err)
-				}
-				return nil
-			}
-
-			// Verify the attachment file exists
-			attachmentPath, err := storage.GetAttachmentFilePath(attachment.Hash)
-			if err != nil {
-				hasErrors = true
-				if mm.logOutput {
-					log.Printf("[VALIDATION] Failed to get file path for %s: %v", attachment.Hash, err)
-				}
-				return nil
-			}
-
-			if _, err := os.Stat(attachmentPath); os.IsNotExist(err) {
-				hasErrors = true
-				if mm.logOutput {
-					log.Printf("[VALIDATION] Attachment file missing: %s", attachmentPath)
-				}
-			}
-
-			// Verify metadata consistency
-			if metadata.Hash != attachment.Hash {
-				hasErrors = true
-				if mm.logOutput {
-					log.Printf("[VALIDATION] Metadata hash mismatch for %s", attachment.Hash)
-				}
 			}
 		}
 
@@ -367,6 +336,48 @@ func (mm *MigrationManager) ValidateMigration() error {
 	}
 
 	return nil
+}
+
+// validateNewFormatAttachment validates a new format attachment and returns true if errors occurred
+func (mm *MigrationManager) validateNewFormatAttachment(storage *DirectoryAttachmentStorage, hash string) bool {
+	hasErrors := false
+
+	// Validate new format attachment
+	metadata, err := storage.GetMetadata(hash)
+	if err != nil {
+		hasErrors = true
+		if mm.logOutput {
+			log.Printf("[VALIDATION] Failed to read metadata for %s: %v", hash, err)
+		}
+		return hasErrors
+	}
+
+	// Verify the attachment file exists
+	attachmentPath, err := storage.GetAttachmentFilePath(hash)
+	if err != nil {
+		hasErrors = true
+		if mm.logOutput {
+			log.Printf("[VALIDATION] Failed to get file path for %s: %v", hash, err)
+		}
+		return hasErrors
+	}
+
+	if _, err := os.Stat(attachmentPath); os.IsNotExist(err) {
+		hasErrors = true
+		if mm.logOutput {
+			log.Printf("[VALIDATION] Attachment file missing: %s", attachmentPath)
+		}
+	}
+
+	// Verify metadata consistency
+	if metadata.Hash != hash {
+		hasErrors = true
+		if mm.logOutput {
+			log.Printf("[VALIDATION] Metadata hash mismatch for %s", hash)
+		}
+	}
+
+	return hasErrors
 }
 
 // GetMigrationStatus returns the current migration status

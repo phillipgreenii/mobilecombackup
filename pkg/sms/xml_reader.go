@@ -510,34 +510,7 @@ func (r *XMLSMSReader) parseMMSElement(decoder *xml.Decoder, startElement xml.St
 
 // parseMMSParts parses the parts section of an MMS
 func (r *XMLSMSReader) parseMMSParts(decoder *xml.Decoder) ([]MMSPart, error) {
-	var parts []MMSPart
-
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			return nil, fmt.Errorf("error reading MMS parts: %w", err)
-		}
-
-		switch se := token.(type) {
-		case xml.StartElement:
-			if se.Name.Local == "part" {
-				part, err := r.parseMMSPart(decoder, se)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse MMS part: %w", err)
-				}
-				parts = append(parts, part)
-			} else {
-				// Skip unknown elements
-				if err := decoder.Skip(); err != nil {
-					return nil, fmt.Errorf("failed to skip unknown element %s: %w", se.Name.Local, err)
-				}
-			}
-		case xml.EndElement:
-			if se.Name.Local == "parts" {
-				return parts, nil
-			}
-		}
-	}
+	return parseXMLCollection(decoder, "parts", "part", r.parseMMSPart)
 }
 
 // parseMMSPart parses a single MMS part
@@ -640,34 +613,7 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 
 // parseMMSAddresses parses the addresses section of an MMS
 func (r *XMLSMSReader) parseMMSAddresses(decoder *xml.Decoder) ([]MMSAddress, error) {
-	var addresses []MMSAddress
-
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			return nil, fmt.Errorf("error reading MMS addresses: %w", err)
-		}
-
-		switch se := token.(type) {
-		case xml.StartElement:
-			if se.Name.Local == "addr" {
-				addr, err := r.parseMMSAddress(decoder, se)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse MMS address: %w", err)
-				}
-				addresses = append(addresses, addr)
-			} else {
-				// Skip unknown elements
-				if err := decoder.Skip(); err != nil {
-					return nil, fmt.Errorf("failed to skip unknown element %s: %w", se.Name.Local, err)
-				}
-			}
-		case xml.EndElement:
-			if se.Name.Local == "addrs" {
-				return addresses, nil
-			}
-		}
-	}
+	return parseXMLCollection(decoder, "addrs", "addr", r.parseMMSAddress)
 }
 
 // parseMMSAddress parses a single MMS address
@@ -900,4 +846,40 @@ func (r *XMLSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
 	}
 
 	return allRefs, nil
+}
+
+// parseXMLCollection parses a collection of XML elements with a common pattern
+func parseXMLCollection[T any](
+	decoder *xml.Decoder,
+	containerName, elementName string,
+	parseFunc func(*xml.Decoder, xml.StartElement) (T, error),
+) ([]T, error) {
+	var collection []T
+
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			return nil, fmt.Errorf("error reading XML collection: %w", err)
+		}
+
+		switch se := token.(type) {
+		case xml.StartElement:
+			if se.Name.Local == elementName {
+				item, err := parseFunc(decoder, se)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse %s: %w", elementName, err)
+				}
+				collection = append(collection, item)
+			} else {
+				// Skip unknown elements
+				if err := decoder.Skip(); err != nil {
+					return nil, fmt.Errorf("failed to skip unknown element %s: %w", se.Name.Local, err)
+				}
+			}
+		case xml.EndElement:
+			if se.Name.Local == containerName {
+				return collection, nil
+			}
+		}
+	}
 }

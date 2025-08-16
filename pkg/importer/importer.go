@@ -220,26 +220,8 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 
 	// Write repository (single write operation)
 	if !imp.options.DryRun {
-		if !imp.options.Quiet {
-			fmt.Println("\nWriting repository...")
-		}
-
-		if imp.options.Filter == "" || imp.options.Filter == callsDir {
-			if err := imp.callsImporter.WriteRepository(); err != nil {
-				return nil, fmt.Errorf("failed to write calls repository: %w", err)
-			}
-		}
-
-		if imp.options.Filter == "" || imp.options.Filter == smsDir {
-			if err := imp.smsImporter.WriteRepository(); err != nil {
-				return nil, fmt.Errorf("failed to write SMS repository: %w", err)
-			}
-		}
-
-		// Save contacts.yaml with any extracted contact names
-		contactsPath := filepath.Join(imp.options.RepoRoot, "contacts.yaml")
-		if err := imp.contactsManager.SaveContacts(contactsPath); err != nil {
-			return nil, fmt.Errorf("failed to save contacts: %w", err)
+		if err := imp.writeRepository(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -248,24 +230,56 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 
 	// Generate summary.yaml file (only in non-dry-run mode)
 	if !imp.options.DryRun {
-		if err := generateSummaryFile(imp.options.RepoRoot); err != nil {
-			// Log error but don't fail the import
-			if !imp.options.Quiet {
-				fmt.Printf("Warning: Failed to generate summary.yaml: %v\n", err)
-			}
-		}
-
-		// Generate files.yaml manifest
-		if err := generateManifestFile(imp.options.RepoRoot, "dev"); err != nil {
-			// Log error but don't fail the import
-			if !imp.options.Quiet {
-				fmt.Printf("Warning: Failed to generate files.yaml: %v\n", err)
-			}
-		}
+		imp.generateRepositoryFiles()
 	}
 
 	summary.Duration = time.Since(startTime)
 	return summary, nil
+}
+
+// writeRepository writes all repository data when not in dry run mode
+func (imp *Importer) writeRepository() error {
+	if !imp.options.Quiet {
+		fmt.Println("\nWriting repository...")
+	}
+
+	if imp.options.Filter == "" || imp.options.Filter == callsDir {
+		if err := imp.callsImporter.WriteRepository(); err != nil {
+			return fmt.Errorf("failed to write calls repository: %w", err)
+		}
+	}
+
+	if imp.options.Filter == "" || imp.options.Filter == smsDir {
+		if err := imp.smsImporter.WriteRepository(); err != nil {
+			return fmt.Errorf("failed to write SMS repository: %w", err)
+		}
+	}
+
+	// Save contacts.yaml with any extracted contact names
+	contactsPath := filepath.Join(imp.options.RepoRoot, "contacts.yaml")
+	if err := imp.contactsManager.SaveContacts(contactsPath); err != nil {
+		return fmt.Errorf("failed to save contacts: %w", err)
+	}
+
+	return nil
+}
+
+// generateRepositoryFiles generates summary and manifest files
+func (imp *Importer) generateRepositoryFiles() {
+	if err := generateSummaryFile(imp.options.RepoRoot); err != nil {
+		// Log error but don't fail the import
+		if !imp.options.Quiet {
+			fmt.Printf("Warning: Failed to generate summary.yaml: %v\n", err)
+		}
+	}
+
+	// Generate files.yaml manifest
+	if err := generateManifestFile(imp.options.RepoRoot, "dev"); err != nil {
+		// Log error but don't fail the import
+		if !imp.options.Quiet {
+			fmt.Printf("Warning: Failed to generate files.yaml: %v\n", err)
+		}
+	}
 }
 
 // validateRepository checks if the repository structure is valid
