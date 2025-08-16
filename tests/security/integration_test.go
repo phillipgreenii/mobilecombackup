@@ -31,7 +31,7 @@ func TestAttachmentStorage_SecurityIntegration(t *testing.T) {
 		if err == nil {
 			t.Error("Expected directory traversal attack to be blocked")
 		}
-		if !strings.Contains(err.Error(), "invalid") {
+		if !strings.Contains(err.Error(), "path traversal") {
 			t.Errorf("Expected path validation error, got: %v", err)
 		}
 	})
@@ -42,7 +42,7 @@ func TestAttachmentStorage_SecurityIntegration(t *testing.T) {
 		if err == nil {
 			t.Error("Expected null byte injection attack to be blocked")
 		}
-		if !strings.Contains(err.Error(), "invalid") {
+		if !strings.Contains(err.Error(), "null byte") {
 			t.Errorf("Expected path validation error, got: %v", err)
 		}
 	})

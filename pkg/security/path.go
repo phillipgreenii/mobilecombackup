@@ -53,10 +53,30 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 		return "", fmt.Errorf("%w: null byte in path", ErrInvalidPath)
 	}
 
-	// 4. Clean the path (removes . and .. elements)
+	// 4. Check for Windows-style path traversal (backslashes)
+	if strings.Contains(userPath, "\\") {
+		return "", fmt.Errorf("%w: backslash in path", ErrInvalidPath)
+	}
+
+	// 5. Check for URL-encoded directory traversal sequences
+	urlEncodedPatterns := []string{
+		"%2e%2e%2f", // ../
+		"%2e%2e/",   // ../
+		"..%2f",     // ../
+		"%2e%2e\\",  // ..\
+		"%2e%2e%5c", // ..\
+	}
+	lowerPath := strings.ToLower(userPath)
+	for _, pattern := range urlEncodedPatterns {
+		if strings.Contains(lowerPath, pattern) {
+			return "", fmt.Errorf("%w: URL-encoded traversal sequence in path", ErrInvalidPath)
+		}
+	}
+
+	// 6. Clean the path (removes . and .. elements)
 	cleaned := filepath.Clean(userPath)
 
-	// 5. Make absolute if relative
+	// 7. Make absolute if relative
 	var absPath string
 	if filepath.IsAbs(cleaned) {
 		absPath = cleaned
@@ -64,7 +84,7 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 		absPath = filepath.Join(v.BaseDir, cleaned)
 	}
 
-	// 6. Resolve symlinks to real path (prevents symlink attacks)
+	// 8. Resolve symlinks to real path (prevents symlink attacks)
 	realPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
 		// If EvalSymlinks fails, the path might not exist, which is often OK
@@ -75,7 +95,7 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 		}
 	}
 
-	// 7. Verify the resolved path is within base directory
+	// 9. Verify the resolved path is within base directory
 	absBase, err := filepath.Abs(v.BaseDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
@@ -89,7 +109,7 @@ func (v *PathValidator) ValidatePath(userPath string) (string, error) {
 		return "", fmt.Errorf("%w: resolved path %q is outside base directory %q", ErrPathOutsideRepository, realPath, absBase)
 	}
 
-	// 8. Return path relative to base directory
+	// 10. Return path relative to base directory
 	relPath, err := filepath.Rel(absBase, realPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to make path relative: %w", err)
