@@ -407,7 +407,7 @@ func TestOptimizedRepositoryValidator_BackwardCompatibility(t *testing.T) {
 }
 
 func TestEarlyTerminationError(t *testing.T) {
-	violations := []ValidationViolation{
+	violations := []Violation{
 		{Type: ChecksumMismatch, Severity: SeverityError, Message: "Critical error"},
 	}
 

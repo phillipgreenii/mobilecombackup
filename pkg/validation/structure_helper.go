@@ -28,13 +28,13 @@ func ValidateDirectoryStructure(
 	reader YearBasedReader,
 	repositoryRoot string,
 	config StructureValidationConfig,
-) []ValidationViolation {
-	var violations []ValidationViolation
+) []Violation {
+	var violations []Violation
 
 	// Get available years from reader first
 	years, err := reader.GetAvailableYears()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     config.DirectoryName + "/",
@@ -51,7 +51,7 @@ func ValidateDirectoryStructure(
 	// Check if directory exists (only if we have years)
 	dataDir := filepath.Join(repositoryRoot, config.DirectoryName)
 	if !dirExists(dataDir) {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     config.DirectoryName + "/",
@@ -66,7 +66,7 @@ func ValidateDirectoryStructure(
 		expectedPath := filepath.Join(dataDir, expectedFileName)
 
 		if !fileExists(expectedPath) {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     filepath.Join(config.DirectoryName, expectedFileName),
@@ -83,13 +83,13 @@ func ValidateDataCounts(
 	reader CountBasedReader,
 	expectedCounts map[int]int,
 	config StructureValidationConfig,
-) []ValidationViolation {
-	var violations []ValidationViolation
+) []Violation {
+	var violations []Violation
 
 	// Get available years
 	years, err := reader.GetAvailableYears()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     config.DirectoryName + "/",
@@ -106,7 +106,7 @@ func ValidateDataCounts(
 		// Get actual count from reader
 		actualCount, err := reader.GetCount(year)
 		if err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     CountMismatch,
 				Severity: SeverityError,
 				File:     filePath,
@@ -118,7 +118,7 @@ func ValidateDataCounts(
 		// Check against expected count if provided
 		if expectedCount, exists := expectedCounts[year]; exists {
 			if actualCount != expectedCount {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     CountMismatch,
 					Severity: SeverityError,
 					File:     filePath,
@@ -142,7 +142,7 @@ func ValidateDataCounts(
 		if !found {
 			fileName := fmt.Sprintf("%s-%d.xml", config.FilePrefix, expectedYear)
 			filePath := filepath.Join(config.DirectoryName, fileName)
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     filePath,

@@ -16,7 +16,7 @@ func TestReportGeneratorImpl_GenerateReport_YAML(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{
 				Type:     MissingFile,
 				Severity: SeverityError,
@@ -70,7 +70,7 @@ func TestReportGeneratorImpl_GenerateReport_JSON(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	result, err := generator.GenerateReport(report, FormatJSON, nil)
@@ -109,7 +109,7 @@ func TestReportGeneratorImpl_GenerateReport_Text(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{
 				Type:     MissingFile,
 				Severity: SeverityError,
@@ -187,7 +187,7 @@ func TestReportGeneratorImpl_GenerateReport_Text_NoViolations(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	result, err := generator.GenerateReport(report, FormatText, nil)
@@ -211,7 +211,7 @@ func TestReportGeneratorImpl_GenerateReport_UnsupportedFormat(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	_, err := generator.GenerateReport(report, ReportFormat("xml"), nil)
@@ -242,7 +242,7 @@ func TestReportGeneratorImpl_GenerateSummary(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError},
 			{Type: MissingFile, Severity: SeverityWarning},
 			{Type: InvalidFormat, Severity: SeverityError},
@@ -310,7 +310,7 @@ func TestReportGeneratorImpl_ApplyFilters_SeverityFilter(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, Message: "Error 1"},
 			{Type: InvalidFormat, Severity: SeverityWarning, Message: "Warning 1"},
 			{Type: ChecksumMismatch, Severity: SeverityError, Message: "Error 2"},
@@ -343,7 +343,7 @@ func TestReportGeneratorImpl_ApplyFilters_TypeFilter(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, Message: "Missing 1"},
 			{Type: InvalidFormat, Severity: SeverityWarning, Message: "Format 1"},
 			{Type: MissingFile, Severity: SeverityWarning, Message: "Missing 2"},
@@ -377,7 +377,7 @@ func TestReportGeneratorImpl_ApplyFilters_FileExcludeFilter(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, File: "calls/calls-2024.xml", Message: "Call file missing"},
 			{Type: InvalidFormat, Severity: SeverityWarning, File: "sms/sms-2024.xml", Message: "SMS format issue"},
 			{Type: ChecksumMismatch, Severity: SeverityError, File: "attachments/ab/abc123", Message: "Attachment checksum"},
@@ -410,7 +410,7 @@ func TestReportGeneratorImpl_ApplyFilters_MaxViolationsLimit(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, Message: "Missing 1"},
 			{Type: MissingFile, Severity: SeverityWarning, Message: "Missing 2"},
 			{Type: MissingFile, Severity: SeverityError, Message: "Missing 3"},
@@ -450,7 +450,7 @@ func TestReportGeneratorImpl_ApplyFilters_CombinedFilters(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, File: "calls/calls-2024.xml", Message: "Missing call file"},
 			{Type: MissingFile, Severity: SeverityWarning, File: "sms/sms-2024.xml", Message: "Missing SMS file"},
 			{Type: InvalidFormat, Severity: SeverityError, File: "contacts.yaml", Message: "Invalid contact format"},
@@ -486,7 +486,7 @@ func TestReportGeneratorImpl_ApplyFilters_NoOptions(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{Type: MissingFile, Severity: SeverityError, Message: "Error 1"},
 			{Type: InvalidFormat, Severity: SeverityWarning, Message: "Warning 1"},
 		},
@@ -521,7 +521,7 @@ func TestReportGeneratorImpl_GenerateReport_WithFilters(t *testing.T) {
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
-		Violations: []ValidationViolation{
+		Violations: []Violation{
 			{
 				Type:     MissingFile,
 				Severity: SeverityError,

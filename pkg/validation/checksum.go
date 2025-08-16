@@ -18,7 +18,7 @@ type ChecksumValidator interface {
 	VerifyFileChecksum(filePath string, expectedChecksum string) error
 
 	// ValidateManifestChecksums verifies all files in manifest have correct checksums
-	ValidateManifestChecksums(manifest *FileManifest) []ValidationViolation
+	ValidateManifestChecksums(manifest *FileManifest) []Violation
 }
 
 // ChecksumValidatorImpl implements ChecksumValidator interface
@@ -65,15 +65,15 @@ func (v *ChecksumValidatorImpl) VerifyFileChecksum(filePath string, expectedChec
 }
 
 // ValidateManifestChecksums verifies all files in manifest have correct checksums
-func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest) []Violation {
+	var violations []Violation
 
 	for _, entry := range manifest.Files {
 		fullPath := filepath.Join(v.repositoryRoot, entry.Name)
 
 		// Check if file exists
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     entry.Name,
@@ -85,7 +85,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 		// Calculate actual checksum
 		actualChecksum, err := v.CalculateFileChecksum(fullPath)
 		if err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
 				File:     entry.Name,
@@ -99,7 +99,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 
 		// Verify checksum matches
 		if actualChecksum != expectedChecksum {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
 				File:     entry.Name,
@@ -113,7 +113,7 @@ func (v *ChecksumValidatorImpl) ValidateManifestChecksums(manifest *FileManifest
 		if fileInfo, err := os.Stat(fullPath); err == nil {
 			actualSize := fileInfo.Size()
 			if actualSize != entry.Size {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     SizeMismatch,
 					Severity: SeverityError,
 					File:     entry.Name,

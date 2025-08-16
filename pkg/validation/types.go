@@ -24,24 +24,24 @@ type FileEntry struct {
 type Report struct {
 	Timestamp      time.Time             `yaml:"timestamp"`
 	RepositoryPath string                `yaml:"repository_path"`
-	Status         ValidationStatus      `yaml:"status"`
-	Violations     []ValidationViolation `yaml:"violations"`
+	Status         Status      `yaml:"status"`
+	Violations     []Violation `yaml:"violations"`
 }
 
-// ValidationStatus represents the overall validation result
-type ValidationStatus string
+// Status represents the overall validation result
+type Status string
 
 const (
 	// Valid indicates the repository passed all validation checks
-	Valid ValidationStatus = "valid"
+	Valid Status = "valid"
 	// Invalid indicates the repository has validation violations
-	Invalid ValidationStatus = "invalid"
+	Invalid Status = "invalid"
 	// ErrorStatus indicates validation could not be completed due to errors
-	ErrorStatus ValidationStatus = "error"
+	ErrorStatus Status = "error"
 )
 
-// ValidationViolation represents a specific validation issue
-type ValidationViolation struct {
+// Violation represents a specific validation issue
+type Violation struct {
 	Type     ViolationType `yaml:"type"`
 	Severity Severity      `yaml:"severity"`
 	File     string        `yaml:"file"`
@@ -90,9 +90,9 @@ const (
 	SeverityWarning Severity = "warning"
 )
 
-// FixableViolation extends ValidationViolation with suggested fix content
+// FixableViolation extends Violation with suggested fix content
 type FixableViolation struct {
-	ValidationViolation
+	Violation
 	SuggestedFix string `yaml:"suggested_fix,omitempty"`
 }
 
@@ -102,10 +102,10 @@ type ManifestValidator interface {
 	LoadManifest() (*FileManifest, error)
 
 	// ValidateManifestFormat checks files.yaml structure and format
-	ValidateManifestFormat(manifest *FileManifest) []ValidationViolation
+	ValidateManifestFormat(manifest *FileManifest) []Violation
 
 	// CheckManifestCompleteness verifies all files are listed
-	CheckManifestCompleteness(manifest *FileManifest) []ValidationViolation
+	CheckManifestCompleteness(manifest *FileManifest) []Violation
 
 	// VerifyManifestChecksum validates files.yaml.sha256
 	VerifyManifestChecksum() error

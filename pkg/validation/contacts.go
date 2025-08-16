@@ -11,13 +11,13 @@ import (
 // ContactsValidator validates contacts file and data using Reader
 type ContactsValidator interface {
 	// ValidateContactsStructure validates contacts.yaml file exists and is readable
-	ValidateContactsStructure() []ValidationViolation
+	ValidateContactsStructure() []Violation
 
 	// ValidateContactsData validates contacts data integrity and format
-	ValidateContactsData() []ValidationViolation
+	ValidateContactsData() []Violation
 
 	// ValidateContactReferences checks contact references in calls/SMS against contacts data
-	ValidateContactReferences(callContacts, smsContacts map[string]bool) []ValidationViolation
+	ValidateContactReferences(callContacts, smsContacts map[string]bool) []Violation
 }
 
 // ContactsValidatorImpl implements ContactsValidator interface
@@ -35,13 +35,13 @@ func NewContactsValidator(repositoryRoot string, contactsReader contacts.Reader)
 }
 
 // ValidateContactsStructure validates contacts.yaml file exists and is readable
-func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ContactsValidatorImpl) ValidateContactsStructure() []Violation {
+	var violations []Violation
 
 	// Check if contacts.yaml exists
 	contactsFile := filepath.Join(v.repositoryRoot, "contacts.yaml")
 	if !fileExists(contactsFile) {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityWarning, // Warning because contacts are optional
 			File:     "contacts.yaml",
@@ -53,7 +53,7 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolatio
 	// Try to load contacts to validate file structure
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     "contacts.yaml",
@@ -65,13 +65,13 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []ValidationViolatio
 }
 
 // ValidateContactsData validates contacts data integrity and format
-func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ContactsValidatorImpl) ValidateContactsData() []Violation {
+	var violations []Violation
 
 	// Load contacts first
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     "contacts.yaml",
@@ -83,7 +83,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 	// Get all contacts for validation
 	allContacts, err := v.contactsReader.GetAllContacts()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     "contacts.yaml",
@@ -102,7 +102,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 
 		// Validate contact name
 		if contact.Name == "" {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     contactContext,
@@ -113,7 +113,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 
 		// Check for duplicate contact names
 		if seenNames[contact.Name] {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     contactContext,
@@ -124,7 +124,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 
 		// Validate phone numbers
 		if len(contact.Numbers) == 0 {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityWarning,
 				File:     contactContext,
@@ -138,7 +138,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 
 			// Validate phone number format
 			if number == "" {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     InvalidFormat,
 					Severity: SeverityError,
 					File:     numberContext,
@@ -149,7 +149,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 
 			// Basic phone number format validation
 			if !phonePattern.MatchString(number) {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     InvalidFormat,
 					Severity: SeverityWarning,
 					File:     numberContext,
@@ -164,7 +164,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 			}
 
 			if existingContact, exists := seenNumbers[number]; exists {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     InvalidFormat,
 					Severity: SeverityError,
 					File:     numberContext,
@@ -181,8 +181,8 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []ValidationViolation {
 }
 
 // ValidateContactReferences checks contact references in calls/SMS against contacts data
-func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsContacts map[string]bool) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsContacts map[string]bool) []Violation {
+	var violations []Violation
 
 	// Load contacts first
 	err := v.contactsReader.LoadContacts()
@@ -217,7 +217,7 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 				severity = SeverityError
 			}
 
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile, // Using MissingFile for missing contact reference
 				Severity: severity,
 				File:     "contacts.yaml",

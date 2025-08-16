@@ -16,16 +16,16 @@ type RepositoryValidator interface {
 	ValidateRepository() (*Report, error)
 
 	// ValidateStructure validates overall repository structure
-	ValidateStructure() []ValidationViolation
+	ValidateStructure() []Violation
 
 	// ValidateManifest validates files.yaml and checksums
-	ValidateManifest() []ValidationViolation
+	ValidateManifest() []Violation
 
 	// ValidateContent validates all content files
-	ValidateContent() []ValidationViolation
+	ValidateContent() []Violation
 
 	// ValidateConsistency performs cross-file consistency validation
-	ValidateConsistency() []ValidationViolation
+	ValidateConsistency() []Violation
 }
 
 // RepositoryValidatorImpl implements comprehensive repository validation
@@ -66,7 +66,7 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 		Timestamp:      time.Now().UTC(),
 		RepositoryPath: v.repositoryRoot,
 		Status:         Valid,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	// Validate marker file first
@@ -80,10 +80,10 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 		if violation.Type == MissingMarkerFile {
 			// Create a fixable violation with suggested content
 			fixable := FixableViolation{
-				ValidationViolation: violation,
+				Violation: violation,
 				SuggestedFix:        v.markerFileValidator.GetSuggestedFix(),
 			}
-			report.Violations = append(report.Violations, fixable.ValidationViolation)
+			report.Violations = append(report.Violations, fixable.Violation)
 		} else {
 			report.Violations = append(report.Violations, violation)
 		}
@@ -127,8 +127,8 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 }
 
 // ValidateStructure validates overall repository structure
-func (v *RepositoryValidatorImpl) ValidateStructure() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *RepositoryValidatorImpl) ValidateStructure() []Violation {
+	var violations []Violation
 
 	// Note: Individual validators handle directory and file structure checks
 	// This method coordinates structure validation across all components
@@ -143,13 +143,13 @@ func (v *RepositoryValidatorImpl) ValidateStructure() []ValidationViolation {
 }
 
 // ValidateManifest validates files.yaml and checksums
-func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *RepositoryValidatorImpl) ValidateManifest() []Violation {
+	var violations []Violation
 
 	// Load and validate manifest format
 	manifest, err := v.manifestValidator.LoadManifest()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityError,
 			File:     "files.yaml",
@@ -166,7 +166,7 @@ func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
 
 	// Verify manifest checksum
 	if err := v.manifestValidator.VerifyManifestChecksum(); err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     ChecksumMismatch,
 			Severity: SeverityError,
 			File:     "files.yaml.sha256",
@@ -181,8 +181,8 @@ func (v *RepositoryValidatorImpl) ValidateManifest() []ValidationViolation {
 }
 
 // ValidateContent validates all content files
-func (v *RepositoryValidatorImpl) ValidateContent() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *RepositoryValidatorImpl) ValidateContent() []Violation {
+	var violations []Violation
 
 	// Validate calls content
 	violations = append(violations, v.callsValidator.ValidateCallsContent()...)
@@ -200,13 +200,13 @@ func (v *RepositoryValidatorImpl) ValidateContent() []ValidationViolation {
 }
 
 // ValidateConsistency performs cross-file consistency validation
-func (v *RepositoryValidatorImpl) ValidateConsistency() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *RepositoryValidatorImpl) ValidateConsistency() []Violation {
+	var violations []Violation
 
 	// Get attachment references from SMS
 	referencedAttachments, err := v.smsValidator.GetAllAttachmentReferences()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "sms/",

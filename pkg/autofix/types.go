@@ -18,14 +18,14 @@ type Report struct {
 
 // FixedViolation represents a violation that was successfully fixed
 type FixedViolation struct {
-	OriginalViolation validation.ValidationViolation `json:"original_violation"`
+	OriginalViolation validation.Violation `json:"original_violation"`
 	FixAction         string                         `json:"fix_action"`
 	Details           string                         `json:"details,omitempty"`
 }
 
 // SkippedViolation represents a violation that was skipped for safety
 type SkippedViolation struct {
-	OriginalViolation validation.ValidationViolation `json:"original_violation"`
+	OriginalViolation validation.Violation `json:"original_violation"`
 	SkipReason        string                         `json:"skip_reason"`
 }
 

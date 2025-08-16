@@ -10,13 +10,13 @@ import (
 // CallsValidator validates calls directory and files using CallsReader
 type CallsValidator interface {
 	// ValidateCallsStructure validates calls directory structure
-	ValidateCallsStructure() []ValidationViolation
+	ValidateCallsStructure() []Violation
 
 	// ValidateCallsContent validates calls file content and consistency
-	ValidateCallsContent() []ValidationViolation
+	ValidateCallsContent() []Violation
 
 	// ValidateCallsCounts verifies call counts match manifest/summary
-	ValidateCallsCounts(expectedCounts map[int]int) []ValidationViolation
+	ValidateCallsCounts(expectedCounts map[int]int) []Violation
 }
 
 // CallsValidatorImpl implements CallsValidator interface
@@ -34,7 +34,7 @@ func NewCallsValidator(repositoryRoot string, callsReader calls.CallsReader) Cal
 }
 
 // ValidateCallsStructure validates calls directory structure
-func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
+func (v *CallsValidatorImpl) ValidateCallsStructure() []Violation {
 	adapter := NewCallsReaderAdapter(v.callsReader)
 	config := StructureValidationConfig{
 		DirectoryName: "calls",
@@ -45,13 +45,13 @@ func (v *CallsValidatorImpl) ValidateCallsStructure() []ValidationViolation {
 }
 
 // ValidateCallsContent validates calls file content and consistency
-func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *CallsValidatorImpl) ValidateCallsContent() []Violation {
+	var violations []Violation
 
 	// Get available years
 	years, err := v.callsReader.GetAvailableYears()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "calls/",
@@ -67,7 +67,7 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
 
 		// Validate file structure and year consistency
 		if err := v.callsReader.ValidateCallsFile(year); err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
@@ -84,8 +84,8 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []ValidationViolation {
 }
 
 // validateCallsYearConsistency checks that all calls in a year file belong to that year
-func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Violation {
+	var violations []Violation
 	fileName := fmt.Sprintf("calls-%d.xml", year)
 	filePath := filepath.Join("calls", fileName)
 
@@ -93,7 +93,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 	err := v.callsReader.StreamCallsForYear(year, func(call calls.Call) error {
 		callYear := call.Timestamp().UTC().Year()
 		if callYear != year {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
@@ -107,7 +107,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 	})
 
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     filePath,
@@ -119,7 +119,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Validation
 }
 
 // ValidateCallsCounts verifies call counts match manifest/summary
-func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []ValidationViolation {
+func (v *CallsValidatorImpl) ValidateCallsCounts(expectedCounts map[int]int) []Violation {
 	adapter := NewCallsReaderAdapter(v.callsReader)
 	config := StructureValidationConfig{
 		DirectoryName: "calls",

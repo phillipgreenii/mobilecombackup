@@ -43,15 +43,15 @@ type ReportGenerator interface {
 	GenerateReport(report *Report, format ReportFormat, options *ReportFilterOptions) (string, error)
 
 	// GenerateSummary creates a brief summary of validation results
-	GenerateSummary(report *Report) (*ValidationSummary, error)
+	GenerateSummary(report *Report) (*Summary, error)
 }
 
-// ValidationSummary provides high-level statistics about validation results
-type ValidationSummary struct {
+// Summary provides high-level statistics about validation results
+type Summary struct {
 	TotalViolations      int                   `yaml:"total_violations" json:"total_violations"`
 	ViolationsByType     map[ViolationType]int `yaml:"violations_by_type" json:"violations_by_type"`
 	ViolationsBySeverity map[Severity]int      `yaml:"violations_by_severity" json:"violations_by_severity"`
-	Status               ValidationStatus      `yaml:"status" json:"status"`
+	Status               Status      `yaml:"status" json:"status"`
 	Timestamp            time.Time             `yaml:"timestamp" json:"timestamp"`
 	RepositoryPath       string                `yaml:"repository_path" json:"repository_path"`
 }
@@ -90,12 +90,12 @@ func (r *ReportGeneratorImpl) GenerateReport(
 }
 
 // GenerateSummary creates a brief summary of validation results
-func (r *ReportGeneratorImpl) GenerateSummary(report *Report) (*ValidationSummary, error) {
+func (r *ReportGeneratorImpl) GenerateSummary(report *Report) (*Summary, error) {
 	if report == nil {
 		return nil, fmt.Errorf("validation report cannot be nil")
 	}
 
-	summary := &ValidationSummary{
+	summary := &Summary{
 		TotalViolations:      len(report.Violations),
 		ViolationsByType:     make(map[ViolationType]int),
 		ViolationsBySeverity: make(map[Severity]int),
@@ -123,7 +123,7 @@ func (r *ReportGeneratorImpl) applyFilters(report *Report, options *ReportFilter
 		Timestamp:      report.Timestamp,
 		RepositoryPath: report.RepositoryPath,
 		Status:         report.Status,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	// Create severity filter map for efficient lookup
@@ -307,8 +307,8 @@ func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error)
 }
 
 // groupViolationsByType groups violations by their type
-func (r *ReportGeneratorImpl) groupViolationsByType(violations []ValidationViolation) map[ViolationType][]ValidationViolation {
-	groups := make(map[ViolationType][]ValidationViolation)
+func (r *ReportGeneratorImpl) groupViolationsByType(violations []Violation) map[ViolationType][]Violation {
+	groups := make(map[ViolationType][]Violation)
 	for _, violation := range violations {
 		groups[violation.Type] = append(groups[violation.Type], violation)
 	}
@@ -316,8 +316,8 @@ func (r *ReportGeneratorImpl) groupViolationsByType(violations []ValidationViola
 }
 
 // groupViolationsBySeverity groups violations by their severity
-func (r *ReportGeneratorImpl) groupViolationsBySeverity(violations []ValidationViolation) map[Severity][]ValidationViolation {
-	groups := make(map[Severity][]ValidationViolation)
+func (r *ReportGeneratorImpl) groupViolationsBySeverity(violations []Violation) map[Severity][]Violation {
+	groups := make(map[Severity][]Violation)
 	for _, violation := range violations {
 		groups[violation.Severity] = append(groups[violation.Severity], violation)
 	}

@@ -140,7 +140,7 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(
 		Timestamp:      time.Now().UTC(),
 		RepositoryPath: v.repositoryRoot,
 		Status:         Valid,
-		Violations:     []ValidationViolation{},
+		Violations:     []Violation{},
 	}
 
 	if options.ParallelValidation {
@@ -175,7 +175,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 	// Use worker pool to limit concurrency
 	semaphore := make(chan struct{}, options.MaxConcurrency)
 	var wg sync.WaitGroup
-	violationsCh := make(chan []ValidationViolation, 4)
+	violationsCh := make(chan []Violation, 4)
 	errorCh := make(chan error, 4)
 
 	// Progress tracking
@@ -197,7 +197,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 	// Launch validation workers
 	validationTasks := []struct {
 		name string
-		fn   func() []ValidationViolation
+		fn   func() []Violation
 	}{
 		{"structure", v.ValidateStructure},
 		{"manifest", v.ValidateManifest},
@@ -207,7 +207,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 
 	for _, task := range validationTasks {
 		wg.Add(1)
-		go func(taskName string, taskFn func() []ValidationViolation) {
+		go func(taskName string, taskFn func() []Violation) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -248,7 +248,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 	}()
 
 	// Collect results
-	allViolations := []ValidationViolation{}
+	allViolations := []Violation{}
 	for {
 		select {
 		case violations, ok := <-violationsCh:
@@ -287,7 +287,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateSequential(
 ) (*Report, error) {
 	tasks := []struct {
 		name string
-		fn   func() []ValidationViolation
+		fn   func() []Violation
 	}{
 		{"structure", v.ValidateStructure},
 		{"manifest", v.ValidateManifest},
@@ -354,7 +354,7 @@ func (v *OptimizedRepositoryValidatorImpl) updateTaskMetrics(taskName string, du
 }
 
 // hasCriticalErrors checks if violations contain critical errors
-func (v *OptimizedRepositoryValidatorImpl) hasCriticalErrors(violations []ValidationViolation) bool {
+func (v *OptimizedRepositoryValidatorImpl) hasCriticalErrors(violations []Violation) bool {
 	for _, violation := range violations {
 		if violation.Severity == SeverityError && v.isCriticalViolation(violation) {
 			return true
@@ -364,7 +364,7 @@ func (v *OptimizedRepositoryValidatorImpl) hasCriticalErrors(violations []Valida
 }
 
 // isCriticalViolation determines if a violation is critical for early termination
-func (v *OptimizedRepositoryValidatorImpl) isCriticalViolation(violation ValidationViolation) bool {
+func (v *OptimizedRepositoryValidatorImpl) isCriticalViolation(violation Violation) bool {
 	// Consider certain types as critical
 	criticalTypes := map[ViolationType]bool{
 		ChecksumMismatch:   true,
@@ -422,7 +422,7 @@ func (v *OptimizedRepositoryValidatorImpl) ClearCache() {
 // EarlyTerminationError indicates validation was terminated early due to critical errors
 type EarlyTerminationError struct {
 	Stage      string
-	Violations []ValidationViolation
+	Violations []Violation
 }
 
 func (e *EarlyTerminationError) Error() string {

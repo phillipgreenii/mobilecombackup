@@ -11,13 +11,13 @@ import (
 // SMSValidator validates SMS directory and files using SMSReader
 type SMSValidator interface {
 	// ValidateSMSStructure validates SMS directory structure
-	ValidateSMSStructure() []ValidationViolation
+	ValidateSMSStructure() []Violation
 
 	// ValidateSMSContent validates SMS file content and consistency
-	ValidateSMSContent() []ValidationViolation
+	ValidateSMSContent() []Violation
 
 	// ValidateSMSCounts verifies SMS message counts match manifest/summary
-	ValidateSMSCounts(expectedCounts map[int]int) []ValidationViolation
+	ValidateSMSCounts(expectedCounts map[int]int) []Violation
 
 	// GetAllAttachmentReferences returns all attachment references for cross-validation
 	GetAllAttachmentReferences() (map[string]bool, error)
@@ -38,7 +38,7 @@ func NewSMSValidator(repositoryRoot string, smsReader sms.SMSReader) SMSValidato
 }
 
 // ValidateSMSStructure validates SMS directory structure
-func (v *SMSValidatorImpl) ValidateSMSStructure() []ValidationViolation {
+func (v *SMSValidatorImpl) ValidateSMSStructure() []Violation {
 	adapter := NewSMSReaderAdapter(v.smsReader)
 	config := StructureValidationConfig{
 		DirectoryName: "sms",
@@ -49,13 +49,13 @@ func (v *SMSValidatorImpl) ValidateSMSStructure() []ValidationViolation {
 }
 
 // ValidateSMSContent validates SMS file content and consistency
-func (v *SMSValidatorImpl) ValidateSMSContent() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *SMSValidatorImpl) ValidateSMSContent() []Violation {
+	var violations []Violation
 
 	// Get available years
 	years, err := v.smsReader.GetAvailableYears()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "sms/",
@@ -71,7 +71,7 @@ func (v *SMSValidatorImpl) ValidateSMSContent() []ValidationViolation {
 
 		// Validate file structure and year consistency
 		if err := v.smsReader.ValidateSMSFile(year); err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
@@ -91,8 +91,8 @@ func (v *SMSValidatorImpl) ValidateSMSContent() []ValidationViolation {
 }
 
 // validateSMSYearConsistency checks that all messages in a year file belong to that year
-func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []Violation {
+	var violations []Violation
 	fileName := fmt.Sprintf("sms-%d.xml", year)
 	filePath := filepath.Join("sms", fileName)
 
@@ -102,7 +102,7 @@ func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []ValidationViol
 		messageTime := time.Unix(message.GetDate()/1000, 0).UTC()
 		messageYear := messageTime.Year()
 		if messageYear != year {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     filePath,
@@ -116,7 +116,7 @@ func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []ValidationViol
 	})
 
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     filePath,
@@ -128,15 +128,15 @@ func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []ValidationViol
 }
 
 // validateAttachmentReferences checks that attachment references are valid
-func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []Violation {
+	var violations []Violation
 	fileName := fmt.Sprintf("sms-%d.xml", year)
 	filePath := filepath.Join("sms", fileName)
 
 	// Get attachment references for this year
 	attachmentRefs, err := v.smsReader.GetAttachmentRefs(year)
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     filePath,
@@ -148,7 +148,7 @@ func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []ValidationVi
 	// Validate attachment reference format
 	for _, ref := range attachmentRefs {
 		if ref == "" {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityWarning,
 				File:     filePath,
@@ -159,7 +159,7 @@ func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []ValidationVi
 
 		// Check if reference follows expected format: attachments/xx/xxxx...
 		if len(ref) < 16 || ref[:12] != "attachments/" {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityWarning,
 				File:     filePath,
@@ -174,7 +174,7 @@ func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []ValidationVi
 }
 
 // ValidateSMSCounts verifies message counts match manifest/summary
-func (v *SMSValidatorImpl) ValidateSMSCounts(expectedCounts map[int]int) []ValidationViolation {
+func (v *SMSValidatorImpl) ValidateSMSCounts(expectedCounts map[int]int) []Violation {
 	adapter := NewSMSReaderAdapter(v.smsReader)
 	config := StructureValidationConfig{
 		DirectoryName: "sms",

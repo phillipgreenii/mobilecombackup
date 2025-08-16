@@ -17,7 +17,7 @@
 //
 // Basic autofix workflow:
 //
-//	violations := []validation.ValidationViolation{
+//	violations := []validation.Violation{
 //		{Type: validation.XMLCountMismatch, File: "sms/sms-2024.xml"},
 //	}
 //
@@ -86,7 +86,7 @@ type SummaryContent struct {
 // Autofixer interface for fixing validation violations
 type Autofixer interface {
 	// FixViolations attempts to fix the given validation violations
-	FixViolations(violations []validation.ValidationViolation, options Options) (*Report, error)
+	FixViolations(violations []validation.Violation, options Options) (*Report, error)
 
 	// CanFix returns true if the violation type can be automatically fixed
 	CanFix(violationType validation.ViolationType) bool
@@ -113,7 +113,7 @@ func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
 
 // FixViolations attempts to fix the given validation violations
 func (a *AutofixerImpl) FixViolations(
-	violations []validation.ValidationViolation, options Options,
+	violations []validation.Violation, options Options,
 ) (*Report, error) {
 	report := a.createInitialReport()
 
@@ -156,7 +156,7 @@ func (a *AutofixerImpl) createInitialReport() *Report {
 }
 
 // performPermissionChecks performs permission checks during dry-run mode
-func (a *AutofixerImpl) performPermissionChecks(violations []validation.ValidationViolation, report *Report) {
+func (a *AutofixerImpl) performPermissionChecks(violations []validation.Violation, report *Report) {
 	if err := a.checkPermissions(violations); err != nil {
 		report.Errors = append(report.Errors, Error{
 			ViolationType: "",
@@ -169,7 +169,7 @@ func (a *AutofixerImpl) performPermissionChecks(violations []validation.Validati
 
 // fixDirectoryViolations handles directory creation violations
 func (a *AutofixerImpl) fixDirectoryViolations(
-	violations []validation.ValidationViolation, options Options, report *Report,
+	violations []validation.Violation, options Options, report *Report,
 ) {
 	directoryViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.StructureViolation,
@@ -184,7 +184,7 @@ func (a *AutofixerImpl) fixDirectoryViolations(
 
 // handleDirectoryViolation processes a single directory violation
 func (a *AutofixerImpl) handleDirectoryViolation(
-	violation validation.ValidationViolation, dryRun bool, report *Report,
+	violation validation.Violation, dryRun bool, report *Report,
 ) {
 	if dryRun {
 		report.FixedViolations = append(report.FixedViolations, FixedViolation{
@@ -213,7 +213,7 @@ func (a *AutofixerImpl) handleDirectoryViolation(
 
 // fixFileViolations handles missing file violations
 func (a *AutofixerImpl) fixFileViolations(
-	violations []validation.ValidationViolation,
+	violations []validation.Violation,
 	options Options,
 	report *Report,
 ) {
@@ -228,7 +228,7 @@ func (a *AutofixerImpl) fixFileViolations(
 }
 
 // handleFileViolation processes a single file violation
-func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViolation, dryRun bool, report *Report) {
+func (a *AutofixerImpl) handleFileViolation(violation validation.Violation, dryRun bool, report *Report) {
 	if !a.CanFix(violation.Type) {
 		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
 			OriginalViolation: violation,
@@ -264,7 +264,7 @@ func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViola
 
 // fixContentViolations handles content-related violations
 func (a *AutofixerImpl) fixContentViolations(
-	violations []validation.ValidationViolation,
+	violations []validation.Violation,
 	options Options,
 	report *Report,
 ) {
@@ -279,7 +279,7 @@ func (a *AutofixerImpl) fixContentViolations(
 }
 
 // handleContentViolation processes a single content violation
-func (a *AutofixerImpl) handleContentViolation(violation validation.ValidationViolation, dryRun bool, report *Report) {
+func (a *AutofixerImpl) handleContentViolation(violation validation.Violation, dryRun bool, report *Report) {
 	if !a.CanFix(violation.Type) {
 		report.SkippedViolations = append(report.SkippedViolations, SkippedViolation{
 			OriginalViolation: violation,
@@ -297,7 +297,7 @@ func (a *AutofixerImpl) handleContentViolation(violation validation.ValidationVi
 }
 
 // handleContentViolationDryRun handles content violations in dry-run mode
-func (a *AutofixerImpl) handleContentViolationDryRun(violation validation.ValidationViolation, report *Report) {
+func (a *AutofixerImpl) handleContentViolationDryRun(violation validation.Violation, report *Report) {
 	var fixAction, details string
 
 	switch violation.Type {
@@ -323,7 +323,7 @@ func (a *AutofixerImpl) handleContentViolationDryRun(violation validation.Valida
 }
 
 // handleContentViolationExecute executes content violation fixes
-func (a *AutofixerImpl) handleContentViolationExecute(violation validation.ValidationViolation, report *Report) {
+func (a *AutofixerImpl) handleContentViolationExecute(violation validation.Violation, report *Report) {
 	var err error
 	var fixAction string
 
@@ -353,7 +353,7 @@ func (a *AutofixerImpl) handleContentViolationExecute(violation validation.Valid
 }
 
 // handleUnsafeViolations handles violations that cannot be safely fixed
-func (a *AutofixerImpl) handleUnsafeViolations(violations []validation.ValidationViolation, report *Report) {
+func (a *AutofixerImpl) handleUnsafeViolations(violations []validation.Violation, report *Report) {
 	unsafeViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.ChecksumMismatch,
 		validation.OrphanedAttachment,
@@ -402,10 +402,10 @@ func (a *AutofixerImpl) CanFix(violationType validation.ViolationType) bool {
 // Helper functions
 
 func filterViolationsByTypes(
-	violations []validation.ValidationViolation,
+	violations []validation.Violation,
 	types []validation.ViolationType,
-) []validation.ValidationViolation {
-	var filtered []validation.ValidationViolation
+) []validation.Violation {
+	var filtered []validation.Violation
 	typeMap := make(map[validation.ViolationType]bool)
 	for _, t := range types {
 		typeMap[t] = true
@@ -419,7 +419,7 @@ func filterViolationsByTypes(
 	return filtered
 }
 
-func isDirectoryMissing(violation validation.ValidationViolation) bool {
+func isDirectoryMissing(violation validation.Violation) bool {
 	// Check if this is a directory missing violation
 	if violation.Type != validation.StructureViolation {
 		return false
@@ -438,11 +438,11 @@ func isDirectoryMissing(violation validation.ValidationViolation) bool {
 			strings.Contains(message, "does not exist"))
 }
 
-func extractDirectoryFromViolation(violation validation.ValidationViolation) string {
+func extractDirectoryFromViolation(violation validation.Violation) string {
 	return violation.File
 }
 
-func (a *AutofixerImpl) fixMissingDirectory(violation validation.ValidationViolation) error {
+func (a *AutofixerImpl) fixMissingDirectory(violation validation.Violation) error {
 	// Validate the directory path from violation
 	relDirPath := extractDirectoryFromViolation(violation)
 
@@ -467,7 +467,7 @@ func (a *AutofixerImpl) fixMissingDirectory(violation validation.ValidationViola
 	return err
 }
 
-func (a *AutofixerImpl) fixMissingFile(violation validation.ValidationViolation) error {
+func (a *AutofixerImpl) fixMissingFile(violation validation.Violation) error {
 	a.reporter.StartOperation(OperationCreateFile, violation.File)
 
 	var err error
@@ -492,7 +492,7 @@ func (a *AutofixerImpl) fixMissingFile(violation validation.ValidationViolation)
 	return err
 }
 
-func (a *AutofixerImpl) fixCountMismatch(violation validation.ValidationViolation) error {
+func (a *AutofixerImpl) fixCountMismatch(violation validation.Violation) error {
 	a.reporter.StartOperation(OperationUpdateXMLCount, violation.File)
 
 	// Validate file path
@@ -539,7 +539,7 @@ func (a *AutofixerImpl) fixCountMismatch(violation validation.ValidationViolatio
 	return nil
 }
 
-func (a *AutofixerImpl) fixSizeMismatch(violation validation.ValidationViolation) error {
+func (a *AutofixerImpl) fixSizeMismatch(violation validation.Violation) error {
 	a.reporter.StartOperation(OperationUpdateFile, violation.File)
 
 	// This fixes size mismatches in files.yaml by regenerating the entire manifest
@@ -764,7 +764,7 @@ func skipElement(decoder *xml.Decoder) error {
 }
 
 // checkPermissions verifies write permissions for dry-run mode
-func (a *AutofixerImpl) checkPermissions(violations []validation.ValidationViolation) error {
+func (a *AutofixerImpl) checkPermissions(violations []validation.Violation) error {
 	// Check repository root write permission
 	if err := checkWritePermission(a.repositoryRoot); err != nil {
 		return fmt.Errorf("repository root not writable: %w", err)
@@ -778,7 +778,7 @@ func (a *AutofixerImpl) checkPermissions(violations []validation.ValidationViola
 }
 
 // collectPathsToCheck collects all paths that need write permission checks
-func (a *AutofixerImpl) collectPathsToCheck(violations []validation.ValidationViolation) map[string]bool {
+func (a *AutofixerImpl) collectPathsToCheck(violations []validation.Violation) map[string]bool {
 	filesToCheck := make(map[string]bool)
 
 	for _, violation := range violations {
@@ -789,7 +789,7 @@ func (a *AutofixerImpl) collectPathsToCheck(violations []validation.ValidationVi
 }
 
 // addPathForViolation adds the appropriate path to check for a violation
-func (a *AutofixerImpl) addPathForViolation(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+func (a *AutofixerImpl) addPathForViolation(violation validation.Violation, filesToCheck map[string]bool) {
 	switch violation.Type {
 	case validation.MissingFile, validation.MissingMarkerFile:
 		a.addMissingFilePathToCheck(violation, filesToCheck)
@@ -801,7 +801,7 @@ func (a *AutofixerImpl) addPathForViolation(violation validation.ValidationViola
 }
 
 // addMissingFilePathToCheck adds parent directory for missing file violations
-func (a *AutofixerImpl) addMissingFilePathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+func (a *AutofixerImpl) addMissingFilePathToCheck(violation validation.Violation, filesToCheck map[string]bool) {
 	validatedPath, err := a.pathValidator.ValidatePath(violation.File)
 	if err != nil {
 		return // Skip invalid paths for permission checking
@@ -817,7 +817,7 @@ func (a *AutofixerImpl) addMissingFilePathToCheck(violation validation.Validatio
 }
 
 // addExistingFilePathToCheck adds file path for existing file violations
-func (a *AutofixerImpl) addExistingFilePathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+func (a *AutofixerImpl) addExistingFilePathToCheck(violation validation.Violation, filesToCheck map[string]bool) {
 	validatedPath, err := a.pathValidator.ValidatePath(violation.File)
 	if err != nil {
 		return // Skip invalid paths for permission checking
@@ -832,7 +832,7 @@ func (a *AutofixerImpl) addExistingFilePathToCheck(violation validation.Validati
 }
 
 // addStructureViolationPathToCheck adds parent directory for structure violations
-func (a *AutofixerImpl) addStructureViolationPathToCheck(violation validation.ValidationViolation, filesToCheck map[string]bool) {
+func (a *AutofixerImpl) addStructureViolationPathToCheck(violation validation.Violation, filesToCheck map[string]bool) {
 	if !isDirectoryMissing(violation) {
 		return
 	}

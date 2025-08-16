@@ -21,7 +21,7 @@ type MarkerFileContent struct {
 // MarkerFileValidator validates the .mobilecombackup.yaml marker file
 type MarkerFileValidator interface {
 	// ValidateMarkerFile checks the marker file exists and has valid content
-	ValidateMarkerFile() ([]ValidationViolation, bool, error)
+	ValidateMarkerFile() ([]Violation, bool, error)
 
 	// GetSuggestedFix returns the suggested content for a missing marker file
 	GetSuggestedFix() string
@@ -43,15 +43,15 @@ func NewMarkerFileValidator(repositoryRoot string) MarkerFileValidator {
 
 // ValidateMarkerFile validates the .mobilecombackup.yaml marker file
 // Returns: violations, versionSupported, error
-func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, bool, error) {
-	var violations []ValidationViolation
+func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error) {
+	var violations []Violation
 	markerPath := filepath.Join(v.repositoryRoot, ".mobilecombackup.yaml")
 
 	// Check if file exists
 	file, err := os.Open(markerPath) // nolint:gosec // Validation requires file access
 	if err != nil {
 		if os.IsNotExist(err) {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingMarkerFile,
 				Severity: SeverityError,
 				File:     ".mobilecombackup.yaml",
@@ -74,7 +74,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	// Validate YAML structure first
 	var rawData map[string]interface{}
 	if err := yaml.Unmarshal(content, &rawData); err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",
@@ -86,7 +86,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	// Parse into structured content
 	var markerContent MarkerFileContent
 	if err := yaml.Unmarshal(content, &markerContent); err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",
@@ -97,14 +97,14 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 
 	// Validate required fields
 	if markerContent.RepositoryStructureVersion == "" {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",
 			Message:  "Missing required field: repository_structure_version",
 		})
 	} else if markerContent.RepositoryStructureVersion != "1" {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     UnsupportedVersion,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",
@@ -116,7 +116,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	}
 
 	if markerContent.CreatedAt == "" {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",
@@ -125,7 +125,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	} else {
 		// Validate RFC3339 timestamp
 		if _, err := time.Parse(time.RFC3339, markerContent.CreatedAt); err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     ".mobilecombackup.yaml",
@@ -135,7 +135,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]ValidationViolation, b
 	}
 
 	if markerContent.CreatedBy == "" {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     InvalidFormat,
 			Severity: SeverityError,
 			File:     ".mobilecombackup.yaml",

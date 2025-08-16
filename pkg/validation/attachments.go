@@ -13,13 +13,13 @@ import (
 // AttachmentsValidator validates attachments directory and files using AttachmentReader
 type AttachmentsValidator interface {
 	// ValidateAttachmentsStructure validates attachments directory structure
-	ValidateAttachmentsStructure() []ValidationViolation
+	ValidateAttachmentsStructure() []Violation
 
 	// ValidateAttachmentIntegrity verifies attachment content matches hashes
-	ValidateAttachmentIntegrity() []ValidationViolation
+	ValidateAttachmentIntegrity() []Violation
 
 	// ValidateAttachmentReferences checks attachment references against SMS data
-	ValidateAttachmentReferences(referencedHashes map[string]bool) []ValidationViolation
+	ValidateAttachmentReferences(referencedHashes map[string]bool) []Violation
 
 	// GetOrphanedAttachments returns attachments not referenced by any messages
 	GetOrphanedAttachments(referencedHashes map[string]bool) ([]*attachments.Attachment, error)
@@ -46,8 +46,8 @@ func NewAttachmentsValidator(
 }
 
 // ValidateAttachmentsStructure validates attachments directory structure
-func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []Violation {
+	var violations []Violation
 
 	// Check if attachments directory exists
 	attachmentsDir := filepath.Join(v.repositoryRoot, "attachments")
@@ -59,14 +59,14 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 		if !dirExists(attachmentsDir) {
 			// Missing attachments directory is only an error if we have referenced attachments
 			// For now, treat as warning since attachments are optional in empty repositories
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     StructureViolation,
 				Severity: SeverityWarning,
 				File:     "attachments/",
 				Message:  "Attachments directory not found (may be OK for repository without MMS)",
 			})
 		} else {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     StructureViolation,
 				Severity: SeverityError,
 				File:     "attachments/",
@@ -83,7 +83,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 
 	// Validate the attachment directory structure using the reader's validator
 	if err := v.attachmentReader.ValidateAttachmentStructure(); err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "attachments/",
@@ -98,13 +98,13 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []ValidationVi
 }
 
 // ValidateAttachmentIntegrity verifies attachment content matches hashes and validates file formats
-func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationViolation {
-	var violations []ValidationViolation
+func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []Violation {
+	var violations []Violation
 
 	// Get all attachments
 	attachmentsList, err := v.attachmentReader.ListAttachments()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "attachments/",
@@ -116,7 +116,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 	// Get MIME type mappings from SMS/MMS data
 	attachmentMimeTypes, err := v.getAttachmentMimeTypes()
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "attachments/",
@@ -130,7 +130,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 	for _, attachment := range attachmentsList {
 		// Check if attachment exists
 		if !attachment.Exists {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     attachment.Path,
@@ -142,7 +142,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 		// Verify content matches hash
 		verified, err := v.attachmentReader.VerifyAttachment(attachment.Hash)
 		if err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
 				File:     attachment.Path,
@@ -152,7 +152,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 		}
 
 		if !verified {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     ChecksumMismatch,
 				Severity: SeverityError,
 				File:     attachment.Path,
@@ -168,7 +168,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 		detectedFormat, err := DetectFileFormat(attachmentPath)
 		if err != nil {
 			// Unknown format - this is an error
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     UnknownFormat,
 				Severity: SeverityError,
 				File:     attachment.Path,
@@ -181,7 +181,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 		if expectedMimeType, exists := attachmentMimeTypes[attachment.Hash]; exists {
 			// Compare detected format with expected MIME type
 			if detectedFormat != expectedMimeType {
-				violations = append(violations, ValidationViolation{
+				violations = append(violations, Violation{
 					Type:     FormatMismatch,
 					Severity: SeverityError,
 					File:     attachment.Path,
@@ -199,8 +199,8 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []ValidationVio
 }
 
 // ValidateAttachmentReferences checks attachment references against SMS data
-func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes map[string]bool) []ValidationViolation {
-	violations := make([]ValidationViolation, 0, len(referencedHashes))
+func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes map[string]bool) []Violation {
+	violations := make([]Violation, 0, len(referencedHashes))
 
 	// Check for referenced attachments that don't exist
 	for referencedHash := range referencedHashes {
@@ -214,7 +214,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 
 		exists, err := v.attachmentReader.AttachmentExists(referencedHash)
 		if err != nil {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     expectedPath,
@@ -224,7 +224,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 		}
 
 		if !exists {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     expectedPath,
@@ -236,7 +236,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 	// Find orphaned attachments (exist but not referenced)
 	orphanedAttachments, err := v.attachmentReader.FindOrphanedAttachments(referencedHashes)
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     "attachments/",
@@ -247,7 +247,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentReferences(referencedHashes
 
 	// Report orphaned attachments as warnings (not errors)
 	for _, orphaned := range orphanedAttachments {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     OrphanedAttachment,
 			Severity: SeverityWarning,
 			File:     orphaned.Path,
@@ -365,8 +365,8 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
 }
 
 // validateNewFormatStructure validates the new directory-based attachment format
-func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []*attachments.Attachment) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []*attachments.Attachment) []Violation {
+	var violations []Violation
 
 	// Get attachment manager to check formats
 	attachmentManager := attachments.NewAttachmentManager(v.repositoryRoot)
@@ -383,13 +383,13 @@ func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []
 }
 
 // validateNewFormatAttachment validates a single new format attachment
-func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attachments.Attachment, storage *attachments.DirectoryAttachmentStorage) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attachments.Attachment, storage *attachments.DirectoryAttachmentStorage) []Violation {
+	var violations []Violation
 
 	// Validate metadata.yaml exists and is readable
 	metadata, err := storage.GetMetadata(attachment.Hash)
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityError,
 			File:     attachment.Path,
@@ -400,7 +400,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 
 	// Validate metadata consistency
 	if metadata.Hash != attachment.Hash {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     ChecksumMismatch,
 			Severity: SeverityError,
 			File:     attachment.Path,
@@ -414,7 +414,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	}
 
 	if metadata.Size != attachment.Size {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     SizeMismatch,
 			Severity: SeverityError,
 			File:     attachment.Path,
@@ -430,7 +430,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	// Validate attachment file exists with proper name
 	attachmentFilePath, err := storage.GetAttachmentFilePath(attachment.Hash)
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityError,
 			File:     attachment.Path,
@@ -440,7 +440,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	}
 
 	if _, err := os.Stat(attachmentFilePath); os.IsNotExist(err) {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityError,
 			File:     attachment.Path,
@@ -452,7 +452,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	expectedFilename := attachments.GenerateFilename(metadata.OriginalName, metadata.MimeType)
 	actualFilename := filepath.Base(attachmentFilePath)
 	if actualFilename != expectedFilename {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityWarning,
 			File:     attachment.Path,
@@ -469,7 +469,7 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	if metadata.MimeType != "" {
 		ext := attachments.GetFileExtension(metadata.MimeType)
 		if ext == "bin" && metadata.MimeType != "application/octet-stream" {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     UnknownFormat,
 				Severity: SeverityWarning,
 				File:     attachment.Path,

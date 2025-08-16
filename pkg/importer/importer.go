@@ -324,13 +324,13 @@ func validateRepository(repoRoot string) error {
 
 // formatValidationError formats validation violations into an error message
 // matching the format used by the validate subcommand
-func formatValidationError(violations []validation.ValidationViolation) error {
+func formatValidationError(violations []validation.Violation) error {
 	if len(violations) == 0 {
 		return nil
 	}
 
 	// Group violations by type (matching validate command format)
-	violationsByType := make(map[string][]validation.ValidationViolation)
+	violationsByType := make(map[string][]validation.Violation)
 	for _, v := range violations {
 		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
 	}

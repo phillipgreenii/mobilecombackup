@@ -70,7 +70,7 @@ func TestAutofix_SecurityIntegration(t *testing.T) {
 	fixer := autofix.NewAutofixer(tempDir, reporter)
 
 	// Create attack vectors via validation violations
-	attackViolations := []validation.ValidationViolation{
+	attackViolations := []validation.Violation{
 		{
 			Type:     validation.StructureViolation,
 			Severity: validation.SeverityError,
@@ -94,7 +94,7 @@ func TestAutofix_SecurityIntegration(t *testing.T) {
 	// Attempt to fix violations with malicious paths
 	for _, violation := range attackViolations {
 		t.Run(violation.File, func(t *testing.T) {
-			report, err := fixer.FixViolations([]validation.ValidationViolation{violation}, autofix.Options{})
+			report, err := fixer.FixViolations([]validation.Violation{violation}, autofix.Options{})
 
 			// Should either fail with validation error or successfully skip the violation
 			if err == nil {

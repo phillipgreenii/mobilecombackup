@@ -48,8 +48,8 @@ func (v *ManifestValidatorImpl) LoadManifest() (*FileManifest, error) {
 }
 
 // ValidateManifestFormat checks files.yaml structure and format
-func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) []Violation {
+	var violations []Violation
 
 	// Check for duplicate entries
 	seenFiles := make(map[string]bool)
@@ -62,7 +62,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 
 		// Check for duplicate file paths
 		if seenFiles[entry.Name] {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     manifestFileName,
@@ -73,7 +73,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 
 		// Validate SHA-256 format
 		if !sha256Pattern.MatchString(entry.Checksum) {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
@@ -83,7 +83,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 
 		// Validate positive size
 		if entry.Size <= 0 {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
@@ -93,7 +93,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 
 		// Validate relative path (no ".." or absolute paths)
 		if filepath.IsAbs(entry.Name) {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
@@ -102,7 +102,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 		}
 
 		if strings.Contains(entry.Name, "..") {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
@@ -112,7 +112,7 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 
 		// Validate file path doesn't include files.yaml or files.yaml.sha256
 		if entry.Name == manifestFileName || entry.Name == manifestChecksumFileName {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
 				File:     entryContext,
@@ -125,8 +125,8 @@ func (v *ManifestValidatorImpl) ValidateManifestFormat(manifest *FileManifest) [
 }
 
 // CheckManifestCompleteness verifies all files are listed
-func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest) []ValidationViolation {
-	var violations []ValidationViolation
+func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest) []Violation {
+	var violations []Violation
 
 	// Build set of files in manifest
 	manifestFiles := make(map[string]bool)
@@ -161,7 +161,7 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 	})
 
 	if err != nil {
-		violations = append(violations, ValidationViolation{
+		violations = append(violations, Violation{
 			Type:     StructureViolation,
 			Severity: SeverityError,
 			File:     v.repositoryRoot,
@@ -173,7 +173,7 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 	// Check for files in repository not in manifest
 	for _, file := range actualFiles {
 		if !manifestFiles[file] {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     ExtraFile,
 				Severity: SeverityError,
 				File:     file,
@@ -190,7 +190,7 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 
 	for _, entry := range manifest.Files {
 		if !actualFileSet[entry.Name] {
-			violations = append(violations, ValidationViolation{
+			violations = append(violations, Violation{
 				Type:     MissingFile,
 				Severity: SeverityError,
 				File:     entry.Name,

@@ -52,7 +52,7 @@ func init() {
 // ValidationResult represents the result of validation
 type ValidationResult struct {
 	Valid         bool                             `json:"valid"`
-	Violations    []validation.ValidationViolation `json:"violations"`
+	Violations    []validation.Violation `json:"violations"`
 	OrphanRemoval *OrphanRemovalResult             `json:"orphan_removal,omitempty"`
 	AutofixReport *autofix.Report           `json:"autofix_report,omitempty"`
 }
@@ -260,7 +260,7 @@ func resolveRepoRoot() string {
 func validateWithProgress(
 	validator validation.RepositoryValidator,
 	reporter ProgressReporter,
-) ([]validation.ValidationViolation, error) {
+) ([]validation.Violation, error) {
 	// For now, just run validation without progress reporting
 	// Progress reporting will be added in the validation package in a future enhancement
 	reporter.StartPhase("repository")
@@ -275,7 +275,7 @@ func validateWithProgress(
 }
 
 func runAutofixWithProgress(
-	violations []validation.ValidationViolation,
+	violations []validation.Violation,
 	repoPath string,
 	reporter ProgressReporter,
 ) (*autofix.Report, error) {
@@ -575,9 +575,9 @@ func displayOrphanRemovalActual(orphanRemoval *OrphanRemovalResult) {
 }
 
 // displayViolationsByType groups and displays violations by type
-func displayViolationsByType(violations []validation.ValidationViolation) {
+func displayViolationsByType(violations []validation.Violation) {
 	// Group violations by type
-	violationsByType := make(map[string][]validation.ValidationViolation)
+	violationsByType := make(map[string][]validation.Violation)
 	for _, v := range violations {
 		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
 	}
