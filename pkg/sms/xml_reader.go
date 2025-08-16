@@ -210,117 +210,156 @@ func (r *XMLSMSReader) parseMMSAttributes(mms *MMS, attrs []xml.Attr) error {
 
 // parseMMSAttribute parses a single MMS attribute
 func (r *XMLSMSReader) parseMMSAttribute(mms *MMS, attr xml.Attr) error {
-	switch attr.Name.Local {
+	return r.parseMMSAttributeByCategory(mms, attr)
+}
+
+// parseMMSAttributeByCategory routes attribute parsing to specialized handlers
+func (r *XMLSMSReader) parseMMSAttributeByCategory(mms *MMS, attr xml.Attr) error {
+	name := attr.Name.Local
+	value := attr.Value
+
+	// Core message attributes
+	if err := r.parseMMSCoreAttributes(mms, name, value); err != nil {
+		return err
+	}
+
+	// Status and flag attributes
+	if r.parseMMSStatusAttributes(mms, name, value) {
+		return nil
+	}
+
+	// Network and protocol attributes
+	if err := r.parseMMSNetworkAttributes(mms, name, value); err != nil {
+		return err
+	}
+
+	// Optional string attributes
+	r.parseMMSOptionalStringAttributes(mms, name, value)
+
+	return nil
+}
+
+// parseMMSCoreAttributes handles core message identification and timing
+func (r *XMLSMSReader) parseMMSCoreAttributes(mms *MMS, name, value string) error {
+	switch name {
 	case "date":
-		return r.parseTimestampAttr(attr.Value, &mms.Date, "date")
-	case "msg_box":
-		return r.parseIntAttr(attr.Value, &mms.MsgBox, "msg_box")
-	case attrAddress:
-		mms.Address = attr.Value
-	case "m_type":
-		return r.parseIntAttr(attr.Value, &mms.MType, "m_type")
-	case "m_id":
-		mms.MId = attr.Value
-	case "thread_id":
-		mms.ThreadID = attr.Value
-	case "text_only":
-		mms.TextOnly = r.parseBooleanAttr(attr.Value)
-	case "sub":
-		if attr.Value != types.XMLNullValue {
-			mms.Sub = attr.Value
-		}
-	case "readable_date":
-		mms.ReadableDate = attr.Value
-	case "contact_name":
-		mms.ContactName = attr.Value
-	case "read":
-		mms.Read = r.parseBooleanAttr(attr.Value)
-	case "locked":
-		mms.Locked = r.parseBooleanAttr(attr.Value)
+		return r.parseTimestampAttr(value, &mms.Date, "date")
 	case "date_sent":
-		return r.parseTimestampAttrWithZero(attr.Value, &mms.DateSent, "date_sent")
-	case "seen":
-		mms.Seen = r.parseBooleanAttr(attr.Value)
-	case "deletable":
-		mms.Deletable = r.parseBooleanAttr(attr.Value)
-	case "hidden":
-		mms.Hidden = r.parseBooleanAttr(attr.Value)
-	case "sim_imsi":
-		if attr.Value != types.XMLNullValue {
-			mms.SimImsi = attr.Value
-		}
-	case "creator":
-		if attr.Value != types.XMLNullValue {
-			mms.Creator = attr.Value
-		}
-	case "sub_id":
-		return r.parseIntAttr(attr.Value, &mms.SubID, "sub_id")
-	case "sim_slot":
-		return r.parseIntAttr(attr.Value, &mms.SimSlot, "sim_slot")
-	case "spam_report":
-		mms.SpamReport = r.parseBooleanAttr(attr.Value)
-	case "safe_message":
-		mms.SafeMessage = r.parseBooleanAttr(attr.Value)
-	case "callback_set":
-		mms.CallbackSet = r.parseBooleanAttr(attr.Value)
-	case "retr_st":
-		return r.parseIntAttr(attr.Value, &mms.RetrSt, "retr_st")
-	case "ct_cls":
-		if attr.Value != types.XMLNullValue {
-			mms.CtCls = attr.Value
-		}
-	case "sub_cs":
-		return r.parseIntAttr(attr.Value, &mms.SubCs, "sub_cs")
-	case "ct_l":
-		if attr.Value != types.XMLNullValue {
-			mms.CtL = attr.Value
-		}
-	case "tr_id":
-		if attr.Value != types.XMLNullValue {
-			mms.TrID = attr.Value
-		}
-	case "st":
-		return r.parseIntAttr(attr.Value, &mms.St, "st")
-	case "m_cls":
-		if attr.Value != types.XMLNullValue {
-			mms.MCls = attr.Value
-		}
+		return r.parseTimestampAttrWithZero(value, &mms.DateSent, "date_sent")
 	case "d_tm":
-		return r.parseTimestampAttrWithZero(attr.Value, &mms.DTm, "d_tm")
-	case "read_status":
-		return r.parseIntAttr(attr.Value, &mms.ReadStatus, "read_status")
-	case "ct_t":
-		if attr.Value != types.XMLNullValue {
-			mms.CtT = attr.Value
-		}
-	case "retr_txt_cs":
-		return r.parseIntAttr(attr.Value, &mms.RetrTxtCs, "retr_txt_cs")
-	case "d_rpt":
-		return r.parseIntAttr(attr.Value, &mms.DRpt, "d_rpt")
-	case "reserved":
-		return r.parseIntAttr(attr.Value, &mms.Reserved, "reserved")
-	case "v":
-		return r.parseIntAttr(attr.Value, &mms.V, "v")
+		return r.parseTimestampAttrWithZero(value, &mms.DTm, "d_tm")
 	case "exp":
-		return r.parseTimestampAttrWithZero(attr.Value, &mms.Exp, "exp")
-	case "pri":
-		return r.parseIntAttr(attr.Value, &mms.Pri, "pri")
-	case "msg_id":
-		return r.parseIntAttr(attr.Value, &mms.MsgID, "msg_id")
-	case "rr":
-		return r.parseIntAttr(attr.Value, &mms.Rr, "rr")
-	case "app_id":
-		return r.parseIntAttr(attr.Value, &mms.AppID, "app_id")
-	case "resp_txt":
-		if attr.Value != types.XMLNullValue {
-			mms.RespTxt = attr.Value
-		}
-	case "rpt_a":
-		return r.parseIntAttr(attr.Value, &mms.RptA, "rpt_a")
-	case "m_size":
-		return r.parseIntAttr(attr.Value, &mms.MSize, "m_size")
+		return r.parseTimestampAttrWithZero(value, &mms.Exp, "exp")
+	case "msg_box":
+		return r.parseIntAttr(value, &mms.MsgBox, "msg_box")
+	case "m_type":
+		return r.parseIntAttr(value, &mms.MType, "m_type")
+	case attrAddress:
+		mms.Address = value
+	case "m_id":
+		mms.MId = value
+	case "thread_id":
+		mms.ThreadID = value
+	case "readable_date":
+		mms.ReadableDate = value
+	case "contact_name":
+		mms.ContactName = value
 	}
 	return nil
+}
+
+// parseMMSStatusAttributes handles boolean status flags and returns true if handled
+func (r *XMLSMSReader) parseMMSStatusAttributes(mms *MMS, name, value string) bool {
+	switch name {
+	case "text_only":
+		mms.TextOnly = r.parseBooleanAttr(value)
+	case "read":
+		mms.Read = r.parseBooleanAttr(value)
+	case "locked":
+		mms.Locked = r.parseBooleanAttr(value)
+	case "seen":
+		mms.Seen = r.parseBooleanAttr(value)
+	case "deletable":
+		mms.Deletable = r.parseBooleanAttr(value)
+	case "hidden":
+		mms.Hidden = r.parseBooleanAttr(value)
+	case "spam_report":
+		mms.SpamReport = r.parseBooleanAttr(value)
+	case "safe_message":
+		mms.SafeMessage = r.parseBooleanAttr(value)
+	case "callback_set":
+		mms.CallbackSet = r.parseBooleanAttr(value)
+	default:
+		return false
+	}
+	return true
+}
+
+// parseMMSNetworkAttributes handles network and protocol-related integer fields
+func (r *XMLSMSReader) parseMMSNetworkAttributes(mms *MMS, name, value string) error {
+	switch name {
+	case "sub_id":
+		return r.parseIntAttr(value, &mms.SubID, "sub_id")
+	case "sim_slot":
+		return r.parseIntAttr(value, &mms.SimSlot, "sim_slot")
+	case "retr_st":
+		return r.parseIntAttr(value, &mms.RetrSt, "retr_st")
+	case "sub_cs":
+		return r.parseIntAttr(value, &mms.SubCs, "sub_cs")
+	case "st":
+		return r.parseIntAttr(value, &mms.St, "st")
+	case "read_status":
+		return r.parseIntAttr(value, &mms.ReadStatus, "read_status")
+	case "retr_txt_cs":
+		return r.parseIntAttr(value, &mms.RetrTxtCs, "retr_txt_cs")
+	case "d_rpt":
+		return r.parseIntAttr(value, &mms.DRpt, "d_rpt")
+	case "reserved":
+		return r.parseIntAttr(value, &mms.Reserved, "reserved")
+	case "v":
+		return r.parseIntAttr(value, &mms.V, "v")
+	case "pri":
+		return r.parseIntAttr(value, &mms.Pri, "pri")
+	case "msg_id":
+		return r.parseIntAttr(value, &mms.MsgID, "msg_id")
+	case "rr":
+		return r.parseIntAttr(value, &mms.Rr, "rr")
+	case "app_id":
+		return r.parseIntAttr(value, &mms.AppID, "app_id")
+	case "rpt_a":
+		return r.parseIntAttr(value, &mms.RptA, "rpt_a")
+	case "m_size":
+		return r.parseIntAttr(value, &mms.MSize, "m_size")
+	}
+	return nil
+}
+
+// parseMMSOptionalStringAttributes handles optional string fields with null checking
+func (r *XMLSMSReader) parseMMSOptionalStringAttributes(mms *MMS, name, value string) {
+	if value == types.XMLNullValue {
+		return
+	}
+
+	switch name {
+	case "sub":
+		mms.Sub = value
+	case "sim_imsi":
+		mms.SimImsi = value
+	case "creator":
+		mms.Creator = value
+	case "ct_cls":
+		mms.CtCls = value
+	case "ct_l":
+		mms.CtL = value
+	case "tr_id":
+		mms.TrID = value
+	case "m_cls":
+		mms.MCls = value
+	case "ct_t":
+		mms.CtT = value
+	case "resp_txt":
+		mms.RespTxt = value
+	}
 }
 
 // parseMMSContent parses MMS child elements (parts and addresses)
