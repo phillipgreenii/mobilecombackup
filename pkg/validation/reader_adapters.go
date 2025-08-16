@@ -5,13 +5,13 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
-// CallsReaderAdapter adapts calls.CallsReader to CountBasedReader interface
+// CallsReaderAdapter adapts calls.Reader to CountBasedReader interface
 type CallsReaderAdapter struct {
-	reader calls.CallsReader
+	reader calls.Reader
 }
 
 // NewCallsReaderAdapter creates a new CallsReaderAdapter
-func NewCallsReaderAdapter(reader calls.CallsReader) *CallsReaderAdapter {
+func NewCallsReaderAdapter(reader calls.Reader) *CallsReaderAdapter {
 	return &CallsReaderAdapter{reader: reader}
 }
 
@@ -25,13 +25,13 @@ func (c *CallsReaderAdapter) GetCount(year int) (int, error) {
 	return c.reader.GetCallsCount(year)
 }
 
-// SMSReaderAdapter adapts sms.SMSReader to CountBasedReader interface
+// SMSReaderAdapter adapts sms.Reader to CountBasedReader interface
 type SMSReaderAdapter struct {
-	reader sms.SMSReader
+	reader sms.Reader
 }
 
 // NewSMSReaderAdapter creates a new SMSReaderAdapter
-func NewSMSReaderAdapter(reader sms.SMSReader) *SMSReaderAdapter {
+func NewSMSReaderAdapter(reader sms.Reader) *SMSReaderAdapter {
 	return &SMSReaderAdapter{reader: reader}
 }
 

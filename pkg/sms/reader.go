@@ -1,7 +1,7 @@
 package sms
 
-// SMSReader reads SMS/MMS records from repository
-type SMSReader interface {
+// Reader reads SMS/MMS records from repository
+type Reader interface {
 	// ReadMessages reads all messages from a specific year
 	ReadMessages(year int) ([]Message, error)
 

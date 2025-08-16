@@ -201,7 +201,7 @@ func readRepositoryMetadata(repoPath string, info *RepositoryInfo) error {
 	return nil
 }
 
-func gatherCallsStats(reader calls.CallsReader, info *RepositoryInfo) error {
+func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 	years, err := reader.GetAvailableYears()
 	if err != nil {
 		return err
@@ -244,7 +244,7 @@ func gatherCallsStats(reader calls.CallsReader, info *RepositoryInfo) error {
 	return nil
 }
 
-func gatherSMSStats(reader sms.SMSReader, info *RepositoryInfo) error {
+func gatherSMSStats(reader sms.Reader, info *RepositoryInfo) error {
 	years, err := reader.GetAvailableYears()
 	if err != nil {
 		return err
@@ -262,7 +262,7 @@ func gatherSMSStats(reader sms.SMSReader, info *RepositoryInfo) error {
 }
 
 // gatherSMSStatsForYear gathers SMS statistics for a specific year
-func gatherSMSStatsForYear(reader sms.SMSReader, year int) (MessageInfo, error) {
+func gatherSMSStatsForYear(reader sms.Reader, year int) (MessageInfo, error) {
 	messageStats := MessageInfo{}
 
 	// Get total count
@@ -319,7 +319,7 @@ func setDateRange(messageStats *MessageInfo, earliest, latest time.Time) {
 
 func gatherAttachmentStats(
 	attachmentReader attachments.AttachmentReader,
-	smsReader sms.SMSReader,
+	smsReader sms.Reader,
 	info *RepositoryInfo,
 ) error {
 	attachmentInfo := AttachmentInfo{

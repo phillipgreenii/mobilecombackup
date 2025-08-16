@@ -26,11 +26,11 @@ type SMSValidator interface {
 // SMSValidatorImpl implements SMSValidator interface
 type SMSValidatorImpl struct {
 	repositoryRoot string
-	smsReader      sms.SMSReader
+	smsReader      sms.Reader
 }
 
 // NewSMSValidator creates a new SMS validator
-func NewSMSValidator(repositoryRoot string, smsReader sms.SMSReader) SMSValidator {
+func NewSMSValidator(repositoryRoot string, smsReader sms.Reader) SMSValidator {
 	return &SMSValidatorImpl{
 		repositoryRoot: repositoryRoot,
 		smsReader:      smsReader,

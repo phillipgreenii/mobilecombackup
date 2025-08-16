@@ -51,10 +51,10 @@ func init() {
 
 // ValidationResult represents the result of validation
 type ValidationResult struct {
-	Valid         bool                             `json:"valid"`
+	Valid         bool                   `json:"valid"`
 	Violations    []validation.Violation `json:"violations"`
-	OrphanRemoval *OrphanRemovalResult             `json:"orphan_removal,omitempty"`
-	AutofixReport *autofix.Report           `json:"autofix_report,omitempty"`
+	OrphanRemoval *OrphanRemovalResult   `json:"orphan_removal,omitempty"`
+	AutofixReport *autofix.Report        `json:"autofix_report,omitempty"`
 }
 
 // OrphanRemovalResult represents the result of orphan attachment removal
@@ -357,7 +357,7 @@ func (r *AutofixProgressReporter) ReportProgress(current, total int) {
 }
 
 func removeOrphanAttachmentsWithProgress(
-	smsReader sms.SMSReader,
+	smsReader sms.Reader,
 	attachmentReader *attachments.AttachmentManager,
 	reporter ProgressReporter,
 ) (*OrphanRemovalResult, error) {
@@ -380,7 +380,7 @@ func removeOrphanAttachmentsWithProgress(
 
 // findOrphanedAttachments finds and returns orphaned attachments
 func findOrphanedAttachments(
-	smsReader sms.SMSReader, attachmentReader *attachments.AttachmentManager,
+	smsReader sms.Reader, attachmentReader *attachments.AttachmentManager,
 ) ([]*attachments.Attachment, int, error) {
 	// Get all attachment references from SMS messages
 	referencedHashes, err := smsReader.GetAllAttachmentRefs()

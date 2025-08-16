@@ -292,7 +292,9 @@ func (am *AttachmentManager) processNewFormatAttachment(prefixDir, hash string, 
 }
 
 // processLegacyFormatAttachment processes a legacy format attachment file
-func (am *AttachmentManager) processLegacyFormatAttachment(hash string, entry fs.DirEntry, callback func(*Attachment) error) error {
+func (am *AttachmentManager) processLegacyFormatAttachment(
+	hash string, entry fs.DirEntry, callback func(*Attachment) error,
+) error {
 	info, err := entry.Info()
 	if err != nil {
 		return nil // Skip files we can't read

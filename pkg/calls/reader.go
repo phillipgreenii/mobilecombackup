@@ -1,7 +1,7 @@
 package calls
 
-// CallsReader reads call records from repository
-type CallsReader interface {
+// Reader reads call records from repository
+type Reader interface {
 	// ReadCalls reads all calls from a specific year file
 	ReadCalls(year int) ([]Call, error)
 

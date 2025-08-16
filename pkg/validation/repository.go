@@ -43,8 +43,8 @@ type RepositoryValidatorImpl struct {
 // NewRepositoryValidator creates a comprehensive repository validator
 func NewRepositoryValidator(
 	repositoryRoot string,
-	callsReader calls.CallsReader,
-	smsReader sms.SMSReader,
+	callsReader calls.Reader,
+	smsReader sms.Reader,
 	attachmentReader attachments.AttachmentReader,
 	contactsReader contacts.Reader,
 ) RepositoryValidator {
@@ -80,8 +80,8 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 		if violation.Type == MissingMarkerFile {
 			// Create a fixable violation with suggested content
 			fixable := FixableViolation{
-				Violation: violation,
-				SuggestedFix:        v.markerFileValidator.GetSuggestedFix(),
+				Violation:    violation,
+				SuggestedFix: v.markerFileValidator.GetSuggestedFix(),
 			}
 			report.Violations = append(report.Violations, fixable.Violation)
 		} else {

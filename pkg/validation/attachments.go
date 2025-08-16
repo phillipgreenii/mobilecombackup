@@ -29,14 +29,14 @@ type AttachmentsValidator interface {
 type AttachmentsValidatorImpl struct {
 	repositoryRoot   string
 	attachmentReader attachments.AttachmentReader
-	smsReader        sms.SMSReader
+	smsReader        sms.Reader
 }
 
 // NewAttachmentsValidator creates a new attachments validator
 func NewAttachmentsValidator(
 	repositoryRoot string,
 	attachmentReader attachments.AttachmentReader,
-	smsReader sms.SMSReader,
+	smsReader sms.Reader,
 ) AttachmentsValidator {
 	return &AttachmentsValidatorImpl{
 		repositoryRoot:   repositoryRoot,
