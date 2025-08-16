@@ -173,15 +173,40 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 
 	// If not dry run, set up rollback on failure
 	var createdPaths []string
-	rollback := func() {
+	rollback := createRollbackFunction(dryRun, &createdPaths)
+
+	// Create directory structure
+	if err := createRepositoryDirectories(repoRoot, dryRun, result, &createdPaths, rollback); err != nil {
+		return nil, err
+	}
+
+	// Create repository files
+	if err := createRepositoryFiles(repoRoot, dryRun, result, &createdPaths, rollback); err != nil {
+		return nil, err
+	}
+
+	// Create manifest files
+	if err := createManifestFiles(repoRoot, dryRun, result, &createdPaths, rollback); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// createRollbackFunction creates a rollback function for cleanup on failure
+func createRollbackFunction(dryRun bool, createdPaths *[]string) func() {
+	return func() {
 		if !dryRun {
 			// Remove files and directories in reverse order
-			for i := len(createdPaths) - 1; i >= 0; i-- {
-				_ = os.RemoveAll(createdPaths[i])
+			for i := len(*createdPaths) - 1; i >= 0; i-- {
+				_ = os.RemoveAll((*createdPaths)[i])
 			}
 		}
 	}
+}
 
+// createRepositoryDirectories creates the main repository directory structure
+func createRepositoryDirectories(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	// Directories to create
 	directories := []string{
 		"calls",
@@ -193,9 +218,9 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 	if _, err := os.Stat(repoRoot); os.IsNotExist(err) {
 		if !dryRun {
 			if err := os.MkdirAll(repoRoot, 0750); err != nil {
-				return nil, fmt.Errorf("failed to create repository root: %w", err)
+				return fmt.Errorf("failed to create repository root: %w", err)
 			}
-			createdPaths = append(createdPaths, repoRoot)
+			*createdPaths = append(*createdPaths, repoRoot)
 		}
 		result.Created = append(result.Created, repoRoot)
 	}
@@ -206,14 +231,38 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 		if !dryRun {
 			if err := os.MkdirAll(dirPath, 0750); err != nil {
 				rollback()
-				return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
+				return fmt.Errorf("failed to create directory %s: %w", dir, err)
 			}
-			createdPaths = append(createdPaths, dirPath)
+			*createdPaths = append(*createdPaths, dirPath)
 		}
 		result.Created = append(result.Created, dirPath)
 	}
 
+	return nil
+}
+
+// createRepositoryFiles creates the core repository configuration files
+func createRepositoryFiles(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	// Create marker file
+	if err := createMarkerFile(repoRoot, dryRun, result, createdPaths, rollback); err != nil {
+		return err
+	}
+
+	// Create empty contacts.yaml
+	if err := createContactsFile(repoRoot, dryRun, result, createdPaths, rollback); err != nil {
+		return err
+	}
+
+	// Create summary.yaml with zero counts
+	if err := createSummaryFile(repoRoot, dryRun, result, createdPaths, rollback); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createMarkerFile creates the .mobilecombackup.yaml marker file
+func createMarkerFile(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
 	markerContent := MarkerFileContent{
 		RepositoryStructureVersion: "1",
@@ -225,29 +274,35 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 		data, err := yaml.Marshal(markerContent)
 		if err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to marshal marker file: %w", err)
+			return fmt.Errorf("failed to marshal marker file: %w", err)
 		}
 		if err := os.WriteFile(markerPath, data, 0600); err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to create marker file: %w", err)
+			return fmt.Errorf("failed to create marker file: %w", err)
 		}
-		createdPaths = append(createdPaths, markerPath)
+		*createdPaths = append(*createdPaths, markerPath)
 	}
 	result.Created = append(result.Created, markerPath)
+	return nil
+}
 
-	// Create empty contacts.yaml
+// createContactsFile creates the empty contacts.yaml file
+func createContactsFile(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	if !dryRun {
 		// Write empty YAML array
 		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0600); err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to create contacts file: %w", err)
+			return fmt.Errorf("failed to create contacts file: %w", err)
 		}
-		createdPaths = append(createdPaths, contactsPath)
+		*createdPaths = append(*createdPaths, contactsPath)
 	}
 	result.Created = append(result.Created, contactsPath)
+	return nil
+}
 
-	// Create summary.yaml with zero counts
+// createSummaryFile creates the summary.yaml file with zero counts
+func createSummaryFile(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	summaryPath := filepath.Join(repoRoot, "summary.yaml")
 	summaryContent := SummaryContent{}
 	summaryContent.Counts.Calls = 0
@@ -257,36 +312,40 @@ func initializeRepository(repoRoot string, dryRun bool, _ bool) (*InitResult, er
 		data, err := yaml.Marshal(summaryContent)
 		if err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to marshal summary file: %w", err)
+			return fmt.Errorf("failed to marshal summary file: %w", err)
 		}
 		if err := os.WriteFile(summaryPath, data, 0600); err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to create summary file: %w", err)
+			return fmt.Errorf("failed to create summary file: %w", err)
 		}
-		createdPaths = append(createdPaths, summaryPath)
+		*createdPaths = append(*createdPaths, summaryPath)
 	}
 	result.Created = append(result.Created, summaryPath)
+	return nil
+}
 
+// createManifestFiles creates the files.yaml and files.yaml.sha256 manifest files
+func createManifestFiles(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	// Create files.yaml and files.yaml.sha256 using manifest generator
 	if !dryRun {
 		manifestGenerator := manifest.NewManifestGenerator(repoRoot)
 		fileManifest, err := manifestGenerator.GenerateFileManifest()
 		if err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to generate file manifest: %w", err)
+			return fmt.Errorf("failed to generate file manifest: %w", err)
 		}
 
 		if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to write manifest files: %w", err)
+			return fmt.Errorf("failed to write manifest files: %w", err)
 		}
-		createdPaths = append(createdPaths, filepath.Join(repoRoot, "files.yaml"))
-		createdPaths = append(createdPaths, filepath.Join(repoRoot, "files.yaml.sha256"))
+		*createdPaths = append(*createdPaths, filepath.Join(repoRoot, "files.yaml"))
+		*createdPaths = append(*createdPaths, filepath.Join(repoRoot, "files.yaml.sha256"))
 	}
 	result.Created = append(result.Created, filepath.Join(repoRoot, "files.yaml"))
 	result.Created = append(result.Created, filepath.Join(repoRoot, "files.yaml.sha256"))
 
-	return result, nil
+	return nil
 }
 
 func displayInitResult(result *InitResult) {
