@@ -143,7 +143,7 @@ validation:
   autofix_enabled: false
 
 logging:
-  level: debugLevel
+  level: debug
   format: "json"
   timestamps: false
   color: false

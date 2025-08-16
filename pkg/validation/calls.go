@@ -22,11 +22,11 @@ type CallsValidator interface {
 // CallsValidatorImpl implements CallsValidator interface
 type CallsValidatorImpl struct {
 	repositoryRoot string
-	callsReader    calls.CallsReader
+	callsReader    calls.Reader
 }
 
 // NewCallsValidator creates a new calls validator
-func NewCallsValidator(repositoryRoot string, callsReader calls.CallsReader) CallsValidator {
+func NewCallsValidator(repositoryRoot string, callsReader calls.Reader) CallsValidator {
 	return &CallsValidatorImpl{
 		repositoryRoot: repositoryRoot,
 		callsReader:    callsReader,

@@ -293,7 +293,7 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 						t.Errorf("Failed to read hash directory %s: %v", subEntry.Name(), err)
 						continue
 					}
-					
+
 					for _, hashEntry := range hashEntries {
 						if !hashEntry.IsDir() && hashEntry.Name() != "metadata.yaml" {
 							// This is an attachment file (not metadata)

@@ -672,7 +672,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
     numbers:
       - "+15555551234"
       - "5555551234"
-  - name: testContactJaneSmith
+  - name: "Jane Smith"
     numbers:
       - "+15555555678"
 `

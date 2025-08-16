@@ -12,21 +12,21 @@ type Report struct {
 	RepositoryPath    string             `json:"repository_path"`
 	FixedViolations   []FixedViolation   `json:"fixed_violations"`
 	SkippedViolations []SkippedViolation `json:"skipped_violations"`
-	Errors            []Error     `json:"errors"`
-	Summary           Summary     `json:"summary"`
+	Errors            []Error            `json:"errors"`
+	Summary           Summary            `json:"summary"`
 }
 
 // FixedViolation represents a violation that was successfully fixed
 type FixedViolation struct {
 	OriginalViolation validation.Violation `json:"original_violation"`
-	FixAction         string                         `json:"fix_action"`
-	Details           string                         `json:"details,omitempty"`
+	FixAction         string               `json:"fix_action"`
+	Details           string               `json:"details,omitempty"`
 }
 
 // SkippedViolation represents a violation that was skipped for safety
 type SkippedViolation struct {
 	OriginalViolation validation.Violation `json:"original_violation"`
-	SkipReason        string                         `json:"skip_reason"`
+	SkipReason        string               `json:"skip_reason"`
 }
 
 // Error represents an error that occurred during autofix

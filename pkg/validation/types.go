@@ -22,8 +22,8 @@ type FileEntry struct {
 
 // Report represents the result of repository validation
 type Report struct {
-	Timestamp      time.Time             `yaml:"timestamp"`
-	RepositoryPath string                `yaml:"repository_path"`
+	Timestamp      time.Time   `yaml:"timestamp"`
+	RepositoryPath string      `yaml:"repository_path"`
 	Status         Status      `yaml:"status"`
 	Violations     []Violation `yaml:"violations"`
 }

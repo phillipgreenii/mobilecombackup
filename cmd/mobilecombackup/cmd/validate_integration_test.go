@@ -49,7 +49,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 				return ""
 			},
 			wantExitCode: 2,
-			wantOutput:   []string{"Error: Repository not found:"},
+			wantOutput:   []string{"Repository not found: /path/that/does/not/exist"},
 			notWant:      []string{"✓"},
 		},
 		{

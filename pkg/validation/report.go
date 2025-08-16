@@ -51,7 +51,7 @@ type Summary struct {
 	TotalViolations      int                   `yaml:"total_violations" json:"total_violations"`
 	ViolationsByType     map[ViolationType]int `yaml:"violations_by_type" json:"violations_by_type"`
 	ViolationsBySeverity map[Severity]int      `yaml:"violations_by_severity" json:"violations_by_severity"`
-	Status               Status      `yaml:"status" json:"status"`
+	Status               Status                `yaml:"status" json:"status"`
 	Timestamp            time.Time             `yaml:"timestamp" json:"timestamp"`
 	RepositoryPath       string                `yaml:"repository_path" json:"repository_path"`
 }

@@ -197,6 +197,13 @@ func (mm *MigrationManager) executeMigration(
 	attachment *Attachment, storage *DirectoryAttachmentStorage,
 	data []byte, metadata AttachmentInfo, result MigrationResult,
 ) MigrationResult {
+	// Remove the legacy file FIRST to make room for the new directory structure
+	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
+	if err := os.Remove(legacyFullPath); err != nil {
+		result.Error = fmt.Sprintf("failed to remove legacy file: %v", err)
+		return result
+	}
+
 	// Store with new format
 	if err := storage.Store(attachment.Hash, data, metadata); err != nil {
 		result.Error = fmt.Sprintf("failed to store in new format: %v", err)
@@ -210,13 +217,6 @@ func (mm *MigrationManager) executeMigration(
 		return result
 	}
 	result.NewPath = newPath
-
-	// Remove the legacy file
-	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
-	if err := os.Remove(legacyFullPath); err != nil {
-		result.Error = fmt.Sprintf("failed to remove legacy file: %v", err)
-		return result
-	}
 
 	result.Success = true
 	if mm.logOutput {
@@ -232,17 +232,18 @@ func detectMimeTypeFromContent(data []byte, _ string) string {
 		return "application/octet-stream"
 	}
 
-	// Check for common file signatures
-	if len(data) >= 8 {
-		// PNG signature
-		if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 {
-			return "image/png"
-		}
-		// JPEG signature
-		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
-			return "image/jpeg"
-		}
-		// GIF signature
+	// Check for JPEG signature (3 bytes minimum)
+	if len(data) >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
+		return "image/jpeg"
+	}
+
+	// Check for PNG signature (4 bytes minimum)
+	if len(data) >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 {
+		return "image/png"
+	}
+
+	// Check for GIF signature (6 bytes minimum)
+	if len(data) >= 6 {
 		if strings.HasPrefix(string(data[:6]), "GIF87a") || strings.HasPrefix(string(data[:6]), "GIF89a") {
 			return "image/gif"
 		}

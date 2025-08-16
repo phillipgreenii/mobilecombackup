@@ -319,7 +319,16 @@ func (das *DirectoryAttachmentStorage) Exists(hash string) bool {
 		return false
 	}
 
-	if _, err := os.Stat(fullDirPath); os.IsNotExist(err) {
+	stat, err := os.Stat(fullDirPath)
+	if os.IsNotExist(err) {
+		return false
+	}
+	if err != nil {
+		return false
+	}
+
+	// Must be a directory for new format
+	if !stat.IsDir() {
 		return false
 	}
 

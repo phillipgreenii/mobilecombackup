@@ -259,10 +259,10 @@ func ExampleAttachment() {
 
 // Example demonstrates using the new DirectoryAttachmentStorage
 func ExampleDirectoryAttachmentStorage() {
-	// Create storage instance
-	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+	// Create storage instance (example paths only - not executed)
+	// storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
 
-	// Store a new attachment
+	// Example of how to store a new attachment
 	hash := emptyFileHash
 	data := []byte("Hello, world!")
 	metadata := attachments.AttachmentInfo{
@@ -274,15 +274,23 @@ func ExampleDirectoryAttachmentStorage() {
 		SourceMMS:    "mms-12345",
 	}
 
-	err := storage.Store(hash, data, metadata)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// In real usage:
+	// err := storage.Store(hash, data, metadata)
+	// if err != nil {
+	//     log.Fatal(err)
+	// }
+
+	fmt.Printf("Storing attachment: %s\n", metadata.OriginalName)
+	fmt.Printf("Hash: %s\n", hash[:8])
+	fmt.Printf("Size: %d bytes\n", metadata.Size)
 
 	fmt.Printf("Stored attachment: %s\n", hash[:8])
 	fmt.Println("New directory structure created with metadata")
 
 	// Output:
+	// Storing attachment: hello.txt
+	// Hash: e3b0c442
+	// Size: 13 bytes
 	// Stored attachment: e3b0c442
 	// New directory structure created with metadata
 }

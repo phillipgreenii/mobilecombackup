@@ -234,18 +234,18 @@ func sanitizeFilename(filename string) string {
 	// Replace path separators with underscores to prevent directory traversal
 	sanitized := strings.ReplaceAll(filename, "/", "_")
 	sanitized = strings.ReplaceAll(sanitized, "\\", "_")
-	
+
 	// Remove other potentially problematic characters
 	sanitized = strings.ReplaceAll(sanitized, "..", "_")
 	sanitized = strings.ReplaceAll(sanitized, ":", "_")
-	
+
 	// Remove null bytes
 	sanitized = strings.ReplaceAll(sanitized, "\x00", "")
-	
+
 	// Ensure filename is not empty after sanitization
 	if sanitized == "" || sanitized == "." {
 		return "sanitized_attachment"
 	}
-	
+
 	return sanitized
 }

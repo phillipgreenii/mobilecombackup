@@ -104,11 +104,16 @@ func TestMigrationManager_MigrateAllAttachments_WithLegacyAttachment(t *testing.
 	}
 	if summary.Failed != 0 {
 		t.Errorf("Expected Failed 0, got %d", summary.Failed)
+		if len(summary.Results) > 0 && summary.Results[0].Error != "" {
+			t.Errorf("Migration error: %s", summary.Results[0].Error)
+		}
 	}
 
-	// Verify the legacy file is removed
-	if _, err := os.Stat(legacyPath); !os.IsNotExist(err) {
-		t.Error("Expected legacy file to be removed")
+	// Verify the legacy file is replaced by a directory (new format)
+	if stat, err := os.Stat(legacyPath); err != nil {
+		t.Errorf("Expected path to exist as directory for new format: %v", err)
+	} else if !stat.IsDir() {
+		t.Errorf("Expected legacy file path to be converted to directory, but it's still a file. Mode: %v", stat.Mode())
 	}
 
 	// Verify the new format exists
@@ -175,7 +180,7 @@ func TestMigrationManager_DryRun(t *testing.T) {
 		t.Error("Expected legacy file to still exist in dry run")
 	}
 
-	// Verify the new format doesn't exist
+	// Verify the new format doesn't exist (dry run shouldn't create actual new format)
 	storage := NewDirectoryAttachmentStorage(tmpDir)
 	if storage.Exists(hash) {
 		t.Error("Expected new format attachment to not exist in dry run")
