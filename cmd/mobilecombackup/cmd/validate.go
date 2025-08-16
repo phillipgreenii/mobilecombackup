@@ -127,16 +127,54 @@ func (r *NullProgressReporter) UpdateProgress(_, _ int) {}
 func (r *NullProgressReporter) CompletePhase() {}
 
 func runValidate(_ *cobra.Command, _ []string) error {
+	// Initialize validation environment
+	absPath, reporter, err := initializeValidationEnvironment()
+	if err != nil {
+		return err
+	}
+
+	// Set up validation components
+	validator := createValidationComponents(absPath)
+
+	// Run initial validation
+	result, err := executeInitialValidation(validator, reporter)
+	if err != nil {
+		return err
+	}
+
+	// Process additional features (autofix, orphan removal)
+	if err := processAdditionalFeatures(result, validator, absPath, reporter); err != nil {
+		return err
+	}
+
+	// Output results and handle exit codes
+	return finalizeValidationResults(result, absPath)
+}
+
+// initializeValidationEnvironment sets up the basic validation environment
+func initializeValidationEnvironment() (string, ProgressReporter, error) {
 	// Resolve repository root
 	repoPath := resolveRepoRoot()
 
 	// Convert to absolute path
 	absPath, err := filepath.Abs(repoPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve repository path: %w", err)
+		return "", nil, fmt.Errorf("failed to resolve repository path: %w", err)
 	}
 
 	// Check if repository exists
+	if err := validateRepositoryExists(absPath); err != nil {
+		return "", nil, err
+	}
+
+	// Set up progress reporter
+	reporter := createProgressReporter()
+
+	return absPath, reporter, nil
+}
+
+// validateRepositoryExists checks if the repository path exists and is accessible
+func validateRepositoryExists(absPath string) error {
 	if _, err := os.Stat(absPath); err != nil {
 		if os.IsNotExist(err) {
 			PrintError("Repository not found: %s", absPath)
@@ -144,18 +182,22 @@ func runValidate(_ *cobra.Command, _ []string) error {
 		}
 		return fmt.Errorf("failed to access repository: %w", err)
 	}
+	return nil
+}
 
-	// Set up progress reporter
-	var reporter ProgressReporter
+// createProgressReporter creates the appropriate progress reporter based on output settings
+func createProgressReporter() ProgressReporter {
 	if outputJSON || quiet {
-		reporter = &NullProgressReporter{}
-	} else {
-		reporter = &ConsoleProgressReporter{
-			quiet:   quiet,
-			verbose: verbose,
-		}
+		return &NullProgressReporter{}
 	}
+	return &ConsoleProgressReporter{
+		quiet:   quiet,
+		verbose: verbose,
+	}
+}
 
+// createValidationComponents sets up all the validation readers and validator
+func createValidationComponents(absPath string) validation.RepositoryValidator {
 	// Create readers
 	callsReader := calls.NewXMLCallsReader(absPath)
 	smsReader := sms.NewXMLSMSReader(absPath)
@@ -163,14 +205,17 @@ func runValidate(_ *cobra.Command, _ []string) error {
 	contactsReader := contacts.NewContactsManager(absPath)
 
 	// Create validator
-	validator := validation.NewRepositoryValidator(
+	return validation.NewRepositoryValidator(
 		absPath,
 		callsReader,
 		smsReader,
 		attachmentReader,
 		contactsReader,
 	)
+}
 
+// executeInitialValidation runs the base validation and creates the initial result
+func executeInitialValidation(validator validation.RepositoryValidator, reporter ProgressReporter) (*ValidationResult, error) {
 	// Run validation with progress reporting
 	violations, err := validateWithProgress(validator, reporter)
 	if err != nil {
@@ -179,53 +224,87 @@ func runValidate(_ *cobra.Command, _ []string) error {
 	}
 
 	// Create result
-	result := ValidationResult{
+	return &ValidationResult{
 		Valid:      len(violations) == 0,
 		Violations: violations,
-	}
+	}, nil
+}
 
+// processAdditionalFeatures handles autofix and orphan removal if requested
+func processAdditionalFeatures(result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter) error {
 	// Run autofix if requested
 	if autofixEnabled {
-		autofixReport, err := runAutofixWithProgress(violations, absPath, reporter)
-		if err != nil {
-			PrintError("Autofix failed: %v", err)
-			os.Exit(3)
-		}
-		result.AutofixReport = autofixReport
-
-		// Update result validity based on remaining violations
-		if autofixReport.Summary.FixedCount > 0 {
-			// Re-run validation to get current state after fixes
-			updatedViolations, err := validateWithProgress(validator, reporter)
-			if err != nil {
-				PrintError("Post-autofix validation failed: %v", err)
-				os.Exit(2)
-			}
-			result.Violations = updatedViolations
-			result.Valid = len(updatedViolations) == 0
+		if err := processAutofix(result, validator, absPath, reporter); err != nil {
+			return err
 		}
 	}
 
 	// Run orphan removal if requested
 	if removeOrphanAttachments {
-		orphanResult, err := removeOrphanAttachmentsWithProgress(smsReader, attachmentReader, reporter)
-		if err != nil {
-			PrintError("Orphan removal failed: %v", err)
-			os.Exit(2)
+		if err := processOrphanRemoval(result, absPath, reporter); err != nil {
+			return err
 		}
-		result.OrphanRemoval = orphanResult
 	}
 
+	return nil
+}
+
+// processAutofix handles autofix functionality
+func processAutofix(result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter) error {
+	autofixReport, err := runAutofixWithProgress(result.Violations, absPath, reporter)
+	if err != nil {
+		PrintError("Autofix failed: %v", err)
+		os.Exit(3)
+	}
+	result.AutofixReport = autofixReport
+
+	// Update result validity based on remaining violations
+	if autofixReport.Summary.FixedCount > 0 {
+		// Re-run validation to get current state after fixes
+		updatedViolations, err := validateWithProgress(validator, reporter)
+		if err != nil {
+			PrintError("Post-autofix validation failed: %v", err)
+			os.Exit(2)
+		}
+		result.Violations = updatedViolations
+		result.Valid = len(updatedViolations) == 0
+	}
+
+	return nil
+}
+
+// processOrphanRemoval handles orphan attachment removal
+func processOrphanRemoval(result *ValidationResult, absPath string, reporter ProgressReporter) error {
+	smsReader := sms.NewXMLSMSReader(absPath)
+	attachmentReader := attachments.NewAttachmentManager(absPath)
+
+	orphanResult, err := removeOrphanAttachmentsWithProgress(smsReader, attachmentReader, reporter)
+	if err != nil {
+		PrintError("Orphan removal failed: %v", err)
+		os.Exit(2)
+	}
+	result.OrphanRemoval = orphanResult
+
+	return nil
+}
+
+// finalizeValidationResults outputs results and sets appropriate exit codes
+func finalizeValidationResults(result *ValidationResult, absPath string) error {
 	// Output results
 	if outputJSON {
-		if err := outputJSONResult(result); err != nil {
+		if err := outputJSONResult(*result); err != nil {
 			return fmt.Errorf("failed to output JSON: %w", err)
 		}
 	} else {
-		outputTextResult(result, absPath)
+		outputTextResult(*result, absPath)
 	}
 
 	// Set exit code based on autofix and validation results
+	return handleValidationExitCodes(result)
+}
+
+// handleValidationExitCodes sets the appropriate exit code based on validation results
+func handleValidationExitCodes(result *ValidationResult) error {
 	if autofixEnabled && result.AutofixReport != nil {
 		// Autofix was run - use autofix exit codes
 		if result.AutofixReport.Summary.ErrorCount > 0 {
