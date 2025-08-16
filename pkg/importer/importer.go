@@ -146,7 +146,30 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 // Import performs the import operation
 func (imp *Importer) Import() (*ImportSummary, error) {
 	startTime := time.Now()
-	summary := &ImportSummary{
+	summary := imp.initializeSummary()
+
+	// Load existing repository data
+	if err := imp.loadExistingRepository(); err != nil {
+		return nil, err
+	}
+
+	// Find and process files
+	if err := imp.processAllFiles(summary); err != nil {
+		return nil, err
+	}
+
+	// Finalize and write results
+	if err := imp.finalizeImport(summary); err != nil {
+		return nil, err
+	}
+
+	summary.Duration = time.Since(startTime)
+	return summary, nil
+}
+
+// initializeSummary creates a new import summary with empty structures
+func (imp *Importer) initializeSummary() *ImportSummary {
+	return &ImportSummary{
 		Calls: &EntityStats{
 			YearStats: make(map[int]*YearStat),
 			Total:     &YearStat{},
@@ -160,33 +183,40 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		},
 		Rejections: make(map[string]*RejectionStats),
 	}
+}
 
-	// Load existing repository
+// loadExistingRepository loads contacts and repository data based on filter
+func (imp *Importer) loadExistingRepository() error {
 	if !imp.options.Quiet {
 		fmt.Println("Loading existing repository...")
 	}
 
 	// Load contacts.yaml
 	if err := imp.contactsManager.LoadContacts(); err != nil {
-		return nil, fmt.Errorf("failed to load contacts: %w", err)
+		return fmt.Errorf("failed to load contacts: %w", err)
 	}
 
 	if imp.options.Filter == "" || imp.options.Filter == callsDir {
 		if err := imp.callsImporter.LoadRepository(); err != nil {
-			return nil, fmt.Errorf("failed to load calls repository: %w", err)
+			return fmt.Errorf("failed to load calls repository: %w", err)
 		}
 	}
 
 	if imp.options.Filter == "" || imp.options.Filter == smsDir {
 		if err := imp.smsImporter.LoadRepository(); err != nil {
-			return nil, fmt.Errorf("failed to load SMS repository: %w", err)
+			return fmt.Errorf("failed to load SMS repository: %w", err)
 		}
 	}
 
+	return nil
+}
+
+// processAllFiles finds and processes all import files
+func (imp *Importer) processAllFiles(summary *ImportSummary) error {
 	// Find files to import
 	files, err := imp.findFiles()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find files: %w", err)
+		return fmt.Errorf("failed to find files: %w", err)
 	}
 
 	summary.FilesProcessed = len(files)
@@ -218,10 +248,15 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		}
 	}
 
+	return nil
+}
+
+// finalizeImport writes results and generates final files
+func (imp *Importer) finalizeImport(summary *ImportSummary) error {
 	// Write repository (single write operation)
 	if !imp.options.DryRun {
 		if err := imp.writeRepository(); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -233,8 +268,7 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 		imp.generateRepositoryFiles()
 	}
 
-	summary.Duration = time.Since(startTime)
-	return summary, nil
+	return nil
 }
 
 // writeRepository writes all repository data when not in dry run mode
