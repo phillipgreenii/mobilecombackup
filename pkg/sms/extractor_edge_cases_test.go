@@ -371,7 +371,6 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 	// Check results
 	extractedCount := 0
 	referencedCount := 0
-	var commonPath string
 
 	for i := 0; i < 10; i++ {
 		if errors[i] != nil {
@@ -387,11 +386,10 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 			referencedCount++
 		}
 
-		// All should have the same path (deduplication)
-		if commonPath == "" {
-			commonPath = result.Path
-		} else if result.Path != commonPath {
-			t.Errorf("Path mismatch: expected %s, got %s", commonPath, result.Path)
+		// All should reference the same hash directory (deduplication)
+		expectedHashDir := fmt.Sprintf("attachments/12/1205380511780bcad75eb2452224f901eb3864c511430ccf717e55139865ca00")
+		if !strings.HasPrefix(result.Path, expectedHashDir) {
+			t.Errorf("Path should reference hash directory %s, got %s", expectedHashDir, result.Path)
 		}
 	}
 
@@ -437,5 +435,10 @@ func TestEdgeCase_DirectoryTraversalAttempt(t *testing.T) {
 	// The malicious filename should be preserved as metadata but not affect storage
 	if part.Filename != "../../etc/passwd" {
 		t.Errorf("Original filename should be preserved as metadata")
+	}
+	
+	// Verify the filename was sanitized in the storage path
+	if !strings.Contains(result.Path, "____etc_passwd") {
+		t.Errorf("Expected sanitized filename in path, got: %s", result.Path)
 	}
 }

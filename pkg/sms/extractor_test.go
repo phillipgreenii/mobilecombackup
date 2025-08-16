@@ -315,7 +315,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {
 		t.Errorf("Expected hash %s, got %s", expectedHash, result.Hash)
 	}
 
-	expectedPath := filepath.Join("attachments", expectedHash[:2], expectedHash)
+	expectedPath := filepath.Join("attachments", expectedHash[:2], expectedHash, "test.png")
 	if result.Path != expectedPath {
 		t.Errorf("Expected path %s, got %s", expectedPath, result.Path)
 	}

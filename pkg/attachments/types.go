@@ -220,11 +220,32 @@ func GetFileExtension(mimeType string) string {
 // GenerateFilename creates a filename based on original name or MIME type
 func GenerateFilename(originalName, mimeType string) string {
 	if originalName != "" && originalName != "null" {
-		// Use original filename if available
-		return originalName
+		// Use original filename if available, but sanitize it for safety
+		return sanitizeFilename(originalName)
 	}
 
 	// Generate generic filename with proper extension
 	ext := GetFileExtension(mimeType)
 	return "attachment." + ext
+}
+
+// sanitizeFilename removes directory traversal elements and other unsafe characters
+func sanitizeFilename(filename string) string {
+	// Replace path separators with underscores to prevent directory traversal
+	sanitized := strings.ReplaceAll(filename, "/", "_")
+	sanitized = strings.ReplaceAll(sanitized, "\\", "_")
+	
+	// Remove other potentially problematic characters
+	sanitized = strings.ReplaceAll(sanitized, "..", "_")
+	sanitized = strings.ReplaceAll(sanitized, ":", "_")
+	
+	// Remove null bytes
+	sanitized = strings.ReplaceAll(sanitized, "\x00", "")
+	
+	// Ensure filename is not empty after sanitization
+	if sanitized == "" || sanitized == "." {
+		return "sanitized_attachment"
+	}
+	
+	return sanitized
 }

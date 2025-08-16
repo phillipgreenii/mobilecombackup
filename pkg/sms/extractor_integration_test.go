@@ -83,9 +83,12 @@ func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 	// Verify attachment manager can read the file
 	attachmentManager := attachments.NewAttachmentManager(tempDir)
 
-	// Extract hash from path
+	// Extract hash from path (format: attachments/xx/hash/filename)
 	pathParts := strings.Split(extractedPart.Path, "/")
-	hash := pathParts[len(pathParts)-1]
+	if len(pathParts) < 3 {
+		t.Fatalf("Invalid path format: %s", extractedPart.Path)
+	}
+	hash := pathParts[len(pathParts)-2] // Hash is the second-to-last segment
 
 	exists, err := attachmentManager.AttachmentExists(hash)
 	if err != nil {
@@ -282,13 +285,25 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 			}
 
 			for _, subEntry := range subEntries {
-				if !subEntry.IsDir() && len(subEntry.Name()) == 64 {
-					// This looks like an attachment file
-					if !strings.HasPrefix(subEntry.Name(), entry.Name()) {
-						t.Errorf("Attachment %s in wrong subdirectory %s",
-							subEntry.Name(), entry.Name())
+				if subEntry.IsDir() && len(subEntry.Name()) == 64 {
+					// This is a hash directory, check for files inside
+					hashDir := filepath.Join(subDir, subEntry.Name())
+					hashEntries, err := os.ReadDir(hashDir)
+					if err != nil {
+						t.Errorf("Failed to read hash directory %s: %v", subEntry.Name(), err)
+						continue
 					}
-					foundAttachments++
+					
+					for _, hashEntry := range hashEntries {
+						if !hashEntry.IsDir() && hashEntry.Name() != "metadata.yaml" {
+							// This is an attachment file (not metadata)
+							if !strings.HasPrefix(subEntry.Name(), entry.Name()) {
+								t.Errorf("Attachment hash %s in wrong subdirectory %s",
+									subEntry.Name(), entry.Name())
+							}
+							foundAttachments++
+						}
+					}
 				}
 			}
 		}
