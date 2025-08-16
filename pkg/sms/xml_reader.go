@@ -101,80 +101,9 @@ func (r *XMLSMSReader) StreamMessagesFromReader(reader io.Reader, callback func(
 func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.StartElement) (SMS, error) {
 	sms := SMS{}
 
-	// Parse attributes
-	for _, attr := range startElement.Attr {
-		switch attr.Name.Local {
-		case "protocol":
-			sms.Protocol = attr.Value
-		case attrAddress:
-			sms.Address = attr.Value
-		case "date":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
-				if err != nil {
-					return sms, fmt.Errorf("invalid date format: %s", attr.Value)
-				}
-				sms.Date = timestamp
-			}
-		case "type":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				typeVal, err := strconv.Atoi(attr.Value)
-				if err != nil {
-					return sms, fmt.Errorf("invalid type format: %s", attr.Value)
-				}
-				sms.Type = MessageType(typeVal)
-			}
-		case "subject":
-			if attr.Value != types.XMLNullValue {
-				sms.Subject = attr.Value
-			}
-		case "body":
-			sms.Body = attr.Value
-		case "service_center":
-			if attr.Value != types.XMLNullValue {
-				sms.ServiceCenter = attr.Value
-			}
-		case "read":
-			if attr.Value == "1" {
-				sms.Read = 1
-			} else {
-				sms.Read = 0
-			}
-		case "status":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				status, err := strconv.Atoi(attr.Value)
-				if err != nil {
-					return sms, fmt.Errorf("invalid status format: %s", attr.Value)
-				}
-				sms.Status = status
-			}
-		case "locked":
-			if attr.Value == "1" {
-				sms.Locked = 1
-			} else {
-				sms.Locked = 0
-			}
-		case "date_sent":
-			if attr.Value != "" && attr.Value != types.XMLNullValue && attr.Value != "0" {
-				timestamp, err := strconv.ParseInt(attr.Value, 10, 64)
-				if err != nil {
-					return sms, fmt.Errorf("invalid date_sent format: %s", attr.Value)
-				}
-				sms.DateSent = timestamp
-			}
-		case "readable_date":
-			sms.ReadableDate = attr.Value
-		case "contact_name":
-			sms.ContactName = attr.Value
-		case "toa":
-			if attr.Value != types.XMLNullValue {
-				sms.Toa = attr.Value
-			}
-		case "sc_toa":
-			if attr.Value != types.XMLNullValue {
-				sms.ScToa = attr.Value
-			}
-		}
+	// Parse SMS attributes
+	if err := r.parseSMSAttributes(&sms, startElement.Attr); err != nil {
+		return sms, err
 	}
 
 	// Skip to end element since SMS is self-closing
@@ -183,6 +112,132 @@ func (r *XMLSMSReader) parseSMSElement(decoder *xml.Decoder, startElement xml.St
 	}
 
 	return sms, nil
+}
+
+// parseSMSAttributes parses all SMS attributes from XML attributes
+func (r *XMLSMSReader) parseSMSAttributes(sms *SMS, attrs []xml.Attr) error {
+	for _, attr := range attrs {
+		if err := r.parseSMSAttributeByCategory(sms, attr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// parseSMSAttributeByCategory routes SMS attribute parsing to specialized handlers
+func (r *XMLSMSReader) parseSMSAttributeByCategory(sms *SMS, attr xml.Attr) error {
+	name := attr.Name.Local
+	value := attr.Value
+
+	// Core message attributes
+	if err := r.parseSMSCoreAttributes(sms, name, value); err != nil {
+		return err
+	}
+
+	// Timestamp attributes
+	if err := r.parseSMSTimestampAttributes(sms, name, value); err != nil {
+		return err
+	}
+
+	// Status and flag attributes
+	r.parseSMSStatusAttributes(sms, name, value)
+
+	// Optional string attributes
+	r.parseSMSOptionalStringAttributes(sms, name, value)
+
+	return nil
+}
+
+// parseSMSCoreAttributes handles core message identification and content
+func (r *XMLSMSReader) parseSMSCoreAttributes(sms *SMS, name, value string) error {
+	switch name {
+	case "protocol":
+		sms.Protocol = value
+	case attrAddress:
+		sms.Address = value
+	case "body":
+		sms.Body = value
+	case "readable_date":
+		sms.ReadableDate = value
+	case "contact_name":
+		sms.ContactName = value
+	case "type":
+		if value != "" && value != types.XMLNullValue {
+			typeVal, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid type format: %s", value)
+			}
+			sms.Type = MessageType(typeVal)
+		}
+	case "status":
+		if value != "" && value != types.XMLNullValue {
+			status, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid status format: %s", value)
+			}
+			sms.Status = status
+		}
+	}
+	return nil
+}
+
+// parseSMSTimestampAttributes handles timestamp parsing with validation
+func (r *XMLSMSReader) parseSMSTimestampAttributes(sms *SMS, name, value string) error {
+	switch name {
+	case "date":
+		if value != "" && value != types.XMLNullValue {
+			timestamp, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid date format: %s", value)
+			}
+			sms.Date = timestamp
+		}
+	case "date_sent":
+		if value != "" && value != types.XMLNullValue && value != "0" {
+			timestamp, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid date_sent format: %s", value)
+			}
+			sms.DateSent = timestamp
+		}
+	}
+	return nil
+}
+
+// parseSMSStatusAttributes handles boolean status flags
+func (r *XMLSMSReader) parseSMSStatusAttributes(sms *SMS, name, value string) {
+	switch name {
+	case "read":
+		if value == "1" {
+			sms.Read = 1
+		} else {
+			sms.Read = 0
+		}
+	case "locked":
+		if value == "1" {
+			sms.Locked = 1
+		} else {
+			sms.Locked = 0
+		}
+	}
+}
+
+// parseSMSOptionalStringAttributes handles optional string fields with null checking
+func (r *XMLSMSReader) parseSMSOptionalStringAttributes(sms *SMS, name, value string) {
+	if value == types.XMLNullValue {
+		return
+	}
+
+	switch name {
+	case "subject":
+		sms.Subject = value
+	case "service_center":
+		sms.ServiceCenter = value
+	case "toa":
+		sms.Toa = value
+	case "sc_toa":
+		sms.ScToa = value
+	}
 }
 
 // parseMMSElement parses a single MMS element
