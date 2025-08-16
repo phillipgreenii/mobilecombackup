@@ -39,7 +39,28 @@ func NewPrometheusMetrics(config *Config) *PrometheusMetrics {
 func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *Registry {
 	registry := &Registry{}
 
-	// Import metrics
+	// Initialize different metric categories
+	createImportMetrics(registry, config)
+	createValidationMetrics(registry, config)
+	createFileMetrics(registry, config)
+	createOperationMetrics(registry, config)
+
+	// Create performance metrics if detailed mode enabled
+	if config.Detailed {
+		createPerformanceMetrics(registry, config)
+	}
+
+	// Register metrics with prometheus
+	registerCoreMetrics(registry, promRegistry)
+	if config.Detailed {
+		registerPerformanceMetrics(registry, promRegistry)
+	}
+
+	return registry
+}
+
+// createImportMetrics initializes import-related metrics
+func createImportMetrics(registry *Registry, config *Config) {
 	registry.ImportDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: config.Namespace,
@@ -81,8 +102,10 @@ func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *R
 		},
 		[]string{"operation"},
 	)
+}
 
-	// Validation metrics
+// createValidationMetrics initializes validation-related metrics
+func createValidationMetrics(registry *Registry, config *Config) {
 	registry.ValidationErrors = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: config.Namespace,
@@ -113,8 +136,10 @@ func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *R
 		},
 		[]string{"operation"},
 	)
+}
 
-	// File metrics
+// createFileMetrics initializes file-related metrics
+func createFileMetrics(registry *Registry, config *Config) {
 	registry.FileSize = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: config.Namespace,
@@ -135,8 +160,10 @@ func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *R
 			Buckets:   []float64{1024, 10240, 102400, 1048576, 10485760, 104857600}, // 1KB to 100MB
 		},
 	)
+}
 
-	// Operation metrics
+// createOperationMetrics initializes operation-related metrics
+func createOperationMetrics(registry *Registry, config *Config) {
 	registry.ActiveOperations = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: config.Namespace,
@@ -156,31 +183,33 @@ func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *R
 		},
 		[]string{"operation", "error_type"},
 	)
+}
 
-	// Performance metrics (only if detailed metrics are enabled)
-	if config.Detailed {
-		registry.MemoryUsage = prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace: config.Namespace,
-				Subsystem: config.Subsystem,
-				Name:      "memory_usage_bytes",
-				Help:      "Memory usage by operation",
-			},
-			[]string{"operation"},
-		)
+// createPerformanceMetrics initializes performance-related metrics
+func createPerformanceMetrics(registry *Registry, config *Config) {
+	registry.MemoryUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: config.Namespace,
+			Subsystem: config.Subsystem,
+			Name:      "memory_usage_bytes",
+			Help:      "Memory usage by operation",
+		},
+		[]string{"operation"},
+	)
 
-		registry.CPUUsage = prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace: config.Namespace,
-				Subsystem: config.Subsystem,
-				Name:      "cpu_usage_percent",
-				Help:      "CPU usage percentage by operation",
-			},
-			[]string{"operation"},
-		)
-	}
+	registry.CPUUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: config.Namespace,
+			Subsystem: config.Subsystem,
+			Name:      "cpu_usage_percent",
+			Help:      "CPU usage percentage by operation",
+		},
+		[]string{"operation"},
+	)
+}
 
-	// Register all metrics with the custom registry
+// registerCoreMetrics registers core metrics with prometheus
+func registerCoreMetrics(registry *Registry, promRegistry *prometheus.Registry) {
 	promRegistry.MustRegister(
 		registry.ImportDuration,
 		registry.FilesProcessed,
@@ -194,15 +223,14 @@ func createMetricsRegistry(config *Config, promRegistry *prometheus.Registry) *R
 		registry.ActiveOperations,
 		registry.OperationErrors,
 	)
+}
 
-	if config.Detailed {
-		promRegistry.MustRegister(
-			registry.MemoryUsage,
-			registry.CPUUsage,
-		)
-	}
-
-	return registry
+// registerPerformanceMetrics registers performance metrics with prometheus
+func registerPerformanceMetrics(registry *Registry, promRegistry *prometheus.Registry) {
+	promRegistry.MustRegister(
+		registry.MemoryUsage,
+		registry.CPUUsage,
+	)
 }
 
 // GetPrometheusRegistry returns the internal prometheus registry
