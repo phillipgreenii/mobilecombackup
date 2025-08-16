@@ -73,21 +73,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ManifestGenerator handles generation and management of file manifests
-type ManifestGenerator struct {
+// Generator handles generation and management of file manifests
+type Generator struct {
 	repositoryRoot string
 }
 
 // NewManifestGenerator creates a new manifest generator
-func NewManifestGenerator(repositoryRoot string) *ManifestGenerator {
-	return &ManifestGenerator{
+func NewManifestGenerator(repositoryRoot string) *Generator {
+	return &Generator{
 		repositoryRoot: repositoryRoot,
 	}
 }
 
 // GenerateFileManifest scans the repository and creates a complete file manifest
 // It excludes files.yaml itself, files.yaml.sha256, and anything in rejected/
-func (g *ManifestGenerator) GenerateFileManifest() (*FileManifest, error) {
+func (g *Generator) GenerateFileManifest() (*FileManifest, error) {
 	now := time.Now().UTC()
 	manifest := &FileManifest{
 		Version:   "1.0",
@@ -143,7 +143,7 @@ func (g *ManifestGenerator) GenerateFileManifest() (*FileManifest, error) {
 }
 
 // WriteManifestFiles writes the manifest and its checksum to the repository
-func (g *ManifestGenerator) WriteManifestFiles(manifest *FileManifest) error {
+func (g *Generator) WriteManifestFiles(manifest *FileManifest) error {
 	// Write files.yaml
 	if err := g.writeManifest(manifest); err != nil {
 		return fmt.Errorf("failed to write manifest: %w", err)
@@ -158,12 +158,12 @@ func (g *ManifestGenerator) WriteManifestFiles(manifest *FileManifest) error {
 }
 
 // WriteManifestOnly writes only files.yaml (not the checksum)
-func (g *ManifestGenerator) WriteManifestOnly(manifest *FileManifest) error {
+func (g *Generator) WriteManifestOnly(manifest *FileManifest) error {
 	return g.writeManifest(manifest)
 }
 
 // WriteChecksumOnly writes only files.yaml.sha256 (if it doesn't exist)
-func (g *ManifestGenerator) WriteChecksumOnly() error {
+func (g *Generator) WriteChecksumOnly() error {
 	checksumPath := filepath.Join(g.repositoryRoot, "files.yaml.sha256")
 
 	// Check if checksum file already exists
@@ -176,7 +176,7 @@ func (g *ManifestGenerator) WriteChecksumOnly() error {
 }
 
 // shouldSkipFile determines if a file should be excluded from the manifest
-func (g *ManifestGenerator) shouldSkipFile(relPath string) bool {
+func (g *Generator) shouldSkipFile(relPath string) bool {
 	// Skip files.yaml itself and its checksum
 	if relPath == "files.yaml" || relPath == "files.yaml.sha256" {
 		return true
@@ -202,7 +202,7 @@ func (g *ManifestGenerator) shouldSkipFile(relPath string) bool {
 }
 
 // writeManifest writes the manifest to files.yaml
-func (g *ManifestGenerator) writeManifest(manifest *FileManifest) error {
+func (g *Generator) writeManifest(manifest *FileManifest) error {
 	manifestPath := filepath.Join(g.repositoryRoot, "files.yaml")
 
 	// Marshal to YAML
@@ -227,7 +227,7 @@ func (g *ManifestGenerator) writeManifest(manifest *FileManifest) error {
 }
 
 // writeManifestChecksum writes the checksum file for files.yaml
-func (g *ManifestGenerator) writeManifestChecksum() error {
+func (g *Generator) writeManifestChecksum() error {
 	manifestPath := filepath.Join(g.repositoryRoot, "files.yaml")
 	checksumPath := filepath.Join(g.repositoryRoot, "files.yaml.sha256")
 
