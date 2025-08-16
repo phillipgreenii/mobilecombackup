@@ -12,7 +12,7 @@ type Report struct {
 	RepositoryPath    string             `json:"repository_path"`
 	FixedViolations   []FixedViolation   `json:"fixed_violations"`
 	SkippedViolations []SkippedViolation `json:"skipped_violations"`
-	Errors            []AutofixError     `json:"errors"`
+	Errors            []Error     `json:"errors"`
 	Summary           AutofixSummary     `json:"summary"`
 }
 
@@ -29,8 +29,8 @@ type SkippedViolation struct {
 	SkipReason        string                         `json:"skip_reason"`
 }
 
-// AutofixError represents an error that occurred during autofix
-type AutofixError struct {
+// Error represents an error that occurred during autofix
+type Error struct {
 	ViolationType validation.ViolationType `json:"violation_type"`
 	File          string                   `json:"file"`
 	Operation     string                   `json:"operation"`

@@ -151,14 +151,14 @@ func (a *AutofixerImpl) createInitialReport() *Report {
 		RepositoryPath:    a.repositoryRoot,
 		FixedViolations:   []FixedViolation{},
 		SkippedViolations: []SkippedViolation{},
-		Errors:            []AutofixError{},
+		Errors:            []Error{},
 	}
 }
 
 // performPermissionChecks performs permission checks during dry-run mode
 func (a *AutofixerImpl) performPermissionChecks(violations []validation.ValidationViolation, report *Report) {
 	if err := a.checkPermissions(violations); err != nil {
-		report.Errors = append(report.Errors, AutofixError{
+		report.Errors = append(report.Errors, Error{
 			ViolationType: "",
 			File:          a.repositoryRoot,
 			Operation:     "permission_check",
@@ -196,7 +196,7 @@ func (a *AutofixerImpl) handleDirectoryViolation(
 	}
 
 	if err := a.fixMissingDirectory(violation); err != nil {
-		report.Errors = append(report.Errors, AutofixError{
+		report.Errors = append(report.Errors, Error{
 			ViolationType: violation.Type,
 			File:          violation.File,
 			Operation:     OperationCreateDirectory,
@@ -247,7 +247,7 @@ func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViola
 	}
 
 	if err := a.fixMissingFile(violation); err != nil {
-		report.Errors = append(report.Errors, AutofixError{
+		report.Errors = append(report.Errors, Error{
 			ViolationType: violation.Type,
 			File:          violation.File,
 			Operation:     OperationCreateFile,
@@ -337,7 +337,7 @@ func (a *AutofixerImpl) handleContentViolationExecute(violation validation.Valid
 	}
 
 	if err != nil {
-		report.Errors = append(report.Errors, AutofixError{
+		report.Errors = append(report.Errors, Error{
 			ViolationType: violation.Type,
 			File:          violation.File,
 			Operation:     fixAction,
