@@ -46,7 +46,7 @@ func NewRepositoryValidator(
 	callsReader calls.CallsReader,
 	smsReader sms.SMSReader,
 	attachmentReader attachments.AttachmentReader,
-	contactsReader contacts.ContactsReader,
+	contactsReader contacts.Reader,
 ) RepositoryValidator {
 	return &RepositoryValidatorImpl{
 		repositoryRoot:       repositoryRoot,

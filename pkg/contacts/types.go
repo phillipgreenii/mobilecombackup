@@ -12,14 +12,14 @@ type UnprocessedEntry struct {
 	ContactNames []string `yaml:"contact_names"`
 }
 
-// ContactsData represents the YAML structure of contacts.yaml
-type ContactsData struct {
+// Data represents the YAML structure of contacts.yaml
+type Data struct {
 	Contacts    []*Contact         `yaml:"contacts"`
 	Unprocessed []UnprocessedEntry `yaml:"unprocessed,omitempty"`
 }
 
-// ContactsReader reads contact information from repository
-type ContactsReader interface {
+// Reader reads contact information from repository
+type Reader interface {
 	// LoadContacts loads all contacts from contacts.yaml
 	LoadContacts() error
 
@@ -48,8 +48,8 @@ type ContactsReader interface {
 	GetUnprocessedEntries() []UnprocessedEntry
 }
 
-// ContactsWriter handles writing contact information to repository
-type ContactsWriter interface {
+// Writer handles writing contact information to repository
+type Writer interface {
 	// SaveContacts writes the current state to contacts.yaml
 	SaveContacts(path string) error
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
-// ContactsValidator validates contacts file and data using ContactsReader
+// ContactsValidator validates contacts file and data using Reader
 type ContactsValidator interface {
 	// ValidateContactsStructure validates contacts.yaml file exists and is readable
 	ValidateContactsStructure() []ValidationViolation
@@ -23,11 +23,11 @@ type ContactsValidator interface {
 // ContactsValidatorImpl implements ContactsValidator interface
 type ContactsValidatorImpl struct {
 	repositoryRoot string
-	contactsReader contacts.ContactsReader
+	contactsReader contacts.Reader
 }
 
 // NewContactsValidator creates a new contacts validator
-func NewContactsValidator(repositoryRoot string, contactsReader contacts.ContactsReader) ContactsValidator {
+func NewContactsValidator(repositoryRoot string, contactsReader contacts.Reader) ContactsValidator {
 	return &ContactsValidatorImpl{
 		repositoryRoot: repositoryRoot,
 		contactsReader: contactsReader,

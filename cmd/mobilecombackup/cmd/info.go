@@ -359,7 +359,7 @@ func gatherAttachmentStats(
 	return nil
 }
 
-func gatherContactsStats(reader contacts.ContactsReader, info *RepositoryInfo) error {
+func gatherContactsStats(reader contacts.Reader, info *RepositoryInfo) error {
 	// Load contacts
 	err := reader.LoadContacts()
 	if err != nil {

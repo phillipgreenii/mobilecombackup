@@ -47,7 +47,7 @@ func (cm *Manager) LoadContacts() error {
 		return fmt.Errorf("failed to read contacts.yaml: %w", err)
 	}
 
-	var contactsData ContactsData
+	var contactsData Data
 	if err := yaml.Unmarshal(data, &contactsData); err != nil {
 		// Try parsing with old format (string array)
 		var oldFormatData struct {
@@ -426,7 +426,7 @@ func (cm *Manager) addUnprocessedEntry(phone, name string) {
 // SaveContacts writes the current state to contacts.yaml
 func (cm *Manager) SaveContacts(path string) error {
 	// Prepare data structure for YAML
-	contactsData := ContactsData{
+	contactsData := Data{
 		Contacts: make([]*Contact, 0, len(cm.contacts)),
 	}
 

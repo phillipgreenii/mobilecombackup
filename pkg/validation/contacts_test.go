@@ -10,7 +10,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 )
 
-// mockContactsReader implements ContactsReader for testing
+// mockContactsReader implements Reader for testing
 type mockContactsReader struct {
 	mu               sync.RWMutex
 	contacts         []*contacts.Contact
