@@ -20,7 +20,7 @@ func TestAutofixer_Integration_FullRepository(t *testing.T) {
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
 	// Simulate violations that would be found by validation
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.StructureViolation,
 			File:     "calls/",
@@ -115,7 +115,7 @@ func TestAutofixer_Integration_DryRunVsRealRun(t *testing.T) {
 	setupRepositoryWithViolations(t, tempDir1)
 	setupRepositoryWithViolations(t, tempDir2)
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",
@@ -179,11 +179,11 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
 	// Create a large number of violations to test performance
-	violations := make([]validation.ValidationViolation, 0)
+	violations := make([]validation.Violation, 0)
 
 	// Add structure violations
 	for _, dir := range []string{"calls", "sms", "attachments"} {
-		violations = append(violations, validation.ValidationViolation{
+		violations = append(violations, validation.Violation{
 			Type:     validation.StructureViolation,
 			File:     dir + "/",
 			Message:  "Missing directory: " + dir,
@@ -194,7 +194,7 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 	// Add many file violations
 	fileTypes := []string{".mobilecombackup.yaml", "contacts.yaml", "summary.yaml", "files.yaml", "files.yaml.sha256"}
 	for _, file := range fileTypes {
-		violations = append(violations, validation.ValidationViolation{
+		violations = append(violations, validation.Violation{
 			Type:     validation.MissingFile,
 			File:     file,
 			Message:  "Missing file: " + file,
@@ -255,7 +255,7 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 
 	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",
@@ -299,7 +299,7 @@ func TestAutofixer_Integration_ErrorRecovery(t *testing.T) {
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
 	// Create a mix of valid and problematic violations
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.StructureViolation,
 			File:     "calls/",
@@ -406,7 +406,7 @@ func TestAutofixer_Integration_Idempotent(t *testing.T) {
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",

@@ -237,8 +237,8 @@ func TestMarkerFileValidator_FixableViolation(t *testing.T) {
 
 	// Create fixable violation
 	fixable := FixableViolation{
-		ValidationViolation: violation,
-		SuggestedFix:        validator.GetSuggestedFix(),
+		Violation:    violation,
+		SuggestedFix: validator.GetSuggestedFix(),
 	}
 
 	// Verify fixable violation has suggested fix

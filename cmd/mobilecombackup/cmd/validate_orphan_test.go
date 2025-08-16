@@ -232,7 +232,7 @@ func TestOrphanRemovalOutputFormats(t *testing.T) {
 			// Create result with orphan removal data
 			result := ValidationResult{
 				Valid:      true,
-				Violations: []validation.ValidationViolation{},
+				Violations: []validation.Violation{},
 				OrphanRemoval: &OrphanRemovalResult{
 					AttachmentsScanned: 10,
 					OrphansFound:       3,

@@ -268,7 +268,7 @@ func TestCallsValidatorImpl_ErrorHandling(t *testing.T) {
 
 // testCallsValidateStructure is a helper for testing calls structure validation
 func testCallsValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
-	availableYears []int, validateFunc func() []ValidationViolation) {
+	availableYears []int, validateFunc func() []Violation) {
 	// Test missing directory
 	violations := validateFunc()
 	if len(violations) != 1 {

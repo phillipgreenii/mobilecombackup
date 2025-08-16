@@ -243,8 +243,8 @@ func TestValidateJSONSchema(t *testing.T) {
 
 	// Parse JSON
 	var result struct {
-		Valid      bool                             `json:"valid"`
-		Violations []validation.ValidationViolation `json:"violations"`
+		Valid      bool                   `json:"valid"`
+		Violations []validation.Violation `json:"violations"`
 	}
 
 	if err := json.Unmarshal(output, &result); err != nil {

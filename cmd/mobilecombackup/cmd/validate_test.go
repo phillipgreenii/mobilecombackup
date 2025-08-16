@@ -136,7 +136,7 @@ func TestValidationResultJSON(t *testing.T) {
 			name: "valid repository",
 			result: ValidationResult{
 				Valid:      true,
-				Violations: []validation.ValidationViolation{},
+				Violations: []validation.Violation{},
 			},
 			expected: `{
   "valid": true,
@@ -147,7 +147,7 @@ func TestValidationResultJSON(t *testing.T) {
 			name: "repository with violations",
 			result: ValidationResult{
 				Valid: false,
-				Violations: []validation.ValidationViolation{
+				Violations: []validation.Violation{
 					{
 						Type:    validation.InvalidFormat,
 						File:    "calls/calls-2015.xml",
@@ -218,7 +218,7 @@ func TestValidationResultTextOutput(t *testing.T) {
 			name: "valid repository normal output",
 			result: ValidationResult{
 				Valid:      true,
-				Violations: []validation.ValidationViolation{},
+				Violations: []validation.Violation{},
 			},
 			repoPath:    "/test/repo",
 			quiet:       false,
@@ -229,7 +229,7 @@ func TestValidationResultTextOutput(t *testing.T) {
 			name: "valid repository quiet mode",
 			result: ValidationResult{
 				Valid:      true,
-				Violations: []validation.ValidationViolation{},
+				Violations: []validation.Violation{},
 			},
 			repoPath:    "/test/repo",
 			quiet:       true,
@@ -240,7 +240,7 @@ func TestValidationResultTextOutput(t *testing.T) {
 			name: "repository with violations",
 			result: ValidationResult{
 				Valid: false,
-				Violations: []validation.ValidationViolation{
+				Violations: []validation.Violation{
 					{
 						Type:    validation.InvalidFormat,
 						File:    "calls/calls-2015.xml",

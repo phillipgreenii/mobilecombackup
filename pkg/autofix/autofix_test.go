@@ -44,7 +44,7 @@ func TestAutofixer_DryRunMode(t *testing.T) {
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",
@@ -111,7 +111,7 @@ func TestAutofixer_CreateMissingDirectories(t *testing.T) {
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.StructureViolation,
 			File:     "calls/",
@@ -165,7 +165,7 @@ func TestAutofixer_CreateMissingFiles(t *testing.T) {
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingMarkerFile,
 			File:     ".mobilecombackup.yaml",
@@ -239,7 +239,7 @@ func TestAutofixer_SkipUnsafeViolations(t *testing.T) {
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.ChecksumMismatch,
 			File:     "calls/calls-2024.xml",
@@ -373,7 +373,7 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 
 	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",
@@ -431,7 +431,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 		t.Fatalf("Failed to write test XML file: %v", err)
 	}
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.CountMismatch,
 			File:     "calls/calls-2024.xml",
@@ -478,7 +478,7 @@ func TestAutofixer_ErrorHandling(t *testing.T) {
 	nonExistentDir := "/this/path/does/not/exist"
 	autofixer := NewAutofixer(nonExistentDir, &NullProgressReporter{})
 
-	violations := []validation.ValidationViolation{
+	violations := []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",
@@ -546,8 +546,8 @@ func TestNewAutofixer(t *testing.T) {
 }
 
 // Helper function to create test violations
-func createTestViolations() []validation.ValidationViolation {
-	return []validation.ValidationViolation{
+func createTestViolations() []validation.Violation {
+	return []validation.Violation{
 		{
 			Type:     validation.MissingFile,
 			File:     ".mobilecombackup.yaml",

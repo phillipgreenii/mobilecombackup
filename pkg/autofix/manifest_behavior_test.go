@@ -65,7 +65,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		// Create missing file violation to trigger manifest recreation
-		violations := []validation.ValidationViolation{
+		violations := []validation.Violation{
 			{
 				Type:    validation.MissingFile,
 				File:    "files.yaml",
@@ -113,7 +113,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		_ = os.Remove(checksumPath)
 
 		// Create missing checksum violation
-		violations := []validation.ValidationViolation{
+		violations := []validation.Violation{
 			{
 				Type:    validation.MissingFile,
 				File:    "files.yaml.sha256",

@@ -443,7 +443,7 @@ func TestSMSValidatorImpl_AttachmentReferenceValidation(t *testing.T) {
 
 // testSMSValidateStructure is a helper for testing SMS structure validation
 func testSMSValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
-	availableYears []int, validateFunc func() []ValidationViolation) {
+	availableYears []int, validateFunc func() []Violation) {
 	// Test missing directory
 	violations := validateFunc()
 	if len(violations) != 1 {
