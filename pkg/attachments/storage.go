@@ -97,9 +97,41 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 // StoreFromReader stores an attachment by streaming from io.Reader
 // This is memory-efficient for large attachments as it doesn't load all data into memory
 func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Reader, metadata AttachmentInfo) error {
+	// Validate hash and prepare paths
+	validatedDirPath, attachmentPath, err := das.prepareAttachmentPaths(hash, metadata)
+	if err != nil {
+		return err
+	}
+
+	// Create directory structure
+	if err := das.createAttachmentDirectory(validatedDirPath); err != nil {
+		return err
+	}
+
+	// Stream data to temporary file with hash verification
+	updatedMetadata, tempFile, err := das.streamDataToTempFile(data, hash, attachmentPath, metadata)
+	if err != nil {
+		return err
+	}
+
+	// Atomically move temp file to final location
+	if err := os.Rename(tempFile, attachmentPath); err != nil {
+		return fmt.Errorf("failed to move temp file to final location: %w", err)
+	}
+
+	// Write metadata file
+	if err := das.writeMetadataFile(validatedDirPath, updatedMetadata, attachmentPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// prepareAttachmentPaths validates hash and prepares all necessary file paths
+func (das *DirectoryAttachmentStorage) prepareAttachmentPaths(hash string, metadata AttachmentInfo) (string, string, error) {
 	// Validate hash first to prevent null byte injection before path construction
 	if err := das.validateHash(hash); err != nil {
-		return customerrors.WrapWithValidation("validate attachment hash", err)
+		return "", "", customerrors.WrapWithValidation("validate attachment hash", err)
 	}
 
 	// Create directory path: attachments/ab/abc123.../
@@ -108,9 +140,26 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	// Validate directory path
 	validatedDirPath, err := das.pathValidator.ValidatePath(dirPath)
 	if err != nil {
-		return fmt.Errorf("invalid attachment directory path: %w", err)
+		return "", "", fmt.Errorf("invalid attachment directory path: %w", err)
 	}
 
+	// Generate filename and validate
+	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
+	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid attachment file path: %w", err)
+	}
+
+	attachmentPath, err := das.pathValidator.GetSafePath(attachmentRelPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get safe attachment path: %w", err)
+	}
+
+	return validatedDirPath, attachmentPath, nil
+}
+
+// createAttachmentDirectory creates the directory structure for the attachment
+func (das *DirectoryAttachmentStorage) createAttachmentDirectory(validatedDirPath string) error {
 	fullDirPath, err := das.pathValidator.GetSafePath(validatedDirPath)
 	if err != nil {
 		return fmt.Errorf("failed to get safe directory path: %w", err)
@@ -125,18 +174,11 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 		return fmt.Errorf("failed to create attachment directory: %w", err)
 	}
 
-	// Generate filename and validate
-	filename := GenerateFilename(metadata.OriginalName, metadata.MimeType)
-	attachmentRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, filename)
-	if err != nil {
-		return fmt.Errorf("invalid attachment file path: %w", err)
-	}
+	return nil
+}
 
-	attachmentPath, err := das.pathValidator.GetSafePath(attachmentRelPath)
-	if err != nil {
-		return fmt.Errorf("failed to get safe attachment path: %w", err)
-	}
-
+// streamDataToTempFile streams data to a temporary file with hash verification
+func (das *DirectoryAttachmentStorage) streamDataToTempFile(data io.Reader, expectedHash, attachmentPath string, metadata AttachmentInfo) (AttachmentInfo, string, error) {
 	// Use temp file for atomic write operation
 	tempFile := attachmentPath + ".tmp"
 
@@ -144,17 +186,41 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	file, err := os.Create(tempFile) // #nosec G304
 	if err != nil {
 		if strings.Contains(err.Error(), "no space left") {
-			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+			return metadata, "", fmt.Errorf("%w: %v", ErrDiskFull, err)
 		}
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return metadata, "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 
-	// Ensure cleanup on any error
+	// Ensure file is closed, but only clean up temp file on error
+	var cleanupOnError = true
 	defer func() {
 		_ = file.Close()
-		_ = os.Remove(tempFile) // Clean up temp file if something goes wrong
+		if cleanupOnError {
+			_ = os.Remove(tempFile) // Clean up temp file if something goes wrong
+		}
 	}()
 
+	// Stream data with hash verification
+	written, err := das.streamWithHashVerification(file, data, expectedHash)
+	if err != nil {
+		return metadata, "", err
+	}
+
+	// Update metadata with actual size
+	metadata.Size = written
+
+	// Close temp file before renaming
+	if err := file.Close(); err != nil {
+		return metadata, "", fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Success - don't clean up temp file
+	cleanupOnError = false
+	return metadata, tempFile, nil
+}
+
+// streamWithHashVerification streams data while calculating and verifying hash
+func (das *DirectoryAttachmentStorage) streamWithHashVerification(file *os.File, data io.Reader, expectedHash string) (int64, error) {
 	// Create hash writer for verification
 	hasher := sha256.New()
 	multiWriter := io.MultiWriter(file, hasher)
@@ -163,31 +229,23 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	written, err := io.CopyBuffer(multiWriter, data, make([]byte, 32*1024))
 	if err != nil {
 		if strings.Contains(err.Error(), "no space left") {
-			return fmt.Errorf("%w: %v", ErrDiskFull, err)
+			return 0, fmt.Errorf("%w: %v", ErrDiskFull, err)
 		}
-		return fmt.Errorf("failed to write attachment data: %w", err)
+		return 0, fmt.Errorf("failed to write attachment data: %w", err)
 	}
 
 	// Verify hash matches expected
 	calculatedHash := hex.EncodeToString(hasher.Sum(nil))
-	if calculatedHash != hash {
-		return fmt.Errorf("%w: expected %s, got %s", ErrHashMismatch, hash, calculatedHash)
+	if calculatedHash != expectedHash {
+		return 0, fmt.Errorf("%w: expected %s, got %s", ErrHashMismatch, expectedHash, calculatedHash)
 	}
 
-	// Update metadata with actual size
-	metadata.Size = written
+	return written, nil
+}
 
-	// Close temp file before renaming
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("failed to close temp file: %w", err)
-	}
-
-	// Atomic rename to final location
-	if err := os.Rename(tempFile, attachmentPath); err != nil {
-		return fmt.Errorf("failed to move temp file to final location: %w", err)
-	}
-
-	// Write metadata file with validation (same as before)
+// writeMetadataFile writes the metadata YAML file with cleanup on failure
+func (das *DirectoryAttachmentStorage) writeMetadataFile(validatedDirPath string, metadata AttachmentInfo, attachmentPath string) error {
+	// Write metadata file with validation
 	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
 	if err != nil {
 		// Clean up attachment file if metadata fails
