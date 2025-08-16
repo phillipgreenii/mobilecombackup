@@ -67,7 +67,7 @@ func TestAutofixer_DryRunMode(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  true,
 		Verbose: false,
 	}
@@ -132,7 +132,7 @@ func TestAutofixer_CreateMissingDirectories(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -198,7 +198,7 @@ func TestAutofixer_CreateMissingFiles(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -254,7 +254,7 @@ func TestAutofixer_SkipUnsafeViolations(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -382,7 +382,7 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  true,
 		Verbose: false,
 	}
@@ -442,7 +442,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -487,7 +487,7 @@ func TestAutofixer_ErrorHandling(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -584,7 +584,7 @@ func TestAutofixer_ComprehensiveWorkflow(t *testing.T) {
 
 	violations := createTestViolations()
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: true, // Test verbose mode
 	}

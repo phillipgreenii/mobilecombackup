@@ -94,7 +94,7 @@ func TestAutofix_SecurityIntegration(t *testing.T) {
 	// Attempt to fix violations with malicious paths
 	for _, violation := range attackViolations {
 		t.Run(violation.File, func(t *testing.T) {
-			report, err := fixer.FixViolations([]validation.ValidationViolation{violation}, autofix.AutofixOptions{})
+			report, err := fixer.FixViolations([]validation.ValidationViolation{violation}, autofix.Options{})
 
 			// Should either fail with validation error or successfully skip the violation
 			if err == nil {

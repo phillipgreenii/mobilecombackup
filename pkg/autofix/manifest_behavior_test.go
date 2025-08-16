@@ -74,7 +74,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Run autofix
-		_, err = autofixer.FixViolations(violations, AutofixOptions{DryRun: false})
+		_, err = autofixer.FixViolations(violations, Options{DryRun: false})
 		if err != nil {
 			t.Fatalf("Autofix failed: %v", err)
 		}
@@ -122,7 +122,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Run autofix
-		_, err := autofixer.FixViolations(violations, AutofixOptions{DryRun: false})
+		_, err := autofixer.FixViolations(violations, Options{DryRun: false})
 		if err != nil {
 			t.Fatalf("Autofix failed: %v", err)
 		}
@@ -139,7 +139,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 		}
 
 		// Run autofix again with same violation
-		_, err = autofixer.FixViolations(violations, AutofixOptions{DryRun: false})
+		_, err = autofixer.FixViolations(violations, Options{DryRun: false})
 		if err != nil {
 			t.Fatalf("Autofix failed: %v", err)
 		}

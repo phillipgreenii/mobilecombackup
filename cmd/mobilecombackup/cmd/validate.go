@@ -293,7 +293,7 @@ func runAutofixWithProgress(
 	autofixer := autofix.NewAutofixer(repoPath, autofixReporter)
 
 	// Set up autofix options
-	options := autofix.AutofixOptions{
+	options := autofix.Options{
 		DryRun:  validateDryRun,
 		Verbose: verbose,
 	}

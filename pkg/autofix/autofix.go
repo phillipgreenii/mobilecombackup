@@ -22,7 +22,7 @@
 //	}
 //
 //	autofixer := NewAutofixerImpl("/path/to/repository")
-//	options := AutofixOptions{DryRun: true, Verbose: true}
+//	options := Options{DryRun: true, Verbose: true}
 //
 //	report, err := autofixer.FixViolations(violations, options)
 //	if err != nil {
@@ -86,7 +86,7 @@ type SummaryContent struct {
 // Autofixer interface for fixing validation violations
 type Autofixer interface {
 	// FixViolations attempts to fix the given validation violations
-	FixViolations(violations []validation.ValidationViolation, options AutofixOptions) (*Report, error)
+	FixViolations(violations []validation.ValidationViolation, options Options) (*Report, error)
 
 	// CanFix returns true if the violation type can be automatically fixed
 	CanFix(violationType validation.ViolationType) bool
@@ -113,7 +113,7 @@ func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
 
 // FixViolations attempts to fix the given validation violations
 func (a *AutofixerImpl) FixViolations(
-	violations []validation.ValidationViolation, options AutofixOptions,
+	violations []validation.ValidationViolation, options Options,
 ) (*Report, error) {
 	report := a.createInitialReport()
 
@@ -135,7 +135,7 @@ func (a *AutofixerImpl) FixViolations(
 	a.handleUnsafeViolations(violations, report)
 
 	// Calculate summary
-	report.Summary = AutofixSummary{
+	report.Summary = Summary{
 		FixedCount:   len(report.FixedViolations),
 		SkippedCount: len(report.SkippedViolations),
 		ErrorCount:   len(report.Errors),
@@ -169,7 +169,7 @@ func (a *AutofixerImpl) performPermissionChecks(violations []validation.Validati
 
 // fixDirectoryViolations handles directory creation violations
 func (a *AutofixerImpl) fixDirectoryViolations(
-	violations []validation.ValidationViolation, options AutofixOptions, report *Report,
+	violations []validation.ValidationViolation, options Options, report *Report,
 ) {
 	directoryViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.StructureViolation,
@@ -214,7 +214,7 @@ func (a *AutofixerImpl) handleDirectoryViolation(
 // fixFileViolations handles missing file violations
 func (a *AutofixerImpl) fixFileViolations(
 	violations []validation.ValidationViolation,
-	options AutofixOptions,
+	options Options,
 	report *Report,
 ) {
 	fileViolations := filterViolationsByTypes(violations, []validation.ViolationType{
@@ -265,7 +265,7 @@ func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViola
 // fixContentViolations handles content-related violations
 func (a *AutofixerImpl) fixContentViolations(
 	violations []validation.ValidationViolation,
-	options AutofixOptions,
+	options Options,
 	report *Report,
 ) {
 	contentViolations := filterViolationsByTypes(violations, []validation.ViolationType{

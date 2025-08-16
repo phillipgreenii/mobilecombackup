@@ -55,7 +55,7 @@ func TestAutofixer_Integration_FullRepository(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: true,
 	}
@@ -132,14 +132,14 @@ func TestAutofixer_Integration_DryRunVsRealRun(t *testing.T) {
 
 	// Run dry-run mode
 	autofixer1 := NewAutofixer(tempDir1, &NullProgressReporter{})
-	dryRunReport, err := autofixer1.FixViolations(violations, AutofixOptions{DryRun: true})
+	dryRunReport, err := autofixer1.FixViolations(violations, Options{DryRun: true})
 	if err != nil {
 		t.Fatalf("Dry-run failed: %v", err)
 	}
 
 	// Run real mode
 	autofixer2 := NewAutofixer(tempDir2, &NullProgressReporter{})
-	realReport, err := autofixer2.FixViolations(violations, AutofixOptions{DryRun: false})
+	realReport, err := autofixer2.FixViolations(violations, Options{DryRun: false})
 	if err != nil {
 		t.Fatalf("Real run failed: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 	// Create test files to scan for files.yaml generation
 	createTestFilesForManifest(t, tempDir, 100)
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -264,7 +264,7 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -320,7 +320,7 @@ func TestAutofixer_Integration_ErrorRecovery(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}
@@ -421,7 +421,7 @@ func TestAutofixer_Integration_Idempotent(t *testing.T) {
 		},
 	}
 
-	options := AutofixOptions{
+	options := Options{
 		DryRun:  false,
 		Verbose: false,
 	}

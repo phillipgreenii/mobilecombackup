@@ -13,7 +13,7 @@ type Report struct {
 	FixedViolations   []FixedViolation   `json:"fixed_violations"`
 	SkippedViolations []SkippedViolation `json:"skipped_violations"`
 	Errors            []Error     `json:"errors"`
-	Summary           AutofixSummary     `json:"summary"`
+	Summary           Summary     `json:"summary"`
 }
 
 // FixedViolation represents a violation that was successfully fixed
@@ -37,15 +37,15 @@ type Error struct {
 	Error         string                   `json:"error"`
 }
 
-// AutofixSummary provides counts of autofix results
-type AutofixSummary struct {
+// Summary provides counts of autofix results
+type Summary struct {
 	FixedCount   int `json:"fixed_count"`
 	SkippedCount int `json:"skipped_count"`
 	ErrorCount   int `json:"error_count"`
 }
 
-// AutofixOptions controls autofix behavior
-type AutofixOptions struct {
+// Options controls autofix behavior
+type Options struct {
 	DryRun  bool `json:"dry_run"`
 	Verbose bool `json:"verbose"`
 }
