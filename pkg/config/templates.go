@@ -8,16 +8,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ConfigTemplate holds template information
-type ConfigTemplate struct {
+// Template holds template information
+type Template struct {
 	Name        string
 	Description string
 	Content     *Config
 }
 
 // GetConfigTemplates returns available configuration templates
-func GetConfigTemplates() []ConfigTemplate {
-	return []ConfigTemplate{
+func GetConfigTemplates() []Template {
+	return []Template{
 		{
 			Name:        "default",
 			Description: "Default configuration for general use",
@@ -75,7 +75,7 @@ func getStrictConfig() *Config {
 func GenerateConfigFile(templateName string, outputPath string) error {
 	templates := GetConfigTemplates()
 
-	var template *ConfigTemplate
+	var template *Template
 	for _, tmpl := range templates {
 		if tmpl.Name == templateName {
 			template = &tmpl

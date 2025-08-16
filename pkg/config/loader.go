@@ -11,26 +11,26 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ConfigLoader interface for loading configuration
-type ConfigLoader interface {
+// Loader interface for loading configuration
+type Loader interface {
 	Load(path string) (*Config, error)
 	LoadWithDefaults() (*Config, error)
 	LoadFromEnvironment(env Environment) (*Config, error)
 	Validate(config *Config) error
 }
 
-// ViperConfigLoader implements ConfigLoader using Viper
+// ViperConfigLoader implements Loader using Viper
 type ViperConfigLoader struct {
 	logger interface{} // Will be logging.Logger but using interface{} to avoid circular dependencies
 }
 
 // NewConfigLoader creates a new configuration loader
-func NewConfigLoader() ConfigLoader {
+func NewConfigLoader() Loader {
 	return &ViperConfigLoader{}
 }
 
 // NewConfigLoaderWithLogger creates a new configuration loader with a logger
-func NewConfigLoaderWithLogger(logger interface{}) ConfigLoader {
+func NewConfigLoaderWithLogger(logger interface{}) Loader {
 	return &ViperConfigLoader{
 		logger: logger,
 	}

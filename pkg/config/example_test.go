@@ -8,8 +8,8 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/config"
 )
 
-// ExampleConfigLoader_LoadWithDefaults demonstrates loading configuration with default precedence
-func ExampleConfigLoader_LoadWithDefaults() {
+// ExampleLoader_LoadWithDefaults demonstrates loading configuration with default precedence
+func ExampleLoader_LoadWithDefaults() {
 	loader := config.NewConfigLoader()
 
 	// Load configuration using standard precedence:
@@ -32,8 +32,8 @@ func ExampleConfigLoader_LoadWithDefaults() {
 	// Log level: info
 }
 
-// ExampleConfigLoader_Load demonstrates loading configuration from a specific file
-func ExampleConfigLoader_Load() {
+// ExampleLoader_Load demonstrates loading configuration from a specific file
+func ExampleLoader_Load() {
 	loader := config.NewConfigLoader()
 
 	// Create a temporary config file
