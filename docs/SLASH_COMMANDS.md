@@ -10,11 +10,13 @@ Implement an issue following the complete development workflow:
 - **Creates TodoWrite list** from issue tasks for progress tracking
 - **Implements one task at a time** with mandatory quality verification
 - **Auto-commits after each completed task** with proper issue references
-- **Mandatory verification before task completion**: All commands must succeed:
+- **Mandatory verification before task completion**: ALL commands must succeed:
   - `devbox run formatter` (format code first)
-  - `devbox run tests` (all tests must pass)
-  - `devbox run linter` (zero violations)
-  - `devbox run build-cli` (successful build)
+  - `devbox run tests` (ALL tests must pass, no exceptions)
+  - `devbox run linter` (ZERO violations allowed)
+  - `devbox run build-cli` (successful build required)
+- **Task completion REQUIRES successful commit** with all checks passing
+- **NEVER use `git commit --no-verify`** under any circumstances
 - **Updates documentation** when complete using product-doc-sync agent
 
 ### `/ready-issue FEAT-XXX or BUG-XXX`
@@ -115,7 +117,14 @@ devbox run linter    # Zero lint violations
 devbox run build-cli # Build must succeed
 ```
 
-**No exceptions**: If any verification step fails, the task remains incomplete until issues are resolved.
+**ABSOLUTE RULES**:
+- **No exceptions**: If ANY verification step fails, the task remains incomplete
+- **ALL tests must pass**: Not some, but ALL tests without exception
+- **ZERO lint violations**: Not reduced, but completely eliminated
+- **Build MUST succeed**: No partial builds or warnings
+- **NEVER use `--no-verify`**: All commits must pass pre-commit hooks
+- **Task NOT complete without commit**: A successful commit is required for completion
+- **STOP and ask for help**: If unable to pass all checks, ask for assistance
 
 ### File Detection Strategy
 
@@ -161,7 +170,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Never use `git add .`** - Commands stage only files they actually modified
 - **Auto-commit only after successful verification** - Prevents broken code from being committed
 - **One task at a time** - Complete each task fully before moving to the next
-- **Quality gates enforced** - No task completion without passing all verification steps
+- **Quality gates enforced** - No task completion without passing ALL verification steps
 - **Issue ID traceability** - All commits reference the relevant issue for tracking
 - **Commands ask for guidance** when encountering fundamental problems or conflicts
 - **File movement uses `git mv`** - Prevents split states and commit issues
+- **CRITICAL: Task is NOT complete without successful commit** - All quality checks must pass
+- **NEVER bypass quality checks** - No `--no-verify` flag usage allowed
+- **STOP if blocked** - Ask for help if unable to achieve clean commit

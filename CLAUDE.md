@@ -22,7 +22,7 @@ devbox run builder   # Build all packages
 # Git hooks (quality enforcement)
 devbox run install-hooks  # Install pre-commit hooks
 devbox run test-hooks     # Test hooks without committing
-git commit --no-verify   # Bypass hooks for emergencies
+# NEVER use: git commit --no-verify
 ```
 
 ## Architecture Overview
@@ -75,9 +75,10 @@ issues/
 ### Implementation Best Practices
 - Create TodoWrite list from issue tasks
 - Work on one task at a time
-- Run verification before marking tasks complete
-- Commit after each completed task
+- Run ALL verification commands before marking tasks complete
+- Commit after each completed task (MUST pass all checks)
 - Reference issue in commit messages (e.g., "FEAT-XXX: Add validation")
+- NEVER mark a task complete without a successful commit
 
 ## Task Completion Verification
 
@@ -93,6 +94,22 @@ If ANY command fails:
 1. Fix the issues
 2. Re-run verification
 3. Only mark complete when ALL pass
+
+## ABSOLUTE COMMIT RULE
+
+**CRITICAL**: Every task MUST end with a commit that passes ALL quality checks:
+
+1. **NEVER** use `git commit --no-verify`
+2. **ALL** tests MUST pass (not some, ALL)
+3. **ZERO** linting errors allowed
+4. Build MUST succeed
+5. Code MUST be formatted
+
+**ENFORCEMENT**:
+- A task is NOT complete until a successful commit is made
+- If ANY quality check fails, the task remains incomplete
+- If there's a blocker preventing commit, STOP and ask for help
+- Do NOT report task completion with failing tests/lint/build
 
 ## Common Patterns
 
@@ -143,6 +160,8 @@ For detailed information, see:
 
 - ALWAYS format before testing or committing
 - NEVER skip verification steps
+- NEVER use `git commit --no-verify`
+- Task completion REQUIRES successful commit with ALL checks passing
 - Use full import paths: `github.com/phillipgreen/mobilecombackup/pkg/...`
 - Timestamps are milliseconds (divide by 1000 for Unix time)
 - XML "null" values should be treated as empty

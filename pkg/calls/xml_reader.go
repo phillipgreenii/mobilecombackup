@@ -41,7 +41,6 @@ type xmlCall struct {
 	ContactName  string `xml:"contact_name,attr"`
 }
 
-
 // parseCallElement parses a single call element from XML attributes
 func (r *XMLCallsReader) parseCallElement(se xml.StartElement) (Call, error) {
 	var xmlCall xmlCall
@@ -258,9 +257,6 @@ func (r *XMLCallsReader) GetCallsCountContext(ctx context.Context, year int) (in
 	filePath := r.getCallsFilePath(year)
 	file, err := os.Open(filePath) // #nosec G304 - validated path within repository
 	if err != nil {
-		if os.IsNotExist(err) {
-			return 0, nil
-		}
 		return 0, fmt.Errorf("failed to open calls file %s: %w", filePath, err)
 	}
 	defer func() { _ = file.Close() }()
@@ -317,6 +313,7 @@ func (r *XMLCallsReader) ValidateCallsFileContext(ctx context.Context, year int)
 
 	decoder := xml.NewDecoder(file)
 	var rootFound bool
+	var declaredCount int
 	callIndex := 0
 	const checkInterval = 100 // Check context every 100 calls
 
@@ -338,28 +335,34 @@ func (r *XMLCallsReader) ValidateCallsFileContext(ctx context.Context, year int)
 			return fmt.Errorf("XML parsing error: %w", err)
 		}
 
-		if se, ok := token.(xml.StartElement); ok {
-			if se.Name.Local == callsElementName && !rootFound {
-				rootFound = true
-			} else if se.Name.Local == callElementName {
-				call, err := r.parseCallElement(se)
-				if err != nil {
-					return fmt.Errorf("call %d: %w", callIndex, err)
-				}
+		se, ok := token.(xml.StartElement)
+		if !ok {
+			continue
+		}
 
-				// Validate that call date matches the expected year
-				timestamp := time.Unix(0, call.Date*int64(time.Millisecond)).UTC()
-				if timestamp.Year() != year {
-					return fmt.Errorf("call %d: date %s belongs to year %d, not %d",
-						callIndex, timestamp.Format(time.RFC3339), timestamp.Year(), year)
-				}
-				callIndex++
+		if se.Name.Local == callsElementName && !rootFound {
+			rootFound = true
+			// Extract count attribute
+			count, err := r.extractCountAttribute(se)
+			if err != nil {
+				return err
 			}
+			declaredCount = count
+		} else if se.Name.Local == callElementName {
+			if err := r.validateCallElement(se, year, callIndex); err != nil {
+				return err
+			}
+			callIndex++
 		}
 	}
 
 	if !rootFound {
 		return fmt.Errorf("root element 'calls' not found")
+	}
+
+	// Validate count matches
+	if declaredCount != callIndex {
+		return fmt.Errorf("count mismatch: declared count=%d, actual count=%d", declaredCount, callIndex)
 	}
 
 	return nil
@@ -390,4 +393,34 @@ func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
 // ValidateCallsFile delegates to ValidateCallsFileContext with background context
 func (r *XMLCallsReader) ValidateCallsFile(year int) error {
 	return r.ValidateCallsFileContext(context.Background(), year)
+}
+
+// extractCountAttribute extracts the count attribute from the calls element
+func (r *XMLCallsReader) extractCountAttribute(se xml.StartElement) (int, error) {
+	for _, attr := range se.Attr {
+		if attr.Name.Local == "count" {
+			count, err := strconv.Atoi(attr.Value)
+			if err != nil {
+				return 0, fmt.Errorf("invalid count attribute '%s': %w", attr.Value, err)
+			}
+			return count, nil
+		}
+	}
+	return 0, nil
+}
+
+// validateCallElement validates a single call element
+func (r *XMLCallsReader) validateCallElement(se xml.StartElement, year int, callIndex int) error {
+	call, err := r.parseCallElement(se)
+	if err != nil {
+		return fmt.Errorf("call %d: %w", callIndex, err)
+	}
+
+	// Validate that call date matches the expected year
+	timestamp := time.Unix(0, call.Date*int64(time.Millisecond)).UTC()
+	if timestamp.Year() != year {
+		return fmt.Errorf("call %d: date %s belongs to year %d, not %d",
+			callIndex, timestamp.Format(time.RFC3339), timestamp.Year(), year)
+	}
+	return nil
 }
