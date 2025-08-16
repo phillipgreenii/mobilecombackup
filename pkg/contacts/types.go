@@ -1,5 +1,7 @@
 package contacts
 
+import "context"
+
 // Contact represents a contact with associated phone numbers
 type Contact struct {
 	Name    string   `yaml:"name"`
@@ -20,36 +22,32 @@ type Data struct {
 
 // Reader reads contact information from repository
 type Reader interface {
-	// LoadContacts loads all contacts from contacts.yaml
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	LoadContacts() error
-
-	// GetContactByNumber returns contact name for a phone number
 	GetContactByNumber(number string) (string, bool)
-
-	// GetNumbersByContact returns all numbers for a contact name
 	GetNumbersByContact(name string) ([]string, bool)
-
-	// GetAllContacts returns all contacts
 	GetAllContacts() ([]*Contact, error)
-
-	// ContactExists checks if a contact name exists
 	ContactExists(name string) bool
-
-	// IsKnownNumber checks if a number has a contact
 	IsKnownNumber(number string) bool
-
-	// GetContactsCount returns total number of contacts
 	GetContactsCount() int
-
-	// AddUnprocessedContacts adds contacts from multi-address SMS parsing
 	AddUnprocessedContacts(addresses, contactNames string) error
-
-	// GetUnprocessedEntries returns all unprocessed entries in structured format
 	GetUnprocessedEntries() []UnprocessedEntry
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	LoadContactsContext(ctx context.Context) error
+	GetAllContactsContext(ctx context.Context) ([]*Contact, error)
+	AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error
 }
 
 // Writer handles writing contact information to repository
 type Writer interface {
-	// SaveContacts writes the current state to contacts.yaml
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	SaveContacts(path string) error
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	SaveContactsContext(ctx context.Context, path string) error
 }

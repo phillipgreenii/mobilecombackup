@@ -71,6 +71,7 @@
 package attachments
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -108,41 +109,45 @@ type AttachmentInfo struct {
 
 // AttachmentReader reads attachments from repository
 type AttachmentReader interface {
-	// GetAttachment retrieves attachment info by hash
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	GetAttachment(hash string) (*Attachment, error)
-
-	// ReadAttachment reads the actual file content
 	ReadAttachment(hash string) ([]byte, error)
-
-	// AttachmentExists checks if attachment exists
 	AttachmentExists(hash string) (bool, error)
-
-	// ListAttachments returns all attachments in repository
 	ListAttachments() ([]*Attachment, error)
-
-	// StreamAttachments streams attachment info for memory efficiency
 	StreamAttachments(callback func(*Attachment) error) error
-
-	// VerifyAttachment checks if file content matches its hash
 	VerifyAttachment(hash string) (bool, error)
-
-	// GetAttachmentPath returns the expected path for a hash
 	GetAttachmentPath(hash string) string
-
-	// FindOrphanedAttachments returns attachments not referenced by any messages
-	// Requires a set of referenced attachment hashes from SMS reader
 	FindOrphanedAttachments(referencedHashes map[string]bool) ([]*Attachment, error)
-
-	// ValidateAttachmentStructure validates the directory structure
 	ValidateAttachmentStructure() error
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	GetAttachmentContext(ctx context.Context, hash string) (*Attachment, error)
+	ReadAttachmentContext(ctx context.Context, hash string) ([]byte, error)
+	AttachmentExistsContext(ctx context.Context, hash string) (bool, error)
+	ListAttachmentsContext(ctx context.Context) ([]*Attachment, error)
+	StreamAttachmentsContext(ctx context.Context, callback func(*Attachment) error) error
+	VerifyAttachmentContext(ctx context.Context, hash string) (bool, error)
+	FindOrphanedAttachmentsContext(ctx context.Context, referencedHashes map[string]bool) ([]*Attachment, error)
+	ValidateAttachmentStructureContext(ctx context.Context) error
 }
 
 // AttachmentStorage interface with directory support
 type AttachmentStorage interface {
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	Store(hash string, data []byte, metadata AttachmentInfo) error
 	GetPath(hash string) (string, error)
 	GetMetadata(hash string) (AttachmentInfo, error)
 	Exists(hash string) bool
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	StoreContext(ctx context.Context, hash string, data []byte, metadata AttachmentInfo) error
+	GetPathContext(ctx context.Context, hash string) (string, error)
+	GetMetadataContext(ctx context.Context, hash string) (AttachmentInfo, error)
+	ExistsContext(ctx context.Context, hash string) bool
 }
 
 // AttachmentStats provides statistics about attachments

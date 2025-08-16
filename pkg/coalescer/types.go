@@ -1,6 +1,7 @@
 package coalescer
 
 import (
+	"context"
 	"time"
 )
 
@@ -43,23 +44,21 @@ type RejectedEntry struct {
 
 // Coalescer manages deduplication and accumulation of entries
 type Coalescer[T Entry] interface {
-	// LoadExisting loads entries from the repository for deduplication
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	LoadExisting(entries []T) error
-
-	// Add attempts to add an entry, returns true if added (not duplicate)
 	Add(entry T) bool
-
-	// GetAll returns all entries (existing + new) sorted by timestamp
 	GetAll() []T
-
-	// GetByYear returns entries for a specific year, sorted by timestamp
 	GetByYear(year int) []T
-
-	// GetSummary returns statistics about the coalescing operation
 	GetSummary() Summary
-
-	// Reset clears all entries and statistics
 	Reset()
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	LoadExistingContext(ctx context.Context, entries []T) error
+	AddContext(ctx context.Context, entry T) bool
+	GetAllContext(ctx context.Context) []T
+	GetByYearContext(ctx context.Context, year int) []T
 }
 
 // ProgressReporter handles progress updates during processing

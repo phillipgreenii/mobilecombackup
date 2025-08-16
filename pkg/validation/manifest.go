@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -260,4 +261,54 @@ func (v *ManifestValidatorImpl) VerifyManifestChecksum() error {
 	}
 
 	return nil
+}
+
+// Context-aware method implementations
+
+// LoadManifestContext reads and parses files.yaml with context support
+func (v *ManifestValidatorImpl) LoadManifestContext(ctx context.Context) (*FileManifest, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	return v.LoadManifest()
+}
+
+// ValidateManifestFormatContext checks files.yaml structure and format with context support
+func (v *ManifestValidatorImpl) ValidateManifestFormatContext(ctx context.Context, manifest *FileManifest) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.ValidateManifestFormat(manifest)
+}
+
+// CheckManifestCompletenessContext verifies all files are listed with context support
+func (v *ManifestValidatorImpl) CheckManifestCompletenessContext(ctx context.Context, manifest *FileManifest) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.CheckManifestCompleteness(manifest)
+}
+
+// VerifyManifestChecksumContext validates files.yaml.sha256 with context support
+func (v *ManifestValidatorImpl) VerifyManifestChecksumContext(ctx context.Context) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	return v.VerifyManifestChecksum()
 }

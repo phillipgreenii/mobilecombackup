@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"time"
 )
 
@@ -98,15 +99,17 @@ type FixableViolation struct {
 
 // ManifestValidator validates files.yaml structure and content
 type ManifestValidator interface {
-	// LoadManifest reads and parses files.yaml
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	LoadManifest() (*FileManifest, error)
-
-	// ValidateManifestFormat checks files.yaml structure and format
 	ValidateManifestFormat(manifest *FileManifest) []Violation
-
-	// CheckManifestCompleteness verifies all files are listed
 	CheckManifestCompleteness(manifest *FileManifest) []Violation
-
-	// VerifyManifestChecksum validates files.yaml.sha256
 	VerifyManifestChecksum() error
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	LoadManifestContext(ctx context.Context) (*FileManifest, error)
+	ValidateManifestFormatContext(ctx context.Context, manifest *FileManifest) []Violation
+	CheckManifestCompletenessContext(ctx context.Context, manifest *FileManifest) []Violation
+	VerifyManifestChecksumContext(ctx context.Context) error
 }

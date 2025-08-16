@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -121,6 +122,20 @@ func (m *mockContactsReader) AddUnprocessedContacts(_, _ string) error {
 func (m *mockContactsReader) GetUnprocessedEntries() []contacts.UnprocessedEntry {
 	// Mock implementation - return empty slice for tests
 	return []contacts.UnprocessedEntry{}
+}
+
+// Context-aware method implementations for mock
+
+func (m *mockContactsReader) LoadContactsContext(ctx context.Context) error {
+	return m.LoadContacts()
+}
+
+func (m *mockContactsReader) GetAllContactsContext(ctx context.Context) ([]*contacts.Contact, error) {
+	return m.GetAllContacts()
+}
+
+func (m *mockContactsReader) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
+	return m.AddUnprocessedContacts(addresses, contactNames)
 }
 
 func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {

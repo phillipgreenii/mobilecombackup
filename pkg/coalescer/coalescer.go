@@ -67,6 +67,7 @@
 package coalescer
 
 import (
+	"context"
 	"sort"
 	"sync"
 )
@@ -87,75 +88,6 @@ func NewCoalescer[T Entry]() Coalescer[T] {
 	return &genericCoalescer[T]{
 		entries: make(map[string]T),
 	}
-}
-
-// LoadExisting loads entries from the repository for deduplication
-func (c *genericCoalescer[T]) LoadExisting(entries []T) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for _, entry := range entries {
-		hash := entry.Hash()
-		if _, exists := c.entries[hash]; !exists {
-			c.entries[hash] = entry
-			c.initialCount++
-		}
-	}
-
-	return nil
-}
-
-// Add attempts to add an entry, returns true if added (not duplicate)
-func (c *genericCoalescer[T]) Add(entry T) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	hash := entry.Hash()
-	if _, exists := c.entries[hash]; exists {
-		c.duplicates++
-		return false
-	}
-
-	c.entries[hash] = entry
-	return true
-}
-
-// GetAll returns all entries (existing + new) sorted by timestamp
-func (c *genericCoalescer[T]) GetAll() []T {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	result := make([]T, 0, len(c.entries))
-	for _, entry := range c.entries {
-		result = append(result, entry)
-	}
-
-	// Sort by timestamp, maintaining stable order for same timestamps
-	sort.SliceStable(result, func(i, j int) bool {
-		return result[i].Timestamp().Before(result[j].Timestamp())
-	})
-
-	return result
-}
-
-// GetByYear returns entries for a specific year, sorted by timestamp
-func (c *genericCoalescer[T]) GetByYear(year int) []T {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	result := make([]T, 0)
-	for _, entry := range c.entries {
-		if entry.Year() == year {
-			result = append(result, entry)
-		}
-	}
-
-	// Sort by timestamp, maintaining stable order for same timestamps
-	sort.SliceStable(result, func(i, j int) bool {
-		return result[i].Timestamp().Before(result[j].Timestamp())
-	})
-
-	return result
 }
 
 // GetSummary returns statistics about the coalescing operation
@@ -184,4 +116,135 @@ func (c *genericCoalescer[T]) Reset() {
 	c.entries = make(map[string]T)
 	c.initialCount = 0
 	c.duplicates = 0
+}
+
+// Context-aware methods implementing the new interface
+
+// LoadExistingContext loads entries from the repository for deduplication with context support
+func (c *genericCoalescer[T]) LoadExistingContext(ctx context.Context, entries []T) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	const checkInterval = 100
+	for i, entry := range entries {
+		// Check context every 100 entries to balance performance and responsiveness
+		if i%checkInterval == 0 && i > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+		}
+
+		hash := entry.Hash()
+		if _, exists := c.entries[hash]; !exists {
+			c.entries[hash] = entry
+			c.initialCount++
+		}
+	}
+
+	return nil
+}
+
+// AddContext attempts to add an entry with context support, returns true if added (not duplicate)
+func (c *genericCoalescer[T]) AddContext(ctx context.Context, entry T) bool {
+	// Check context before operation
+	select {
+	case <-ctx.Done():
+		return false
+	default:
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	hash := entry.Hash()
+	if _, exists := c.entries[hash]; exists {
+		c.duplicates++
+		return false
+	}
+
+	c.entries[hash] = entry
+	return true
+}
+
+// GetAllContext returns all entries (existing + new) sorted by timestamp with context support
+func (c *genericCoalescer[T]) GetAllContext(ctx context.Context) []T {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	result := make([]T, 0, len(c.entries))
+	for _, entry := range c.entries {
+		result = append(result, entry)
+	}
+
+	// Sort by timestamp, maintaining stable order for same timestamps
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Timestamp().Before(result[j].Timestamp())
+	})
+
+	return result
+}
+
+// GetByYearContext returns entries for a specific year, sorted by timestamp with context support
+func (c *genericCoalescer[T]) GetByYearContext(ctx context.Context, year int) []T {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	result := make([]T, 0)
+	for _, entry := range c.entries {
+		if entry.Year() == year {
+			result = append(result, entry)
+		}
+	}
+
+	// Sort by timestamp, maintaining stable order for same timestamps
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Timestamp().Before(result[j].Timestamp())
+	})
+
+	return result
+}
+
+// Legacy method implementations that delegate to context versions
+
+// LoadExisting delegates to LoadExistingContext with background context
+func (c *genericCoalescer[T]) LoadExisting(entries []T) error {
+	return c.LoadExistingContext(context.Background(), entries)
+}
+
+// Add delegates to AddContext with background context
+func (c *genericCoalescer[T]) Add(entry T) bool {
+	return c.AddContext(context.Background(), entry)
+}
+
+// GetAll delegates to GetAllContext with background context
+func (c *genericCoalescer[T]) GetAll() []T {
+	return c.GetAllContext(context.Background())
+}
+
+// GetByYear delegates to GetByYearContext with background context
+func (c *genericCoalescer[T]) GetByYear(year int) []T {
+	return c.GetByYearContext(context.Background(), year)
 }

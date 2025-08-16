@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -929,4 +930,83 @@ func parseXMLCollection[T any](
 			}
 		}
 	}
+}
+
+// Context-aware method implementations
+
+// ReadMessagesContext reads all messages from a specific year with context support
+func (r *XMLSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]Message, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return r.ReadMessages(year)
+}
+
+// StreamMessagesForYearContext streams messages for memory efficiency with context support
+func (r *XMLSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, callback func(Message) error) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return r.StreamMessagesForYear(year, callback)
+}
+
+// GetAttachmentRefsContext returns all attachment references in a year with context support
+func (r *XMLSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return r.GetAttachmentRefs(year)
+}
+
+// GetAllAttachmentRefsContext returns all attachment references across all years with context support
+func (r *XMLSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return r.GetAllAttachmentRefs()
+}
+
+// GetAvailableYearsContext returns list of years with SMS data with context support
+func (r *XMLSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return r.GetAvailableYears()
+}
+
+// GetMessageCountContext returns total number of messages for a year with context support
+func (r *XMLSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+	}
+	return r.GetMessageCount(year)
+}
+
+// ValidateSMSFileContext validates XML structure and year consistency with context support
+func (r *XMLSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return r.ValidateSMSFile(year)
 }

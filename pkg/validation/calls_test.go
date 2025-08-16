@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -53,6 +54,28 @@ func (m *mockCallsReader) ValidateCallsFile(year int) error {
 		return err
 	}
 	return nil
+}
+
+// Context-aware method implementations for mock
+
+func (m *mockCallsReader) ReadCallsContext(ctx context.Context, year int) ([]calls.Call, error) {
+	return m.ReadCalls(year)
+}
+
+func (m *mockCallsReader) StreamCallsForYearContext(ctx context.Context, year int, callback func(calls.Call) error) error {
+	return m.StreamCallsForYear(year, callback)
+}
+
+func (m *mockCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+	return m.GetAvailableYears()
+}
+
+func (m *mockCallsReader) GetCallsCountContext(ctx context.Context, year int) (int, error) {
+	return m.GetCallsCount(year)
+}
+
+func (m *mockCallsReader) ValidateCallsFileContext(ctx context.Context, year int) error {
+	return m.ValidateCallsFile(year)
 }
 
 func TestCallsValidatorImpl_ValidateCallsStructure(t *testing.T) {

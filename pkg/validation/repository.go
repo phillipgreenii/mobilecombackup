@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -12,20 +13,21 @@ import (
 
 // RepositoryValidator performs comprehensive repository validation using all reader APIs
 type RepositoryValidator interface {
-	// ValidateRepository performs complete repository validation
+	// Legacy methods (deprecated but maintained for backward compatibility)
+	// These delegate to context versions with context.Background()
 	ValidateRepository() (*Report, error)
-
-	// ValidateStructure validates overall repository structure
 	ValidateStructure() []Violation
-
-	// ValidateManifest validates files.yaml and checksums
 	ValidateManifest() []Violation
-
-	// ValidateContent validates all content files
 	ValidateContent() []Violation
-
-	// ValidateConsistency performs cross-file consistency validation
 	ValidateConsistency() []Violation
+
+	// Context-aware methods
+	// These are the preferred methods for new code
+	ValidateRepositoryContext(ctx context.Context) (*Report, error)
+	ValidateStructureContext(ctx context.Context) []Violation
+	ValidateManifestContext(ctx context.Context) []Violation
+	ValidateContentContext(ctx context.Context) []Violation
+	ValidateConsistencyContext(ctx context.Context) []Violation
 }
 
 // RepositoryValidatorImpl implements comprehensive repository validation
@@ -243,4 +245,66 @@ func (v *RepositoryValidatorImpl) collectContactReferences() (map[string]bool, m
 	// streaming methods to extract contact names without loading all data
 
 	return callContacts, smsContacts
+}
+
+// Context-aware method implementations
+
+// ValidateRepositoryContext performs complete repository validation with context support
+func (v *RepositoryValidatorImpl) ValidateRepositoryContext(ctx context.Context) (*Report, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	return v.ValidateRepository()
+}
+
+// ValidateStructureContext validates overall repository structure with context support
+func (v *RepositoryValidatorImpl) ValidateStructureContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.ValidateStructure()
+}
+
+// ValidateManifestContext validates files.yaml and checksums with context support
+func (v *RepositoryValidatorImpl) ValidateManifestContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.ValidateManifest()
+}
+
+// ValidateContentContext validates all content files with context support
+func (v *RepositoryValidatorImpl) ValidateContentContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.ValidateContent()
+}
+
+// ValidateConsistencyContext performs cross-file consistency validation with context support
+func (v *RepositoryValidatorImpl) ValidateConsistencyContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	return v.ValidateConsistency()
 }

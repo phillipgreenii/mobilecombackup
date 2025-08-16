@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -88,6 +89,40 @@ func (m *mockAttachmentReader) FindOrphanedAttachments(_ map[string]bool) ([]*at
 
 func (m *mockAttachmentReader) ValidateAttachmentStructure() error {
 	return m.structureError
+}
+
+// Context-aware method implementations for mock
+
+func (m *mockAttachmentReader) GetAttachmentContext(ctx context.Context, hash string) (*attachments.Attachment, error) {
+	return m.GetAttachment(hash)
+}
+
+func (m *mockAttachmentReader) ReadAttachmentContext(ctx context.Context, hash string) ([]byte, error) {
+	return m.ReadAttachment(hash)
+}
+
+func (m *mockAttachmentReader) AttachmentExistsContext(ctx context.Context, hash string) (bool, error) {
+	return m.AttachmentExists(hash)
+}
+
+func (m *mockAttachmentReader) ListAttachmentsContext(ctx context.Context) ([]*attachments.Attachment, error) {
+	return m.ListAttachments()
+}
+
+func (m *mockAttachmentReader) StreamAttachmentsContext(ctx context.Context, callback func(*attachments.Attachment) error) error {
+	return m.StreamAttachments(callback)
+}
+
+func (m *mockAttachmentReader) VerifyAttachmentContext(ctx context.Context, hash string) (bool, error) {
+	return m.VerifyAttachment(hash)
+}
+
+func (m *mockAttachmentReader) FindOrphanedAttachmentsContext(ctx context.Context, referencedHashes map[string]bool) ([]*attachments.Attachment, error) {
+	return m.FindOrphanedAttachments(referencedHashes)
+}
+
+func (m *mockAttachmentReader) ValidateAttachmentStructureContext(ctx context.Context) error {
+	return m.ValidateAttachmentStructure()
 }
 
 func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {

@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -514,4 +515,50 @@ func (cm *Manager) SaveContacts(path string) error {
 	}
 
 	return nil
+}
+
+// Context-aware method implementations
+
+// LoadContactsContext loads all contacts from contacts.yaml with context support
+func (cm *Manager) LoadContactsContext(ctx context.Context) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return cm.LoadContacts()
+}
+
+// GetAllContactsContext returns all contacts with context support
+func (cm *Manager) GetAllContactsContext(ctx context.Context) ([]*Contact, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return cm.GetAllContacts()
+}
+
+// AddUnprocessedContactsContext adds contacts from multi-address SMS parsing with context support
+func (cm *Manager) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return cm.AddUnprocessedContacts(addresses, contactNames)
+}
+
+// SaveContactsContext writes the current state to contacts.yaml with context support
+func (cm *Manager) SaveContactsContext(ctx context.Context, path string) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return cm.SaveContacts(path)
 }

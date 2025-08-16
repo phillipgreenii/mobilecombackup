@@ -1,6 +1,7 @@
 package attachments
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io/fs"
@@ -439,4 +440,96 @@ func (am *AttachmentManager) GetAttachmentStats(referencedHashes map[string]bool
 	})
 
 	return stats, err
+}
+
+// Context-aware method implementations
+
+// GetAttachmentContext retrieves attachment info by hash with context support
+func (am *AttachmentManager) GetAttachmentContext(ctx context.Context, hash string) (*Attachment, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return am.GetAttachment(hash)
+}
+
+// ReadAttachmentContext reads the actual file content with context support
+func (am *AttachmentManager) ReadAttachmentContext(ctx context.Context, hash string) ([]byte, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return am.ReadAttachment(hash)
+}
+
+// AttachmentExistsContext checks if attachment exists with context support
+func (am *AttachmentManager) AttachmentExistsContext(ctx context.Context, hash string) (bool, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	default:
+	}
+	return am.AttachmentExists(hash)
+}
+
+// ListAttachmentsContext returns all attachments in repository with context support
+func (am *AttachmentManager) ListAttachmentsContext(ctx context.Context) ([]*Attachment, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return am.ListAttachments()
+}
+
+// StreamAttachmentsContext streams attachment info for memory efficiency with context support
+func (am *AttachmentManager) StreamAttachmentsContext(ctx context.Context, callback func(*Attachment) error) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return am.StreamAttachments(callback)
+}
+
+// VerifyAttachmentContext checks if file content matches its hash with context support
+func (am *AttachmentManager) VerifyAttachmentContext(ctx context.Context, hash string) (bool, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	default:
+	}
+	return am.VerifyAttachment(hash)
+}
+
+// FindOrphanedAttachmentsContext returns attachments not referenced by any messages with context support
+func (am *AttachmentManager) FindOrphanedAttachmentsContext(
+	ctx context.Context, referencedHashes map[string]bool,
+) ([]*Attachment, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	return am.FindOrphanedAttachments(referencedHashes)
+}
+
+// ValidateAttachmentStructureContext validates the directory structure with context support
+func (am *AttachmentManager) ValidateAttachmentStructureContext(ctx context.Context) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return am.ValidateAttachmentStructure()
 }

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -69,6 +70,36 @@ func (m *mockSMSReader) ValidateSMSFile(year int) error {
 		return err
 	}
 	return nil
+}
+
+// Context-aware method implementations for mock
+
+func (m *mockSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]sms.Message, error) {
+	return m.ReadMessages(year)
+}
+
+func (m *mockSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, callback func(sms.Message) error) error {
+	return m.StreamMessagesForYear(year, callback)
+}
+
+func (m *mockSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
+	return m.GetAttachmentRefs(year)
+}
+
+func (m *mockSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
+	return m.GetAllAttachmentRefs()
+}
+
+func (m *mockSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+	return m.GetAvailableYears()
+}
+
+func (m *mockSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
+	return m.GetMessageCount(year)
+}
+
+func (m *mockSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
+	return m.ValidateSMSFile(year)
 }
 
 // mockSMS implements sms.Message interface for testing
