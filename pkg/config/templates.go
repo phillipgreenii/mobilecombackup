@@ -116,6 +116,16 @@ func GenerateConfigFile(templateName string, outputPath string) error {
 
 // GetConfigExample returns an example configuration with comments
 func GetConfigExample() string {
+	return getConfigHeader() +
+		getRepositoryConfigExample() +
+		getImportConfigExample() +
+		getValidationConfigExample() +
+		getLoggingConfigExample() +
+		getEnvironmentConfigExample()
+}
+
+// getConfigHeader returns the header section of the config example
+func getConfigHeader() string {
 	return `# mobilecombackup Configuration File
 # 
 # This file demonstrates all available configuration options.
@@ -125,7 +135,12 @@ func GetConfigExample() string {
 # 3. This configuration file
 # 4. Built-in defaults (lowest priority)
 
-# Repository configuration
+`
+}
+
+// getRepositoryConfigExample returns the repository configuration section
+func getRepositoryConfigExample() string {
+	return `# Repository configuration
 repository:
   # Root directory for the mobile backup repository
   root: "."
@@ -135,7 +150,12 @@ repository:
     dir: 0755   # Directory permissions (octal)
     file: 0644  # File permissions (octal)
 
-# Import configuration
+`
+}
+
+// getImportConfigExample returns the import configuration section
+func getImportConfigExample() string {
+	return `# Import configuration
 import:
   # Number of records to process in each batch
   batch_size: 1000
@@ -162,7 +182,12 @@ import:
       start: "2020-01-01T00:00:00Z"
       end: "2024-12-31T23:59:59Z"
 
-# Validation configuration
+`
+}
+
+// getValidationConfigExample returns the validation configuration section
+func getValidationConfigExample() string {
+	return `# Validation configuration
 validation:
   # Enable strict validation mode
   strict: false
@@ -182,7 +207,12 @@ validation:
   # Create backups before fixing issues
   backup_on_fix: true
 
-# Logging configuration
+`
+}
+
+// getLoggingConfigExample returns the logging configuration section
+func getLoggingConfigExample() string {
+	return `# Logging configuration
 logging:
   # Log level: debug, info, warn, error, off
   level: "info"
@@ -199,7 +229,12 @@ logging:
   # Optional: write logs to file (empty = stdout/stderr only)
   file: ""
 
-# Environment-specific settings
+`
+}
+
+// getEnvironmentConfigExample returns the environment configuration section
+func getEnvironmentConfigExample() string {
+	return `# Environment-specific settings
 # You can create separate config files for different environments:
 # - mobilecombackup-development.yaml
 # - mobilecombackup-test.yaml  
