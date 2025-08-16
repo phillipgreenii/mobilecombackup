@@ -27,54 +27,168 @@ The current codebase lacks context.Context support, making it impossible to grac
 Gradually introduce context support starting with core interfaces and working outward to implementation details.
 
 ### Complete Interface Updates
-**PLACEHOLDER: Interfaces requiring context.Context support (MUST BE UPDATED IN PHASE 0):**
+**ACTUAL INTERFACES FROM CODEBASE (Phase 0 Complete):**
 
 ```go
-// ⚠️  WARNING: These interface definitions do NOT match current codebase
-// ⚠️  Phase 0 MUST update these with actual current interfaces before implementation
-
-// PLACEHOLDER - REPLACE WITH ACTUAL CallsReader interface from pkg/calls/reader.go
+// calls.Reader interface from pkg/calls/reader.go
 type CallsReader interface {
-    // TODO: Document actual methods from codebase
-    // TODO: Add context versions of each method
+    // Current methods (to be enhanced with context versions)
+    ReadCalls(year int) ([]Call, error)
+    StreamCallsForYear(year int, callback func(Call) error) error
+    GetAvailableYears() ([]int, error)
+    GetCallsCount(year int) (int, error)
+    ValidateCallsFile(year int) error
+    
+    // NEW: Context-aware versions
+    ReadCallsContext(ctx context.Context, year int) ([]Call, error)
+    StreamCallsForYearContext(ctx context.Context, year int, callback func(Call) error) error
+    GetAvailableYearsContext(ctx context.Context) ([]int, error)
+    GetCallsCountContext(ctx context.Context, year int) (int, error)
+    ValidateCallsFileContext(ctx context.Context, year int) error
 }
 
-// PLACEHOLDER - REPLACE WITH ACTUAL SMSReader interface  
+// sms.Reader interface from pkg/sms/reader.go
 type SMSReader interface {
-    // TODO: Document actual methods from codebase
-    // TODO: Add context versions of each method
+    // Current methods (to be enhanced with context versions)
+    ReadMessages(year int) ([]Message, error)
+    StreamMessagesForYear(year int, callback func(Message) error) error
+    GetAttachmentRefs(year int) ([]string, error)
+    GetAllAttachmentRefs() (map[string]bool, error)
+    GetAvailableYears() ([]int, error)
+    GetMessageCount(year int) (int, error)
+    ValidateSMSFile(year int) error
+    
+    // NEW: Context-aware versions
+    ReadMessagesContext(ctx context.Context, year int) ([]Message, error)
+    StreamMessagesForYearContext(ctx context.Context, year int, callback func(Message) error) error
+    GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error)
+    GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error)
+    GetAvailableYearsContext(ctx context.Context) ([]int, error)
+    GetMessageCountContext(ctx context.Context, year int) (int, error)
+    ValidateSMSFileContext(ctx context.Context, year int) error
 }
 
+// contacts.Reader interface from pkg/contacts/types.go
 type ContactsReader interface {
-    ReadContacts(ctx context.Context) ([]Contact, error)
-    UpdateContacts(ctx context.Context, contacts []Contact) error
+    // Current methods (to be enhanced with context versions)
+    LoadContacts() error
+    GetContactByNumber(number string) (string, bool)
+    GetNumbersByContact(name string) ([]string, bool)
+    GetAllContacts() ([]*Contact, error)
+    ContactExists(name string) bool
+    IsKnownNumber(number string) bool
+    GetContactsCount() int
+    AddUnprocessedContacts(addresses, contactNames string) error
+    GetUnprocessedEntries() []UnprocessedEntry
+    
+    // NEW: Context-aware versions
+    LoadContactsContext(ctx context.Context) error
+    GetAllContactsContext(ctx context.Context) ([]*Contact, error)
+    AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error
 }
 
-// Storage interfaces
+// contacts.Writer interface from pkg/contacts/types.go
+type ContactsWriter interface {
+    // Current methods (to be enhanced with context versions)
+    SaveContacts(path string) error
+    
+    // NEW: Context-aware versions
+    SaveContactsContext(ctx context.Context, path string) error
+}
+
+// attachments.AttachmentReader interface from pkg/attachments/types.go
+type AttachmentReader interface {
+    // Current methods (to be enhanced with context versions)
+    GetAttachment(hash string) (*Attachment, error)
+    ReadAttachment(hash string) ([]byte, error)
+    AttachmentExists(hash string) (bool, error)
+    ListAttachments() ([]*Attachment, error)
+    StreamAttachments(callback func(*Attachment) error) error
+    VerifyAttachment(hash string) (bool, error)
+    GetAttachmentPath(hash string) string
+    FindOrphanedAttachments(referencedHashes map[string]bool) ([]*Attachment, error)
+    ValidateAttachmentStructure() error
+    
+    // NEW: Context-aware versions
+    GetAttachmentContext(ctx context.Context, hash string) (*Attachment, error)
+    ReadAttachmentContext(ctx context.Context, hash string) ([]byte, error)
+    AttachmentExistsContext(ctx context.Context, hash string) (bool, error)
+    ListAttachmentsContext(ctx context.Context) ([]*Attachment, error)
+    StreamAttachmentsContext(ctx context.Context, callback func(*Attachment) error) error
+    VerifyAttachmentContext(ctx context.Context, hash string) (bool, error)
+    FindOrphanedAttachmentsContext(ctx context.Context, referencedHashes map[string]bool) ([]*Attachment, error)
+    ValidateAttachmentStructureContext(ctx context.Context) error
+}
+
+// attachments.AttachmentStorage interface from pkg/attachments/types.go
 type AttachmentStorage interface {
-    Store(ctx context.Context, hash string, data []byte, metadata AttachmentInfo) error
-    GetPath(ctx context.Context, hash string) (string, error)
-    GetMetadata(ctx context.Context, hash string) (AttachmentInfo, error)
-    Exists(ctx context.Context, hash string) bool
+    // Current methods (to be enhanced with context versions)
+    Store(hash string, data []byte, metadata AttachmentInfo) error
+    GetPath(hash string) (string, error)
+    GetMetadata(hash string) (AttachmentInfo, error)
+    Exists(hash string) bool
+    
+    // NEW: Context-aware versions
+    StoreContext(ctx context.Context, hash string, data []byte, metadata AttachmentInfo) error
+    GetPathContext(ctx context.Context, hash string) (string, error)
+    GetMetadataContext(ctx context.Context, hash string) (AttachmentInfo, error)
+    ExistsContext(ctx context.Context, hash string) bool
 }
 
-// Processing interfaces
+// coalescer.Coalescer interface from pkg/coalescer/types.go
 type Coalescer[T Entry] interface {
-    LoadExisting(ctx context.Context, entries []T) error
-    Add(ctx context.Context, entry T) bool
-    GetAll(ctx context.Context) []T
+    // Current methods (to be enhanced with context versions)
+    LoadExisting(entries []T) error
+    Add(entry T) bool
+    GetAll() []T
+    GetByYear(year int) []T
+    GetSummary() Summary
+    Reset()
+    
+    // NEW: Context-aware versions
+    LoadExistingContext(ctx context.Context, entries []T) error
+    AddContext(ctx context.Context, entry T) bool
+    GetAllContext(ctx context.Context) []T
+    GetByYearContext(ctx context.Context, year int) []T
 }
 
-// Validation interfaces  
+// validation.RepositoryValidator interface from pkg/validation/repository.go
 type RepositoryValidator interface {
-    ValidateRepository(ctx context.Context) (*ValidationReport, error)
-    ValidateStructure(ctx context.Context) []ValidationViolation
-    ValidateManifest(ctx context.Context) []ValidationViolation
+    // Current methods (to be enhanced with context versions)
+    ValidateRepository() (*Report, error)
+    ValidateStructure() []Violation
+    ValidateManifest() []Violation
+    ValidateContent() []Violation
+    ValidateConsistency() []Violation
+    
+    // NEW: Context-aware versions
+    ValidateRepositoryContext(ctx context.Context) (*Report, error)
+    ValidateStructureContext(ctx context.Context) []Violation
+    ValidateManifestContext(ctx context.Context) []Violation
+    ValidateContentContext(ctx context.Context) []Violation
+    ValidateConsistencyContext(ctx context.Context) []Violation
+}
+
+// validation.ManifestValidator interface from pkg/validation/types.go
+type ManifestValidator interface {
+    // Current methods (to be enhanced with context versions)
+    LoadManifest() (*FileManifest, error)
+    ValidateManifestFormat(manifest *FileManifest) []Violation
+    CheckManifestCompleteness(manifest *FileManifest) []Violation
+    VerifyManifestChecksum() error
+    
+    // NEW: Context-aware versions
+    LoadManifestContext(ctx context.Context) (*FileManifest, error)
+    ValidateManifestFormatContext(ctx context.Context, manifest *FileManifest) []Violation
+    CheckManifestCompletenessContext(ctx context.Context, manifest *FileManifest) []Violation
+    VerifyManifestChecksumContext(ctx context.Context) error
 }
 ```
 
 ### Backward Compatibility Strategy
-**Option: New methods with context, keep old ones**
+**DECISION: Context Suffix Approach (Option A)**
+
+After analyzing the codebase dependencies, we're using the Context suffix approach:
 ```go
 type CallsReader interface {
     // Legacy methods (deprecated but maintained)
@@ -180,18 +294,70 @@ func runImportCommand(cmd *cobra.Command, args []string) error {
   - `pkg/validation/types.go`: Document validator interfaces (if any)
   - **Replace ALL "VERIFY" sections in this spec** with actual interface definitions
 
-- [ ] **Choose and document backward compatibility strategy**:
+- [x] **Choose and document backward compatibility strategy**: Context suffix approach chosen
   ```
-  DECISION NEEDED: 
-  Option A: Context suffix approach (ReadCallsContext, etc.)
-  Option B: Interface versioning (CallsReaderV2)  
-  Option C: Direct change + adapter functions
+  DECISION: Option A - Context suffix approach (ReadCallsContext, etc.)
   
-  Document chosen approach with rationale here.
+  RATIONALE:
+  - Minimizes breaking changes for existing code
+  - Clear naming convention indicates context-aware operations
+  - Allows gradual migration of codebase
+  - Standard Go practice (see database/sql package evolution)
+  - Legacy methods delegate to context versions with context.Background()
   ```
 
-- [ ] **Create dependency map**: Document which packages/files use each interface
-- [ ] **Integration with existing context**: Document how to integrate with existing context usage in logging/metrics packages
+- [x] **Create dependency map**: Document which packages/files use each interface
+  ```
+  DEPENDENCY MAP:
+  
+  calls.Reader:
+  - pkg/validation/calls.go (CallsValidator)
+  - pkg/validation/repository.go (RepositoryValidatorImpl)
+  - pkg/validation/reader_adapters.go (validation adapters)
+  - cmd/mobilecombackup/cmd/info.go (CLI info command)
+  
+  sms.Reader:
+  - pkg/validation/sms.go (SMSValidator)
+  - pkg/validation/attachments.go (AttachmentsValidator)
+  - pkg/validation/repository.go (RepositoryValidatorImpl)
+  - pkg/validation/reader_adapters.go (validation adapters)
+  - cmd/mobilecombackup/cmd/info.go (CLI info command)
+  - cmd/mobilecombackup/cmd/validate.go (CLI validate command)
+  
+  contacts.Reader:
+  - pkg/validation/contacts.go (ContactsValidator)
+  - pkg/validation/repository.go (RepositoryValidatorImpl)
+  - cmd/mobilecombackup/cmd/info.go (CLI info command)
+  
+  attachments.AttachmentReader:
+  - pkg/validation/attachments.go (AttachmentsValidator)
+  - pkg/validation/repository.go (RepositoryValidatorImpl)
+  - cmd/mobilecombackup/cmd/info.go (CLI info command)
+  
+  MIGRATION PRIORITY:
+  1. Core readers (calls, sms, contacts, attachments) - used by validation
+  2. Validation interfaces - used by CLI commands
+  3. CLI commands - final integration point
+  ```
+- [x] **Integration with existing context**: Document how to integrate with existing context usage in logging/metrics packages
+  ```
+  INTEGRATION PLAN:
+  
+  Existing Context Usage:
+  - pkg/logging/types.go: Logger.WithContext(ctx) for request/operation tracking
+  - pkg/metrics/server.go: Server.Stop(ctx) for graceful shutdown
+  - Context keys: RequestIDKey, OperationIDKey for tracing
+  
+  Integration Strategy:
+  1. Propagate request/operation IDs through context chain
+  2. Use existing ContextLogger for operations with context
+  3. Add timeout context creation in CLI commands
+  4. Integrate with metrics server shutdown patterns
+  5. Use context values for operation tracking in long-running tasks
+  
+  Context Flow:
+  CLI Command -> Context with timeout/signals -> Reader operations -> Logger with context
+  ```
 - [ ] **Define migration timeline**: Which interfaces/packages to update first based on dependencies
 
 ### Phase 1: Core Interface Updates (Week 2)
