@@ -33,57 +33,93 @@ func NewContactsManager(repoPath string) *Manager {
 
 // LoadContacts loads all contacts from contacts.yaml
 func (cm *Manager) LoadContacts() error {
+	contactsData, err := cm.loadContactsFile()
+	if err != nil {
+		return err
+	}
+
+	// Initialize data structures
+	cm.contacts = make(map[string]*Contact)
+	cm.numberToName = make(map[string]string)
+	cm.unprocessed = make(map[string][]string)
+
+	// Build lookup maps and validate
+	if err := cm.buildContactMaps(contactsData.Contacts); err != nil {
+		return err
+	}
+
+	// Process unprocessed entries
+	cm.processUnprocessedEntries(contactsData.Unprocessed)
+
+	cm.loaded = true
+	return nil
+}
+
+// loadContactsFile reads and parses the contacts.yaml file
+func (cm *Manager) loadContactsFile() (*Data, error) {
 	contactsPath := filepath.Join(cm.repoPath, "contacts.yaml")
 
 	// Check if file exists
 	if _, err := os.Stat(contactsPath); os.IsNotExist(err) {
 		// Missing contacts.yaml is not an error, just means no contacts
-		cm.loaded = true
-		return nil
+		return &Data{}, nil
 	}
 
 	data, err := os.ReadFile(contactsPath) // #nosec G304
 	if err != nil {
-		return fmt.Errorf("failed to read contacts.yaml: %w", err)
+		return nil, fmt.Errorf("failed to read contacts.yaml: %w", err)
 	}
 
 	var contactsData Data
 	if err := yaml.Unmarshal(data, &contactsData); err != nil {
 		// Try parsing with old format (string array)
-		var oldFormatData struct {
-			Contacts    []*Contact `yaml:"contacts"`
-			Unprocessed []string   `yaml:"unprocessed,omitempty"`
+		if convertedData, convertErr := cm.convertOldFormat(data); convertErr == nil {
+			return convertedData, nil
 		}
-		if oldErr := yaml.Unmarshal(data, &oldFormatData); oldErr != nil {
-			return fmt.Errorf("failed to parse contacts.yaml: %w", err)
-		}
+		return nil, fmt.Errorf("failed to parse contacts.yaml: %w", err)
+	}
 
-		// Convert old format to new format
-		contactsData.Contacts = oldFormatData.Contacts
-		for _, entry := range oldFormatData.Unprocessed {
-			// Parse "phone: name" format
-			parts := strings.SplitN(entry, ":", 2)
-			if len(parts) == 2 {
-				phone := strings.TrimSpace(parts[0])
-				name := strings.TrimSpace(parts[1])
-				if phone != "" && name != "" {
-					contactsData.Unprocessed = append(contactsData.Unprocessed, UnprocessedEntry{
-						PhoneNumber:  phone,
-						ContactNames: []string{name},
-					})
-				}
+	return &contactsData, nil
+}
+
+// convertOldFormat converts old string array format to new format
+func (cm *Manager) convertOldFormat(data []byte) (*Data, error) {
+	var oldFormatData struct {
+		Contacts    []*Contact `yaml:"contacts"`
+		Unprocessed []string   `yaml:"unprocessed,omitempty"`
+	}
+	if err := yaml.Unmarshal(data, &oldFormatData); err != nil {
+		return nil, err
+	}
+
+	// Convert old format to new format
+	contactsData := &Data{
+		Contacts: oldFormatData.Contacts,
+	}
+
+	for _, entry := range oldFormatData.Unprocessed {
+		// Parse "phone: name" format
+		parts := strings.SplitN(entry, ":", 2)
+		if len(parts) == 2 {
+			phone := strings.TrimSpace(parts[0])
+			name := strings.TrimSpace(parts[1])
+			if phone != "" && name != "" {
+				contactsData.Unprocessed = append(contactsData.Unprocessed, UnprocessedEntry{
+					PhoneNumber:  phone,
+					ContactNames: []string{name},
+				})
 			}
 		}
 	}
 
-	// Clear existing data
-	cm.contacts = make(map[string]*Contact)
-	cm.numberToName = make(map[string]string)
-	cm.unprocessed = make(map[string][]string)
+	return contactsData, nil
+}
 
-	// Build lookup maps
+// buildContactMaps builds lookup maps for contacts and validates for duplicates
+func (cm *Manager) buildContactMaps(contacts []*Contact) error {
 	duplicateNumbers := make(map[string][]string) // normalized number -> contact names
-	for _, contact := range contactsData.Contacts {
+
+	for _, contact := range contacts {
 		if contact.Name == "" {
 			return fmt.Errorf("contact with empty name found")
 		}
@@ -111,25 +147,34 @@ func (cm *Manager) LoadContacts() error {
 	}
 
 	// Report duplicate numbers as errors
-	if len(duplicateNumbers) > 0 {
-		var errors []string
-		for number, names := range duplicateNumbers {
-			// Remove duplicates from names list
-			uniqueNames := make(map[string]bool)
-			for _, name := range names {
-				uniqueNames[name] = true
-			}
-			var nameList []string
-			for name := range uniqueNames {
-				nameList = append(nameList, name)
-			}
-			errors = append(errors, fmt.Sprintf("number %s assigned to multiple contacts: %v", number, nameList))
-		}
-		return fmt.Errorf("duplicate phone numbers found: %s", strings.Join(errors, "; "))
+	return cm.validateNoDuplicateNumbers(duplicateNumbers)
+}
+
+// validateNoDuplicateNumbers checks for and reports duplicate phone numbers
+func (cm *Manager) validateNoDuplicateNumbers(duplicateNumbers map[string][]string) error {
+	if len(duplicateNumbers) == 0 {
+		return nil
 	}
 
-	// Parse unprocessed section
-	for _, entry := range contactsData.Unprocessed {
+	errors := make([]string, 0, len(duplicateNumbers))
+	for number, names := range duplicateNumbers {
+		// Remove duplicates from names list
+		uniqueNames := make(map[string]bool)
+		for _, name := range names {
+			uniqueNames[name] = true
+		}
+		var nameList []string
+		for name := range uniqueNames {
+			nameList = append(nameList, name)
+		}
+		errors = append(errors, fmt.Sprintf("number %s assigned to multiple contacts: %v", number, nameList))
+	}
+	return fmt.Errorf("duplicate phone numbers found: %s", strings.Join(errors, "; "))
+}
+
+// processUnprocessedEntries processes the unprocessed entries section
+func (cm *Manager) processUnprocessedEntries(unprocessed []UnprocessedEntry) {
+	for _, entry := range unprocessed {
 		phone := entry.PhoneNumber
 		names := entry.ContactNames
 
@@ -144,9 +189,6 @@ func (cm *Manager) LoadContacts() error {
 			}
 		}
 	}
-
-	cm.loaded = true
-	return nil
 }
 
 // isUnknownContact checks if a contact name represents an unknown contact placeholder
