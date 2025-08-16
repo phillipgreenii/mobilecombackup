@@ -100,8 +100,10 @@ func GenerateConfigFile(templateName string, outputPath string) error {
 	}
 
 	// Add template header comment
-	header := fmt.Sprintf("# Generated configuration file: %s\n# %s\n#\n# For more information, see: https://github.com/phillipgreen/mobilecombackup\n\n",
-		template.Name, template.Description)
+	header := fmt.Sprintf(
+		"# Generated configuration file: %s\n# %s\n#\n# For more information, see: https://github.com/phillipgreen/mobilecombackup\n\n",
+		template.Name, template.Description,
+	)
 	content := header + string(data)
 
 	// Write to file

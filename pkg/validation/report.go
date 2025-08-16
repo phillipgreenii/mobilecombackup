@@ -65,7 +65,11 @@ func NewReportGenerator() ReportGenerator {
 }
 
 // GenerateReport creates a formatted validation report
-func (r *ReportGeneratorImpl) GenerateReport(report *ValidationReport, format ReportFormat, options *ReportFilterOptions) (string, error) {
+func (r *ReportGeneratorImpl) GenerateReport(
+	report *ValidationReport,
+	format ReportFormat,
+	options *ReportFilterOptions,
+) (string, error) {
 	if report == nil {
 		return "", fmt.Errorf("validation report cannot be nil")
 	}

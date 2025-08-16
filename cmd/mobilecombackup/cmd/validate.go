@@ -453,7 +453,12 @@ func executeOrphanRemoval(
 }
 
 // removeOrphanedAttachment removes a single orphaned attachment
-func removeOrphanedAttachment(attachment *attachments.Attachment, repoPath string, result *OrphanRemovalResult, emptyDirs map[string]bool) {
+func removeOrphanedAttachment(
+	attachment *attachments.Attachment,
+	repoPath string,
+	result *OrphanRemovalResult,
+	emptyDirs map[string]bool,
+) {
 	fullPath := filepath.Join(repoPath, attachment.Path)
 
 	// Track the directory for potential cleanup

@@ -212,7 +212,11 @@ func (a *AutofixerImpl) handleDirectoryViolation(
 }
 
 // fixFileViolations handles missing file violations
-func (a *AutofixerImpl) fixFileViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+func (a *AutofixerImpl) fixFileViolations(
+	violations []validation.ValidationViolation,
+	options AutofixOptions,
+	report *AutofixReport,
+) {
 	fileViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.MissingFile,
 		validation.MissingMarkerFile,
@@ -259,7 +263,11 @@ func (a *AutofixerImpl) handleFileViolation(violation validation.ValidationViola
 }
 
 // fixContentViolations handles content-related violations
-func (a *AutofixerImpl) fixContentViolations(violations []validation.ValidationViolation, options AutofixOptions, report *AutofixReport) {
+func (a *AutofixerImpl) fixContentViolations(
+	violations []validation.ValidationViolation,
+	options AutofixOptions,
+	report *AutofixReport,
+) {
 	contentViolations := filterViolationsByTypes(violations, []validation.ViolationType{
 		validation.CountMismatch,
 		validation.SizeMismatch,
@@ -297,7 +305,10 @@ func (a *AutofixerImpl) handleContentViolationDryRun(violation validation.Valida
 		fixAction = OperationUpdateXMLCount
 		details = fmt.Sprintf("Would update count attribute in %s", violation.File)
 		if violation.Expected != "" && violation.Actual != "" {
-			details = fmt.Sprintf("Would update count attribute in %s (from %s to %s)", violation.File, violation.Actual, violation.Expected)
+			details = fmt.Sprintf(
+				"Would update count attribute in %s (from %s to %s)",
+				violation.File, violation.Actual, violation.Expected,
+			)
 		}
 	case validation.SizeMismatch:
 		fixAction = OperationUpdateFile
@@ -390,7 +401,10 @@ func (a *AutofixerImpl) CanFix(violationType validation.ViolationType) bool {
 
 // Helper functions
 
-func filterViolationsByTypes(violations []validation.ValidationViolation, types []validation.ViolationType) []validation.ValidationViolation {
+func filterViolationsByTypes(
+	violations []validation.ValidationViolation,
+	types []validation.ViolationType,
+) []validation.ValidationViolation {
 	var filtered []validation.ValidationViolation
 	typeMap := make(map[validation.ViolationType]bool)
 	for _, t := range types {

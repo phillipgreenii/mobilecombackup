@@ -195,7 +195,11 @@ type ReprocessingStats struct {
 type extractorFunc func(string, *contacts.ContactsManager) (int, error)
 
 // reprocessFiles is a generic function to process XML files in a directory
-func reprocessFiles(repoRoot, dirName string, contactsManager *contacts.ContactsManager, extractor extractorFunc) (*ReprocessingStats, error) {
+func reprocessFiles(
+	repoRoot, dirName string,
+	contactsManager *contacts.ContactsManager,
+	extractor extractorFunc,
+) (*ReprocessingStats, error) {
 	stats := &ReprocessingStats{}
 
 	dataDir := filepath.Join(repoRoot, dirName)

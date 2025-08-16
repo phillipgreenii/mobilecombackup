@@ -114,7 +114,10 @@ func NewOptimizedRepositoryValidator(base RepositoryValidator) OptimizedReposito
 }
 
 // ValidateRepositoryWithOptions performs validation with performance controls
-func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(ctx context.Context, options *PerformanceOptions) (*ValidationReport, error) {
+func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(
+	ctx context.Context,
+	options *PerformanceOptions,
+) (*ValidationReport, error) {
 	if options == nil {
 		options = DefaultPerformanceOptions()
 	}
@@ -277,7 +280,11 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 }
 
 // validateSequential performs validation sequentially with optimizations
-func (v *OptimizedRepositoryValidatorImpl) validateSequential(ctx context.Context, report *ValidationReport, options *PerformanceOptions) (*ValidationReport, error) {
+func (v *OptimizedRepositoryValidatorImpl) validateSequential(
+	ctx context.Context,
+	report *ValidationReport,
+	options *PerformanceOptions,
+) (*ValidationReport, error) {
 	tasks := []struct {
 		name string
 		fn   func() []ValidationViolation

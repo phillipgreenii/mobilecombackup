@@ -33,7 +33,11 @@ type AttachmentsValidatorImpl struct {
 }
 
 // NewAttachmentsValidator creates a new attachments validator
-func NewAttachmentsValidator(repositoryRoot string, attachmentReader attachments.AttachmentReader, smsReader sms.SMSReader) AttachmentsValidator {
+func NewAttachmentsValidator(
+	repositoryRoot string,
+	attachmentReader attachments.AttachmentReader,
+	smsReader sms.SMSReader,
+) AttachmentsValidator {
 	return &AttachmentsValidatorImpl{
 		repositoryRoot:   repositoryRoot,
 		attachmentReader: attachmentReader,
@@ -400,7 +404,10 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 			Type:     ChecksumMismatch,
 			Severity: SeverityError,
 			File:     attachment.Path,
-			Message:  fmt.Sprintf("Metadata hash mismatch for attachment %s: expected %s, got %s", attachment.Hash, attachment.Hash, metadata.Hash),
+			Message: fmt.Sprintf(
+				"Metadata hash mismatch for attachment %s: expected %s, got %s",
+				attachment.Hash, attachment.Hash, metadata.Hash,
+			),
 			Expected: attachment.Hash,
 			Actual:   metadata.Hash,
 		})
@@ -411,7 +418,10 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 			Type:     SizeMismatch,
 			Severity: SeverityError,
 			File:     attachment.Path,
-			Message:  fmt.Sprintf("Metadata size mismatch for attachment %s: expected %d, got %d", attachment.Hash, attachment.Size, metadata.Size),
+			Message: fmt.Sprintf(
+				"Metadata size mismatch for attachment %s: expected %d, got %d",
+				attachment.Hash, attachment.Size, metadata.Size,
+			),
 			Expected: fmt.Sprintf("%d bytes", attachment.Size),
 			Actual:   fmt.Sprintf("%d bytes", metadata.Size),
 		})
@@ -446,7 +456,10 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 			Type:     StructureViolation,
 			Severity: SeverityWarning,
 			File:     attachment.Path,
-			Message:  fmt.Sprintf("Attachment filename doesn't match expected pattern for %s: expected %s, got %s", attachment.Hash, expectedFilename, actualFilename),
+			Message: fmt.Sprintf(
+				"Attachment filename doesn't match expected pattern for %s: expected %s, got %s",
+				attachment.Hash, expectedFilename, actualFilename,
+			),
 			Expected: expectedFilename,
 			Actual:   actualFilename,
 		})

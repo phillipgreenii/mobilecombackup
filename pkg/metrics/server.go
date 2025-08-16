@@ -174,7 +174,7 @@ func (s *Server) handleLiveness(w http.ResponseWriter, _ *http.Request) {
 }
 
 // handleInfo handles application info endpoint
-func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleInfo(w http.ResponseWriter, _ *http.Request) {
 	response := map[string]interface{}{
 		"application": "mobilecombackup",
 		"version":     "dev", // This would be injected at build time

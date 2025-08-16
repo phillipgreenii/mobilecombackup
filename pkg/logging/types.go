@@ -73,7 +73,9 @@ type LogConfig struct {
 type ContextKey string
 
 const (
-	RequestIDKey   ContextKey = "request_id"
+	// RequestIDKey is the context key used for request ID tracking
+	RequestIDKey ContextKey = "request_id"
+	// OperationIDKey is the context key used for operation ID tracking
 	OperationIDKey ContextKey = "operation_id"
 )
 
