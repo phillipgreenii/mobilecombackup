@@ -148,6 +148,191 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 	}
 }
 
+// determineExtractableContent determines what content to extract from the MMS part
+func (ae *AttachmentExtractor) determineExtractableContent(part *MMSPart) (string, bool, *AttachmentExtractionResult) {
+	// Log extraction attempt for debugging and auditing
+	log.Printf("[ATTACHMENT] Processing part: ContentType=%s, DataLen=%d, TextLen=%d, ContentDisp=%s, Filename=%s",
+		part.ContentType, len(part.Data), len(part.Text), part.ContentDisp, part.Filename)
+
+	// Check if this is explicitly marked as an attachment
+	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
+
+	// Determine what content we have to extract
+	var contentToExtract string
+	var isBase64 bool
+
+	switch {
+	case part.Data != "" && part.Data != "null":
+		// Binary data (base64 encoded)
+		contentToExtract = part.Data
+		isBase64 = true
+		log.Printf("[ATTACHMENT] Found base64 data, size: %d bytes", len(contentToExtract))
+	case part.Text != "" && part.Text != "null" && isExplicitAttachment:
+		// Text content marked as attachment
+		contentToExtract = part.Text
+		isBase64 = false
+		log.Printf("[ATTACHMENT] Found text content marked as attachment, size: %d bytes", len(contentToExtract))
+	default:
+		// No extractable content - skip
+		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
+			part.Data, part.Text, isExplicitAttachment)
+		return "", false, &AttachmentExtractionResult{
+			Action:     ActionSkipped,
+			Reason:     "no-data",
+			UpdatePart: false,
+		}
+	}
+
+	return contentToExtract, isBase64, nil
+}
+
+// validateExtractionRequirements validates content type and size requirements
+func (ae *AttachmentExtractor) validateExtractionRequirements(
+	part *MMSPart, contentToExtract string, isBase64 bool, config ContentTypeConfig,
+) *AttachmentExtractionResult {
+	// Check if this is explicitly marked as an attachment
+	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
+
+	// Check content type extraction decision with comprehensive logging
+	decision := ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config)
+	if !decision.ShouldExtract {
+		log.Printf("[ATTACHMENT] Content type filtering: %s - %s (category: %s)",
+			decision.Reason, part.ContentType, decision.Category)
+		return &AttachmentExtractionResult{
+			Action:     ActionSkipped,
+			Reason:     "content-type-filtered",
+			UpdatePart: false,
+		}
+	}
+
+	log.Printf("[ATTACHMENT] Content type approved for extraction: %s - %s",
+		part.ContentType, decision.Reason)
+
+	// For text content, skip size check as text attachments can be small
+	// For binary content, skip small files (likely metadata)
+	if isBase64 && len(contentToExtract) < 1024 {
+		// Too small - skip
+		log.Printf("[ATTACHMENT] Skipping small binary content: %d bytes (threshold: 1024)", len(contentToExtract))
+		return &AttachmentExtractionResult{
+			Action:     ActionSkipped,
+			Reason:     "too-small",
+			UpdatePart: false,
+		}
+	}
+
+	// Proceed with extraction
+	log.Printf("[ATTACHMENT] Proceeding with extraction for content type: %s", part.ContentType)
+	return nil
+}
+
+// decodeContent decodes the content based on whether it's base64 or text
+func (ae *AttachmentExtractor) decodeContent(contentToExtract string, isBase64 bool) ([]byte, error) {
+	// Decode content based on type
+	var decodedData []byte
+	var err error
+
+	if isBase64 {
+		// Decode base64 data
+		log.Printf("[ATTACHMENT] Decoding base64 data (%d chars)", len(contentToExtract))
+		decodedData, err = base64.StdEncoding.DecodeString(contentToExtract)
+		if err != nil {
+			// Failed to decode base64 data
+			log.Printf("[ATTACHMENT] Failed to decode base64 data: %v", err)
+			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
+		}
+		log.Printf("[ATTACHMENT] Decoded to %d bytes", len(decodedData))
+	} else {
+		// Use text content as-is (UTF-8 encoded)
+		decodedData = []byte(contentToExtract)
+		log.Printf("[ATTACHMENT] Using text content as-is: %d bytes", len(decodedData))
+	}
+
+	return decodedData, nil
+}
+
+// handleAttachmentStorage handles either referencing existing attachments or creating new ones
+func (ae *AttachmentExtractor) handleAttachmentStorage(part *MMSPart, decodedData []byte) (*AttachmentExtractionResult, error) {
+	// Calculate SHA-256 hash
+	hasher := sha256.New()
+	hasher.Write(decodedData)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+	log.Printf("[ATTACHMENT] Calculated hash: %s", hash)
+
+	// Check if attachment already exists
+	exists, err := ae.attachmentManager.AttachmentExists(hash)
+	if err != nil {
+		log.Printf("[ATTACHMENT] Failed to check attachment existence: %v", err)
+		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
+	}
+
+	if exists {
+		return ae.referenceExistingAttachment(hash, decodedData)
+	}
+
+	return ae.createNewAttachment(part, decodedData, hash)
+}
+
+// referenceExistingAttachment creates a result for an existing attachment
+func (ae *AttachmentExtractor) referenceExistingAttachment(hash string, decodedData []byte) (*AttachmentExtractionResult, error) {
+	// Attachment already exists, get its current path
+	attachment, err := ae.attachmentManager.GetAttachment(hash)
+	if err != nil {
+		log.Printf("[ATTACHMENT] Failed to get existing attachment path: %v", err)
+		return nil, fmt.Errorf("failed to get existing attachment path: %w", err)
+	}
+
+	log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachment.Path)
+	return &AttachmentExtractionResult{
+		Action:         ActionReferenced,
+		Hash:           hash,
+		Path:           attachment.Path,
+		OriginalSize:   int64(len(decodedData)),
+		UpdatePart:     true,
+		ExtractionDate: time.Now().UTC(),
+	}, nil
+}
+
+// createNewAttachment creates and stores a new attachment
+func (ae *AttachmentExtractor) createNewAttachment(
+	part *MMSPart, decodedData []byte, hash string,
+) (*AttachmentExtractionResult, error) {
+	// Use new directory-based storage for new attachments
+	storage := attachments.NewDirectoryAttachmentStorage(ae.repoRoot)
+
+	// Create metadata
+	metadata := attachments.AttachmentInfo{
+		Hash:         hash,
+		OriginalName: part.Filename,
+		MimeType:     part.ContentType,
+		Size:         int64(len(decodedData)),
+		CreatedAt:    time.Now().UTC(),
+		SourceMMS:    "", // Could be populated with MMS ID if available
+	}
+
+	// Store attachment with new format
+	if err := storage.Store(hash, decodedData, metadata); err != nil {
+		log.Printf("[ATTACHMENT] Failed to store attachment: %v", err)
+		return nil, fmt.Errorf("failed to store attachment: %w", err)
+	}
+
+	// Get the path for the stored attachment
+	attachmentPath, err := storage.GetPath(hash)
+	if err != nil {
+		log.Printf("[ATTACHMENT] Failed to get stored attachment path: %v", err)
+		return nil, fmt.Errorf("failed to get stored attachment path: %w", err)
+	}
+
+	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
+	return &AttachmentExtractionResult{
+		Action:         ActionExtracted,
+		Hash:           hash,
+		Path:           attachmentPath,
+		OriginalSize:   int64(len(decodedData)),
+		UpdatePart:     true,
+		ExtractionDate: time.Now().UTC(),
+	}, nil
+}
+
 // shouldExtractContentType determines if a content type should be extracted with detailed decision logging
 func (ae *AttachmentExtractor) shouldExtractContentType(
 	contentType string,
@@ -205,157 +390,28 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 }
 
 // ExtractAttachmentFromPart extracts an attachment from an MMS part if needed
-func (ae *AttachmentExtractor) ExtractAttachmentFromPart(part *MMSPart, config ContentTypeConfig) (*AttachmentExtractionResult, error) {
-	// Log extraction attempt for debugging and auditing
-	log.Printf("[ATTACHMENT] Processing part: ContentType=%s, DataLen=%d, TextLen=%d, ContentDisp=%s, Filename=%s",
-		part.ContentType, len(part.Data), len(part.Text), part.ContentDisp, part.Filename)
-
-	// Check if this is explicitly marked as an attachment
-	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
-
-	// Determine what content we have to extract
-	var contentToExtract string
-	var isBase64 bool
-
-	switch {
-	case part.Data != "" && part.Data != "null":
-		// Binary data (base64 encoded)
-		contentToExtract = part.Data
-		isBase64 = true
-		log.Printf("[ATTACHMENT] Found base64 data, size: %d bytes", len(contentToExtract))
-	case part.Text != "" && part.Text != "null" && isExplicitAttachment:
-		// Text content marked as attachment
-		contentToExtract = part.Text
-		isBase64 = false
-		log.Printf("[ATTACHMENT] Found text content marked as attachment, size: %d bytes", len(contentToExtract))
-	default:
-		// No extractable content - skip
-		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
-			part.Data, part.Text, isExplicitAttachment)
-		return &AttachmentExtractionResult{
-			Action:     ActionSkipped,
-			Reason:     "no-data",
-			UpdatePart: false,
-		}, nil
+func (ae *AttachmentExtractor) ExtractAttachmentFromPart(
+	part *MMSPart, config ContentTypeConfig,
+) (*AttachmentExtractionResult, error) {
+	// Determine extractable content
+	contentToExtract, isBase64, skipResult := ae.determineExtractableContent(part)
+	if skipResult != nil {
+		return skipResult, nil
 	}
 
-	// Check content type extraction decision with comprehensive logging
-	decision := ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config)
-	if !decision.ShouldExtract {
-		log.Printf("[ATTACHMENT] Content type filtering: %s - %s (category: %s)",
-			decision.Reason, part.ContentType, decision.Category)
-		return &AttachmentExtractionResult{
-			Action:     ActionSkipped,
-			Reason:     "content-type-filtered",
-			UpdatePart: false,
-		}, nil
+	// Validate content type and size requirements
+	if result := ae.validateExtractionRequirements(part, contentToExtract, isBase64, config); result != nil {
+		return result, nil
 	}
 
-	log.Printf("[ATTACHMENT] Content type approved for extraction: %s - %s",
-		part.ContentType, decision.Reason)
-
-	// For text content, skip size check as text attachments can be small
-	// For binary content, skip small files (likely metadata)
-	if isBase64 && len(contentToExtract) < 1024 {
-		// Too small - skip
-		log.Printf("[ATTACHMENT] Skipping small binary content: %d bytes (threshold: 1024)", len(contentToExtract))
-		return &AttachmentExtractionResult{
-			Action:     ActionSkipped,
-			Reason:     "too-small",
-			UpdatePart: false,
-		}, nil
-	}
-
-	// Proceed with extraction
-	log.Printf("[ATTACHMENT] Proceeding with extraction for content type: %s", part.ContentType)
-
-	// Decode content based on type
-	var decodedData []byte
-	var err error
-
-	if isBase64 {
-		// Decode base64 data
-		log.Printf("[ATTACHMENT] Decoding base64 data (%d chars)", len(contentToExtract))
-		decodedData, err = base64.StdEncoding.DecodeString(contentToExtract)
-		if err != nil {
-			// Failed to decode base64 data
-			log.Printf("[ATTACHMENT] Failed to decode base64 data: %v", err)
-			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
-		}
-		log.Printf("[ATTACHMENT] Decoded to %d bytes", len(decodedData))
-	} else {
-		// Use text content as-is (UTF-8 encoded)
-		decodedData = []byte(contentToExtract)
-		log.Printf("[ATTACHMENT] Using text content as-is: %d bytes", len(decodedData))
-	}
-
-	// Calculate SHA-256 hash
-	hasher := sha256.New()
-	hasher.Write(decodedData)
-	hash := fmt.Sprintf("%x", hasher.Sum(nil))
-	log.Printf("[ATTACHMENT] Calculated hash: %s", hash)
-
-	// Check if attachment already exists
-	exists, err := ae.attachmentManager.AttachmentExists(hash)
+	// Decode the content
+	decodedData, err := ae.decodeContent(contentToExtract, isBase64)
 	if err != nil {
-		log.Printf("[ATTACHMENT] Failed to check attachment existence: %v", err)
-		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
+		return nil, err
 	}
 
-	if exists {
-		// Attachment already exists, get its current path
-		attachment, err := ae.attachmentManager.GetAttachment(hash)
-		if err != nil {
-			log.Printf("[ATTACHMENT] Failed to get existing attachment path: %v", err)
-			return nil, fmt.Errorf("failed to get existing attachment path: %w", err)
-		}
-
-		log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachment.Path)
-		return &AttachmentExtractionResult{
-			Action:         ActionReferenced,
-			Hash:           hash,
-			Path:           attachment.Path,
-			OriginalSize:   int64(len(decodedData)),
-			UpdatePart:     true,
-			ExtractionDate: time.Now().UTC(),
-		}, nil
-	}
-
-	// Use new directory-based storage for new attachments
-	storage := attachments.NewDirectoryAttachmentStorage(ae.repoRoot)
-
-	// Create metadata
-	metadata := attachments.AttachmentInfo{
-		Hash:         hash,
-		OriginalName: part.Filename,
-		MimeType:     part.ContentType,
-		Size:         int64(len(decodedData)),
-		CreatedAt:    time.Now().UTC(),
-		SourceMMS:    "", // Could be populated with MMS ID if available
-	}
-
-	// Store attachment with new format
-	if err := storage.Store(hash, decodedData, metadata); err != nil {
-		log.Printf("[ATTACHMENT] Failed to store attachment: %v", err)
-		return nil, fmt.Errorf("failed to store attachment: %w", err)
-	}
-
-	// Get the path for the stored attachment
-	attachmentPath, err := storage.GetPath(hash)
-	if err != nil {
-		log.Printf("[ATTACHMENT] Failed to get stored attachment path: %v", err)
-		return nil, fmt.Errorf("failed to get stored attachment path: %w", err)
-	}
-
-	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
-	return &AttachmentExtractionResult{
-		Action:         ActionExtracted,
-		Hash:           hash,
-		Path:           attachmentPath,
-		OriginalSize:   int64(len(decodedData)),
-		UpdatePart:     true,
-		ExtractionDate: time.Now().UTC(),
-	}, nil
+	// Handle attachment storage (either reference existing or create new)
+	return ae.handleAttachmentStorage(part, decodedData)
 }
 
 // AttachmentExtractionResult contains the result of an attachment extraction attempt

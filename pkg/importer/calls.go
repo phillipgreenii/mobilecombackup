@@ -96,111 +96,17 @@ func (ci *CallsImporter) LoadRepository() error {
 
 // ImportFile imports calls from a single file
 func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
-	file, err := os.Open(filename) // #nosec G304
+	// Parse XML file
+	root, err := ci.parseCallsXML(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer func() { _ = file.Close() }()
-
-	// Apply size limit to prevent DoS attacks (BUG-051)
-	limitedReader := &io.LimitedReader{R: file, N: ci.options.MaxXMLSize}
-
-	// Parse the XML file with size limit
-	decoder := xml.NewDecoder(limitedReader)
-
-	// Find the root element
-	var root struct {
-		XMLName xml.Name
-		Count   string `xml:"count,attr"`
-		Calls   []struct {
-			XMLName      xml.Name
-			Number       string `xml:"number,attr"`
-			Duration     int    `xml:"duration,attr"`
-			Date         int64  `xml:"date,attr"`
-			Type         int    `xml:"type,attr"`
-			ReadableDate string `xml:"readable_date,attr"`
-			ContactName  string `xml:"contact_name,attr"`
-		} `xml:"call"`
+		return nil, err
 	}
 
-	if err := decoder.Decode(&root); err != nil {
-		// Check if the error was due to size limit exceeded
-		if err == io.EOF && limitedReader.N == 0 {
-			return nil, security.NewFileSizeLimitExceededError(
-				filepath.Base(filename),
-				ci.options.MaxXMLSize,
-				0, // Don't know actual size
-				"XML parsing")
-		}
-		return nil, fmt.Errorf("failed to parse XML: %w", err)
-	}
-
-	stat := &YearStat{}
-	var rejections []RejectedEntry
-
-	// Process each call
-	for i, xmlCall := range root.Calls {
-		// Convert to Call struct
-		call := &calls.Call{
-			Number:       xmlCall.Number,
-			Duration:     xmlCall.Duration,
-			Date:         xmlCall.Date,
-			Type:         calls.CallType(xmlCall.Type),
-			ReadableDate: xmlCall.ReadableDate,
-			ContactName:  xmlCall.ContactName,
-		}
-
-		// Validate the call
-		violations := ci.validator.Validate(call)
-		if len(violations) > 0 {
-			// Capture the original XML for the rejection file
-			callXML, _ := xml.Marshal(xmlCall)
-			rejections = append(rejections, RejectedEntry{
-				Line:       i + 2, // +2 for XML header and root element
-				Data:       string(callXML),
-				Violations: violations,
-			})
-			stat.Rejected++
-			continue
-		}
-
-		// Extract contact information for valid calls
-		ci.extractContact(call)
-
-		// Add to coalescer (checks for duplicates)
-		entry := calls.CallEntry{Call: call}
-		wasAdded := ci.coalescer.Add(entry)
-
-		// Update file-level statistics
-		if wasAdded {
-			stat.Added++
-		} else {
-			stat.Duplicates++
-		}
-
-		// Track entry by year
-		if ci.yearTracker != nil {
-			ci.yearTracker.TrackImportEntry(entry.Year(), wasAdded)
-		}
-
-		// Report progress every 100 entries
-		if (i+1)%100 == 0 && ci.options.ProgressReporter != nil {
-			ci.options.ProgressReporter.UpdateProgress(i+1, len(root.Calls))
-		}
-	}
+	// Process all calls and track statistics
+	stat, rejections := ci.processCalls(root.Calls)
 
 	// Write rejections if any
-	if len(rejections) > 0 && !ci.options.DryRun {
-		rejFile, err := ci.rejWriter.WriteRejections(filename, rejections)
-		if err != nil {
-			stat.Errors++
-			if !ci.options.Quiet {
-				fmt.Printf("Warning: failed to write rejection file: %v\n", err)
-			}
-		} else if ci.options.Verbose && !ci.options.Quiet {
-			fmt.Printf("Created rejection file: %s\n", rejFile)
-		}
-	}
+	ci.writeRejections(filename, rejections, stat)
 
 	return stat, nil
 }
@@ -290,6 +196,144 @@ func (ci *CallsImporter) extractContact(call *calls.Call) {
 			if name != "" && !isUnknownContact(name) {
 				ci.contactsManager.AddUnprocessedContact(call.Number, name)
 			}
+		}
+	}
+}
+
+// parseCallsXML parses the XML file and returns the root structure
+func (ci *CallsImporter) parseCallsXML(filename string) (*struct {
+	XMLName xml.Name
+	Count   string `xml:"count,attr"`
+	Calls   []struct {
+		XMLName      xml.Name
+		Number       string `xml:"number,attr"`
+		Duration     int    `xml:"duration,attr"`
+		Date         int64  `xml:"date,attr"`
+		Type         int    `xml:"type,attr"`
+		ReadableDate string `xml:"readable_date,attr"`
+		ContactName  string `xml:"contact_name,attr"`
+	} `xml:"call"`
+}, error) {
+	file, err := os.Open(filename) // #nosec G304
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer func() { _ = file.Close() }()
+
+	// Apply size limit to prevent DoS attacks (BUG-051)
+	limitedReader := &io.LimitedReader{R: file, N: ci.options.MaxXMLSize}
+
+	// Parse the XML file with size limit
+	decoder := xml.NewDecoder(limitedReader)
+
+	// Find the root element
+	var root struct {
+		XMLName xml.Name
+		Count   string `xml:"count,attr"`
+		Calls   []struct {
+			XMLName      xml.Name
+			Number       string `xml:"number,attr"`
+			Duration     int    `xml:"duration,attr"`
+			Date         int64  `xml:"date,attr"`
+			Type         int    `xml:"type,attr"`
+			ReadableDate string `xml:"readable_date,attr"`
+			ContactName  string `xml:"contact_name,attr"`
+		} `xml:"call"`
+	}
+
+	if err := decoder.Decode(&root); err != nil {
+		// Check if the error was due to size limit exceeded
+		if err == io.EOF && limitedReader.N == 0 {
+			return nil, security.NewFileSizeLimitExceededError(
+				filepath.Base(filename),
+				ci.options.MaxXMLSize,
+				0, // Don't know actual size
+				"XML parsing")
+		}
+		return nil, fmt.Errorf("failed to parse XML: %w", err)
+	}
+
+	return &root, nil
+}
+
+// processCalls processes all calls and returns statistics and rejections
+func (ci *CallsImporter) processCalls(xmlCalls []struct {
+	XMLName      xml.Name
+	Number       string `xml:"number,attr"`
+	Duration     int    `xml:"duration,attr"`
+	Date         int64  `xml:"date,attr"`
+	Type         int    `xml:"type,attr"`
+	ReadableDate string `xml:"readable_date,attr"`
+	ContactName  string `xml:"contact_name,attr"`
+}) (*YearStat, []RejectedEntry) {
+	stat := &YearStat{}
+	var rejections []RejectedEntry
+
+	// Process each call
+	for i, xmlCall := range xmlCalls {
+		// Convert to Call struct
+		call := &calls.Call{
+			Number:       xmlCall.Number,
+			Duration:     xmlCall.Duration,
+			Date:         xmlCall.Date,
+			Type:         calls.CallType(xmlCall.Type),
+			ReadableDate: xmlCall.ReadableDate,
+			ContactName:  xmlCall.ContactName,
+		}
+
+		// Validate the call
+		violations := ci.validator.Validate(call)
+		if len(violations) > 0 {
+			// Capture the original XML for the rejection file
+			callXML, _ := xml.Marshal(xmlCall)
+			rejections = append(rejections, RejectedEntry{
+				Line:       i + 2, // +2 for XML header and root element
+				Data:       string(callXML),
+				Violations: violations,
+			})
+			stat.Rejected++
+			continue
+		}
+
+		// Extract contact information for valid calls
+		ci.extractContact(call)
+
+		// Add to coalescer (checks for duplicates)
+		entry := calls.CallEntry{Call: call}
+		wasAdded := ci.coalescer.Add(entry)
+
+		// Update file-level statistics
+		if wasAdded {
+			stat.Added++
+		} else {
+			stat.Duplicates++
+		}
+
+		// Track entry by year
+		if ci.yearTracker != nil {
+			ci.yearTracker.TrackImportEntry(entry.Year(), wasAdded)
+		}
+
+		// Report progress every 100 entries
+		if (i+1)%100 == 0 && ci.options.ProgressReporter != nil {
+			ci.options.ProgressReporter.UpdateProgress(i+1, len(xmlCalls))
+		}
+	}
+
+	return stat, rejections
+}
+
+// writeRejections writes rejection files if there are any rejections
+func (ci *CallsImporter) writeRejections(filename string, rejections []RejectedEntry, stat *YearStat) {
+	if len(rejections) > 0 && !ci.options.DryRun {
+		rejFile, err := ci.rejWriter.WriteRejections(filename, rejections)
+		if err != nil {
+			stat.Errors++
+			if !ci.options.Quiet {
+				fmt.Printf("Warning: failed to write rejection file: %v\n", err)
+			}
+		} else if ci.options.Verbose && !ci.options.Quiet {
+			fmt.Printf("Created rejection file: %s\n", rejFile)
 		}
 	}
 }

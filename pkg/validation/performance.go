@@ -171,19 +171,53 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateAsync(options *PerformanceOpt
 }
 
 // validateParallel performs validation with concurrent component validation
-func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context, report *Report, options *PerformanceOptions) (*Report, error) {
-	// Use worker pool to limit concurrency
+func (v *OptimizedRepositoryValidatorImpl) validateParallel(
+	ctx context.Context,
+	report *Report,
+	options *PerformanceOptions,
+) (*Report, error) {
+	// Setup concurrency control and channels
+	semaphore, violationsCh, errorCh, wg := v.setupParallelValidation(options)
+
+	// Setup progress tracking
+	updateProgress := v.createProgressCallback(options)
+
+	// Launch validation workers
+	v.launchValidationWorkers(ctx, semaphore, violationsCh, errorCh, wg, options, updateProgress)
+
+	// Collect results
+	allViolations, err := v.collectValidationResults(ctx, violationsCh, errorCh, wg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Finalize report
+	report.Violations = allViolations
+	v.determineStatus(report)
+
+	return report, nil
+}
+
+// setupParallelValidation initializes concurrency control and communication channels
+func (v *OptimizedRepositoryValidatorImpl) setupParallelValidation(
+	options *PerformanceOptions,
+) (chan struct{}, chan []Violation, chan error, *sync.WaitGroup) {
 	semaphore := make(chan struct{}, options.MaxConcurrency)
-	var wg sync.WaitGroup
 	violationsCh := make(chan []Violation, 4)
 	errorCh := make(chan error, 4)
+	var wg sync.WaitGroup
+	return semaphore, violationsCh, errorCh, &wg
+}
 
-	// Progress tracking
+// createProgressCallback creates a thread-safe progress update function
+func (v *OptimizedRepositoryValidatorImpl) createProgressCallback(
+	options *PerformanceOptions,
+) func(string) {
 	var completedStages int32
 	const totalStages = 4 // Number of validation stages
 	var progressMu sync.Mutex
 
-	updateProgress := func(stage string) {
+	return func(stage string) {
 		completed := atomic.AddInt32(&completedStages, 1)
 		if options.ProgressCallback != nil {
 			// Protect the callback invocation to ensure ordered/consistent calls
@@ -193,8 +227,18 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 			progressMu.Unlock()
 		}
 	}
+}
 
-	// Launch validation workers
+// launchValidationWorkers starts concurrent validation tasks
+func (v *OptimizedRepositoryValidatorImpl) launchValidationWorkers(
+	ctx context.Context,
+	semaphore chan struct{},
+	violationsCh chan []Violation,
+	errorCh chan error,
+	wg *sync.WaitGroup,
+	options *PerformanceOptions,
+	updateProgress func(string),
+) {
 	validationTasks := []struct {
 		name string
 		fn   func() []Violation
@@ -246,8 +290,15 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 		close(violationsCh)
 		close(errorCh)
 	}()
+}
 
-	// Collect results
+// collectValidationResults gathers results from all validation workers
+func (v *OptimizedRepositoryValidatorImpl) collectValidationResults(
+	ctx context.Context,
+	violationsCh chan []Violation,
+	errorCh chan error,
+	_ *sync.WaitGroup,
+) ([]Violation, error) {
 	allViolations := []Violation{}
 	for {
 		select {
@@ -272,11 +323,7 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 		}
 	}
 
-	// Finalize report
-	report.Violations = allViolations
-	v.determineStatus(report)
-
-	return report, nil
+	return allViolations, nil
 }
 
 // validateSequential performs validation sequentially with optimizations

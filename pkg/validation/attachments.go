@@ -101,6 +101,26 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentsStructure() []Violation {
 func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []Violation {
 	var violations []Violation
 
+	// Get all attachments and MIME types
+	attachmentsList, attachmentMimeTypes, setupViolations := v.setupAttachmentValidation()
+	violations = append(violations, setupViolations...)
+	if len(attachmentsList) == 0 && len(setupViolations) > 0 {
+		return violations
+	}
+
+	// Verify each attachment's integrity
+	for _, attachment := range attachmentsList {
+		attachmentViolations := v.validateSingleAttachment(attachment, attachmentMimeTypes)
+		violations = append(violations, attachmentViolations...)
+	}
+
+	return violations
+}
+
+// setupAttachmentValidation prepares data needed for attachment validation
+func (v *AttachmentsValidatorImpl) setupAttachmentValidation() ([]*attachments.Attachment, map[string]string, []Violation) {
+	var violations []Violation
+
 	// Get all attachments
 	attachmentsList, err := v.attachmentReader.ListAttachments()
 	if err != nil {
@@ -110,7 +130,7 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []Violation {
 			File:     "attachments/",
 			Message:  fmt.Sprintf("Failed to list attachments for integrity check: %v", err),
 		})
-		return violations
+		return nil, nil, violations
 	}
 
 	// Get MIME type mappings from SMS/MMS data
@@ -126,74 +146,95 @@ func (v *AttachmentsValidatorImpl) ValidateAttachmentIntegrity() []Violation {
 		attachmentMimeTypes = make(map[string]string)
 	}
 
-	// Verify each attachment's integrity
-	for _, attachment := range attachmentsList {
-		// Check if attachment exists
-		if !attachment.Exists {
-			violations = append(violations, Violation{
-				Type:     MissingFile,
-				Severity: SeverityError,
-				File:     attachment.Path,
-				Message:  fmt.Sprintf("Attachment file not found: %s", attachment.Hash),
-			})
-			continue
-		}
+	return attachmentsList, attachmentMimeTypes, violations
+}
 
-		// Verify content matches hash
-		verified, err := v.attachmentReader.VerifyAttachment(attachment.Hash)
-		if err != nil {
-			violations = append(violations, Violation{
-				Type:     ChecksumMismatch,
-				Severity: SeverityError,
-				File:     attachment.Path,
-				Message:  fmt.Sprintf("Failed to verify attachment %s: %v", attachment.Hash, err),
-			})
-			continue
-		}
+// validateSingleAttachment performs integrity validation on a single attachment
+func (v *AttachmentsValidatorImpl) validateSingleAttachment(
+	attachment *attachments.Attachment,
+	attachmentMimeTypes map[string]string,
+) []Violation {
+	var violations []Violation
 
-		if !verified {
-			violations = append(violations, Violation{
-				Type:     ChecksumMismatch,
-				Severity: SeverityError,
-				File:     attachment.Path,
-				Message:  fmt.Sprintf("Attachment content doesn't match hash: %s", attachment.Hash),
-				Expected: attachment.Hash,
-				Actual:   "content hash mismatch",
-			})
-			continue // Skip format validation for corrupted files
-		}
-
-		// Perform format validation - validate that file content matches expected MIME type
-		attachmentPath := filepath.Join(v.repositoryRoot, attachment.Path)
-		detectedFormat, err := DetectFileFormat(attachmentPath)
-		if err != nil {
-			// Unknown format - this is an error
-			violations = append(violations, Violation{
-				Type:     UnknownFormat,
-				Severity: SeverityError,
-				File:     attachment.Path,
-				Message:  fmt.Sprintf("Unknown or unrecognized file format for attachment %s: %v", attachment.Hash, err),
-			})
-			continue
-		}
-
-		// Check if we have expected MIME type from SMS/MMS data
-		if expectedMimeType, exists := attachmentMimeTypes[attachment.Hash]; exists {
-			// Compare detected format with expected MIME type
-			if detectedFormat != expectedMimeType {
-				violations = append(violations, Violation{
-					Type:     FormatMismatch,
-					Severity: SeverityError,
-					File:     attachment.Path,
-					Message:  fmt.Sprintf("File format mismatch for attachment %s", attachment.Hash),
-					Expected: expectedMimeType,
-					Actual:   detectedFormat,
-				})
-			}
-		}
-		// Note: If no expected MIME type is available from SMS data, we only verify
-		// that the format is recognized (not unknown), but don't enforce a specific type
+	// Check if attachment exists
+	if !attachment.Exists {
+		violations = append(violations, Violation{
+			Type:     MissingFile,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Attachment file not found: %s", attachment.Hash),
+		})
+		return violations
 	}
+
+	// Verify content matches hash
+	verified, err := v.attachmentReader.VerifyAttachment(attachment.Hash)
+	if err != nil {
+		violations = append(violations, Violation{
+			Type:     ChecksumMismatch,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Failed to verify attachment %s: %v", attachment.Hash, err),
+		})
+		return violations
+	}
+
+	if !verified {
+		violations = append(violations, Violation{
+			Type:     ChecksumMismatch,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Attachment content doesn't match hash: %s", attachment.Hash),
+			Expected: attachment.Hash,
+			Actual:   "content hash mismatch",
+		})
+		return violations // Skip format validation for corrupted files
+	}
+
+	// Perform format validation
+	formatViolations := v.validateAttachmentFormat(attachment, attachmentMimeTypes)
+	violations = append(violations, formatViolations...)
+
+	return violations
+}
+
+// validateAttachmentFormat validates file format matches expected MIME type
+func (v *AttachmentsValidatorImpl) validateAttachmentFormat(
+	attachment *attachments.Attachment,
+	attachmentMimeTypes map[string]string,
+) []Violation {
+	var violations []Violation
+
+	// Perform format validation - validate that file content matches expected MIME type
+	attachmentPath := filepath.Join(v.repositoryRoot, attachment.Path)
+	detectedFormat, err := DetectFileFormat(attachmentPath)
+	if err != nil {
+		// Unknown format - this is an error
+		violations = append(violations, Violation{
+			Type:     UnknownFormat,
+			Severity: SeverityError,
+			File:     attachment.Path,
+			Message:  fmt.Sprintf("Unknown or unrecognized file format for attachment %s: %v", attachment.Hash, err),
+		})
+		return violations
+	}
+
+	// Check if we have expected MIME type from SMS/MMS data
+	if expectedMimeType, exists := attachmentMimeTypes[attachment.Hash]; exists {
+		// Compare detected format with expected MIME type
+		if detectedFormat != expectedMimeType {
+			violations = append(violations, Violation{
+				Type:     FormatMismatch,
+				Severity: SeverityError,
+				File:     attachment.Path,
+				Message:  fmt.Sprintf("File format mismatch for attachment %s", attachment.Hash),
+				Expected: expectedMimeType,
+				Actual:   detectedFormat,
+			})
+		}
+	}
+	// Note: If no expected MIME type is available from SMS data, we only verify
+	// that the format is recognized (not unknown), but don't enforce a specific type
 
 	return violations
 }
@@ -383,7 +424,10 @@ func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []
 }
 
 // validateNewFormatAttachment validates a single new format attachment
-func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attachments.Attachment, storage *attachments.DirectoryAttachmentStorage) []Violation {
+func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(
+	attachment *attachments.Attachment,
+	storage *attachments.DirectoryAttachmentStorage,
+) []Violation {
 	var violations []Violation
 
 	// Validate metadata.yaml exists and is readable
@@ -399,6 +443,27 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 	}
 
 	// Validate metadata consistency
+	metadataViolations := v.validateAttachmentMetadata(attachment, &metadata)
+	violations = append(violations, metadataViolations...)
+
+	// Validate attachment file exists and naming
+	fileViolations := v.validateAttachmentFile(attachment, storage, &metadata)
+	violations = append(violations, fileViolations...)
+
+	// Validate MIME type is supported
+	mimeViolations := v.validateMimeType(attachment, &metadata)
+	violations = append(violations, mimeViolations...)
+
+	return violations
+}
+
+// validateAttachmentMetadata validates metadata consistency
+func (v *AttachmentsValidatorImpl) validateAttachmentMetadata(
+	attachment *attachments.Attachment,
+	metadata *attachments.AttachmentInfo,
+) []Violation {
+	var violations []Violation
+
 	if metadata.Hash != attachment.Hash {
 		violations = append(violations, Violation{
 			Type:     ChecksumMismatch,
@@ -426,6 +491,17 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 			Actual:   fmt.Sprintf("%d bytes", metadata.Size),
 		})
 	}
+
+	return violations
+}
+
+// validateAttachmentFile validates attachment file existence and naming
+func (v *AttachmentsValidatorImpl) validateAttachmentFile(
+	attachment *attachments.Attachment,
+	storage *attachments.DirectoryAttachmentStorage,
+	metadata *attachments.AttachmentInfo,
+) []Violation {
+	var violations []Violation
 
 	// Validate attachment file exists with proper name
 	attachmentFilePath, err := storage.GetAttachmentFilePath(attachment.Hash)
@@ -465,7 +541,16 @@ func (v *AttachmentsValidatorImpl) validateNewFormatAttachment(attachment *attac
 		})
 	}
 
-	// Validate MIME type is supported
+	return violations
+}
+
+// validateMimeType validates MIME type is supported
+func (v *AttachmentsValidatorImpl) validateMimeType(
+	attachment *attachments.Attachment,
+	metadata *attachments.AttachmentInfo,
+) []Violation {
+	var violations []Violation
+
 	if metadata.MimeType != "" {
 		ext := attachments.GetFileExtension(metadata.MimeType)
 		if ext == "bin" && metadata.MimeType != "application/octet-stream" {

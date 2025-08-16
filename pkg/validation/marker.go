@@ -44,8 +44,33 @@ func NewMarkerFileValidator(repositoryRoot string) MarkerFileValidator {
 // ValidateMarkerFile validates the .mobilecombackup.yaml marker file
 // Returns: violations, versionSupported, error
 func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error) {
-	var violations []Violation
 	markerPath := filepath.Join(v.repositoryRoot, ".mobilecombackup.yaml")
+
+	// Load and parse marker file
+	markerContent, rawData, violations, err := v.loadMarkerFile(markerPath)
+	if err != nil {
+		return violations, false, err
+	}
+	if len(violations) > 0 && markerContent == nil {
+		// Missing file is supported, but malformed content is not
+		if len(violations) > 0 && violations[0].Type == MissingMarkerFile {
+			return violations, true, nil // Missing file is supported
+		}
+		return violations, false, nil // Malformed content can't determine version
+	}
+
+	// Validate marker content
+	validationViolations, versionSupported := v.validateMarkerContent(markerContent, rawData)
+	violations = append(violations, validationViolations...)
+
+	return violations, versionSupported, nil
+}
+
+// loadMarkerFile loads and parses the marker file
+func (v *MarkerFileValidatorImpl) loadMarkerFile(
+	markerPath string,
+) (*MarkerFileContent, map[string]interface{}, []Violation, error) {
+	var violations []Violation
 
 	// Check if file exists
 	file, err := os.Open(markerPath) // nolint:gosec // Validation requires file access
@@ -59,17 +84,28 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error
 				Expected: "Marker file with repository metadata",
 				Actual:   "File not found",
 			})
-			return violations, true, nil // Version supported since file is missing
+			return nil, nil, violations, nil // Version supported since file is missing
 		}
-		return nil, false, fmt.Errorf("failed to open marker file: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to open marker file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// Read file content
 	content, err := io.ReadAll(file)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to read marker file: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to read marker file: %w", err)
 	}
+
+	// Parse YAML
+	markerContent, rawData, parseViolations := v.parseMarkerContent(content)
+	violations = append(violations, parseViolations...)
+
+	return markerContent, rawData, violations, nil
+}
+
+// parseMarkerContent parses YAML content into structured data
+func (v *MarkerFileValidatorImpl) parseMarkerContent(content []byte) (*MarkerFileContent, map[string]interface{}, []Violation) {
+	var violations []Violation
 
 	// Validate YAML structure first
 	var rawData map[string]interface{}
@@ -80,7 +116,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error
 			File:     ".mobilecombackup.yaml",
 			Message:  fmt.Sprintf("Invalid YAML syntax: %v", err),
 		})
-		return violations, false, nil // Can't determine version support
+		return nil, nil, violations // Can't determine version support
 	}
 
 	// Parse into structured content
@@ -92,8 +128,19 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error
 			File:     ".mobilecombackup.yaml",
 			Message:  fmt.Sprintf("Failed to parse marker file content: %v", err),
 		})
-		return violations, false, nil
+		return nil, rawData, violations
 	}
+
+	return &markerContent, rawData, violations
+}
+
+// validateMarkerContent validates marker file fields and structure
+func (v *MarkerFileValidatorImpl) validateMarkerContent(
+	markerContent *MarkerFileContent,
+	rawData map[string]interface{},
+) ([]Violation, bool) {
+	var violations []Violation
+	versionSupported := true
 
 	// Validate required fields
 	if markerContent.RepositoryStructureVersion == "" {
@@ -112,7 +159,7 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error
 			Expected: "1",
 			Actual:   markerContent.RepositoryStructureVersion,
 		})
-		return violations, false, nil // Version not supported
+		versionSupported = false // Version not supported
 	}
 
 	if markerContent.CreatedAt == "" {
@@ -154,9 +201,11 @@ func (v *MarkerFileValidatorImpl) ValidateMarkerFile() ([]Violation, bool, error
 	}
 
 	// Return true for version supported if version is "1" or missing
-	versionSupported := markerContent.RepositoryStructureVersion == "" || markerContent.RepositoryStructureVersion == "1"
+	if markerContent.RepositoryStructureVersion == "" {
+		versionSupported = true
+	}
 
-	return violations, versionSupported, nil
+	return violations, versionSupported
 }
 
 // GetSuggestedFix returns the suggested content for a missing marker file

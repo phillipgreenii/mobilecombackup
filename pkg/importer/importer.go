@@ -497,123 +497,115 @@ func (imp *Importer) updateSMSSummary(stats *EntityStats, stat *YearStat) {
 // finalizeSummary calculates final statistics
 func (imp *Importer) finalizeSummary(summary *ImportSummary) {
 	if imp.options.Filter == "" || imp.options.Filter == callsDir {
-		// Get statistics from calls coalescer
-		coalSummary := imp.callsImporter.GetSummary()
-		summary.Calls.Total.Initial = coalSummary.Initial
-		summary.Calls.Total.Final = coalSummary.Final
-
-		// First, create YearStat entries for all years that had any activity
-		allYears := make(map[int]bool)
-
-		// Collect years from tracker activity
-		for year := range imp.callsTracker.initial {
-			allYears[year] = true
-		}
-		for year := range imp.callsTracker.added {
-			allYears[year] = true
-		}
-		for year := range imp.callsTracker.duplicates {
-			allYears[year] = true
-		}
-
-		// Initialize YearStat for all active years
-		for year := range allYears {
-			summary.Calls.YearStats[year] = &YearStat{
-				Initial:    imp.callsTracker.GetInitial(year),
-				Added:      imp.callsTracker.GetAdded(year),
-				Duplicates: imp.callsTracker.GetDuplicates(year),
-				Final:      0, // Will be counted below
-			}
-		}
-
-		// Count final entries per year
-		for _, entry := range imp.callsImporter.coalescer.GetAll() {
-			year := entry.Year()
-			if _, exists := summary.Calls.YearStats[year]; !exists {
-				// This should not happen but be defensive
-				summary.Calls.YearStats[year] = &YearStat{
-					Initial:    imp.callsTracker.GetInitial(year),
-					Added:      imp.callsTracker.GetAdded(year),
-					Duplicates: imp.callsTracker.GetDuplicates(year),
-					Final:      0,
-				}
-			}
-			summary.Calls.YearStats[year].Final++
-		}
-
-		// Validate mathematics for all call years
-		for year, stat := range summary.Calls.YearStats {
-			if err := imp.callsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
-				if !imp.options.Quiet {
-					fmt.Printf("Warning: Calls statistics validation failed: %v\n", err)
-				}
-			}
-		}
+		imp.finalizeCallsStatistics(summary)
 	}
 
 	if imp.options.Filter == "" || imp.options.Filter == smsDir {
-		// Get statistics from SMS coalescer
-		coalSummary := imp.smsImporter.GetSummary()
-		summary.SMS.Total.Initial = coalSummary.Initial
-		summary.SMS.Total.Final = coalSummary.Final
-
-		// First, create YearStat entries for all years that had any activity
-		allYears := make(map[int]bool)
-
-		// Collect years from tracker activity
-		for year := range imp.smsTracker.initial {
-			allYears[year] = true
-		}
-		for year := range imp.smsTracker.added {
-			allYears[year] = true
-		}
-		for year := range imp.smsTracker.duplicates {
-			allYears[year] = true
-		}
-
-		// Initialize YearStat for all active years
-		for year := range allYears {
-			summary.SMS.YearStats[year] = &YearStat{
-				Initial:    imp.smsTracker.GetInitial(year),
-				Added:      imp.smsTracker.GetAdded(year),
-				Duplicates: imp.smsTracker.GetDuplicates(year),
-				Final:      0, // Will be counted below
-			}
-		}
-
-		// Count final entries per year
-		for _, entry := range imp.smsImporter.coalescer.GetAll() {
-			year := entry.Year()
-			if _, exists := summary.SMS.YearStats[year]; !exists {
-				// This should not happen but be defensive
-				summary.SMS.YearStats[year] = &YearStat{
-					Initial:    imp.smsTracker.GetInitial(year),
-					Added:      imp.smsTracker.GetAdded(year),
-					Duplicates: imp.smsTracker.GetDuplicates(year),
-					Final:      0,
-				}
-			}
-			summary.SMS.YearStats[year].Final++
-		}
-
-		// Validate mathematics for all SMS years
-		for year, stat := range summary.SMS.YearStats {
-			if err := imp.smsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
-				if !imp.options.Quiet {
-					fmt.Printf("Warning: SMS statistics validation failed: %v\n", err)
-				}
-			}
-		}
-
-		// Get attachment statistics from SMS importer
-		attachStats := imp.smsImporter.GetAttachmentStats()
-		summary.Attachments.Total.Total = attachStats.Total
-		summary.Attachments.Total.New = attachStats.New
-		summary.Attachments.Total.Duplicates = attachStats.Duplicates
+		imp.finalizeSMSStatistics(summary)
 	}
 
 	// Collect rejection statistics
 	imp.collectRejectionStats(summary)
+}
+
+// finalizeCallsStatistics finalizes call statistics in the summary
+func (imp *Importer) finalizeCallsStatistics(summary *ImportSummary) {
+	// Get statistics from calls coalescer
+	coalSummary := imp.callsImporter.GetSummary()
+	summary.Calls.Total.Initial = coalSummary.Initial
+	summary.Calls.Total.Final = coalSummary.Final
+
+	// Initialize year statistics
+	imp.initializeYearStats(summary.Calls.YearStats, imp.callsTracker)
+
+	// Count final entries per year
+	for _, entry := range imp.callsImporter.coalescer.GetAll() {
+		year := entry.Year()
+		imp.ensureYearStatExists(summary.Calls.YearStats, year, imp.callsTracker)
+		summary.Calls.YearStats[year].Final++
+	}
+
+	// Validate mathematics for all call years
+	for year, stat := range summary.Calls.YearStats {
+		if err := imp.callsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
+			if !imp.options.Quiet {
+				fmt.Printf("Warning: Calls statistics validation failed: %v\n", err)
+			}
+		}
+	}
+}
+
+// finalizeSMSStatistics finalizes SMS statistics in the summary
+func (imp *Importer) finalizeSMSStatistics(summary *ImportSummary) {
+	// Get statistics from SMS coalescer
+	coalSummary := imp.smsImporter.GetSummary()
+	summary.SMS.Total.Initial = coalSummary.Initial
+	summary.SMS.Total.Final = coalSummary.Final
+
+	// Initialize year statistics
+	imp.initializeYearStats(summary.SMS.YearStats, imp.smsTracker)
+
+	// Count final entries per year
+	for _, entry := range imp.smsImporter.coalescer.GetAll() {
+		year := entry.Year()
+		imp.ensureYearStatExists(summary.SMS.YearStats, year, imp.smsTracker)
+		summary.SMS.YearStats[year].Final++
+	}
+
+	// Validate mathematics for all SMS years
+	for year, stat := range summary.SMS.YearStats {
+		if err := imp.smsTracker.ValidateYearStatistics(year, stat.Final); err != nil {
+			if !imp.options.Quiet {
+				fmt.Printf("Warning: SMS statistics validation failed: %v\n", err)
+			}
+		}
+	}
+
+	// Get attachment statistics from SMS importer
+	attachStats := imp.smsImporter.GetAttachmentStats()
+	summary.Attachments.Total.Total = attachStats.Total
+	summary.Attachments.Total.New = attachStats.New
+	summary.Attachments.Total.Duplicates = attachStats.Duplicates
+}
+
+// initializeYearStats creates YearStat entries for all years that had activity
+func (imp *Importer) initializeYearStats(yearStats map[int]*YearStat, tracker *YearTracker) {
+	// First, create YearStat entries for all years that had any activity
+	allYears := make(map[int]bool)
+
+	// Collect years from tracker activity
+	for year := range tracker.initial {
+		allYears[year] = true
+	}
+	for year := range tracker.added {
+		allYears[year] = true
+	}
+	for year := range tracker.duplicates {
+		allYears[year] = true
+	}
+
+	// Initialize YearStat for all active years
+	for year := range allYears {
+		yearStats[year] = &YearStat{
+			Initial:    tracker.GetInitial(year),
+			Added:      tracker.GetAdded(year),
+			Duplicates: tracker.GetDuplicates(year),
+			Final:      0, // Will be counted by caller
+		}
+	}
+}
+
+// ensureYearStatExists ensures a YearStat exists for the given year
+func (imp *Importer) ensureYearStatExists(yearStats map[int]*YearStat, year int, tracker *YearTracker) {
+	if _, exists := yearStats[year]; !exists {
+		// This should not happen but be defensive
+		yearStats[year] = &YearStat{
+			Initial:    tracker.GetInitial(year),
+			Added:      tracker.GetAdded(year),
+			Duplicates: tracker.GetDuplicates(year),
+			Final:      0,
+		}
+	}
 }
 
 // collectRejectionStats collects rejection statistics from importers

@@ -208,26 +208,40 @@ func (r *ReportGeneratorImpl) generateJSONReport(report *Report) (string, error)
 func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error) {
 	var builder strings.Builder
 
-	// Header
-	fmt.Fprintf(&builder, "Repository Validation Report\n")
-	fmt.Fprintf(&builder, "===========================\n\n")
-	fmt.Fprintf(&builder, "Repository: %s\n", report.RepositoryPath)
-	fmt.Fprintf(&builder, "Timestamp:  %s\n", report.Timestamp.Format("2006-01-02 15:04:05 UTC"))
-	fmt.Fprintf(&builder, "Status:     %s\n", strings.ToUpper(string(report.Status)))
-	fmt.Fprintf(&builder, "Total Violations: %d\n\n", len(report.Violations))
+	// Build report header
+	r.buildReportHeader(&builder, report)
 
+	// Handle empty violations case
 	if len(report.Violations) == 0 {
 		fmt.Fprintf(&builder, "✅ No validation violations found!\n")
 		return builder.String(), nil
 	}
 
-	// Group violations by severity and type
+	// Group violations and build summaries
 	violationsByType := r.groupViolationsByType(report.Violations)
 	violationsBySeverity := r.groupViolationsBySeverity(report.Violations)
 
-	// Summary by severity
-	fmt.Fprintf(&builder, "Summary by Severity:\n")
-	fmt.Fprintf(&builder, "-------------------\n")
+	r.buildSeveritySummary(&builder, violationsBySeverity)
+	r.buildTypeSummary(&builder, violationsByType)
+	r.buildDetailedViolations(&builder, violationsBySeverity, violationsByType)
+
+	return builder.String(), nil
+}
+
+// buildReportHeader creates the report header section
+func (r *ReportGeneratorImpl) buildReportHeader(builder *strings.Builder, report *Report) {
+	fmt.Fprintf(builder, "Repository Validation Report\n")
+	fmt.Fprintf(builder, "===========================\n\n")
+	fmt.Fprintf(builder, "Repository: %s\n", report.RepositoryPath)
+	fmt.Fprintf(builder, "Timestamp:  %s\n", report.Timestamp.Format("2006-01-02 15:04:05 UTC"))
+	fmt.Fprintf(builder, "Status:     %s\n", strings.ToUpper(string(report.Status)))
+	fmt.Fprintf(builder, "Total Violations: %d\n\n", len(report.Violations))
+}
+
+// buildSeveritySummary creates the summary by severity section
+func (r *ReportGeneratorImpl) buildSeveritySummary(builder *strings.Builder, violationsBySeverity map[Severity][]Violation) {
+	fmt.Fprintf(builder, "Summary by Severity:\n")
+	fmt.Fprintf(builder, "-------------------\n")
 	severities := []Severity{SeverityError, SeverityWarning}
 	for _, severity := range severities {
 		count := len(violationsBySeverity[severity])
@@ -236,14 +250,16 @@ func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error)
 			if severity == SeverityError {
 				icon = "❌"
 			}
-			fmt.Fprintf(&builder, "%s %s: %d\n", icon, strings.ToUpper(string(severity)), count)
+			fmt.Fprintf(builder, "%s %s: %d\n", icon, strings.ToUpper(string(severity)), count)
 		}
 	}
-	fmt.Fprintf(&builder, "\n")
+	fmt.Fprintf(builder, "\n")
+}
 
-	// Summary by type
-	fmt.Fprintf(&builder, "Summary by Type:\n")
-	fmt.Fprintf(&builder, "---------------\n")
+// buildTypeSummary creates the summary by type section
+func (r *ReportGeneratorImpl) buildTypeSummary(builder *strings.Builder, violationsByType map[ViolationType][]Violation) {
+	fmt.Fprintf(builder, "Summary by Type:\n")
+	fmt.Fprintf(builder, "---------------\n")
 	// Sort types for consistent output
 	types := make([]ViolationType, 0, len(violationsByType))
 	for violationType := range violationsByType {
@@ -256,16 +272,32 @@ func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error)
 	for _, violationType := range types {
 		violations := violationsByType[violationType]
 		if len(violations) > 0 {
-			fmt.Fprintf(&builder, "  %s: %d\n", strings.ReplaceAll(string(violationType), "_", " "), len(violations))
+			fmt.Fprintf(builder, "  %s: %d\n", strings.ReplaceAll(string(violationType), "_", " "), len(violations))
 		}
 	}
-	fmt.Fprintf(&builder, "\n")
+	fmt.Fprintf(builder, "\n")
+}
 
-	// Detailed violations
-	fmt.Fprintf(&builder, "Detailed Violations:\n")
-	fmt.Fprintf(&builder, "===================\n\n")
+// buildDetailedViolations creates the detailed violations section
+func (r *ReportGeneratorImpl) buildDetailedViolations(
+	builder *strings.Builder,
+	violationsBySeverity map[Severity][]Violation,
+	violationsByType map[ViolationType][]Violation,
+) {
+	fmt.Fprintf(builder, "Detailed Violations:\n")
+	fmt.Fprintf(builder, "===================\n\n")
+
+	// Get sorted types for consistent ordering
+	types := make([]ViolationType, 0, len(violationsByType))
+	for violationType := range violationsByType {
+		types = append(types, violationType)
+	}
+	sort.Slice(types, func(i, j int) bool {
+		return string(types[i]) < string(types[j])
+	})
 
 	// Show errors first, then warnings
+	severities := []Severity{SeverityError, SeverityWarning}
 	for _, severity := range severities {
 		violations := violationsBySeverity[severity]
 		if len(violations) == 0 {
@@ -277,33 +309,40 @@ func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error)
 			icon = "❌"
 		}
 
-		fmt.Fprintf(&builder, "%s %s (%d)\n", icon, strings.ToUpper(string(severity)), len(violations))
-		fmt.Fprintf(&builder, "%s\n", strings.Repeat("-", len(string(severity))+6))
+		fmt.Fprintf(builder, "%s %s (%d)\n", icon, strings.ToUpper(string(severity)), len(violations))
+		fmt.Fprintf(builder, "%s\n", strings.Repeat("-", len(string(severity))+6))
 
 		// Group by type within severity
 		typeGroups := r.groupViolationsByType(violations)
-		for _, violationType := range types {
-			typeViolations := typeGroups[violationType]
-			if len(typeViolations) == 0 {
-				continue
-			}
-
-			fmt.Fprintf(&builder, "\n%s:\n", strings.ReplaceAll(string(violationType), "_", " "))
-			for _, violation := range typeViolations {
-				fmt.Fprintf(&builder, "  • %s", violation.Message)
-				if violation.File != "" {
-					fmt.Fprintf(&builder, " (in %s)", violation.File)
-				}
-				if violation.Expected != "" || violation.Actual != "" {
-					fmt.Fprintf(&builder, "\n    Expected: %s, Actual: %s", violation.Expected, violation.Actual)
-				}
-				fmt.Fprintf(&builder, "\n")
-			}
-		}
-		fmt.Fprintf(&builder, "\n")
+		r.buildViolationsByType(builder, typeGroups, types)
+		fmt.Fprintf(builder, "\n")
 	}
+}
 
-	return builder.String(), nil
+// buildViolationsByType outputs violations grouped by type
+func (r *ReportGeneratorImpl) buildViolationsByType(
+	builder *strings.Builder,
+	typeGroups map[ViolationType][]Violation,
+	types []ViolationType,
+) {
+	for _, violationType := range types {
+		typeViolations := typeGroups[violationType]
+		if len(typeViolations) == 0 {
+			continue
+		}
+
+		fmt.Fprintf(builder, "\n%s:\n", strings.ReplaceAll(string(violationType), "_", " "))
+		for _, violation := range typeViolations {
+			fmt.Fprintf(builder, "  • %s", violation.Message)
+			if violation.File != "" {
+				fmt.Fprintf(builder, " (in %s)", violation.File)
+			}
+			if violation.Expected != "" || violation.Actual != "" {
+				fmt.Fprintf(builder, "\n    Expected: %s, Actual: %s", violation.Expected, violation.Actual)
+			}
+			fmt.Fprintf(builder, "\n")
+		}
+	}
 }
 
 // groupViolationsByType groups violations by their type

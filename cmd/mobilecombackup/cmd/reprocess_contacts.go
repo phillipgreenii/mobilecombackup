@@ -47,7 +47,7 @@ func init() {
 		"Preview what would be reprocessed without making changes")
 }
 
-func runReprocessContacts(_ *cobra.Command, args []string) error {
+func runReprocessContacts(_ *cobra.Command, _ []string) error {
 	// Setup and validation
 	resolvedRepoRoot, contactsManager, initialStats, err := setupReprocessContacts()
 	if err != nil {
@@ -107,7 +107,7 @@ func setupReprocessContacts() (string, *contacts.Manager, reprocessInitialStats,
 }
 
 // processFilesForContacts processes all files and collects new contacts
-func processFilesForContacts(resolvedRepoRoot string, initialStats reprocessInitialStats) ([]contacts.UnprocessedEntry, error) {
+func processFilesForContacts(resolvedRepoRoot string, _ reprocessInitialStats) ([]contacts.UnprocessedEntry, error) {
 	// Create a temporary contacts manager for reprocessing
 	tempContactsManager := contacts.NewContactsManager("")
 

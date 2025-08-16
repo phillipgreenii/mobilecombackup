@@ -107,10 +107,33 @@ func (si *SMSImporter) ImportFile(filePath string) (*YearStat, error) {
 func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	summary := &YearStat{}
 
+	// Setup rejection handling
+	if err := si.setupRejectionHandling(filePath); err != nil {
+		return nil, err
+	}
+
+	// Process messages from file
+	limitedReader, file, err := si.openFileWithSizeLimit(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = file.Close() }()
+
+	// Stream and process messages
+	err = si.streamAndProcessMessages(limitedReader, summary)
+	if err != nil {
+		return si.handleProcessingError(err, filePath, limitedReader, summary)
+	}
+
+	return summary, nil
+}
+
+// setupRejectionHandling sets up rejection file paths and writers
+func (si *SMSImporter) setupRejectionHandling(filePath string) error {
 	// Calculate file hash for rejection file naming
 	fileHash, err := calculateFileHash(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to calculate file hash: %w", err)
+		return fmt.Errorf("failed to calculate file hash: %w", err)
 	}
 
 	// Create rejection writer for this file
@@ -124,19 +147,26 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 	// si.rejectWriter = NewXMLRejectionWriter(rejectPath)
 	// defer si.rejectWriter.Close()
 
-	// Process messages from file
+	return nil
+}
+
+// openFileWithSizeLimit opens the file with DoS protection size limits
+func (si *SMSImporter) openFileWithSizeLimit(filePath string) (*io.LimitedReader, *os.File, error) {
 	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer func() { _ = file.Close() }()
 
 	// Apply size limit to prevent DoS attacks (BUG-051)
 	limitedReader := &io.LimitedReader{R: file, N: si.options.MaxXMLSize}
+	return limitedReader, file, nil
+}
 
+// streamAndProcessMessages streams messages from reader and processes each one
+func (si *SMSImporter) streamAndProcessMessages(limitedReader *io.LimitedReader, summary *YearStat) error {
 	reader := sms.NewXMLSMSReader("")
 	lineNumber := 0
-	err = reader.StreamMessagesFromReader(limitedReader, func(msg sms.Message) error {
+	return reader.StreamMessagesFromReader(limitedReader, func(msg sms.Message) error {
 		lineNumber++
 
 		// Validate message
@@ -198,24 +228,23 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 		return nil
 	})
+}
 
-	if err != nil {
-		// Check if the error was due to size limit exceeded
-		if err == io.EOF && limitedReader.N == 0 {
-			summary.Errors++
-			return summary, security.NewFileSizeLimitExceededError(
-				filepath.Base(filePath),
-				si.options.MaxXMLSize,
-				0, // Don't know actual size
-				"SMS XML parsing")
-		}
+// handleProcessingError handles errors from message processing
+func (si *SMSImporter) handleProcessingError(
+	err error, filePath string, limitedReader *io.LimitedReader, summary *YearStat,
+) (*YearStat, error) {
+	// Check if the error was due to size limit exceeded
+	if err == io.EOF && limitedReader.N == 0 {
 		summary.Errors++
-		return summary, err
+		return summary, security.NewFileSizeLimitExceededError(
+			filepath.Base(filePath),
+			si.options.MaxXMLSize,
+			0, // Don't know actual size
+			"SMS XML parsing")
 	}
-
-	// Note: Violation file writing is handled by rejection writer when rejections occur
-
-	return summary, nil
+	summary.Errors++
+	return summary, err
 }
 
 // validateMessage validates an SMS/MMS message

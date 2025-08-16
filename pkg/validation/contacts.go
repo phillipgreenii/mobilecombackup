@@ -68,6 +68,24 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []Violation {
 func (v *ContactsValidatorImpl) ValidateContactsData() []Violation {
 	var violations []Violation
 
+	// Load and get contacts for validation
+	allContacts, setupViolations := v.loadContactsForValidation()
+	violations = append(violations, setupViolations...)
+	if len(allContacts) == 0 && len(setupViolations) > 0 {
+		return violations
+	}
+
+	// Validate all contacts data integrity
+	validationViolations := v.validateAllContactsData(allContacts)
+	violations = append(violations, validationViolations...)
+
+	return violations
+}
+
+// loadContactsForValidation loads contacts and returns them with any violations
+func (v *ContactsValidatorImpl) loadContactsForValidation() ([]*contacts.Contact, []Violation) {
+	var violations []Violation
+
 	// Load contacts first
 	err := v.contactsReader.LoadContacts()
 	if err != nil {
@@ -77,7 +95,7 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []Violation {
 			File:     "contacts.yaml",
 			Message:  fmt.Sprintf("Cannot validate contacts data - failed to load: %v", err),
 		})
-		return violations
+		return nil, violations
 	}
 
 	// Get all contacts for validation
@@ -89,10 +107,17 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []Violation {
 			File:     "contacts.yaml",
 			Message:  fmt.Sprintf("Failed to get contacts for validation: %v", err),
 		})
-		return violations
+		return nil, violations
 	}
 
-	// Validate contact data integrity
+	return allContacts, violations
+}
+
+// validateAllContactsData validates all contacts and detects duplicates
+func (v *ContactsValidatorImpl) validateAllContactsData(allContacts []*contacts.Contact) []Violation {
+	var violations []Violation
+
+	// Setup validation state
 	seenNames := make(map[string]bool)
 	seenNumbers := make(map[string]string) // number -> contact name
 	phonePattern := regexp.MustCompile(`^\+?[\d\s\-\(\)\.]+$`)
@@ -100,80 +125,111 @@ func (v *ContactsValidatorImpl) ValidateContactsData() []Violation {
 	for i, contact := range allContacts {
 		contactContext := fmt.Sprintf("contact %d", i+1)
 
-		// Validate contact name
-		if contact.Name == "" {
+		// Validate individual contact
+		contactViolations := v.validateSingleContact(contact, contactContext, seenNames)
+		violations = append(violations, contactViolations...)
+
+		// Validate phone numbers and detect duplicates
+		numberViolations := v.validateContactNumbers(contact, i, contactContext, seenNumbers, phonePattern)
+		violations = append(violations, numberViolations...)
+	}
+
+	return violations
+}
+
+// validateSingleContact validates a single contact's basic properties
+func (v *ContactsValidatorImpl) validateSingleContact(
+	contact *contacts.Contact,
+	contactContext string,
+	seenNames map[string]bool,
+) []Violation {
+	var violations []Violation
+
+	// Validate contact name
+	if contact.Name == "" {
+		violations = append(violations, Violation{
+			Type:     InvalidFormat,
+			Severity: SeverityError,
+			File:     contactContext,
+			Message:  "Contact name cannot be empty",
+		})
+		// Continue processing to check phone numbers even for invalid names
+	}
+
+	// Check for duplicate contact names
+	if seenNames[contact.Name] {
+		violations = append(violations, Violation{
+			Type:     InvalidFormat,
+			Severity: SeverityError,
+			File:     contactContext,
+			Message:  fmt.Sprintf("Duplicate contact name: %s", contact.Name),
+		})
+	}
+	seenNames[contact.Name] = true
+
+	// Check if contact has phone numbers
+	if len(contact.Numbers) == 0 {
+		violations = append(violations, Violation{
+			Type:     InvalidFormat,
+			Severity: SeverityWarning,
+			File:     contactContext,
+			Message:  fmt.Sprintf("Contact '%s' has no phone numbers", contact.Name),
+		})
+	}
+
+	return violations
+}
+
+// validateContactNumbers validates phone numbers and detects duplicates
+func (v *ContactsValidatorImpl) validateContactNumbers(
+	contact *contacts.Contact,
+	contactIndex int,
+	contactContext string,
+	seenNumbers map[string]string,
+	phonePattern *regexp.Regexp,
+) []Violation {
+	var violations []Violation
+
+	for j, number := range contact.Numbers {
+		numberContext := fmt.Sprintf("%s number %d", contactContext, j+1)
+
+		// Validate phone number format
+		if number == "" {
 			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
-				File:     contactContext,
-				Message:  "Contact name cannot be empty",
-			})
-			// Continue processing to check phone numbers even for invalid names
-		}
-
-		// Check for duplicate contact names
-		if seenNames[contact.Name] {
-			violations = append(violations, Violation{
-				Type:     InvalidFormat,
-				Severity: SeverityError,
-				File:     contactContext,
-				Message:  fmt.Sprintf("Duplicate contact name: %s", contact.Name),
-			})
-		}
-		seenNames[contact.Name] = true
-
-		// Validate phone numbers
-		if len(contact.Numbers) == 0 {
-			violations = append(violations, Violation{
-				Type:     InvalidFormat,
-				Severity: SeverityWarning,
-				File:     contactContext,
-				Message:  fmt.Sprintf("Contact '%s' has no phone numbers", contact.Name),
+				File:     numberContext,
+				Message:  fmt.Sprintf("Empty phone number for contact '%s'", contact.Name),
 			})
 			continue
 		}
 
-		for j, number := range contact.Numbers {
-			numberContext := fmt.Sprintf("%s number %d", contactContext, j+1)
+		// Basic phone number format validation
+		if !phonePattern.MatchString(number) {
+			violations = append(violations, Violation{
+				Type:     InvalidFormat,
+				Severity: SeverityWarning,
+				File:     numberContext,
+				Message:  fmt.Sprintf("Phone number '%s' has unusual format for contact '%s'", number, contact.Name),
+			})
+		}
 
-			// Validate phone number format
-			if number == "" {
-				violations = append(violations, Violation{
-					Type:     InvalidFormat,
-					Severity: SeverityError,
-					File:     numberContext,
-					Message:  fmt.Sprintf("Empty phone number for contact '%s'", contact.Name),
-				})
-				continue
-			}
+		// Check for duplicate phone numbers across contacts
+		contactName := contact.Name
+		if contactName == "" {
+			contactName = fmt.Sprintf("(unnamed contact %d)", contactIndex+1)
+		}
 
-			// Basic phone number format validation
-			if !phonePattern.MatchString(number) {
-				violations = append(violations, Violation{
-					Type:     InvalidFormat,
-					Severity: SeverityWarning,
-					File:     numberContext,
-					Message:  fmt.Sprintf("Phone number '%s' has unusual format for contact '%s'", number, contact.Name),
-				})
-			}
-
-			// Check for duplicate phone numbers across contacts
-			contactName := contact.Name
-			if contactName == "" {
-				contactName = fmt.Sprintf("(unnamed contact %d)", i+1)
-			}
-
-			if existingContact, exists := seenNumbers[number]; exists {
-				violations = append(violations, Violation{
-					Type:     InvalidFormat,
-					Severity: SeverityError,
-					File:     numberContext,
-					Message: fmt.Sprintf("Phone number '%s' assigned to multiple contacts: '%s' and '%s'",
-						number, existingContact, contactName),
-				})
-			} else {
-				seenNumbers[number] = contactName
-			}
+		if existingContact, exists := seenNumbers[number]; exists {
+			violations = append(violations, Violation{
+				Type:     InvalidFormat,
+				Severity: SeverityError,
+				File:     numberContext,
+				Message: fmt.Sprintf("Phone number '%s' assigned to multiple contacts: '%s' and '%s'",
+					number, existingContact, contactName),
+			})
+		} else {
+			seenNumbers[number] = contactName
 		}
 	}
 
