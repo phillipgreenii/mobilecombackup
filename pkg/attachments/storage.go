@@ -178,7 +178,9 @@ func (das *DirectoryAttachmentStorage) createAttachmentDirectory(validatedDirPat
 }
 
 // streamDataToTempFile streams data to a temporary file with hash verification
-func (das *DirectoryAttachmentStorage) streamDataToTempFile(data io.Reader, expectedHash, attachmentPath string, metadata AttachmentInfo) (AttachmentInfo, string, error) {
+func (das *DirectoryAttachmentStorage) streamDataToTempFile(
+	data io.Reader, expectedHash, attachmentPath string, metadata AttachmentInfo,
+) (AttachmentInfo, string, error) {
 	// Use temp file for atomic write operation
 	tempFile := attachmentPath + ".tmp"
 
@@ -220,7 +222,9 @@ func (das *DirectoryAttachmentStorage) streamDataToTempFile(data io.Reader, expe
 }
 
 // streamWithHashVerification streams data while calculating and verifying hash
-func (das *DirectoryAttachmentStorage) streamWithHashVerification(file *os.File, data io.Reader, expectedHash string) (int64, error) {
+func (das *DirectoryAttachmentStorage) streamWithHashVerification(
+	file *os.File, data io.Reader, expectedHash string,
+) (int64, error) {
 	// Create hash writer for verification
 	hasher := sha256.New()
 	multiWriter := io.MultiWriter(file, hasher)
@@ -244,7 +248,9 @@ func (das *DirectoryAttachmentStorage) streamWithHashVerification(file *os.File,
 }
 
 // writeMetadataFile writes the metadata YAML file with cleanup on failure
-func (das *DirectoryAttachmentStorage) writeMetadataFile(validatedDirPath string, metadata AttachmentInfo, attachmentPath string) error {
+func (das *DirectoryAttachmentStorage) writeMetadataFile(
+	validatedDirPath string, metadata AttachmentInfo, attachmentPath string,
+) error {
 	// Write metadata file with validation
 	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
 	if err != nil {

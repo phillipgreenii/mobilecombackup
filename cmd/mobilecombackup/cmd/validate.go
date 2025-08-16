@@ -139,7 +139,8 @@ func runValidate(_ *cobra.Command, _ []string) error {
 	// Run initial validation
 	result, err := executeInitialValidation(validator, reporter)
 	if err != nil {
-		return err
+		PrintError("%v", err)
+		os.Exit(2)
 	}
 
 	// Process additional features (autofix, orphan removal)
@@ -219,8 +220,7 @@ func executeInitialValidation(validator validation.RepositoryValidator, reporter
 	// Run validation with progress reporting
 	violations, err := validateWithProgress(validator, reporter)
 	if err != nil {
-		PrintError("Validation failed: %v", err)
-		os.Exit(2)
+		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Create result
@@ -231,7 +231,9 @@ func executeInitialValidation(validator validation.RepositoryValidator, reporter
 }
 
 // processAdditionalFeatures handles autofix and orphan removal if requested
-func processAdditionalFeatures(result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter) error {
+func processAdditionalFeatures(
+	result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter,
+) error {
 	// Run autofix if requested
 	if autofixEnabled {
 		if err := processAutofix(result, validator, absPath, reporter); err != nil {
@@ -250,7 +252,9 @@ func processAdditionalFeatures(result *ValidationResult, validator validation.Re
 }
 
 // processAutofix handles autofix functionality
-func processAutofix(result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter) error {
+func processAutofix(
+	result *ValidationResult, validator validation.RepositoryValidator, absPath string, reporter ProgressReporter,
+) error {
 	autofixReport, err := runAutofixWithProgress(result.Violations, absPath, reporter)
 	if err != nil {
 		PrintError("Autofix failed: %v", err)

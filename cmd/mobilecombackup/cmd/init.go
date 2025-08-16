@@ -206,7 +206,9 @@ func createRollbackFunction(dryRun bool, createdPaths *[]string) func() {
 }
 
 // createRepositoryDirectories creates the main repository directory structure
-func createRepositoryDirectories(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
+func createRepositoryDirectories(
+	repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func(),
+) error {
 	// Directories to create
 	directories := []string{
 		"calls",
