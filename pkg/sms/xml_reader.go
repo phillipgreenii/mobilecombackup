@@ -510,97 +510,152 @@ func (r *XMLSMSReader) parseMMSPart(decoder *xml.Decoder, startElement xml.Start
 	part := MMSPart{}
 
 	// Parse part attributes
-	for _, attr := range startElement.Attr {
-		switch attr.Name.Local {
-		case "seq":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				seq, err := strconv.Atoi(attr.Value)
-				if err != nil {
-					return part, fmt.Errorf("invalid seq format: %s", attr.Value)
-				}
-				part.Seq = seq
-			}
-		case "ct":
-			part.ContentType = attr.Value
-		case "name":
-			if attr.Value != types.XMLNullValue {
-				part.Name = attr.Value
-			}
-		case "chset":
-			if attr.Value != types.XMLNullValue {
-				part.Charset = attr.Value
-			}
-		case "cd":
-			if attr.Value != types.XMLNullValue {
-				part.ContentDisp = attr.Value
-			}
-		case "fn":
-			if attr.Value != types.XMLNullValue {
-				part.Filename = attr.Value
-			}
-		case "cid":
-			if attr.Value != types.XMLNullValue {
-				part.ContentID = attr.Value
-			}
-		case "cl":
-			if attr.Value != types.XMLNullValue {
-				part.ContentLoc = attr.Value
-			}
-		case "ctt_s":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				cttS, err := strconv.Atoi(attr.Value)
-				if err != nil {
-					return part, fmt.Errorf("invalid ctt_s format: %s", attr.Value)
-				}
-				part.CttS = cttS
-			}
-		case "ctt_t":
-			if attr.Value != "" && attr.Value != types.XMLNullValue {
-				cttT, err := strconv.Atoi(attr.Value)
-				if err != nil {
-					return part, fmt.Errorf("invalid ctt_t format: %s", attr.Value)
-				}
-				part.CttT = cttT
-			}
-		case attrText:
-			part.Text = attr.Value
-		case "data":
-			// Store the base64 data reference for attachment extraction
-			if attr.Value != types.XMLNullValue && attr.Value != "" {
-				part.Data = attr.Value
-			}
-		}
+	if err := r.parseMMSPartAttributes(&part, startElement.Attr); err != nil {
+		return part, err
 	}
 
-	// Parse child elements like AttachmentRef
+	// Parse child elements
+	return r.parseMMSPartContent(decoder, &part)
+}
+
+// parseMMSPartAttributes parses all MMS part attributes
+func (r *XMLSMSReader) parseMMSPartAttributes(part *MMSPart, attrs []xml.Attr) error {
+	for _, attr := range attrs {
+		if err := r.parseMMSPartAttributeByCategory(part, attr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// parseMMSPartAttributeByCategory routes part attribute parsing to specialized handlers
+func (r *XMLSMSReader) parseMMSPartAttributeByCategory(part *MMSPart, attr xml.Attr) error {
+	name := attr.Name.Local
+	value := attr.Value
+
+	// Core content attributes
+	if err := r.parseMMSPartCoreAttributes(part, name, value); err != nil {
+		return err
+	}
+
+	// Content metadata attributes
+	r.parseMMSPartContentAttributes(part, name, value)
+
+	// Numeric attributes
+	if err := r.parseMMSPartNumericAttributes(part, name, value); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// parseMMSPartCoreAttributes handles sequence, content type, and data
+func (r *XMLSMSReader) parseMMSPartCoreAttributes(part *MMSPart, name, value string) error {
+	switch name {
+	case "seq":
+		if value != "" && value != types.XMLNullValue {
+			seq, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid seq format: %s", value)
+			}
+			part.Seq = seq
+		}
+	case "ct":
+		part.ContentType = value
+	case attrText:
+		part.Text = value
+	case "data":
+		// Store the base64 data reference for attachment extraction
+		if value != types.XMLNullValue && value != "" {
+			part.Data = value
+		}
+	}
+	return nil
+}
+
+// parseMMSPartContentAttributes handles content metadata with null checking
+func (r *XMLSMSReader) parseMMSPartContentAttributes(part *MMSPart, name, value string) {
+	if value == types.XMLNullValue {
+		return
+	}
+
+	switch name {
+	case "name":
+		part.Name = value
+	case "chset":
+		part.Charset = value
+	case "cd":
+		part.ContentDisp = value
+	case "fn":
+		part.Filename = value
+	case "cid":
+		part.ContentID = value
+	case "cl":
+		part.ContentLoc = value
+	}
+}
+
+// parseMMSPartNumericAttributes handles numeric content attributes
+func (r *XMLSMSReader) parseMMSPartNumericAttributes(part *MMSPart, name, value string) error {
+	if value == "" || value == types.XMLNullValue {
+		return nil
+	}
+
+	switch name {
+	case "ctt_s":
+		cttS, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid ctt_s format: %s", value)
+		}
+		part.CttS = cttS
+	case "ctt_t":
+		cttT, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid ctt_t format: %s", value)
+		}
+		part.CttT = cttT
+	}
+	return nil
+}
+
+// parseMMSPartContent parses child elements of an MMS part
+func (r *XMLSMSReader) parseMMSPartContent(decoder *xml.Decoder, part *MMSPart) (MMSPart, error) {
 	for {
 		token, err := decoder.Token()
 		if err != nil {
-			return part, fmt.Errorf("error reading part elements: %w", err)
+			return *part, fmt.Errorf("error reading part elements: %w", err)
 		}
 
 		switch se := token.(type) {
 		case xml.StartElement:
-			switch se.Name.Local {
-			case "AttachmentRef":
-				// Read the text content of the AttachmentRef element
-				var attachmentRef string
-				if err := decoder.DecodeElement(&attachmentRef, &se); err != nil {
-					return part, fmt.Errorf("failed to decode AttachmentRef: %w", err)
-				}
-				part.AttachmentRef = attachmentRef
-			default:
-				// Skip unknown elements
-				if err := decoder.Skip(); err != nil {
-					return part, fmt.Errorf("failed to skip unknown element %s: %w", se.Name.Local, err)
-				}
+			if err := r.parseMMSPartChildElement(decoder, part, se); err != nil {
+				return *part, err
 			}
 		case xml.EndElement:
 			if se.Name.Local == "part" {
-				return part, nil
+				return *part, nil
 			}
 		}
 	}
+}
+
+// parseMMSPartChildElement handles individual child elements
+func (r *XMLSMSReader) parseMMSPartChildElement(decoder *xml.Decoder, part *MMSPart, startElement xml.StartElement) error {
+	switch startElement.Name.Local {
+	case "AttachmentRef":
+		// Read the text content of the AttachmentRef element
+		var attachmentRef string
+		if err := decoder.DecodeElement(&attachmentRef, &startElement); err != nil {
+			return fmt.Errorf("failed to decode AttachmentRef: %w", err)
+		}
+		part.AttachmentRef = attachmentRef
+	default:
+		// Skip unknown elements
+		if err := decoder.Skip(); err != nil {
+			return fmt.Errorf("failed to skip unknown element %s: %w", startElement.Name.Local, err)
+		}
+	}
+	return nil
 }
 
 // parseMMSAddresses parses the addresses section of an MMS
