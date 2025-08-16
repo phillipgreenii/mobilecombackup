@@ -54,7 +54,7 @@ type ValidationResult struct {
 	Valid         bool                             `json:"valid"`
 	Violations    []validation.ValidationViolation `json:"violations"`
 	OrphanRemoval *OrphanRemovalResult             `json:"orphan_removal,omitempty"`
-	AutofixReport *autofix.AutofixReport           `json:"autofix_report,omitempty"`
+	AutofixReport *autofix.Report           `json:"autofix_report,omitempty"`
 }
 
 // OrphanRemovalResult represents the result of orphan attachment removal
@@ -278,7 +278,7 @@ func runAutofixWithProgress(
 	violations []validation.ValidationViolation,
 	repoPath string,
 	reporter ProgressReporter,
-) (*autofix.AutofixReport, error) {
+) (*autofix.Report, error) {
 	reporter.StartPhase("autofix")
 	defer reporter.CompletePhase()
 
@@ -603,7 +603,7 @@ func displayViolationsByType(violations []validation.ValidationViolation) {
 }
 
 // displayAutofixReport displays the autofix report results
-func displayAutofixReport(report *autofix.AutofixReport) {
+func displayAutofixReport(report *autofix.Report) {
 	if !quiet {
 		fmt.Println()
 		if validateDryRun {

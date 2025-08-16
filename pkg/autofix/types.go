@@ -6,8 +6,8 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
 
-// AutofixReport represents the result of autofix operations
-type AutofixReport struct {
+// Report represents the result of autofix operations
+type Report struct {
 	Timestamp         time.Time          `json:"timestamp"`
 	RepositoryPath    string             `json:"repository_path"`
 	FixedViolations   []FixedViolation   `json:"fixed_violations"`
