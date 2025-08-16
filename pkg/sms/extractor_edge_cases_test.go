@@ -387,7 +387,7 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 		}
 
 		// All should reference the same hash directory (deduplication)
-		expectedHashDir := fmt.Sprintf("attachments/12/1205380511780bcad75eb2452224f901eb3864c511430ccf717e55139865ca00")
+		expectedHashDir := "attachments/12/1205380511780bcad75eb2452224f901eb3864c511430ccf717e55139865ca00"
 		if !strings.HasPrefix(result.Path, expectedHashDir) {
 			t.Errorf("Path should reference hash directory %s, got %s", expectedHashDir, result.Path)
 		}
@@ -436,7 +436,7 @@ func TestEdgeCase_DirectoryTraversalAttempt(t *testing.T) {
 	if part.Filename != "../../etc/passwd" {
 		t.Errorf("Original filename should be preserved as metadata")
 	}
-	
+
 	// Verify the filename was sanitized in the storage path
 	if !strings.Contains(result.Path, "____etc_passwd") {
 		t.Errorf("Expected sanitized filename in path, got: %s", result.Path)
