@@ -13,7 +13,7 @@ import (
 // RepositoryValidator performs comprehensive repository validation using all reader APIs
 type RepositoryValidator interface {
 	// ValidateRepository performs complete repository validation
-	ValidateRepository() (*ValidationReport, error)
+	ValidateRepository() (*Report, error)
 
 	// ValidateStructure validates overall repository structure
 	ValidateStructure() []ValidationViolation
@@ -61,8 +61,8 @@ func NewRepositoryValidator(
 }
 
 // ValidateRepository performs complete repository validation
-func (v *RepositoryValidatorImpl) ValidateRepository() (*ValidationReport, error) {
-	report := &ValidationReport{
+func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
+	report := &Report{
 		Timestamp:      time.Now().UTC(),
 		RepositoryPath: v.repositoryRoot,
 		Status:         Valid,

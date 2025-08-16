@@ -40,10 +40,10 @@ type ReportFilterOptions struct {
 // ReportGenerator generates formatted validation reports
 type ReportGenerator interface {
 	// GenerateReport creates a formatted validation report
-	GenerateReport(report *ValidationReport, format ReportFormat, options *ReportFilterOptions) (string, error)
+	GenerateReport(report *Report, format ReportFormat, options *ReportFilterOptions) (string, error)
 
 	// GenerateSummary creates a brief summary of validation results
-	GenerateSummary(report *ValidationReport) (*ValidationSummary, error)
+	GenerateSummary(report *Report) (*ValidationSummary, error)
 }
 
 // ValidationSummary provides high-level statistics about validation results
@@ -66,7 +66,7 @@ func NewReportGenerator() ReportGenerator {
 
 // GenerateReport creates a formatted validation report
 func (r *ReportGeneratorImpl) GenerateReport(
-	report *ValidationReport,
+	report *Report,
 	format ReportFormat,
 	options *ReportFilterOptions,
 ) (string, error) {
@@ -90,7 +90,7 @@ func (r *ReportGeneratorImpl) GenerateReport(
 }
 
 // GenerateSummary creates a brief summary of validation results
-func (r *ReportGeneratorImpl) GenerateSummary(report *ValidationReport) (*ValidationSummary, error) {
+func (r *ReportGeneratorImpl) GenerateSummary(report *Report) (*ValidationSummary, error) {
 	if report == nil {
 		return nil, fmt.Errorf("validation report cannot be nil")
 	}
@@ -114,12 +114,12 @@ func (r *ReportGeneratorImpl) GenerateSummary(report *ValidationReport) (*Valida
 }
 
 // applyFilters creates a filtered copy of the validation report
-func (r *ReportGeneratorImpl) applyFilters(report *ValidationReport, options *ReportFilterOptions) *ValidationReport {
+func (r *ReportGeneratorImpl) applyFilters(report *Report, options *ReportFilterOptions) *Report {
 	if options == nil {
 		return report
 	}
 
-	filteredReport := &ValidationReport{
+	filteredReport := &Report{
 		Timestamp:      report.Timestamp,
 		RepositoryPath: report.RepositoryPath,
 		Status:         report.Status,
@@ -187,7 +187,7 @@ func (r *ReportGeneratorImpl) shouldExcludeFile(file string, excludePatterns []s
 }
 
 // generateYAMLReport creates a YAML-formatted validation report
-func (r *ReportGeneratorImpl) generateYAMLReport(report *ValidationReport) (string, error) {
+func (r *ReportGeneratorImpl) generateYAMLReport(report *Report) (string, error) {
 	yamlData, err := yaml.Marshal(report)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal report to YAML: %v", err)
@@ -196,7 +196,7 @@ func (r *ReportGeneratorImpl) generateYAMLReport(report *ValidationReport) (stri
 }
 
 // generateJSONReport creates a JSON-formatted validation report
-func (r *ReportGeneratorImpl) generateJSONReport(report *ValidationReport) (string, error) {
+func (r *ReportGeneratorImpl) generateJSONReport(report *Report) (string, error) {
 	jsonData, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal report to JSON: %v", err)
@@ -205,7 +205,7 @@ func (r *ReportGeneratorImpl) generateJSONReport(report *ValidationReport) (stri
 }
 
 // generateTextReport creates a human-readable text validation report
-func (r *ReportGeneratorImpl) generateTextReport(report *ValidationReport) (string, error) {
+func (r *ReportGeneratorImpl) generateTextReport(report *Report) (string, error) {
 	var builder strings.Builder
 
 	// Header

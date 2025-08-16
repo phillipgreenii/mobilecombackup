@@ -42,10 +42,10 @@ type OptimizedRepositoryValidator interface {
 	RepositoryValidator
 
 	// ValidateRepositoryWithOptions performs validation with performance controls
-	ValidateRepositoryWithOptions(ctx context.Context, options *PerformanceOptions) (*ValidationReport, error)
+	ValidateRepositoryWithOptions(ctx context.Context, options *PerformanceOptions) (*Report, error)
 
 	// ValidateAsync performs validation asynchronously with progress reporting
-	ValidateAsync(options *PerformanceOptions) (<-chan *ValidationReport, <-chan error)
+	ValidateAsync(options *PerformanceOptions) (<-chan *Report, <-chan error)
 
 	// GetMetrics returns current validation performance metrics
 	GetMetrics() *Metrics
@@ -117,7 +117,7 @@ func NewOptimizedRepositoryValidator(base RepositoryValidator) OptimizedReposito
 func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(
 	ctx context.Context,
 	options *PerformanceOptions,
-) (*ValidationReport, error) {
+) (*Report, error) {
 	if options == nil {
 		options = DefaultPerformanceOptions()
 	}
@@ -136,7 +136,7 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(
 		v.metrics.mu.Unlock()
 	}()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Now().UTC(),
 		RepositoryPath: v.repositoryRoot,
 		Status:         Valid,
@@ -150,8 +150,8 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateRepositoryWithOptions(
 }
 
 // ValidateAsync performs validation asynchronously with progress reporting
-func (v *OptimizedRepositoryValidatorImpl) ValidateAsync(options *PerformanceOptions) (<-chan *ValidationReport, <-chan error) {
-	reportCh := make(chan *ValidationReport, 1)
+func (v *OptimizedRepositoryValidatorImpl) ValidateAsync(options *PerformanceOptions) (<-chan *Report, <-chan error) {
+	reportCh := make(chan *Report, 1)
 	errorCh := make(chan error, 1)
 
 	go func() {
@@ -171,7 +171,7 @@ func (v *OptimizedRepositoryValidatorImpl) ValidateAsync(options *PerformanceOpt
 }
 
 // validateParallel performs validation with concurrent component validation
-func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context, report *ValidationReport, options *PerformanceOptions) (*ValidationReport, error) {
+func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context, report *Report, options *PerformanceOptions) (*Report, error) {
 	// Use worker pool to limit concurrency
 	semaphore := make(chan struct{}, options.MaxConcurrency)
 	var wg sync.WaitGroup
@@ -282,9 +282,9 @@ func (v *OptimizedRepositoryValidatorImpl) validateParallel(ctx context.Context,
 // validateSequential performs validation sequentially with optimizations
 func (v *OptimizedRepositoryValidatorImpl) validateSequential(
 	ctx context.Context,
-	report *ValidationReport,
+	report *Report,
 	options *PerformanceOptions,
-) (*ValidationReport, error) {
+) (*Report, error) {
 	tasks := []struct {
 		name string
 		fn   func() []ValidationViolation
@@ -374,7 +374,7 @@ func (v *OptimizedRepositoryValidatorImpl) isCriticalViolation(violation Validat
 }
 
 // determineStatus sets the overall validation status
-func (v *OptimizedRepositoryValidatorImpl) determineStatus(report *ValidationReport) {
+func (v *OptimizedRepositoryValidatorImpl) determineStatus(report *Report) {
 	hasErrors := false
 	for _, violation := range report.Violations {
 		if violation.Severity == SeverityError {

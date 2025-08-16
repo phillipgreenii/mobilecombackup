@@ -546,7 +546,7 @@ func TestConcurrentViolationAppend(t *testing.T) {
 
 	// Run concurrent validations and verify that all violations are collected correctly
 	const numTests = 5
-	results := make(chan *ValidationReport, numTests)
+	results := make(chan *Report, numTests)
 
 	for i := 0; i < numTests; i++ {
 		go func() {

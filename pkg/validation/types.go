@@ -20,8 +20,8 @@ type FileEntry struct {
 	Modified string `yaml:"modified"`
 }
 
-// ValidationReport represents the result of repository validation
-type ValidationReport struct {
+// Report represents the result of repository validation
+type Report struct {
 	Timestamp      time.Time             `yaml:"timestamp"`
 	RepositoryPath string                `yaml:"repository_path"`
 	Status         ValidationStatus      `yaml:"status"`

@@ -12,7 +12,7 @@ import (
 func TestReportGeneratorImpl_GenerateReport_YAML(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -40,7 +40,7 @@ func TestReportGeneratorImpl_GenerateReport_YAML(t *testing.T) {
 	}
 
 	// Verify it's valid YAML by parsing it back
-	var parsed ValidationReport
+	var parsed Report
 	err = yaml.Unmarshal([]byte(result), &parsed)
 	if err != nil {
 		t.Fatalf("Generated YAML is invalid: %v", err)
@@ -66,7 +66,7 @@ func TestReportGeneratorImpl_GenerateReport_YAML(t *testing.T) {
 func TestReportGeneratorImpl_GenerateReport_JSON(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
@@ -79,7 +79,7 @@ func TestReportGeneratorImpl_GenerateReport_JSON(t *testing.T) {
 	}
 
 	// Verify it's valid JSON by parsing it back
-	var parsed ValidationReport
+	var parsed Report
 	err = json.Unmarshal([]byte(result), &parsed)
 	if err != nil {
 		t.Fatalf("Generated JSON is invalid: %v", err)
@@ -105,7 +105,7 @@ func TestReportGeneratorImpl_GenerateReport_JSON(t *testing.T) {
 func TestReportGeneratorImpl_GenerateReport_Text(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -183,7 +183,7 @@ func TestReportGeneratorImpl_GenerateReport_Text(t *testing.T) {
 func TestReportGeneratorImpl_GenerateReport_Text_NoViolations(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
@@ -207,7 +207,7 @@ func TestReportGeneratorImpl_GenerateReport_Text_NoViolations(t *testing.T) {
 func TestReportGeneratorImpl_GenerateReport_UnsupportedFormat(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Valid,
@@ -238,7 +238,7 @@ func TestReportGeneratorImpl_GenerateReport_NilReport(t *testing.T) {
 func TestReportGeneratorImpl_GenerateSummary(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -306,7 +306,7 @@ func TestReportGeneratorImpl_GenerateSummary_NilReport(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_SeverityFilter(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -339,7 +339,7 @@ func TestReportGeneratorImpl_ApplyFilters_SeverityFilter(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_TypeFilter(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -373,7 +373,7 @@ func TestReportGeneratorImpl_ApplyFilters_TypeFilter(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_FileExcludeFilter(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -406,7 +406,7 @@ func TestReportGeneratorImpl_ApplyFilters_FileExcludeFilter(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_MaxViolationsLimit(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -446,7 +446,7 @@ func TestReportGeneratorImpl_ApplyFilters_MaxViolationsLimit(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_CombinedFilters(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -482,7 +482,7 @@ func TestReportGeneratorImpl_ApplyFilters_CombinedFilters(t *testing.T) {
 func TestReportGeneratorImpl_ApplyFilters_NoOptions(t *testing.T) {
 	generator := &ReportGeneratorImpl{}
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
@@ -517,7 +517,7 @@ func TestNewReportGenerator(t *testing.T) {
 func TestReportGeneratorImpl_GenerateReport_WithFilters(t *testing.T) {
 	generator := NewReportGenerator()
 
-	report := &ValidationReport{
+	report := &Report{
 		Timestamp:      time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 		RepositoryPath: "/test/repo",
 		Status:         Invalid,
