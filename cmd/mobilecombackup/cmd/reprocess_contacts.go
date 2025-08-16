@@ -192,12 +192,12 @@ type ReprocessingStats struct {
 }
 
 // extractorFunc defines the signature for file processing functions
-type extractorFunc func(string, *contacts.ContactsManager) (int, error)
+type extractorFunc func(string, *contacts.Manager) (int, error)
 
 // reprocessFiles is a generic function to process XML files in a directory
 func reprocessFiles(
 	repoRoot, dirName string,
-	contactsManager *contacts.ContactsManager,
+	contactsManager *contacts.Manager,
 	extractor extractorFunc,
 ) (*ReprocessingStats, error) {
 	stats := &ReprocessingStats{}
@@ -245,17 +245,17 @@ func reprocessFiles(
 }
 
 // reprocessCallsFiles processes all calls files in the repository
-func reprocessCallsFiles(repoRoot string, contactsManager *contacts.ContactsManager) (*ReprocessingStats, error) {
+func reprocessCallsFiles(repoRoot string, contactsManager *contacts.Manager) (*ReprocessingStats, error) {
 	return reprocessFiles(repoRoot, "calls", contactsManager, extractContactsFromCallsFile)
 }
 
 // reprocessSMSFiles processes all SMS files in the repository
-func reprocessSMSFiles(repoRoot string, contactsManager *contacts.ContactsManager) (*ReprocessingStats, error) {
+func reprocessSMSFiles(repoRoot string, contactsManager *contacts.Manager) (*ReprocessingStats, error) {
 	return reprocessFiles(repoRoot, "sms", contactsManager, extractContactsFromSMSFile)
 }
 
 // extractContactsFromCallsFile extracts contacts from a single calls file
-func extractContactsFromCallsFile(filePath string, contactsManager *contacts.ContactsManager) (int, error) {
+func extractContactsFromCallsFile(filePath string, contactsManager *contacts.Manager) (int, error) {
 	file, err := os.Open(filePath) // #nosec G304
 	if err != nil {
 		return 0, fmt.Errorf("failed to open file: %w", err)
@@ -301,7 +301,7 @@ func extractContactsFromCallsFile(filePath string, contactsManager *contacts.Con
 }
 
 // extractContactsFromSMSFile extracts contacts from a single SMS file
-func extractContactsFromSMSFile(filePath string, contactsManager *contacts.ContactsManager) (int, error) {
+func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Manager) (int, error) {
 	// Create an SMS reader to parse the XML file
 	reader := sms.NewXMLSMSReader("")
 
@@ -335,7 +335,7 @@ func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Conta
 }
 
 // extractContactFromCall extracts contact information from a call record
-func extractContactFromCall(call *calls.Call, contactsManager *contacts.ContactsManager) {
+func extractContactFromCall(call *calls.Call, contactsManager *contacts.Manager) {
 	// Extract contact names if both number and contact name are present
 	if call.Number != "" && call.ContactName != "" {
 		// Split contact names by comma and process each separately
@@ -350,7 +350,7 @@ func extractContactFromCall(call *calls.Call, contactsManager *contacts.Contacts
 }
 
 // extractContactFromSMS extracts contact information from an SMS message
-func extractContactFromSMS(smsMsg sms.SMS, contactsManager *contacts.ContactsManager) {
+func extractContactFromSMS(smsMsg sms.SMS, contactsManager *contacts.Manager) {
 	// Extract primary address contact, splitting multiple contact names
 	if smsMsg.Address != "" && smsMsg.ContactName != "" {
 		// Split contact names by comma and process each separately
@@ -365,7 +365,7 @@ func extractContactFromSMS(smsMsg sms.SMS, contactsManager *contacts.ContactsMan
 }
 
 // extractContactFromMMS extracts contact information from an MMS message
-func extractContactFromMMS(mmsMsg sms.MMS, contactsManager *contacts.ContactsManager) {
+func extractContactFromMMS(mmsMsg sms.MMS, contactsManager *contacts.Manager) {
 	// Extract primary address contact, splitting multiple contact names
 	if mmsMsg.Address != "" && mmsMsg.ContactName != "" {
 		// Split contact names by comma and process each separately

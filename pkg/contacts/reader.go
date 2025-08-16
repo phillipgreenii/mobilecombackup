@@ -11,8 +11,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ContactsManager provides contact management functionality
-type ContactsManager struct {
+// Manager provides contact management functionality
+type Manager struct {
 	repoPath     string
 	contacts     map[string]*Contact // name -> Contact
 	numberToName map[string]string   // normalized number -> name
@@ -20,9 +20,9 @@ type ContactsManager struct {
 	loaded       bool
 }
 
-// NewContactsManager creates a new ContactsManager for the given repository path
-func NewContactsManager(repoPath string) *ContactsManager {
-	return &ContactsManager{
+// NewContactsManager creates a new Manager for the given repository path
+func NewContactsManager(repoPath string) *Manager {
+	return &Manager{
 		repoPath:     repoPath,
 		contacts:     make(map[string]*Contact),
 		numberToName: make(map[string]string),
@@ -32,7 +32,7 @@ func NewContactsManager(repoPath string) *ContactsManager {
 }
 
 // LoadContacts loads all contacts from contacts.yaml
-func (cm *ContactsManager) LoadContacts() error {
+func (cm *Manager) LoadContacts() error {
 	contactsPath := filepath.Join(cm.repoPath, "contacts.yaml")
 
 	// Check if file exists
@@ -176,7 +176,7 @@ func normalizePhoneNumber(number string) string {
 }
 
 // GetContactByNumber returns contact name for a phone number
-func (cm *ContactsManager) GetContactByNumber(number string) (string, bool) {
+func (cm *Manager) GetContactByNumber(number string) (string, bool) {
 	if !cm.loaded {
 		return "", false
 	}
@@ -187,7 +187,7 @@ func (cm *ContactsManager) GetContactByNumber(number string) (string, bool) {
 }
 
 // GetNumbersByContact returns all numbers for a contact name
-func (cm *ContactsManager) GetNumbersByContact(name string) ([]string, bool) {
+func (cm *Manager) GetNumbersByContact(name string) ([]string, bool) {
 	if !cm.loaded {
 		return nil, false
 	}
@@ -204,7 +204,7 @@ func (cm *ContactsManager) GetNumbersByContact(name string) ([]string, bool) {
 }
 
 // GetAllContacts returns all contacts
-func (cm *ContactsManager) GetAllContacts() ([]*Contact, error) {
+func (cm *Manager) GetAllContacts() ([]*Contact, error) {
 	if !cm.loaded {
 		if err := cm.LoadContacts(); err != nil {
 			return nil, err
@@ -226,7 +226,7 @@ func (cm *ContactsManager) GetAllContacts() ([]*Contact, error) {
 }
 
 // ContactExists checks if a contact name exists
-func (cm *ContactsManager) ContactExists(name string) bool {
+func (cm *Manager) ContactExists(name string) bool {
 	if !cm.loaded {
 		return false
 	}
@@ -236,13 +236,13 @@ func (cm *ContactsManager) ContactExists(name string) bool {
 }
 
 // IsKnownNumber checks if a number has a contact
-func (cm *ContactsManager) IsKnownNumber(number string) bool {
+func (cm *Manager) IsKnownNumber(number string) bool {
 	_, exists := cm.GetContactByNumber(number)
 	return exists
 }
 
 // GetContactsCount returns total number of contacts
-func (cm *ContactsManager) GetContactsCount() int {
+func (cm *Manager) GetContactsCount() int {
 	if !cm.loaded {
 		return 0
 	}
@@ -251,7 +251,7 @@ func (cm *ContactsManager) GetContactsCount() int {
 }
 
 // AddUnprocessedContact adds a contact to the unprocessed section
-func (cm *ContactsManager) AddUnprocessedContact(phone, name string) {
+func (cm *Manager) AddUnprocessedContact(phone, name string) {
 	if phone == "" || name == "" {
 		return // Skip empty values
 	}
@@ -300,7 +300,7 @@ func (cm *ContactsManager) AddUnprocessedContact(phone, name string) {
 }
 
 // GetUnprocessedContacts returns all unprocessed contacts
-func (cm *ContactsManager) GetUnprocessedContacts() map[string][]string {
+func (cm *Manager) GetUnprocessedContacts() map[string][]string {
 	// Return a deep copy to prevent modification
 	result := make(map[string][]string)
 	for phone, names := range cm.unprocessed {
@@ -313,7 +313,7 @@ func (cm *ContactsManager) GetUnprocessedContacts() map[string][]string {
 }
 
 // AddUnprocessedContacts adds contacts from multi-address SMS parsing
-func (cm *ContactsManager) AddUnprocessedContacts(addresses, contactNames string) error {
+func (cm *Manager) AddUnprocessedContacts(addresses, contactNames string) error {
 	// Parse addresses separated by ~
 	addressList := strings.Split(addresses, "~")
 	// Parse contact names separated by ,
@@ -346,7 +346,7 @@ func (cm *ContactsManager) AddUnprocessedContacts(addresses, contactNames string
 }
 
 // GetUnprocessedEntries returns all unprocessed entries in structured format
-func (cm *ContactsManager) GetUnprocessedEntries() []UnprocessedEntry {
+func (cm *Manager) GetUnprocessedEntries() []UnprocessedEntry {
 	var entries []UnprocessedEntry
 
 	// Group by raw phone number and sort
@@ -379,7 +379,7 @@ func (cm *ContactsManager) GetUnprocessedEntries() []UnprocessedEntry {
 }
 
 // addUnprocessedEntry adds a single unprocessed entry (internal helper)
-func (cm *ContactsManager) addUnprocessedEntry(phone, name string) {
+func (cm *Manager) addUnprocessedEntry(phone, name string) {
 	normalized := normalizePhoneNumber(phone)
 	if normalized == "" {
 		return // Skip invalid phone numbers
@@ -424,7 +424,7 @@ func (cm *ContactsManager) addUnprocessedEntry(phone, name string) {
 }
 
 // SaveContacts writes the current state to contacts.yaml
-func (cm *ContactsManager) SaveContacts(path string) error {
+func (cm *Manager) SaveContacts(path string) error {
 	// Prepare data structure for YAML
 	contactsData := ContactsData{
 		Contacts: make([]*Contact, 0, len(cm.contacts)),

@@ -105,7 +105,7 @@ type Importer struct {
 	options         *ImportOptions
 	callsImporter   *CallsImporter
 	smsImporter     *SMSImporter
-	contactsManager *contacts.ContactsManager
+	contactsManager *contacts.Manager
 	callsTracker    *YearTracker
 	smsTracker      *YearTracker
 }

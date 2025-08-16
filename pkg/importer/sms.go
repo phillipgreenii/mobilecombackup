@@ -20,7 +20,7 @@ import (
 type SMSImporter struct {
 	options             *ImportOptions
 	coalescer           coalescer.Coalescer[sms.MessageEntry]
-	contactsManager     *contacts.ContactsManager
+	contactsManager     *contacts.Manager
 	attachmentExtractor *sms.AttachmentExtractor
 	attachmentStats     *sms.AttachmentExtractionStats
 	contentTypeConfig   sms.ContentTypeConfig
@@ -30,7 +30,7 @@ type SMSImporter struct {
 }
 
 // NewSMSImporter creates a new SMS importer
-func NewSMSImporter(options *ImportOptions, contactsManager *contacts.ContactsManager, yearTracker *YearTracker) *SMSImporter {
+func NewSMSImporter(options *ImportOptions, contactsManager *contacts.Manager, yearTracker *YearTracker) *SMSImporter {
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 

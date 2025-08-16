@@ -24,14 +24,14 @@ type CallsImporter struct {
 	writer          *calls.XMLCallsWriter
 	validator       *CallValidator
 	rejWriter       RejectionWriter
-	contactsManager *contacts.ContactsManager
+	contactsManager *contacts.Manager
 	yearTracker     *YearTracker
 }
 
 // NewCallsImporter creates a new calls importer
 func NewCallsImporter(
 	options *ImportOptions,
-	contactsManager *contacts.ContactsManager,
+	contactsManager *contacts.Manager,
 	yearTracker *YearTracker,
 ) (*CallsImporter, error) {
 	// Set defaults for size limits if not specified

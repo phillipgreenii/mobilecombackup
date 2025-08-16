@@ -14,8 +14,8 @@ const (
 	exampleTempDir = "/tmp/example"
 )
 
-// Example demonstrates basic usage of the ContactsManager
-func ExampleContactsManager() {
+// Example demonstrates basic usage of the Manager
+func ExampleManager() {
 	// Create a manager for a repository
 	manager := contacts.NewContactsManager("/path/to/repository")
 
@@ -37,7 +37,7 @@ func ExampleContactsManager() {
 }
 
 // Example demonstrates phone number lookup with various formats
-func ExampleContactsManager_GetContactByNumber() {
+func ExampleManager_GetContactByNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -61,7 +61,7 @@ func ExampleContactsManager_GetContactByNumber() {
 }
 
 // Example demonstrates getting all numbers for a contact
-func ExampleContactsManager_GetNumbersByContact() {
+func ExampleManager_GetNumbersByContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -76,7 +76,7 @@ func ExampleContactsManager_GetNumbersByContact() {
 }
 
 // Example demonstrates checking if numbers are known
-func ExampleContactsManager_IsKnownNumber() {
+func ExampleManager_IsKnownNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -96,7 +96,7 @@ func ExampleContactsManager_IsKnownNumber() {
 }
 
 // Example demonstrates iterating through all contacts
-func ExampleContactsManager_GetAllContacts() {
+func ExampleManager_GetAllContacts() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -115,7 +115,7 @@ func ExampleContactsManager_GetAllContacts() {
 }
 
 // Example demonstrates contact existence checking
-func ExampleContactsManager_ContactExists() {
+func ExampleManager_ContactExists() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -135,7 +135,7 @@ func ExampleContactsManager_ContactExists() {
 }
 
 // Example demonstrates handling the special "<unknown>" contact
-func ExampleContactsManager_unknownContact() {
+func ExampleManager_unknownContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 	_ = manager.LoadContacts()
 
@@ -156,7 +156,7 @@ func ExampleContactsManager_unknownContact() {
 }
 
 // Example demonstrates error handling for common scenarios
-func ExampleContactsManager_errorHandling() {
+func ExampleManager_errorHandling() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 
 	// LoadContacts may fail for various reasons
@@ -199,8 +199,8 @@ func Example_phoneNumberNormalization() {
 	}
 }
 
-// ExampleContactsManager_AddUnprocessedContacts demonstrates the new multi-address parsing functionality
-func ExampleContactsManager_AddUnprocessedContacts() {
+// ExampleManager_AddUnprocessedContacts demonstrates the new multi-address parsing functionality
+func ExampleManager_AddUnprocessedContacts() {
 	// Create a manager for a temporary directory
 	tempDir := exampleTempDir
 	_ = os.MkdirAll(tempDir, 0750)
@@ -235,8 +235,8 @@ func ExampleContactsManager_AddUnprocessedContacts() {
 	// Phone: 5559876543, Names: [Jane Smith]
 }
 
-// ExampleContactsManager_AddUnprocessedContacts_countMismatch demonstrates validation error handling
-func ExampleContactsManager_AddUnprocessedContacts_countMismatch() {
+// ExampleManager_AddUnprocessedContacts_countMismatch demonstrates validation error handling
+func ExampleManager_AddUnprocessedContacts_countMismatch() {
 	manager := contacts.NewContactsManager("")
 
 	// Address count doesn't match contact name count - this will return an error
@@ -249,8 +249,8 @@ func ExampleContactsManager_AddUnprocessedContacts_countMismatch() {
 	// Validation error: address count (2) does not match contact name count (1)
 }
 
-// ExampleContactsManager_GetUnprocessedEntries demonstrates the new structured format
-func ExampleContactsManager_GetUnprocessedEntries() {
+// ExampleManager_GetUnprocessedEntries demonstrates the new structured format
+func ExampleManager_GetUnprocessedEntries() {
 	tempDir := exampleTempDir
 	_ = os.MkdirAll(tempDir, 0750)
 	defer func() { _ = os.RemoveAll(tempDir) }()
