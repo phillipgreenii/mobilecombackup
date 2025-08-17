@@ -9,6 +9,10 @@ import (
 )
 
 func TestMainIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build the binary for testing
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command(

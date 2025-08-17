@@ -5,6 +5,8 @@ import (
 )
 
 func TestYearTracker_BasicFunctionality(t *testing.T) {
+	t.Parallel()
+
 	tracker := NewYearTracker()
 
 	// Test initial state
@@ -47,6 +49,8 @@ func TestYearTracker_BasicFunctionality(t *testing.T) {
 }
 
 func TestYearTracker_ValidateYearStatistics(t *testing.T) {
+	t.Parallel()
+
 	tracker := NewYearTracker()
 
 	// Set up year 2023: 5 initial + 3 added = 8 final (2 duplicates not counted)
@@ -80,6 +84,8 @@ func TestYearTracker_ValidateYearStatistics(t *testing.T) {
 }
 
 func TestYearTracker_GetAllYears(t *testing.T) {
+	t.Parallel()
+
 	tracker := NewYearTracker()
 
 	// Initially should be empty
@@ -113,6 +119,8 @@ func TestYearTracker_GetAllYears(t *testing.T) {
 }
 
 func TestYearTracker_MultiYearScenario(t *testing.T) {
+	t.Parallel()
+
 	tracker := NewYearTracker()
 
 	// Simulate a realistic multi-year import scenario

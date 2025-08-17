@@ -14,6 +14,10 @@ import (
 
 // TestAttachmentStorage_SecurityIntegration tests that attachment storage is protected against directory traversal
 func TestAttachmentStorage_SecurityIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tempDir := t.TempDir()
 	storage := attachments.NewDirectoryAttachmentStorage(tempDir)
 
@@ -65,6 +69,9 @@ func TestAttachmentStorage_SecurityIntegration(t *testing.T) {
 
 // TestAutofix_SecurityIntegration tests that autofix operations are protected against directory traversal
 func TestAutofix_SecurityIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	reporter := &autofix.NullProgressReporter{}
 	fixer := autofix.NewAutofixer(tempDir, reporter)
@@ -194,6 +201,10 @@ func TestPathValidator_RealisticAttackScenarios(t *testing.T) {
 
 // TestPathValidator_Performance tests that path validation meets performance requirements
 func TestPathValidator_Performance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
 	tempDir := t.TempDir()
 	validator := security.NewPathValidator(tempDir)
 

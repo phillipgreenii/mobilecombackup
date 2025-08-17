@@ -31,6 +31,9 @@ func copyFile(src, dst string) error {
 }
 
 func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Use existing test data from testdata/archive/calls.xml
 	repoRoot := "../../testdata/archive"
 	_ = NewXMLCallsReader(repoRoot)
@@ -91,6 +94,9 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 }
 
 func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Use the larger test file from testdata/to_process/00/calls-test.xml
 	tempDir := t.TempDir()
 	callsDir := filepath.Join(tempDir, "calls")
@@ -162,6 +168,9 @@ func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
 }
 
 func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Use integration test scenario data
 	tempDir := t.TempDir()
 	callsDir := filepath.Join(tempDir, "calls")

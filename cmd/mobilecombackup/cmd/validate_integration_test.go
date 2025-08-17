@@ -15,6 +15,10 @@ import (
 
 // TestValidateCommandIntegration tests the validate command via the CLI
 func TestValidateCommandIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
@@ -226,6 +230,10 @@ func TestValidateCommandIntegration(t *testing.T) {
 
 // TestValidateJSONSchema tests that JSON output matches the expected schema
 func TestValidateJSONSchema(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
@@ -351,6 +359,10 @@ created_by: "test"
 
 // TestValidateOrphanRemovalIntegration tests the --remove-orphan-attachments flag via CLI
 func TestValidateOrphanRemovalIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204

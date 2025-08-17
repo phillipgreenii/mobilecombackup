@@ -8,6 +8,8 @@ import (
 )
 
 func TestDetermineMimeType(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		path     string
 		expected string
@@ -36,6 +38,8 @@ func TestDetermineMimeType(t *testing.T) {
 }
 
 func TestFormatNumber(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    int
 		expected string
@@ -61,6 +65,8 @@ func TestFormatNumber(t *testing.T) {
 }
 
 func TestFormatBytes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    int64
 		expected string
@@ -86,6 +92,8 @@ func TestFormatBytes(t *testing.T) {
 }
 
 func TestAddCommas(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    string
 		expected string
@@ -108,6 +116,8 @@ func TestAddCommas(t *testing.T) {
 }
 
 func TestRepositoryInfoJSONMarshaling(t *testing.T) {
+	t.Parallel()
+
 	info := &RepositoryInfo{
 		Version:   "1",
 		CreatedAt: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -204,6 +214,8 @@ func TestRepositoryInfoJSONMarshaling(t *testing.T) {
 }
 
 func TestOutputTextInfoFormatting(t *testing.T) {
+	t.Parallel()
+
 	info := &RepositoryInfo{
 		Version:   "1",
 		CreatedAt: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -258,6 +270,8 @@ func TestOutputTextInfoFormatting(t *testing.T) {
 }
 
 func TestInfoMarkerFileContentUnmarshaling(t *testing.T) {
+	t.Parallel()
+
 	var marker InfoMarkerFileContent
 	jsonData := `{"repository_structure_version":"1","created_at":"2024-01-15T10:30:00Z",` +
 		`"created_by":"mobilecombackup v1.0.0"}`
@@ -282,6 +296,8 @@ func TestInfoMarkerFileContentUnmarshaling(t *testing.T) {
 }
 
 func TestEmptyRepositoryInfo(t *testing.T) {
+	t.Parallel()
+
 	info := &RepositoryInfo{
 		Calls:        make(map[string]YearInfo),
 		SMS:          make(map[string]MessageInfo),

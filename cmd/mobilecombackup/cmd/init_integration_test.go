@@ -12,6 +12,10 @@ import (
 
 // TestInitCommandIntegration tests the init command via the CLI
 func TestInitCommandIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
@@ -211,6 +215,10 @@ func TestInitCommandIntegration(t *testing.T) {
 
 // TestInitCommandTreeOutput tests the tree-style output formatting
 func TestInitCommandTreeOutput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Save current directory
 	oldDir, err := os.Getwd()
 	if err != nil {

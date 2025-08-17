@@ -133,6 +133,10 @@ func TestPrometheusMetrics_OperationMetrics(t *testing.T) {
 }
 
 func TestPrometheusMetrics_PerformanceMetrics(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
 	config := &Config{
 		Enabled:   true,
 		Namespace: "test",

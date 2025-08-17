@@ -12,6 +12,8 @@ const (
 )
 
 func TestNewValidationError(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewValidationError(testOperation, underlyingErr)
 
@@ -51,6 +53,8 @@ func TestNewValidationError(t *testing.T) {
 }
 
 func TestNewValidationErrorWithCode(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewValidationErrorWithCode(testOperation, ErrCodeParsing, underlyingErr)
 
@@ -69,6 +73,8 @@ func TestNewValidationErrorWithCode(t *testing.T) {
 }
 
 func TestNewProcessingError(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewProcessingError("parsing", "input.xml", underlyingErr)
 
@@ -87,6 +93,8 @@ func TestNewProcessingError(t *testing.T) {
 }
 
 func TestNewProcessingErrorWithCode(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewProcessingErrorWithCode("parsing", "input.xml", ErrCodeParsing, underlyingErr)
 
@@ -96,6 +104,8 @@ func TestNewProcessingErrorWithCode(t *testing.T) {
 }
 
 func TestNewImportError(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewImportError("validation", "contacts", 100, underlyingErr)
 
@@ -117,6 +127,8 @@ func TestNewImportError(t *testing.T) {
 }
 
 func TestNewImportErrorWithCode(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewImportErrorWithCode("validation", "contacts", 100, ErrCodeValidation, underlyingErr)
 
@@ -126,6 +138,8 @@ func TestNewImportErrorWithCode(t *testing.T) {
 }
 
 func TestNewFileError(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewFileError("/path/to/file.txt", "read", underlyingErr)
 
@@ -144,6 +158,8 @@ func TestNewFileError(t *testing.T) {
 }
 
 func TestNewFileErrorWithCode(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewFileErrorWithCode("/path/to/file.txt", "write", ErrCodePermission, underlyingErr)
 
@@ -153,6 +169,8 @@ func TestNewFileErrorWithCode(t *testing.T) {
 }
 
 func TestNewConfigurationError(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewConfigurationError("max_files", "invalid", underlyingErr)
 
@@ -171,6 +189,8 @@ func TestNewConfigurationError(t *testing.T) {
 }
 
 func TestNewConfigurationErrorWithCode(t *testing.T) {
+	t.Parallel()
+
 	underlyingErr := errors.New("test error")
 	err := NewConfigurationErrorWithCode("key", "value", ErrCodeValidation, underlyingErr)
 

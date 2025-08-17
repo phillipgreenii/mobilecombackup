@@ -6,6 +6,8 @@ import (
 )
 
 func TestCallEntry_Hash(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		call1    *Call
@@ -173,6 +175,8 @@ func TestCallEntry_Hash(t *testing.T) {
 }
 
 func TestCallEntry_Timestamp(t *testing.T) {
+	t.Parallel()
+
 	call := &Call{
 		Date: 1609459200000, // 2021-01-01 00:00:00 UTC in milliseconds
 	}
@@ -187,6 +191,8 @@ func TestCallEntry_Timestamp(t *testing.T) {
 }
 
 func TestCallEntry_Year(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		date     int64

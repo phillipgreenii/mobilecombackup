@@ -68,6 +68,9 @@ created_by: "mobilecombackup v1.0.0"
 }
 
 func TestImporter_ContactExtraction_SMS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	testXML := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <smses count="3">
   <sms address="5551234567" contact_name="John Doe" body="Hello" date="1609459200000" type="2" readable_date="Jan 1, 2021 12:00:00 AM" />
@@ -79,6 +82,9 @@ func TestImporter_ContactExtraction_SMS(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_Calls(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	testXML := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="3">
   <call number="5551234567" contact_name="John Doe" duration="120" date="1609459200000" type="1" readable_date="Jan 1, 2021 12:00:00 AM" />
@@ -90,6 +96,9 @@ func TestImporter_ContactExtraction_Calls(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_MMS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
@@ -187,6 +196,9 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_ExistingContacts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
@@ -316,6 +328,9 @@ unprocessed:
 }
 
 func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
@@ -391,6 +406,9 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
@@ -457,6 +475,9 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_DryRun(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")
@@ -508,6 +529,9 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 }
 
 func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temp directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")

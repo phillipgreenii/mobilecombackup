@@ -33,6 +33,10 @@ func copyFile(src, dst string) error {
 }
 
 func TestContactsManager_Integration_WithTestData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Check if test data exists
 	testDataPath := "../../testdata/it/scenerio-00/original_repo_root/contacts.yaml"
 	if _, err := os.Stat(testDataPath); os.IsNotExist(err) {
@@ -117,6 +121,9 @@ func TestContactsManager_Integration_EmptyRepository(t *testing.T) {
 }
 
 func TestContactsManager_Integration_LargeContactList(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
@@ -158,6 +165,9 @@ func TestContactsManager_Integration_LargeContactList(t *testing.T) {
 }
 
 func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
@@ -214,6 +224,9 @@ func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
 }
 
 func TestContactsManager_Integration_PhoneNumberVariations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
@@ -258,6 +271,9 @@ func TestContactsManager_Integration_PhoneNumberVariations(t *testing.T) {
 }
 
 func TestContactsManager_Integration_UnknownContact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 

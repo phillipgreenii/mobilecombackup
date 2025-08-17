@@ -10,6 +10,10 @@ import (
 )
 
 func TestInfoCommandIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tests := []struct {
 		name string
 		args []string
@@ -122,6 +126,10 @@ func TestInfoCommandIntegration(t *testing.T) {
 }
 
 func TestInfoCommandWithData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := buildTestBinary(t)
 
@@ -185,6 +193,9 @@ func TestInfoCommandWithData(t *testing.T) {
 }
 
 func TestInfoCommandEnvironmentVariable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Build test binary
 	testBin := buildTestBinary(t)
 

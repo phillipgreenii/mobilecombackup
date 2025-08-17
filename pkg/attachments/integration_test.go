@@ -38,6 +38,10 @@ func copyFile(src, dst string) error {
 }
 
 func TestAttachmentManager_Integration_WithTestData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Check if test data exists
 	testDataPath := "../../testdata/it/scenerio-00/original_repo_root/attachments"
 	if _, err := os.Stat(testDataPath); os.IsNotExist(err) {
@@ -160,6 +164,9 @@ func TestAttachmentManager_Integration_EmptyRepository(t *testing.T) {
 }
 
 func TestAttachmentManager_Integration_LargeRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	manager := NewAttachmentManager(tempDir)
 
@@ -239,6 +246,9 @@ func TestAttachmentManager_Integration_LargeRepository(t *testing.T) {
 }
 
 func TestAttachmentManager_Integration_CrossReference(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	manager := NewAttachmentManager(tempDir)
 
@@ -309,6 +319,9 @@ func TestAttachmentManager_Integration_CrossReference(t *testing.T) {
 }
 
 func TestAttachmentManager_Integration_CorruptedFiles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	manager := NewAttachmentManager(tempDir)
 
@@ -350,6 +363,9 @@ func TestAttachmentManager_Integration_CorruptedFiles(t *testing.T) {
 }
 
 func TestAttachmentManager_Integration_ValidationErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	manager := NewAttachmentManager(tempDir)
 

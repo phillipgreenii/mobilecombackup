@@ -28,6 +28,12 @@
       "tests": [
         "go test -v -covermode=set ./..."
       ],
+      "test-unit": [
+        "go test -short -v ./..."
+      ],
+      "test-integration": [
+        "go test -run Integration -v ./..."
+      ],
       "linter": [
         "golangci-lint run"
       ],

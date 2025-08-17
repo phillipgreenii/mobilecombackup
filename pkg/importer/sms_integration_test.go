@@ -9,6 +9,10 @@ import (
 )
 
 func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Create temporary directories
 	tempDir := t.TempDir()
 	repoRoot := filepath.Join(tempDir, "repo")

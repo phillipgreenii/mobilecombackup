@@ -9,6 +9,10 @@ import (
 
 // TestInfoCommandEmptyRepository tests the info command on an empty repository
 func TestInfoCommandEmptyRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204
@@ -65,6 +69,9 @@ func TestInfoCommandEmptyRepository(t *testing.T) {
 
 // TestInfoCommandJSON tests the info command JSON output on empty repository
 func TestInfoCommandEmptyRepositoryJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Build test binary
 	testBin := filepath.Join(t.TempDir(), "mobilecombackup-test")
 	buildCmd := exec.Command("go", "build", "-o", testBin, "../../../cmd/mobilecombackup") // #nosec G204

@@ -32,6 +32,9 @@ func copyFile(src, dst string) error {
 }
 
 func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Use existing test data from testdata/to_process/sms-test.xml
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
@@ -115,6 +118,9 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_GetMessageCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
@@ -137,6 +143,9 @@ func TestXMLSMSReader_Integration_GetMessageCount(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_GetAvailableYears(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 
@@ -168,6 +177,9 @@ func TestXMLSMSReader_Integration_GetAvailableYears(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_MMSParts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
@@ -228,6 +240,9 @@ func TestXMLSMSReader_Integration_MMSParts(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_ValidateWithActualData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
@@ -246,6 +261,9 @@ func TestXMLSMSReader_Integration_ValidateWithActualData(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_YearConsistency(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
@@ -291,6 +309,9 @@ func TestXMLSMSReader_Integration_YearConsistency(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_GetAttachmentRefs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))
@@ -320,6 +341,9 @@ func TestXMLSMSReader_Integration_GetAttachmentRefs(t *testing.T) {
 }
 
 func TestXMLSMSReader_Integration_MessageTypes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	smsDir := filepath.Join(tempDir, "sms")
 	err := copyFile("../../testdata/to_process/sms-test.xml", filepath.Join(smsDir, "sms-2013.xml"))

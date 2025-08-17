@@ -12,6 +12,10 @@ import (
 
 // TestAutofixer_Integration_FullRepository tests autofix on a complete repository structure
 func TestAutofixer_Integration_FullRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tempDir := t.TempDir()
 
 	// Create a repository with various violations
@@ -108,6 +112,10 @@ func TestAutofixer_Integration_FullRepository(t *testing.T) {
 
 // TestAutofixer_Integration_DryRunVsRealRun compares dry-run and real execution
 func TestAutofixer_Integration_DryRunVsRealRun(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Set up two identical test directories
 	tempDir1 := t.TempDir()
 	tempDir2 := t.TempDir()
@@ -237,6 +245,10 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 
 // TestAutofixer_Integration_PermissionErrors tests handling of permission errors
 func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	if os.Getuid() == 0 {
 		t.Skip("Skipping permission test when running as root")
 	}
@@ -295,6 +307,10 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 
 // TestAutofixer_Integration_ErrorRecovery tests that errors don't stop processing
 func TestAutofixer_Integration_ErrorRecovery(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 
@@ -403,6 +419,10 @@ func createTestFilesForManifest(t *testing.T, repoDir string, count int) {
 
 // TestAutofixer_Integration_Idempotent tests that running autofix multiple times is safe
 func TestAutofixer_Integration_Idempotent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tempDir := t.TempDir()
 	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
 

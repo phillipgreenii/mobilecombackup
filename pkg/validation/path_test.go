@@ -395,6 +395,10 @@ func TestPathValidationFuzzing(t *testing.T) {
 
 // TestPerformance ensures validation doesn't introduce significant overhead
 func TestPerformance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
 	tmpDir := t.TempDir()
 	validator, err := NewPathValidator(tmpDir)
 	if err != nil {

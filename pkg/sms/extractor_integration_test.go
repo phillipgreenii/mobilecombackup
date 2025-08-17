@@ -14,6 +14,10 @@ import (
 )
 
 func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	tempDir := t.TempDir()
 
 	// Create test MMS with attachments
@@ -109,6 +113,9 @@ func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 }
 
 func TestAttachmentExtraction_XMLSerialization(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Test that extracted MMS can be properly serialized to XML
 	mms := &MMS{
 		Date:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC).Unix() * 1000,
@@ -157,6 +164,9 @@ func TestAttachmentExtraction_XMLSerialization(t *testing.T) {
 }
 
 func TestAttachmentExtraction_MultipleMessagesDuplicateAttachments(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	extractor := NewAttachmentExtractor(tempDir)
 	config := GetDefaultContentTypeConfig()
@@ -231,6 +241,9 @@ func TestAttachmentExtraction_MultipleMessagesDuplicateAttachments(t *testing.T)
 }
 
 func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	extractor := NewAttachmentExtractor(tempDir)
 	config := GetDefaultContentTypeConfig()
@@ -321,6 +334,9 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 }
 
 func TestAttachmentExtraction_LargeMessageBatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	tempDir := t.TempDir()
 	extractor := NewAttachmentExtractor(tempDir)
 	config := GetDefaultContentTypeConfig()

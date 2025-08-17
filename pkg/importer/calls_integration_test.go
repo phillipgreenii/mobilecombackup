@@ -10,6 +10,10 @@ import (
 )
 
 func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
 	// Create temporary directory for test
 	tmpDir := t.TempDir()
 	repoRoot := filepath.Join(tmpDir, "repo")
@@ -88,6 +92,9 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
 }
 
 func TestCallsImporter_DuplicateDetection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temporary directory for test
 	tmpDir := t.TempDir()
 	repoRoot := filepath.Join(tmpDir, "repo")
@@ -173,6 +180,9 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
 }
 
 func TestCallsImporter_InvalidEntries(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temporary directory for test
 	tmpDir := t.TempDir()
 	repoRoot := filepath.Join(tmpDir, "repo")
@@ -273,6 +283,9 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 }
 
 func TestCallsImporter_OrderPreservation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
 	// Create temporary directory for test
 	tmpDir := t.TempDir()
 	repoRoot := filepath.Join(tmpDir, "repo")

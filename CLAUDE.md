@@ -78,6 +78,17 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 - Test both success and failure paths
 - Create `example_test.go` for usage docs
 
+#### Test Commands
+- `devbox run test-unit`: Fast unit tests only (skips integration tests via `-short`)
+- `devbox run test-integration`: Integration tests only (CLI and file I/O tests)
+- `devbox run test`: Full test suite (both unit and integration tests)
+
+#### Test Development Workflow
+1. **During development**: Use `devbox run test-unit` for rapid feedback
+2. **Before committing**: Run `devbox run test` to ensure all tests pass
+3. **Integration tests**: Use `testing.Short()` to skip in unit-only runs
+4. **Unit tests**: Add `t.Parallel()` to pure logic tests for performance
+
 ### Error Handling
 - Return errors, don't `os.Exit()` in libraries
 - Include context in error messages

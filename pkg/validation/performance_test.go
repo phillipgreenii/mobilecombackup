@@ -12,6 +12,10 @@ import (
 )
 
 func TestDefaultPerformanceOptions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
 	options := DefaultPerformanceOptions()
 
 	if !options.ParallelValidation {

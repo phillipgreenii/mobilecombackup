@@ -331,6 +331,8 @@ func TestXMLCallsReader_EmptyCallsDirectory(t *testing.T) {
 }
 
 func TestCallTypeConstants(t *testing.T) {
+	t.Parallel()
+
 	// Test that the call type constants match the expected values
 	if Incoming != 1 {
 		t.Errorf("Expected Incoming to be 1, got %d", Incoming)

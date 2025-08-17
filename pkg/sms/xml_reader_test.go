@@ -508,6 +508,8 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 }
 
 func TestMessageType_Constants(t *testing.T) {
+	t.Parallel()
+
 	if ReceivedMessage != 1 {
 		t.Errorf("ReceivedMessage = %v, want 1", ReceivedMessage)
 	}

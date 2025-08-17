@@ -271,6 +271,10 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums_MultipleViolations(t *t
 }
 
 func TestChecksumValidatorImpl_LargeFilePerformance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
 	tempDir := t.TempDir()
 	validator := NewChecksumValidator(tempDir)
 
