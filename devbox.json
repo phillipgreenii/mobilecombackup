@@ -1,11 +1,13 @@
 {
-  "$schema":  "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
-	  "go@1.24",
-	  "golangci-lint@latest",
-	  "claude-code@latest",
-	  "viu@latest",
-	  "yq@latest"
+    "deno@2",
+    "go@1.24",
+    "golangci-lint@latest",
+    "jq@latest",
+    "viu@latest",
+    "yq@latest",
+    "claude-code@1.0.72"
   ],
   "shell": {
     "init_hook": [
@@ -15,51 +17,51 @@
     ],
     "scripts": {
       "list-issues": [
-              "ls -1 issues/{active,ready,backlog}"
+        "ls -1 issues/{active,ready,backlog}"
       ],
       "formatter": [
-              "go fmt ./..."
+        "go fmt ./..."
       ],
       "builder": [
-              "go build -v ./..."
+        "go build -v ./..."
       ],
       "tests": [
-              "go test -v -covermode=set ./..."
+        "go test -v -covermode=set ./..."
       ],
       "linter": [
-              "golangci-lint run"
+        "golangci-lint run"
       ],
       "linter-fix": [
-              "golangci-lint run --fix"
+        "golangci-lint run --fix"
       ],
       "build-cli": [
-              "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
+        "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup'"
       ],
       "validate-version": [
-              "bash scripts/validate-version.sh"
+        "bash scripts/validate-version.sh"
       ],
       "ci": [
-              "devbox run formatter",
-              "devbox run tests",
-              "devbox run linter",
-              "devbox run build-cli"
+        "devbox run formatter",
+        "devbox run tests",
+        "devbox run linter",
+        "devbox run build-cli"
       ],
       "install-hooks": [
-              "bash scripts/install-hooks.sh"
+        "bash scripts/install-hooks.sh"
       ],
       "test-hooks": [
-              "echo '🧪 Testing pre-commit hooks...'",
-              ".githooks/pre-commit"
+        "echo '🧪 Testing pre-commit hooks...'",
+        ".githooks/pre-commit"
       ],
       "coverage": [
-              "echo '📊 Running test coverage analysis...'",
-              "go test -coverprofile=coverage.out ./...",
-              "go tool cover -html=coverage.out -o coverage.html",
-              "echo '✅ Coverage report generated: coverage.html'"
+        "echo '📊 Running test coverage analysis...'",
+        "go test -coverprofile=coverage.out ./...",
+        "go tool cover -html=coverage.out -o coverage.html",
+        "echo '✅ Coverage report generated: coverage.html'"
       ],
       "coverage-summary": [
-              "echo '📈 Test Coverage Summary:'",
-              "go test -cover ./... | grep -E 'coverage|ok|FAIL' | sort"
+        "echo '📈 Test Coverage Summary:'",
+        "go test -cover ./... | grep -E 'coverage|ok|FAIL' | sort"
       ]
     }
   }
