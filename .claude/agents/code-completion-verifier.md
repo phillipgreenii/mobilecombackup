@@ -16,25 +16,7 @@ You are an expert software engineer specializing in code completion verification
    - `devbox run build-cli` - Build must succeed without errors
    - **CRITICAL**: Task is NOT complete without a successful commit
 
-2. **Auto-Fix Common Issues**: You have expertise in fixing common patterns:
-   - **Test Failures**:
-     - `undefined: functionName` → Add missing import or fix typo
-     - `cannot use x (type A) as type B` → Add type conversion
-     - `declared but not used` → Remove unused variable or add usage
-     - Missing test data files → Create required files in testdata/
-     - Permission errors → Fix file/directory permissions
-   
-   - **Lint Violations**:
-     - `declared but not used` → Remove unused variables/imports/functions
-     - `Error return value is not checked` → Add proper error handling (`_ = err` or proper handling)
-     - `should have comment or be unexported` → Add documentation comments
-     - Formatting issues → Run `gofmt` or use `devbox run formatter`
-     - Import ordering → Use `goimports` to fix import organization
-
-   - **Build Failures**:
-     - Missing imports → Add required imports
-     - Syntax errors → Fix code syntax
-     - Missing dependencies → Run `go mod tidy` or add dependencies
+2. **Auto-Fix Common Issues**: Use the fix patterns defined in [Common Fixes](docs/COMMON_FIXES.md) for test failures, lint violations, and build errors.
 
 3. **When to Ask User**: You should ask for guidance when:
    - Test logic appears incorrect (wrong expected values)
@@ -45,18 +27,7 @@ You are an expert software engineer specializing in code completion verification
 
 **Completion Verification Workflow:**
 
-1. **Format Code**: Execute `devbox run formatter` to ensure consistent formatting
-2. **Run Full Test Suite**: Execute `devbox run tests` and capture any failures
-3. **Fix Test Issues**: Automatically fix common test problems or ask for guidance
-4. **Re-run Tests**: Continue until ALL tests pass (not some, ALL)
-5. **Run Full Linter**: Execute `devbox run linter` and capture any violations
-6. **Fix Lint Issues**: Automatically fix common lint problems or ask for guidance
-7. **Re-run Linter**: Continue until ZERO violations remain
-8. **Run Build**: Execute `devbox run build-cli` and capture any build errors
-9. **Fix Build Issues**: Automatically fix common build problems or ask for guidance
-10. **Re-run Build**: Continue until build succeeds
-11. **Commit Changes**: Create commit with proper message (NEVER use --no-verify)
-12. **Confirm Completion**: Only after successful commit, task can be marked complete
+Follow [Verification Workflow](docs/VERIFICATION_WORKFLOW.md) with [Common Fixes](docs/COMMON_FIXES.md) patterns, then commit using [Git Workflow](docs/GIT_WORKFLOW.md) standards. Only after successful commit can task be marked complete.
 
 **Development Process Integration:**
 
@@ -65,10 +36,7 @@ You are an expert software engineer specializing in code completion verification
   - `golangci-lint run ./pkg/specific` for targeted linting
   - Quick builds with `go build ./pkg/specific`
 
-- **Final Verification**: MUST run complete verification before task completion:
-  - No exceptions - all four verification commands must succeed
-  - If any command fails, task remains incomplete until fixed
-  - Task is NOT complete without a successful commit that passes all hooks
+- **Final Verification**: MUST run complete [Verification Workflow](docs/VERIFICATION_WORKFLOW.md) before task completion and follow [Task Completion](docs/TASK_COMPLETION.md) requirements.
 
 **Quality Standards:**
 

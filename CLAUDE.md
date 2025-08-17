@@ -8,13 +8,9 @@ This is a Go command-line tool for processing mobile phone backup files (Call an
 
 ## Development Commands
 
-```bash
-# Quality workflow (ALWAYS run in this order)
-devbox run formatter  # Format code first
-devbox run tests     # Run all tests
-devbox run linter    # Check code quality
-devbox run build-cli # Build the CLI
+For verification workflow and quality commands, see [Verification Workflow](docs/VERIFICATION_WORKFLOW.md).
 
+```bash
 # Development shortcuts
 devbox shell         # Enter development environment
 devbox run builder   # Build all packages
@@ -22,7 +18,6 @@ devbox run builder   # Build all packages
 # Git hooks (quality enforcement)
 devbox run install-hooks  # Install pre-commit hooks
 devbox run test-hooks     # Test hooks without committing
-# NEVER use: git commit --no-verify
 ```
 
 ## Architecture Overview
@@ -56,6 +51,8 @@ repository/
 
 ## Issue Development Workflow
 
+For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLOW.md).
+
 ### Quick Reference
 1. **Create issue**: Use `/create-feature` or `/create-bug` commands
 2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
@@ -63,53 +60,15 @@ repository/
 4. **Implement**: Use `/implement-issue FEAT-XXX` command
 5. **Complete**: Updates move to `issues/completed/`
 
-### Issue Structure
-```
-issues/
-├── active/      # Currently being implemented
-├── ready/       # Fully planned, ready to implement
-├── backlog/     # Being planned
-└── completed/   # Finished issues
-```
+## Task Completion Requirements
 
-### Implementation Best Practices
-- Create TodoWrite list from issue tasks
-- Work on one task at a time
-- Run ALL verification commands before marking tasks complete
-- Commit after each completed task (MUST pass all checks)
-- Reference issue in commit messages (e.g., "FEAT-XXX: Add validation")
-- NEVER mark a task complete without a successful commit
+For detailed task completion requirements and verification workflow, see [Task Completion](docs/TASK_COMPLETION.md).
 
-## Task Completion Verification
+## Git Workflow and Commit Rules
 
-**MANDATORY**: Before marking any task complete, ALL commands must succeed:
-```bash
-devbox run formatter  # Code must be formatted
-devbox run tests     # All tests must pass
-devbox run linter    # Zero lint violations
-devbox run build-cli # Build must succeed
-```
+For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW.md).
 
-If ANY command fails:
-1. Fix the issues
-2. Re-run verification
-3. Only mark complete when ALL pass
-
-## ABSOLUTE COMMIT RULE
-
-**CRITICAL**: Every task MUST end with a commit that passes ALL quality checks:
-
-1. **NEVER** use `git commit --no-verify`
-2. **ALL** tests MUST pass (not some, ALL)
-3. **ZERO** linting errors allowed
-4. Build MUST succeed
-5. Code MUST be formatted
-
-**ENFORCEMENT**:
-- A task is NOT complete until a successful commit is made
-- If ANY quality check fails, the task remains incomplete
-- If there's a blocker preventing commit, STOP and ask for help
-- Do NOT report task completion with failing tests/lint/build
+**CRITICAL**: Every task MUST end with a commit that passes ALL quality checks. NEVER use `git commit --no-verify`.
 
 ## Common Patterns
 
@@ -132,23 +91,18 @@ If ANY command fails:
 - `example_test.go`: Usage examples
 
 ### Git Workflow
-```bash
-# Stage specific files only (NEVER use git add .)
-git add pkg/specific/file.go
-
-# Commit with issue reference
-git commit -m "FEAT-XXX: Brief description
-
-Detailed explanation if needed
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-```
+See [Git Workflow](docs/GIT_WORKFLOW.md) for complete commit standards and staging practices.
 
 ## Additional Documentation
 
-For detailed information, see:
+### Core Workflow Documentation
+- **Verification Workflow**: `docs/VERIFICATION_WORKFLOW.md` - Quality verification commands
+- **Git Workflow**: `docs/GIT_WORKFLOW.md` - Commit rules and standards
+- **Task Completion**: `docs/TASK_COMPLETION.md` - Task completion requirements
+- **Common Fixes**: `docs/COMMON_FIXES.md` - Fix patterns for common issues
+- **Issue Workflow**: `docs/ISSUE_WORKFLOW.md` - Complete development lifecycle
+
+### Project Documentation
 - **Troubleshooting**: `docs/TROUBLESHOOTING.md` - Test/lint failures and fixes
 - **Version Management**: `docs/VERSION_MANAGEMENT.md` - Release workflow
 - **Session Learnings**: `docs/SESSION_LEARNINGS.md` - Implementation insights

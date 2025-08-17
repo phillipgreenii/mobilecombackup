@@ -49,29 +49,9 @@ When activated, you will:
    - Check that any configuration examples reflect current requirements
    - Validate that documented workflows match actual system behavior
 
-7. **Task Completion Verification** (MANDATORY): If you make any code changes during documentation sync, before marking any TodoWrite task complete, you MUST:
-   - Run `devbox run tests` - all tests must pass (no failures, no compilation errors)
-   - Run `devbox run linter` - zero lint violations allowed
-   - Run `devbox run build-cli` - build must succeed without errors
-   - Fix any failures found before proceeding to next task
-   - Auto-fix common issues: missing imports, unused variables, format violations
-   - Ask user when fix might change business logic or when unsure
+7. **Task Completion Verification** (MANDATORY): If you make any code changes during documentation sync, follow [Task Completion](docs/TASK_COMPLETION.md) and [Verification Workflow](docs/VERIFICATION_WORKFLOW.md) requirements. Use [Common Fixes](docs/COMMON_FIXES.md) patterns for auto-fixing issues.
 
-8. **Auto-Commit After Task Completion**: After completing documentation updates or other tasks, ALWAYS commit your changes:
-   - Use git status before starting work to track which files will change
-   - After task completion and verification, use git status again to identify changed files
-   - Stage only the files you modified during the task (never use `git add .`)
-   - Commit with a descriptive message referencing the issue ID if applicable
-   - Use this commit message format:
-     ```
-     [ISSUE-ID]: [Brief task description]
-     
-     [Optional: Details about changes made]
-     
-     🤖 Generated with [Claude Code](https://claude.ai/code)
-     
-     Co-Authored-By: Claude <noreply@anthropic.com>
-     ```
+8. **Auto-Commit After Task Completion**: Follow [Git Workflow](docs/GIT_WORKFLOW.md) for commit standards, file staging, and message format after completing documentation updates or other tasks.
 
 You will be thorough but efficient, focusing on meaningful updates rather than cosmetic changes. You understand that good documentation is crucial for project maintainability and developer onboarding. Your updates should be clear, concise, and add value to the project's documentation ecosystem.
 

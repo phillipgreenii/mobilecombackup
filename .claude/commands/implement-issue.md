@@ -9,34 +9,11 @@ Use agent spec-implementation-engineer to implement issue $ARGUMENTS following t
 
 **Implementation Requirements:**
 - **One task at a time**: Complete each TodoWrite task fully before moving to next
-- **Verification before completion**: ALL commands must succeed before marking task complete:
-  ```bash
-  devbox run formatter  # Code must be formatted
-  devbox run tests     # All tests must pass  
-  devbox run linter    # Zero lint violations
-  devbox run build-cli # Build must succeed
-  ```
-- **Code quality**: Ensure code compiles and all tests pass before marking any task complete
-- **Task completion**: Only mark TodoWrite tasks complete when ALL verification steps pass
+- **Verification before completion**: Follow [Verification Workflow](docs/VERIFICATION_WORKFLOW.md) and [Task Completion](docs/TASK_COMPLETION.md) requirements
+- **Code quality**: All verification commands must pass before marking any task complete
 
 **Auto-Commit Workflow (After Each Task):**
-1. **Check git status** before and after task work to identify modified files
-2. **Run verification** - ensure all quality checks pass:
-   - `devbox run formatter` (format code first)
-   - `devbox run tests` (all tests must pass)  
-   - `devbox run linter` (zero violations)
-   - `devbox run build-cli` (successful build)
-3. **Stage only modified files** - never use `git add .`, only stage files you changed
-4. **Commit with proper format**:
-   ```
-   [ISSUE-ID]: [Brief task description]
-
-   [Optional: Implementation details]
-
-   🤖 Generated with [Claude Code](https://claude.ai/code)
-
-   Co-Authored-By: Claude <noreply@anthropic.com>
-   ```
+Follow [Git Workflow](docs/GIT_WORKFLOW.md) for commit standards and [Verification Workflow](docs/VERIFICATION_WORKFLOW.md) requirements.
 
 **Issue Completion:**
 When all tasks are complete, use agent product-doc-sync to:
