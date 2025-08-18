@@ -388,7 +388,7 @@ func TestOptimizedRepositoryValidator_BackwardCompatibility(t *testing.T) {
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
 
 	// Verify base interface methods still work
-	report, err := optimized.ValidateRepository()
+	report, err := optimized.ValidateRepositoryContext(context.Background())
 	if err != nil {
 		t.Fatalf("Base ValidateRepository method failed: %v", err)
 	}
@@ -397,16 +397,16 @@ func TestOptimizedRepositoryValidator_BackwardCompatibility(t *testing.T) {
 	}
 
 	// Test other base methods
-	structureViolations := optimized.ValidateStructure()
+	structureViolations := optimized.ValidateStructureContext(context.Background())
 	t.Logf("Structure violations: %d", len(structureViolations))
 
-	manifestViolations := optimized.ValidateManifest()
+	manifestViolations := optimized.ValidateManifestContext(context.Background())
 	t.Logf("Manifest violations: %d", len(manifestViolations))
 
-	contentViolations := optimized.ValidateContent()
+	contentViolations := optimized.ValidateContentContext(context.Background())
 	t.Logf("Content violations: %d", len(contentViolations))
 
-	consistencyViolations := optimized.ValidateConsistency()
+	consistencyViolations := optimized.ValidateConsistencyContext(context.Background())
 	t.Logf("Consistency violations: %d", len(consistencyViolations))
 }
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -347,7 +348,7 @@ func validateWithProgress(
 	// For now, just run validation without progress reporting
 	// Progress reporting will be added in the validation package in a future enhancement
 	reporter.StartPhase("repository")
-	report, err := validator.ValidateRepository()
+	report, err := validator.ValidateRepositoryContext(context.Background())
 	reporter.CompletePhase()
 
 	if err != nil {

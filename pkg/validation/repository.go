@@ -15,10 +15,25 @@ import (
 type RepositoryValidator interface {
 	// Legacy methods (deprecated but maintained for backward compatibility)
 	// These delegate to context versions with context.Background()
+
+	// Deprecated: ValidateRepository is deprecated. Use ValidateRepositoryContext instead.
+	// This method will be removed in v2.0.0 (estimated 6 months).
 	ValidateRepository() (*Report, error)
+
+	// Deprecated: ValidateStructure is deprecated. Use ValidateStructureContext instead.
+	// This method will be removed in v2.0.0 (estimated 6 months).
 	ValidateStructure() []Violation
+
+	// Deprecated: ValidateManifest is deprecated. Use ValidateManifestContext instead.
+	// This method will be removed in v2.0.0 (estimated 6 months).
 	ValidateManifest() []Violation
+
+	// Deprecated: ValidateContent is deprecated. Use ValidateContentContext instead.
+	// This method will be removed in v2.0.0 (estimated 6 months).
 	ValidateContent() []Violation
+
+	// Deprecated: ValidateConsistency is deprecated. Use ValidateConsistencyContext instead.
+	// This method will be removed in v2.0.0 (estimated 6 months).
 	ValidateConsistency() []Violation
 
 	// Context-aware methods
@@ -63,7 +78,62 @@ func NewRepositoryValidator(
 }
 
 // ValidateRepository performs complete repository validation
+// Deprecated: Use ValidateRepositoryContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
+	return v.ValidateRepositoryContext(context.Background())
+}
+
+// ValidateStructure validates overall repository structure
+// Deprecated: Use ValidateStructureContext instead. This method will be removed in v2.0.0.
+func (v *RepositoryValidatorImpl) ValidateStructure() []Violation {
+	return v.ValidateStructureContext(context.Background())
+}
+
+// ValidateManifest validates files.yaml and checksums
+// Deprecated: Use ValidateManifestContext instead. This method will be removed in v2.0.0.
+func (v *RepositoryValidatorImpl) ValidateManifest() []Violation {
+	return v.ValidateManifestContext(context.Background())
+}
+
+// ValidateContent validates all content files
+// Deprecated: Use ValidateContentContext instead. This method will be removed in v2.0.0.
+func (v *RepositoryValidatorImpl) ValidateContent() []Violation {
+	return v.ValidateContentContext(context.Background())
+}
+
+// ValidateConsistency performs cross-file consistency validation
+// Deprecated: Use ValidateConsistencyContext instead. This method will be removed in v2.0.0.
+func (v *RepositoryValidatorImpl) ValidateConsistency() []Violation {
+	return v.ValidateConsistencyContext(context.Background())
+}
+
+// collectContactReferences gathers contact names referenced in calls and SMS
+func (v *RepositoryValidatorImpl) collectContactReferences() (map[string]bool, map[string]bool) {
+	callContacts := make(map[string]bool)
+	smsContacts := make(map[string]bool)
+
+	// This is a simplified implementation - in a real scenario, we would
+	// need to add methods to the readers to extract contact names efficiently
+	// For now, we return empty maps to avoid errors
+
+	// TODO: Implement contact extraction from calls and SMS
+	// This would require extending the reader interfaces or implementing
+	// streaming methods to extract contact names without loading all data
+
+	return callContacts, smsContacts
+}
+
+// Context-aware method implementations
+
+// ValidateRepositoryContext performs complete repository validation with context support
+func (v *RepositoryValidatorImpl) ValidateRepositoryContext(ctx context.Context) (*Report, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	report := &Report{
 		Timestamp:      time.Now().UTC(),
 		RepositoryPath: v.repositoryRoot,
@@ -97,11 +167,18 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 		return report, nil
 	}
 
+	// Check context before each validation step
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	// Validate in logical order: structure -> manifest -> content -> consistency
-	structureViolations := v.ValidateStructure()
-	manifestViolations := v.ValidateManifest()
-	contentViolations := v.ValidateContent()
-	consistencyViolations := v.ValidateConsistency()
+	structureViolations := v.ValidateStructureContext(ctx)
+	manifestViolations := v.ValidateManifestContext(ctx)
+	contentViolations := v.ValidateContentContext(ctx)
+	consistencyViolations := v.ValidateConsistencyContext(ctx)
 
 	// Combine all violations
 	report.Violations = append(report.Violations, structureViolations...)
@@ -128,8 +205,15 @@ func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 	return report, nil
 }
 
-// ValidateStructure validates overall repository structure
-func (v *RepositoryValidatorImpl) ValidateStructure() []Violation {
+// ValidateStructureContext validates overall repository structure with context support
+func (v *RepositoryValidatorImpl) ValidateStructureContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
 	var violations []Violation
 
 	// Note: Individual validators handle directory and file structure checks
@@ -144,8 +228,15 @@ func (v *RepositoryValidatorImpl) ValidateStructure() []Violation {
 	return violations
 }
 
-// ValidateManifest validates files.yaml and checksums
-func (v *RepositoryValidatorImpl) ValidateManifest() []Violation {
+// ValidateManifestContext validates files.yaml and checksums with context support
+func (v *RepositoryValidatorImpl) ValidateManifestContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
 	var violations []Violation
 
 	// Load and validate manifest format
@@ -182,8 +273,15 @@ func (v *RepositoryValidatorImpl) ValidateManifest() []Violation {
 	return violations
 }
 
-// ValidateContent validates all content files
-func (v *RepositoryValidatorImpl) ValidateContent() []Violation {
+// ValidateContentContext validates all content files with context support
+func (v *RepositoryValidatorImpl) ValidateContentContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
 	var violations []Violation
 
 	// Validate calls content
@@ -201,8 +299,15 @@ func (v *RepositoryValidatorImpl) ValidateContent() []Violation {
 	return violations
 }
 
-// ValidateConsistency performs cross-file consistency validation
-func (v *RepositoryValidatorImpl) ValidateConsistency() []Violation {
+// ValidateConsistencyContext performs cross-file consistency validation with context support
+func (v *RepositoryValidatorImpl) ValidateConsistencyContext(ctx context.Context) []Violation {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
 	var violations []Violation
 
 	// Get attachment references from SMS
@@ -229,82 +334,4 @@ func (v *RepositoryValidatorImpl) ValidateConsistency() []Violation {
 	// This would validate counts and statistics against actual data
 
 	return violations
-}
-
-// collectContactReferences gathers contact names referenced in calls and SMS
-func (v *RepositoryValidatorImpl) collectContactReferences() (map[string]bool, map[string]bool) {
-	callContacts := make(map[string]bool)
-	smsContacts := make(map[string]bool)
-
-	// This is a simplified implementation - in a real scenario, we would
-	// need to add methods to the readers to extract contact names efficiently
-	// For now, we return empty maps to avoid errors
-
-	// TODO: Implement contact extraction from calls and SMS
-	// This would require extending the reader interfaces or implementing
-	// streaming methods to extract contact names without loading all data
-
-	return callContacts, smsContacts
-}
-
-// Context-aware method implementations
-
-// ValidateRepositoryContext performs complete repository validation with context support
-func (v *RepositoryValidatorImpl) ValidateRepositoryContext(ctx context.Context) (*Report, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
-	return v.ValidateRepository()
-}
-
-// ValidateStructureContext validates overall repository structure with context support
-func (v *RepositoryValidatorImpl) ValidateStructureContext(ctx context.Context) []Violation {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-	}
-
-	return v.ValidateStructure()
-}
-
-// ValidateManifestContext validates files.yaml and checksums with context support
-func (v *RepositoryValidatorImpl) ValidateManifestContext(ctx context.Context) []Violation {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-	}
-
-	return v.ValidateManifest()
-}
-
-// ValidateContentContext validates all content files with context support
-func (v *RepositoryValidatorImpl) ValidateContentContext(ctx context.Context) []Violation {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-	}
-
-	return v.ValidateContent()
-}
-
-// ValidateConsistencyContext performs cross-file consistency validation with context support
-func (v *RepositoryValidatorImpl) ValidateConsistencyContext(ctx context.Context) []Violation {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-	}
-
-	return v.ValidateConsistency()
 }

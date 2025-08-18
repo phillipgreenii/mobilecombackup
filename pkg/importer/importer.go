@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -345,7 +346,7 @@ func validateRepository(repoRoot string) error {
 		contactsReader,
 	)
 
-	report, err := validator.ValidateRepository()
+	report, err := validator.ValidateRepositoryContext(context.Background())
 	if err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}

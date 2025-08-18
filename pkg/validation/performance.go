@@ -245,10 +245,10 @@ func (v *OptimizedRepositoryValidatorImpl) launchValidationWorkers(
 		name string
 		fn   func() []Violation
 	}{
-		{"structure", v.ValidateStructure},
-		{"manifest", v.ValidateManifest},
-		{"content", v.ValidateContent},
-		{"consistency", v.ValidateConsistency},
+		{"structure", func() []Violation { return v.ValidateStructureContext(ctx) }},
+		{"manifest", func() []Violation { return v.ValidateManifestContext(ctx) }},
+		{"content", func() []Violation { return v.ValidateContentContext(ctx) }},
+		{"consistency", func() []Violation { return v.ValidateConsistencyContext(ctx) }},
 	}
 
 	for _, task := range validationTasks {
@@ -338,10 +338,10 @@ func (v *OptimizedRepositoryValidatorImpl) validateSequential(
 		name string
 		fn   func() []Violation
 	}{
-		{"structure", v.ValidateStructure},
-		{"manifest", v.ValidateManifest},
-		{"content", v.ValidateContent},
-		{"consistency", v.ValidateConsistency},
+		{"structure", func() []Violation { return v.ValidateStructureContext(ctx) }},
+		{"manifest", func() []Violation { return v.ValidateManifestContext(ctx) }},
+		{"content", func() []Violation { return v.ValidateContentContext(ctx) }},
+		{"consistency", func() []Violation { return v.ValidateConsistencyContext(ctx) }},
 	}
 
 	totalTasks := len(tasks)

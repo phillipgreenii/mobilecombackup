@@ -58,6 +58,16 @@ linters:
       min-complexity: 5
     nakedret:
       max-func-lines: 30
+    revive:
+      rules:
+        # Detect usage of deprecated methods
+        - name: empty-lines
+          disabled: true
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: "*testing.T,*testing.B"
+    staticcheck:
+      checks: ["all", "SA1019"] # SA1019 detects usage of deprecated APIs
 
   exclusions:
     warn-unused: true

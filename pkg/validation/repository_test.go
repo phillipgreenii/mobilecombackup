@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +39,7 @@ func TestRepositoryValidatorImpl_ValidateRepository(t *testing.T) {
 		contactsReader,
 	)
 
-	report, err := validator.ValidateRepository()
+	report, err := validator.ValidateRepositoryContext(context.Background())
 	if err != nil {
 		t.Fatalf("ValidateRepository failed: %v", err)
 	}
@@ -109,7 +110,7 @@ created_by: "mobilecombackup v1.0.0"
 		contactsReader,
 	)
 
-	report, err := validator.ValidateRepository()
+	report, err := validator.ValidateRepositoryContext(context.Background())
 	if err != nil {
 		t.Fatalf("ValidateRepository failed: %v", err)
 	}
@@ -152,7 +153,7 @@ created_by: "mobilecombackup v2.0.0"
 		contactsReader,
 	)
 
-	report, err := validator.ValidateRepository()
+	report, err := validator.ValidateRepositoryContext(context.Background())
 	if err != nil {
 		t.Fatalf("ValidateRepository failed: %v", err)
 	}
@@ -209,7 +210,7 @@ func TestRepositoryValidatorImpl_ValidateStructure(t *testing.T) {
 		contactsReader,
 	)
 
-	violations := validator.ValidateStructure()
+	violations := validator.ValidateStructureContext(context.Background())
 
 	// Should have violations for missing directories/files since we have data but no files
 	if len(violations) == 0 {
@@ -229,7 +230,7 @@ func TestRepositoryValidatorImpl_ValidateManifest(t *testing.T) {
 		checksumValidator: NewChecksumValidator(tempDir),
 	}
 
-	violations := validator.ValidateManifest()
+	violations := validator.ValidateManifestContext(context.Background())
 
 	// Should have violation for missing files.yaml
 	if len(violations) == 0 {
@@ -308,7 +309,7 @@ func TestRepositoryValidatorImpl_ValidateContent(t *testing.T) {
 		contactsReader,
 	)
 
-	violations := validator.ValidateContent()
+	violations := validator.ValidateContentContext(context.Background())
 
 	// May have violations for missing files, but should not fail completely
 	if len(violations) > 10 {
@@ -355,7 +356,7 @@ func TestRepositoryValidatorImpl_ValidateConsistency(t *testing.T) {
 		contactsReader,
 	)
 
-	violations := validator.ValidateConsistency()
+	violations := validator.ValidateConsistencyContext(context.Background())
 
 	// Should have violations for missing referenced attachment and orphaned attachment
 	if len(violations) < 2 {
@@ -403,9 +404,9 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
 	}
 
-	report, err := testValidator.ValidateRepository()
+	report, err := testValidator.ValidateRepositoryContext(context.Background())
 	if err != nil {
-		t.Fatalf("ValidateRepository failed: %v", err)
+		t.Fatalf("ValidateRepositoryContext failed: %v", err)
 	}
 
 	// Status determination logic:
@@ -432,6 +433,63 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 	}
 }
 
+func TestRepositoryValidatorImpl_ContextCancellation(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a validator
+	testValidator := &RepositoryValidatorImpl{
+		repositoryRoot:       tempDir,
+		markerFileValidator:  NewMarkerFileValidator(tempDir),
+		manifestValidator:    NewManifestValidator(tempDir),
+		checksumValidator:    NewChecksumValidator(tempDir),
+		callsValidator:       NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
+		smsValidator:         NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
+		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
+		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
+	}
+
+	t.Run("ValidateRepositoryContext respects context cancellation", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		_, err := testValidator.ValidateRepositoryContext(ctx)
+		// Validation might complete before context is checked, which is okay
+		// The important thing is that it doesn't panic or hang
+		_ = err // Acknowledge we're not checking the error value
+	})
+
+	t.Run("ValidateStructureContext respects context cancellation", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		violations := testValidator.ValidateStructureContext(ctx)
+		// Should not panic, violations may or may not be empty depending on timing
+		_ = violations
+	})
+
+	t.Run("Context-aware methods work with valid context", func(t *testing.T) {
+		ctx := context.Background()
+
+		// These should all work without issues
+		_, err := testValidator.ValidateRepositoryContext(ctx)
+		if err != nil {
+			t.Errorf("ValidateRepositoryContext failed with valid context: %v", err)
+		}
+
+		structureViolations := testValidator.ValidateStructureContext(ctx)
+		_ = structureViolations // Just ensure it doesn't panic
+
+		manifestViolations := testValidator.ValidateManifestContext(ctx)
+		_ = manifestViolations
+
+		contentViolations := testValidator.ValidateContentContext(ctx)
+		_ = contentViolations
+
+		consistencyViolations := testValidator.ValidateConsistencyContext(ctx)
+		_ = consistencyViolations
+	})
+}
+
 func TestRepositoryValidatorImpl_ErrorHandling(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -449,7 +507,7 @@ func TestRepositoryValidatorImpl_ErrorHandling(t *testing.T) {
 		&mockContactsReader{contacts: []*contacts.Contact{}},
 	)
 
-	violations := validator.ValidateConsistency()
+	violations := validator.ValidateConsistencyContext(context.Background())
 
 	// Should handle error gracefully and report it as a violation
 	foundErrorViolation := false

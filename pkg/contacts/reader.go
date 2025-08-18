@@ -1,3 +1,5 @@
+// Package contacts provides functionality for managing and processing contact information
+// from mobile backup files, including YAML-based contact storage and phone number normalization.
 package contacts
 
 import (
