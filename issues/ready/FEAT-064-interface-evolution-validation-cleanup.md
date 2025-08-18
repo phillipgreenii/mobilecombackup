@@ -15,15 +15,15 @@ Clean up the validation interfaces to provide clear, single-purpose APIs while m
 ## Design
 ### Current Problem
 ```go
-// pkg/validation/repository.go lines 16-31
+// pkg/validation/repository.go - actual interface names:
 type RepositoryValidator interface {
     // Legacy methods without context
-    ValidateRepository() error
-    ValidateStructure() error
+    ValidateRepository() (*Report, error)
+    ValidateStructure() []Violation
     
-    // Context-aware methods (newer)
-    ValidateRepositoryWithContext(ctx context.Context) error
-    ValidateStructureWithContext(ctx context.Context) error
+    // Context-aware methods (newer) - note: actual names use "Context" suffix
+    ValidateRepositoryContext(ctx context.Context) (*Report, error)
+    ValidateStructureContext(ctx context.Context) []Violation
 }
 ```
 
@@ -44,10 +44,17 @@ type RepositoryValidator interface {
 - Add automated migration tool/script
 - Update documentation to recommend context methods
 
-### Phase 3: Cleanup (Release +2)
+### Phase 3: Cleanup (6 months after deprecation)
 - Remove deprecated methods after 2 release cycles
 - Clean up interface definitions
 - Update tests to use new interface
+
+## Deprecation Comment Example
+```go
+// Deprecated: ValidateRepository is deprecated. Use ValidateRepositoryContext instead.
+// This method will be removed in v2.0.0 (estimated 6 months).
+ValidateRepository() (*Report, error)
+```
 
 ## Tasks
 - [ ] Add deprecation warnings to legacy validation methods
