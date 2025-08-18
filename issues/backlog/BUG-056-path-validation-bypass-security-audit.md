@@ -45,11 +45,44 @@ No enforced policy requiring security validator usage for file operations with e
 3. Add linting rules to prevent future unsafe path operations
 4. Create secure path operation guidelines
 
+## Risk Categorization Criteria
+Need to define clear criteria for categorizing 545 `filepath.Join` instances:
+
+### High Risk (Must validate)
+- User-provided paths from CLI arguments
+- Paths from imported XML/YAML files
+- Any path that crosses trust boundaries
+- Paths used in file write operations
+
+### Medium Risk (Should validate)
+- Paths derived from user data (e.g., hash-based paths)
+- Paths used in manifest generation
+- Year-based directory creation from timestamps
+
+### Low Risk (May skip validation)
+- Hard-coded test data paths
+- Internal package paths with no external input
+- Temporary file creation in controlled environments
+
+## Implementation Priority
+1. **Critical** (implement first):
+   - cmd/mobilecombackup/cmd/*.go (all CLI handlers)
+   - pkg/importer/*.go (handles external data)
+
+2. **High** (implement second):
+   - pkg/attachments/*.go (user data storage)
+   - pkg/autofix/*.go (file modifications)
+
+3. **Medium** (implement third):
+   - pkg/calls/writer.go, pkg/sms/writer.go (year-based paths)
+   - pkg/manifest/*.go (file listings)
+
 ## Tasks
-- [ ] Complete audit of all filepath.Join usage (200+ instances)
-- [ ] Categorize instances by security risk (user input vs internal operations)
+- [ ] Create audit tracking spreadsheet (545 instances across 88 files)
+- [ ] Define systematic audit methodology
+- [ ] Complete audit of all filepath.Join usage with risk categorization
 - [ ] Replace high-risk instances with security validator
-- [ ] Add golangci-lint rule to prevent unsafe path operations
+- [ ] Add performance benchmarks (baseline vs with validation)
 - [ ] Update development guidelines for secure path handling
 - [ ] Add regression tests for path validation
 - [ ] Document secure path operation patterns
