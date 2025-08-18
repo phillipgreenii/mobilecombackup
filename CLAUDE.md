@@ -70,6 +70,25 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 
 **CRITICAL**: Every task MUST end with a commit that passes ALL quality checks. NEVER use `git commit --no-verify`.
 
+## Development Tools
+
+### Code Analysis
+- **ast-grep**: Structural code search and refactoring (available in devbox)
+- **fd**: Fast file finding
+- **ripgrep**: Fast text search (via claude-code)
+
+#### Common ast-grep Patterns
+```bash
+# Find function definitions
+ast-grep --pattern 'func $NAME($$$) $RET { $$$ }'
+
+# Find error handling patterns
+ast-grep --pattern 'if err != nil { $$$ }'
+
+# Find test functions
+ast-grep --pattern 'func Test$_($$$) { $$$ }'
+```
+
 ## Common Patterns
 
 ### Testing
@@ -79,9 +98,9 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 - Create `example_test.go` for usage docs
 
 #### Test Commands
-- `devbox run test-unit`: Fast unit tests only (skips integration tests via `-short`)
+- `devbox run test-unit`: Fast unit tests only (uses `gotestsum` for better output)
 - `devbox run test-integration`: Integration tests only (CLI and file I/O tests)
-- `devbox run test`: Full test suite (both unit and integration tests)
+- `devbox run test`: Full test suite (both unit and integration tests with enhanced output)
 
 #### Test Development Workflow
 1. **During development**: Use `devbox run test-unit` for rapid feedback

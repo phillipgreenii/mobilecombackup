@@ -146,6 +146,39 @@ Ask for user guidance when:
 - Unfamiliar error patterns not covered by common fixes
 - Repeated failures after multiple fix attempts
 
+## Code Analysis and Search Tools
+
+### Using ast-grep for Structural Code Search
+
+For complex code analysis and refactoring, use `ast-grep` (available in devbox):
+
+```bash
+# Find all function definitions
+ast-grep --pattern 'func $NAME($$$) $RET { $$$ }'
+
+# Find specific Go patterns
+ast-grep --pattern 'if err != nil { $$$ }'
+
+# Search for struct field access
+ast-grep --pattern '$OBJ.$FIELD'
+
+# Find test functions
+ast-grep --pattern 'func Test$_($$$) { $$$ }'
+```
+
+### Traditional Search Tools
+
+For text-based search:
+- **ripgrep**: Fast text search (via claude-code)
+- **fd**: Fast file finding
+- **grep**: Standard text search
+
+### When to Use Each Tool
+
+- **ast-grep**: Structural code patterns, refactoring, finding specific Go constructs
+- **ripgrep/grep**: Text search, finding strings, error messages
+- **fd**: Finding files by name patterns
+
 ## Devbox Environment Issues
 
 - **Problem**: Commands fail outside devbox environment

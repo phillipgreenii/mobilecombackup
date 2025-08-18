@@ -1,9 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
+    "ast-grep@latest",
     "deno@2",
     "go@1.24",
+    "gopls@latest",
     "golangci-lint@latest",
+    "gotestsum@latest",
     "jq@latest",
     "viu@latest",
     "yq@latest",
@@ -13,7 +16,15 @@
     "init_hook": [
       "go mod tidy",
       "echo '📋 Setting up development environment...'",
-      "if [ -f scripts/install-hooks.sh ]; then bash scripts/install-hooks.sh; fi"
+      "if [ -f scripts/install-hooks.sh ]; then bash scripts/install-hooks.sh; fi",
+      "# Load project-specific Neovim config if it exists",
+      "export NVIM_PROJECT_CONFIG=$PWD/.config/nvim",
+      "if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then",
+      "  export XDG_CONFIG_HOME_NVIM=$PWD/.config",
+      "  alias vim='nvim -u $NVIM_PROJECT_CONFIG/init.lua'",
+      "  alias nvim='nvim -u $NVIM_PROJECT_CONFIG/init.lua'",
+      "  echo '🔧 Project-specific Neovim configuration loaded'",
+      "fi"
     ],
     "scripts": {
       "list-issues": [
@@ -26,13 +37,13 @@
         "go build -v ./..."
       ],
       "tests": [
-        "go test -v -covermode=set ./..."
+        "gotestsum --format testname -- -covermode=set ./..."
       ],
       "test-unit": [
-        "go test -short -v ./..."
+        "gotestsum --format testname -- -short ./..."
       ],
       "test-integration": [
-        "go test -run Integration -v ./..."
+        "gotestsum --format testname -- -run Integration ./..."
       ],
       "linter": [
         "golangci-lint run"
@@ -61,13 +72,13 @@
       ],
       "coverage": [
         "echo '📊 Running test coverage analysis...'",
-        "go test -coverprofile=coverage.out ./...",
+        "gotestsum --format testname -- -coverprofile=coverage.out ./...",
         "go tool cover -html=coverage.out -o coverage.html",
         "echo '✅ Coverage report generated: coverage.html'"
       ],
       "coverage-summary": [
         "echo '📈 Test Coverage Summary:'",
-        "go test -cover ./... | grep -E 'coverage|ok|FAIL' | sort"
+        "gotestsum --format testname -- -cover ./..."
       ]
     }
   }
