@@ -28,17 +28,20 @@ import (
 Create domain interfaces that the service layer depends on, with concrete implementations in domain packages.
 
 ```go
-// pkg/domain/interfaces.go
+// Package structure clarification:
+// - Leverage existing Reader interfaces in pkg/calls/reader.go and pkg/sms/reader.go  
+// - Extend rather than replace existing patterns
+// - Create pkg/service/interfaces.go for service-layer abstractions
+
+// pkg/service/interfaces.go
 type CallsReader interface {
-    StreamCalls(ctx context.Context, year int, callback func(Call) error) error
-    GetAvailableYears() ([]int, error)
-    GetCallsCount(year int) (int, error)
+    calls.Reader  // Embed existing Reader interface
+    // Service-specific extensions if needed
 }
 
 type SMSReader interface {
-    StreamMessages(ctx context.Context, year int, callback func(Message) error) error
-    GetAvailableYears() ([]int, error) 
-    GetMessageCount(year int) (int, error)
+    sms.Reader  // Embed existing Reader interface  
+    // Service-specific extensions if needed
 }
 
 type ContactsManager interface {
@@ -57,7 +60,8 @@ type AttachmentManager interface {
 
 ## Implementation Plan
 ### Phase 1: Interface Definition (Week 1)
-- Create `pkg/domain/interfaces.go` with abstraction interfaces
+- Create `pkg/service/interfaces.go` with abstraction interfaces
+- Build upon existing Reader interfaces in pkg/calls and pkg/sms
 - Define common types and data structures
 - Ensure interfaces cover all current usage patterns
 
@@ -78,7 +82,7 @@ type AttachmentManager interface {
 
 ## Tasks
 - [ ] Design domain interfaces for all service dependencies
-- [ ] Create pkg/domain/interfaces.go with complete interface definitions
+- [ ] Create pkg/service/interfaces.go with complete interface definitions
 - [ ] Update domain packages to implement new interfaces
 - [ ] Refactor pkg/importer to use interfaces instead of concrete types
 - [ ] Implement dependency injection in service constructors
