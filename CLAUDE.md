@@ -72,10 +72,25 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 
 ## Development Tools
 
-### Code Analysis
-- **ast-grep**: Structural code search and refactoring (available in devbox)
+### Code Analysis (Preferred - Semantic Tools)
+- **Serena MCP**: Advanced semantic code analysis and symbol manipulation
+  - `mcp__serena__find_symbol` - Semantic symbol search (prefer over grep for code)
+  - `mcp__serena__search_for_pattern` - Advanced pattern matching with code awareness
+  - `mcp__serena__get_symbols_overview` - Understand file structure before editing
+  - `mcp__serena__find_referencing_symbols` - Find symbol usage across codebase
+  - `mcp__serena__replace_symbol_body` - Precise code modifications
+  - `mcp__serena__insert_after_symbol` / `mcp__serena__insert_before_symbol` - Structured code insertion
+
+### Code Analysis (Fallback - Structural Tools)
+- **ast-grep**: Structural code search and refactoring (when Serena MCP insufficient)
 - **fd**: Fast file finding
-- **ripgrep**: Fast text search (via claude-code)
+- **ripgrep**: Fast text search (use only for non-code content)
+
+#### Tool Selection Guidelines
+**For code analysis tasks, prefer this hierarchy:**
+1. **Serena MCP tools** - For symbol finding, code structure analysis, precise modifications
+2. **ast-grep** - For structural patterns when Serena MCP insufficient  
+3. **ripgrep/grep** - Only for non-code text search or when semantic tools fail
 
 #### Common ast-grep Patterns
 ```bash
@@ -87,6 +102,22 @@ ast-grep --pattern 'if err != nil { $$$ }'
 
 # Find test functions
 ast-grep --pattern 'func Test$_($$$) { $$$ }'
+```
+
+#### Serena MCP Workflow Examples
+```bash
+# Recommended workflow for code analysis:
+# 1. Get file overview before editing
+mcp__serena__get_symbols_overview
+
+# 2. Find specific symbols semantically
+mcp__serena__find_symbol --name_path "functionName"
+
+# 3. Find usage/references
+mcp__serena__find_referencing_symbols
+
+# 4. Make precise modifications
+mcp__serena__replace_symbol_body
 ```
 
 ## Common Patterns
@@ -122,6 +153,75 @@ ast-grep --pattern 'func Test$_($$$) { $$$ }'
 
 ### Git Workflow
 See [Git Workflow](docs/GIT_WORKFLOW.md) for complete commit standards and staging practices.
+
+## Agent Tool Preferences
+
+### Required Agent Permissions
+The following agents require full access to all Serena MCP tools:
+
+**Agents Requiring Serena MCP Access:**
+- `code-completion-verifier`
+- `spec-implementation-engineer` 
+- `spec-review-engineer`
+
+**Required Serena MCP Tools:**
+- `mcp__serena__get_symbols_overview`
+- `mcp__serena__find_symbol`
+- `mcp__serena__find_referencing_symbols`
+- `mcp__serena__search_for_pattern`
+- `mcp__serena__replace_symbol_body`
+- `mcp__serena__insert_after_symbol`
+- `mcp__serena__insert_before_symbol`
+- `mcp__serena__list_dir`
+- `mcp__serena__find_file`
+- `mcp__serena__write_memory`
+- `mcp__serena__read_memory`
+- `mcp__serena__list_memories`
+- `mcp__serena__delete_memory`
+- `mcp__serena__check_onboarding_performed`
+- `mcp__serena__onboarding`
+- `mcp__serena__think_about_collected_information`
+- `mcp__serena__think_about_task_adherence`
+- `mcp__serena__think_about_whether_you_are_done`
+
+### Code Analysis Workflow
+When working with Go code, agents should:
+
+1. **Start with Serena MCP** for all code analysis:
+   - `mcp__serena__get_symbols_overview` to understand file structure
+   - `mcp__serena__find_symbol` to locate specific functions/types
+   - `mcp__serena__find_referencing_symbols` to understand usage
+
+2. **Use Serena MCP for modifications**:
+   - `mcp__serena__replace_symbol_body` for function/method changes
+   - `mcp__serena__insert_after_symbol` for adding new code
+   - Ensure changes are semantically correct within code structure
+
+3. **Fallback to basic tools only when**:
+   - Serena MCP tools fail or are insufficient
+   - Working with non-code files (documentation, configs)
+   - Simple text-based operations
+
+### Tool Selection Examples
+```bash
+# ✅ PREFERRED: Semantic analysis for Go code
+mcp__serena__find_symbol --name_path "ProcessCalls"
+
+# ❌ AVOID: Text search for code symbols
+grep "func ProcessCalls"
+
+# ✅ PREFERRED: Understanding code structure  
+mcp__serena__get_symbols_overview --relative_path "pkg/calls"
+
+# ❌ AVOID: Basic file reading for code analysis
+cat pkg/calls/reader.go
+
+# ✅ PREFERRED: Finding symbol references
+mcp__serena__find_referencing_symbols --name_path "Call" 
+
+# ❌ AVOID: Text-based reference search
+grep -r "Call" .
+```
 
 ## Additional Documentation
 

@@ -17,6 +17,11 @@ mobilecombackup
 .pre-commit-config.yaml
 
 #########
+# agents 
+#
+.serena/
+
+#########
 # PYTHON
 #
 # Byte-compiled / optimized / DLL files

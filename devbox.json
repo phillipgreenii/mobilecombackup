@@ -10,7 +10,8 @@
     "jq@latest",
     "viu@latest",
     "yq@latest",
-    "claude-code@1.0.72"
+    "claude-code@1.0.72",
+    "uv@latest"
   ],
   "shell": {
     "init_hook": [
