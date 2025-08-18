@@ -10,6 +10,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 	"github.com/spf13/cobra"
 )
@@ -330,7 +331,7 @@ func extractContactsFromCallsFile(filePath string, contactsManager *contacts.Man
 	defer func() { _ = file.Close() }()
 
 	// Parse the XML file using the same structure as the importer
-	decoder := xml.NewDecoder(file)
+	decoder := security.NewSecureXMLDecoder(file)
 
 	// Find the root element
 	var root struct {

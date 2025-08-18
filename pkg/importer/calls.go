@@ -224,7 +224,7 @@ func (ci *CallsImporter) parseCallsXML(filename string) (*struct {
 	limitedReader := &io.LimitedReader{R: file, N: ci.options.MaxXMLSize}
 
 	// Parse the XML file with size limit
-	decoder := xml.NewDecoder(limitedReader)
+	decoder := security.NewSecureXMLDecoder(limitedReader)
 
 	// Find the root element
 	var root struct {

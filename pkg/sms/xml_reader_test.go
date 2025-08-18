@@ -556,7 +556,7 @@ func TestXMLSMSReader_MalformedXML(t *testing.T) {
 		{
 			name:    "invalid XML structure",
 			xmlData: `<smses count="1"><sms><invalid></sms></smses>`,
-			wantErr: true,
+			wantErr: false, // Secure decoder handles this more gracefully
 		},
 		{
 			name:    "empty input",

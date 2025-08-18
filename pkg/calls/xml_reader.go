@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 )
 
 const (
@@ -154,7 +156,7 @@ func (r *XMLCallsReader) StreamCallsForYearContext(ctx context.Context, year int
 	}
 	defer func() { _ = file.Close() }()
 
-	decoder := xml.NewDecoder(file)
+	decoder := security.NewSecureXMLDecoder(file)
 	return r.streamCallElementsWithContext(ctx, decoder, callback)
 }
 
@@ -261,7 +263,7 @@ func (r *XMLCallsReader) GetCallsCountContext(ctx context.Context, year int) (in
 	}
 	defer func() { _ = file.Close() }()
 
-	decoder := xml.NewDecoder(file)
+	decoder := security.NewSecureXMLDecoder(file)
 
 	for {
 		// Check context periodically during XML parsing
@@ -311,7 +313,7 @@ func (r *XMLCallsReader) ValidateCallsFileContext(ctx context.Context, year int)
 	}
 	defer func() { _ = file.Close() }()
 
-	decoder := xml.NewDecoder(file)
+	decoder := security.NewSecureXMLDecoder(file)
 	var rootFound bool
 	var declaredCount int
 	callIndex := 0

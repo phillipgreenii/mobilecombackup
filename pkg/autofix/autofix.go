@@ -695,7 +695,7 @@ func (a *AutofixerImpl) createManifestChecksum() error {
 // fixXMLCountAttribute fixes the count attribute in XML files to match actual child element count
 func fixXMLCountAttribute(content []byte) ([]byte, int, error) {
 	// Parse XML to count child elements
-	decoder := xml.NewDecoder(strings.NewReader(string(content)))
+	decoder := security.NewSecureXMLDecoder(strings.NewReader(string(content)))
 
 	var rootElement xml.StartElement
 	var childCount int

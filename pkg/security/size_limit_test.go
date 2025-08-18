@@ -101,7 +101,7 @@ func TestXMLParsingWithSizeLimit(t *testing.T) {
 			limitedReader := &io.LimitedReader{R: reader, N: tt.limit}
 
 			// Try to parse XML (similar to what importer does)
-			decoder := xml.NewDecoder(limitedReader)
+			decoder := NewSecureXMLDecoder(limitedReader)
 
 			var root struct {
 				XMLName xml.Name `xml:"calls"`

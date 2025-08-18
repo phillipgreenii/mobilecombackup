@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/types"
 )
 
@@ -62,7 +63,7 @@ func (r *XMLSMSReader) StreamMessagesForYear(year int, callback func(Message) er
 
 // StreamMessagesFromReader streams messages from an io.Reader
 func (r *XMLSMSReader) StreamMessagesFromReader(reader io.Reader, callback func(Message) error) error {
-	decoder := xml.NewDecoder(reader)
+	decoder := security.NewSecureXMLDecoder(reader)
 
 	for {
 		token, err := decoder.Token()
@@ -764,7 +765,7 @@ func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
 	}
 	defer func() { _ = file.Close() }()
 
-	decoder := xml.NewDecoder(file)
+	decoder := security.NewSecureXMLDecoder(file)
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {

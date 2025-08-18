@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"strings"
 	"testing"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 )
 
 // FuzzXMLCallsParser tests the XML parsing with random input to find crashes and edge cases
@@ -60,7 +62,7 @@ func FuzzXMLCallsParser(f *testing.F) {
 		}
 
 		reader := strings.NewReader(xmlData)
-		decoder := xml.NewDecoder(reader)
+		decoder := security.NewSecureXMLDecoder(reader)
 
 		// Try to decode - this should handle any input gracefully
 		err := decoder.Decode(&xmlCalls)
