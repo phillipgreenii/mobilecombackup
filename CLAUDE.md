@@ -70,6 +70,13 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 
 **CRITICAL**: Every task MUST end with a commit that passes ALL quality checks. NEVER use `git commit --no-verify`.
 
+### Pre-commit Hook Optimization (FEAT-072)
+The pre-commit hook is optimized for documentation-focused workflows:
+- **Markdown-only commits**: Skip tests, run formatter + linter only (~6s, target <10s)
+- **Code/mixed commits**: Run full checks (formatter + tests + linter, target <30s)
+- **Automatic detection**: Uses `git diff --cached --name-only` to analyze staged files
+- **Clear feedback**: Shows optimization decisions and performance metrics
+
 ## Development Tools
 
 ### Code Analysis (Preferred - Semantic Tools)
