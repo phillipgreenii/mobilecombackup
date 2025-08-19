@@ -330,7 +330,7 @@ created_by: "mobilecombackup v1.0.0"
 func TestDependencyInjection(t *testing.T) {
 	tempDir := t.TempDir()
 	setupValidRepository(t, tempDir)
-	
+
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
@@ -379,7 +379,7 @@ func TestDependencyInjection(t *testing.T) {
 func TestCallsImporterDependencyInjection(t *testing.T) {
 	tempDir := t.TempDir()
 	setupValidRepository(t, tempDir)
-	
+
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
@@ -416,7 +416,7 @@ func TestCallsImporterDependencyInjection(t *testing.T) {
 func TestSMSImporterDependencyInjection(t *testing.T) {
 	tempDir := t.TempDir()
 	setupValidRepository(t, tempDir)
-	
+
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},

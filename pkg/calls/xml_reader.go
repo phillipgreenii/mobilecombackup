@@ -93,7 +93,7 @@ func (r *XMLCallsReader) parseCallElement(se xml.StartElement) (Call, error) {
 func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
 	years, err := r.GetAvailableYears()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get available call years: %w", err)
 	}
 
 	// If no years found, return nil (empty repository)
@@ -105,7 +105,7 @@ func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
 		if err := r.StreamCallsForYear(year, func(call Call) error {
 			return callback(&call)
 		}); err != nil {
-			return err
+			return fmt.Errorf("failed to stream calls for year %d: %w", year, err)
 		}
 	}
 
