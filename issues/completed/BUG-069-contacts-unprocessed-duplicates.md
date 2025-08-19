@@ -2,7 +2,7 @@
 
 ## Status
 - **Reported**: 2025-08-19
-- **Fixed**: 
+- **Fixed**: 2025-08-19
 - **Priority**: medium
 - **Severity**: major
 

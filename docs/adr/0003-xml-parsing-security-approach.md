@@ -124,3 +124,15 @@ for {
 
 - **ADR-0001**: Streaming Processing - Security applies to streaming XML parsing
 - **ADR-0004**: Repository Structure - Security protects repository integrity
+
+## Security Updates
+
+### Path Validation Security (2025-08-19)
+In addition to XML parsing security, the system now enforces comprehensive path validation to prevent directory traversal attacks:
+
+- **Validate Command Security (BUG-056)**: All file operations in validation commands use `security.PathValidator` to ensure operations remain within repository boundaries
+- **Orphan Removal Security**: Attachment cleanup operations validate all paths before removal to prevent deletion of files outside the repository
+- **CLI Security**: All user-provided paths from command-line arguments are validated before use
+- **Import/Export Security**: File operations during import and export processes include path boundary checking
+
+This extends the security-by-default principle to file system operations, ensuring that all external input involving file paths is properly validated and contained within the repository structure.

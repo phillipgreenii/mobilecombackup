@@ -168,9 +168,10 @@ unprocessed:
 - **Structure**: Each entry has `phone_number` and `contact_names` fields
 - **Multi-Address Support**: Parses addresses with `~` separators and contact names with `,` separators
 - **Validation**: Requires equal counts of phone numbers and contact names (rejects entire SMS entry if mismatch)
-- **Contact Matching**: Excludes phone numbers that already exist in main contacts section
+- **Contact Matching**: Excludes phone numbers that already exist in main contacts section using normalized phone number comparison
+- **Duplicate Prevention**: Ensures contacts do not appear in both processed and unprocessed sections (BUG-069 fix)
 - **Name Combining**: Multiple contact names for same phone number are combined into single entry
-- **Sorting**: Entries sorted by raw phone number (lexicographic comparison)
+- **Consistent Ordering**: Entries consistently ordered by phone number lexicographically in saved files (BUG-070 fix)
 - **Manual Review**: Requires manual promotion to main contacts section for canonical name selection
 
 #### files.yaml
@@ -313,6 +314,16 @@ The `contact_name` field should NOT be used for comparing or identifying duplica
 - Unknown numbers showing as "(Unknown)" vs actual names
 
 The phone number (`number` for calls, `address` for SMS/MMS) should be used as the primary identifier. The `contacts.yaml` file will maintain the authoritative mapping of numbers to names.
+
+### Security and Path Validation
+All file operations handling external input use the security path validator (`pkg/security/path.go`) to prevent directory traversal attacks. This includes:
+- CLI argument processing and validation
+- Import/export operations with user-provided paths
+- Repository structure management and file operations
+- Attachment extraction and storage operations
+- Orphan removal and cleanup operations
+
+Path validation ensures all file operations remain within repository boundaries and prevents access to parent directories or sensitive system locations.
 
 ### Timezone Considerations
 - The `readable_date` field uses the timezone of where the backup was performed
@@ -468,6 +479,8 @@ type ContactsReader interface {
 - Unprocessed contact extraction and storage during import
 - Atomic file operations for data integrity
 - Support for multiple name variations per phone number
+- **Consistency Fixes**: Normalized phone number comparison prevents contacts from appearing in both processed and unprocessed sections (BUG-069)
+- **Deterministic Ordering**: SaveContacts produces consistent file output with lexicographically sorted unprocessed entries (BUG-070)
 
 ### ContactsWriter Interface
 
@@ -1030,6 +1043,7 @@ JSON output (`--output-json`):
 The `--remove-orphan-attachments` flag enables removal of attachment files that are no longer referenced by any SMS/MMS messages:
 
 - **Safe Operation**: Only removes files confirmed to have no references
+- **Security**: Uses path validation to ensure removal operations stay within repository boundaries (BUG-056 fix)
 - **Dry-Run Support**: Use `--dry-run` to preview what would be removed
 - **Progress Reporting**: Shows scanning and removal progress
 - **Error Handling**: Continues processing if individual files fail to remove

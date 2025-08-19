@@ -192,12 +192,25 @@ repository/
 - **How**: All timestamps normalized to UTC with explicit conversion
 - **Trade-offs**: May lose original timezone info, but ensures consistency
 
+### Contact Management Architecture
+- **Why**: Centralized contact name resolution with manual review workflow
+- **How**: Dual-section contacts.yaml with processed and unprocessed entries
+- **Key Features**:
+  - Normalized phone number comparison prevents duplicates between sections (BUG-069 fix)
+  - Deterministic ordering ensures consistent file output across saves (BUG-070 fix)  
+  - Unprocessed section extracts contact names during import for manual review
+  - O(1) lookup performance using hash maps for number-to-name mapping
+- **Trade-offs**: Manual review required for new contacts, but ensures data accuracy
+
 ## Security Architecture
 
 ### Path Validation (`pkg/security`)
-- All file paths validated to prevent directory traversal
-- Relative path resolution with security checks
+- All file paths validated to prevent directory traversal attacks
+- Comprehensive security audit fixes (BUG-056) ensure CLI operations use path validation
+- Relative path resolution with security boundary checks
 - Null byte and control character filtering
+- **Validate Command Security**: All file operations including orphan removal use security validator
+- **Repository Containment**: All file operations verified to stay within repository boundaries
 
 ### Hash Verification
 - SHA-256 checksums for all stored files

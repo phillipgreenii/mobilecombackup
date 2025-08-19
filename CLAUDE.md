@@ -233,6 +233,7 @@ grep -r "Call" .
 - **Issue Workflow**: `docs/ISSUE_WORKFLOW.md` - Complete development lifecycle
 
 ### Project Documentation
+- **Architecture**: `docs/ARCHITECTURE.md` - System architecture and design decisions
 - **Troubleshooting**: `docs/TROUBLESHOOTING.md` - Test/lint failures and fixes
 - **Version Management**: `docs/VERSION_MANAGEMENT.md` - Release workflow
 - **Session Learnings**: `docs/SESSION_LEARNINGS.md` - Implementation insights

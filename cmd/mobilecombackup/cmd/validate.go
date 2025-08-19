@@ -565,16 +565,16 @@ func removeOrphanedAttachment(
 	}
 
 	// Securely construct the full path for attachment removal
-	// Since attachment paths come from AttachmentManager (trusted source), 
+	// Since attachment paths come from AttachmentManager (trusted source),
 	// we can safely join them with the repo path
 	var fullPath string
-	
+
 	if filepath.IsAbs(attachment.Path) {
 		fullPath = attachment.Path
 	} else {
 		fullPath = filepath.Join(repoPath, attachment.Path)
 	}
-	
+
 	// Validate that the final path is within the repository bounds
 	absRepoPath, err := filepath.Abs(repoPath)
 	if err != nil {
@@ -585,7 +585,7 @@ func removeOrphanedAttachment(
 		})
 		return
 	}
-	
+
 	absFullPath, err := filepath.Abs(fullPath)
 	if err != nil {
 		result.RemovalFailures++
@@ -595,7 +595,7 @@ func removeOrphanedAttachment(
 		})
 		return
 	}
-	
+
 	// Ensure the path is within repository boundaries
 	if !strings.HasPrefix(absFullPath+string(filepath.Separator), absRepoPath+string(filepath.Separator)) {
 		result.RemovalFailures++
