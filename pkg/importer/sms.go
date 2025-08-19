@@ -109,13 +109,13 @@ func (si *SMSImporter) processFile(filePath string) (*YearStat, error) {
 
 	// Setup rejection handling
 	if err := si.setupRejectionHandling(filePath); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to setup rejection handling for %s: %w", filepath.Base(filePath), err)
 	}
 
 	// Process messages from file
 	limitedReader, file, err := si.openFileWithSizeLimit(filePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open SMS file %s: %w", filepath.Base(filePath), err)
 	}
 	defer func() { _ = file.Close() }()
 

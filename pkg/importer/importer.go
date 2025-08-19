@@ -151,17 +151,17 @@ func (imp *Importer) Import() (*ImportSummary, error) {
 
 	// Load existing repository data
 	if err := imp.loadExistingRepository(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load existing repository: %w", err)
 	}
 
 	// Find and process files
 	if err := imp.processAllFiles(summary); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to process import files: %w", err)
 	}
 
 	// Finalize and write results
 	if err := imp.finalizeImport(summary); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to finalize import: %w", err)
 	}
 
 	summary.Duration = time.Since(startTime)

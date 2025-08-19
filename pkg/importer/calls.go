@@ -99,7 +99,7 @@ func (ci *CallsImporter) ImportFile(filename string) (*YearStat, error) {
 	// Parse XML file
 	root, err := ci.parseCallsXML(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse calls XML file %s: %w", filepath.Base(filename), err)
 	}
 
 	// Process all calls and track statistics

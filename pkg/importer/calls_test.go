@@ -1,10 +1,15 @@
 package importer
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
+	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 )
 
 func TestCallValidator_Validate(t *testing.T) {
@@ -181,5 +186,141 @@ func TestCallValidator_PhoneNumberFormats(t *testing.T) {
 		if len(violations) > 0 {
 			t.Errorf("Phone number %q should be valid, got violations: %v", number, violations)
 		}
+	}
+}
+
+// TestImporter_ErrorContextPreservation tests that errors maintain proper context through the call chain
+func TestImporter_ErrorContextPreservation(t *testing.T) {
+	t.Parallel()
+
+	// Create a temporary directory for the test repository
+	tempDir := t.TempDir()
+
+	// Create options with an invalid file to trigger file processing errors
+	invalidFile := "/nonexistent/path/that/does/not/exist.xml"
+	
+	options := &ImportOptions{
+		RepoRoot: tempDir,
+		Paths:    []string{invalidFile},
+		Quiet:    true,
+	}
+
+	// Try to create importer - this will fail due to invalid repository
+	_, err := NewImporter(options)
+
+	// Verify error contains proper context
+	if err == nil {
+		t.Fatal("Expected error but got none")
+	}
+
+	errorMsg := err.Error()
+
+	// Check that error message contains context from validation
+	if !strings.Contains(errorMsg, "invalid repository") {
+		t.Errorf("Error message missing repository context. Got: %s", errorMsg)
+	}
+
+	// Verify this is proper error wrapping by checking the error chain
+	if !strings.Contains(errorMsg, "validation failed") {
+		t.Errorf("Error message missing validation context. Got: %s", errorMsg) 
+	}
+
+	// Test with valid repository but nonexistent file to trigger file processing error
+	repoRoot := tempDir + "/valid_repo"
+	setupValidRepository(t, repoRoot)
+
+	validOptions := &ImportOptions{
+		RepoRoot: repoRoot,
+		Paths:    []string{invalidFile}, // File that doesn't exist
+		Quiet:    true,
+	}
+
+	importer, err := NewImporter(validOptions)
+	if err != nil {
+		t.Fatalf("Failed to create importer with valid repository: %v", err)
+	}
+
+	// Attempt import, which should fail when trying to process the nonexistent file
+	_, err = importer.Import()
+
+	if err == nil {
+		t.Fatal("Expected error for nonexistent file but got none")
+	}
+
+	errorMsg = err.Error()
+
+	// Verify error context is preserved through the call chain
+	expectedContexts := []string{
+		"failed to process import files", // From main Import method
+		"stat",                           // From file stat operation
+	}
+
+	for _, expectedContext := range expectedContexts {
+		if !strings.Contains(errorMsg, expectedContext) {
+			t.Errorf("Error message missing expected context '%s'. Got: %s", expectedContext, errorMsg)
+		}
+	}
+
+	// Verify error chain is preserved (can unwrap to original error)
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		t.Errorf("Expected to unwrap to os.PathError, but couldn't. Error chain: %v", err)
+	}
+}
+
+// setupValidRepository creates a minimal valid repository for testing
+func setupValidRepository(t *testing.T, repoRoot string) {
+	t.Helper()
+
+	// Create directory structure  
+	dirs := []string{
+		repoRoot,
+		filepath.Join(repoRoot, "calls"),
+		filepath.Join(repoRoot, "sms"), 
+		filepath.Join(repoRoot, "attachments"),
+	}
+
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+	}
+
+	// Create marker file
+	markerContent := `repository_structure_version: "1"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup v1.0.0"
+`
+	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0600); err != nil {
+		t.Fatalf("Failed to create marker file: %v", err)
+	}
+
+	// Create empty contacts file
+	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
+	contactsContent := "contacts: []\n"
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
+		t.Fatalf("Failed to create contacts file: %v", err)
+	}
+
+	// Create summary file  
+	summaryPath := filepath.Join(repoRoot, "summary.yaml")
+	summaryContent := `counts:
+  calls: 0
+  sms: 0
+`
+	if err := os.WriteFile(summaryPath, []byte(summaryContent), 0600); err != nil {
+		t.Fatalf("Failed to create summary file: %v", err)
+	}
+
+	// Generate and write manifest files
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	fileManifest, err := manifestGenerator.GenerateFileManifest()
+	if err != nil {
+		t.Fatalf("Failed to generate file manifest: %v", err)
+	}
+
+	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
+		t.Fatalf("Failed to write manifest files: %v", err)
 	}
 }
