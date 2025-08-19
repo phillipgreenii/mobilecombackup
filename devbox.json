@@ -80,6 +80,9 @@
       "coverage-summary": [
         "echo '📈 Test Coverage Summary:'",
         "gotestsum --format testname -- -cover ./..."
+      ],
+      "ccusage": [
+	      "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"
       ]
     }
   }
