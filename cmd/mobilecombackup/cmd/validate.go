@@ -12,6 +12,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/autofix"
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 	"github.com/spf13/cobra"
@@ -57,6 +58,9 @@ type ValidationResult struct {
 	OrphanRemoval *OrphanRemovalResult   `json:"orphan_removal,omitempty"`
 	AutofixReport *autofix.Report        `json:"autofix_report,omitempty"`
 }
+
+// PathValidator for secure path operations
+var pathValidator *security.PathValidator
 
 // OrphanRemovalResult represents the result of orphan attachment removal
 type OrphanRemovalResult struct {
@@ -524,13 +528,24 @@ func executeOrphanRemoval(
 	repoPath := attachmentReader.GetRepoPath()
 	emptyDirs := make(map[string]bool) // Track directories that might become empty
 
+	// SECURITY FIX: Initialize path validator for secure directory operations
+	if pathValidator == nil {
+		pathValidator = security.NewPathValidator(repoPath)
+	}
+
 	for _, attachment := range orphanedAttachments {
 		removeOrphanedAttachment(attachment, repoPath, result, emptyDirs)
 	}
 
-	// Clean up empty directories
+	// Clean up empty directories - with path validation
 	for dir := range emptyDirs {
-		cleanupEmptyDirectory(filepath.Join(repoPath, dir))
+		// SECURITY FIX: Validate directory path before cleanup
+		safeDirPath, err := pathValidator.JoinAndValidate(dir)
+		if err != nil {
+			// Skip cleanup for invalid directory paths
+			continue
+		}
+		cleanupEmptyDirectory(safeDirPath)
 	}
 
 	return result
@@ -543,14 +558,60 @@ func removeOrphanedAttachment(
 	result *OrphanRemovalResult,
 	emptyDirs map[string]bool,
 ) {
-	fullPath := filepath.Join(repoPath, attachment.Path)
+	// SECURITY FIX: Use PathValidator to prevent path traversal attacks
+	// Initialize path validator if not already done
+	if pathValidator == nil {
+		pathValidator = security.NewPathValidator(repoPath)
+	}
+
+	// Securely construct the full path for attachment removal
+	// Since attachment paths come from AttachmentManager (trusted source), 
+	// we can safely join them with the repo path
+	var fullPath string
+	
+	if filepath.IsAbs(attachment.Path) {
+		fullPath = attachment.Path
+	} else {
+		fullPath = filepath.Join(repoPath, attachment.Path)
+	}
+	
+	// Validate that the final path is within the repository bounds
+	absRepoPath, err := filepath.Abs(repoPath)
+	if err != nil {
+		result.RemovalFailures++
+		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
+			Path:  attachment.Path,
+			Error: fmt.Sprintf("failed to resolve repo path: %v", err),
+		})
+		return
+	}
+	
+	absFullPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		result.RemovalFailures++
+		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
+			Path:  attachment.Path,
+			Error: fmt.Sprintf("failed to resolve attachment path: %v", err),
+		})
+		return
+	}
+	
+	// Ensure the path is within repository boundaries
+	if !strings.HasPrefix(absFullPath+string(filepath.Separator), absRepoPath+string(filepath.Separator)) {
+		result.RemovalFailures++
+		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
+			Path:  attachment.Path,
+			Error: fmt.Sprintf("path %s is outside repository %s", absFullPath, absRepoPath),
+		})
+		return
+	}
 
 	// Track the directory for potential cleanup
 	dir := filepath.Dir(attachment.Path)
 	emptyDirs[dir] = true
 
 	// Attempt to remove the file
-	if err := os.Remove(fullPath); err != nil {
+	if err := os.Remove(absFullPath); err != nil {
 		result.RemovalFailures++
 		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
 			Path:  attachment.Path,

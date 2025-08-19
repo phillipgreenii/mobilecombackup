@@ -378,12 +378,13 @@ func (cm *Manager) AddUnprocessedContacts(addresses, contactNames string) error 
 			continue
 		}
 
-		// Check if this number is known in main contacts (no normalization per requirement)
-		if cm.IsKnownNumber(address) {
+		// Normalize address for consistent checking with stored contacts
+		normalized := normalizePhoneNumber(address)
+		if cm.IsKnownNumber(normalized) {
 			continue // Skip known contacts
 		}
 
-		// Add to unprocessed using raw address (no normalization per requirement)
+		// Add to unprocessed using raw address (preserved for backwards compatibility)
 		cm.addUnprocessedEntry(address, name)
 	}
 
@@ -486,17 +487,8 @@ func (cm *Manager) SaveContacts(path string) error {
 		contactsData.Contacts = append(contactsData.Contacts, contactCopy)
 	}
 
-	// Add unprocessed entries in structured format
-	for phone, names := range cm.unprocessed {
-		if len(names) > 0 {
-			entry := UnprocessedEntry{
-				PhoneNumber:  phone,
-				ContactNames: make([]string, len(names)),
-			}
-			copy(entry.ContactNames, names)
-			contactsData.Unprocessed = append(contactsData.Unprocessed, entry)
-		}
-	}
+	// Add unprocessed entries using sorted method to ensure consistent ordering
+	contactsData.Unprocessed = cm.GetUnprocessedEntries()
 
 	// Marshal to YAML
 	yamlData, err := yaml.Marshal(&contactsData)

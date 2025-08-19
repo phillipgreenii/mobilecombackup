@@ -1,10 +1,13 @@
 package contacts
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -618,10 +621,10 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 	manager := NewContactsManager(tempDir)
 
-	// Add some test data
-	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
-	manager.AddUnprocessedContact("5551234567", "Johnny")
-	manager.AddUnprocessedContact("5559876543", testContactJaneSmith)
+	// Add some test data - including in non-sorted order to test ordering
+	manager.AddUnprocessedContact("5559876543", testContactJaneSmith) // Higher number first
+	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)   // Lower number second
+	manager.AddUnprocessedContact("5551234567", "Johnny")             // Same number, different name
 
 	// Save contacts
 	err := manager.SaveContacts(contactsPath)
@@ -659,6 +662,42 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	}
 	if !strings.Contains(yamlStr, "contacts: []") {
 		t.Error("Saved file should contain empty contacts array")
+	}
+
+	// Parse YAML and verify ordering
+	var contactsData Data
+	err = yaml.Unmarshal(content, &contactsData)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal YAML: %v", err)
+	}
+
+	// Verify ordering: 5551234567 should come before 5559876543
+	if len(contactsData.Unprocessed) != 2 {
+		t.Fatalf("Expected 2 unprocessed entries, got %d", len(contactsData.Unprocessed))
+	}
+
+	// Check phone number ordering (lexicographic)
+	if contactsData.Unprocessed[0].PhoneNumber != "5551234567" {
+		t.Errorf("First unprocessed entry should be 5551234567, got %s",
+			contactsData.Unprocessed[0].PhoneNumber)
+	}
+	if contactsData.Unprocessed[1].PhoneNumber != "5559876543" {
+		t.Errorf("Second unprocessed entry should be 5559876543, got %s",
+			contactsData.Unprocessed[1].PhoneNumber)
+	}
+
+	// Check contact names are sorted within each phone number
+	firstEntryNames := contactsData.Unprocessed[0].ContactNames
+	expectedNames := []string{"John Doe", "Johnny"} // Should be alphabetically sorted
+	if len(firstEntryNames) != len(expectedNames) {
+		t.Fatalf("Expected %d contact names for first entry, got %d",
+			len(expectedNames), len(firstEntryNames))
+	}
+	for i, name := range firstEntryNames {
+		if name != expectedNames[i] {
+			t.Errorf("Expected contact name %s at position %d, got %s",
+				expectedNames[i], i, name)
+		}
 	}
 }
 
@@ -866,6 +905,105 @@ contacts:
 	}
 }
 
+func TestContactsManager_AddUnprocessedContacts_NormalizationConsistency(t *testing.T) {
+	tempDir := t.TempDir()
+	contactsPath := filepath.Join(tempDir, "contacts.yaml")
+
+	// Create contacts.yaml with normalized number
+	contactsData := `
+contacts:
+  - name: "Jim Henson"
+    numbers: ["5555550004"]
+`
+	if err := os.WriteFile(contactsPath, []byte(contactsData), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	manager := NewContactsManager(tempDir)
+	err := manager.LoadContacts()
+	if err != nil {
+		t.Fatalf("LoadContacts failed: %v", err)
+	}
+
+	// Verify the contact is loaded properly
+	if !manager.IsKnownNumber("5555550004") {
+		t.Fatal("Expected '5555550004' to be a known number")
+	}
+
+	// Test various formats of the same number that should be recognized as the same
+	testCases := []struct {
+		name     string
+		address  string
+		expected bool // true if should be skipped (known), false if should be added to unprocessed
+	}{
+		{"formatted_with_dashes", "555-555-0004", true},
+		{"formatted_with_parens", "(555) 555-0004", true},
+		{"with_country_code", "+15555550004", true},
+		{"with_country_code_no_plus", "15555550004", true},
+		{"different_number", "5555550003", false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset unprocessed entries for each test
+			manager.unprocessed = make(map[string][]string)
+
+			// Try to add contact with various number formats
+			err = manager.AddUnprocessedContacts(tc.address, "Oscar Wilde")
+			if err != nil {
+				t.Fatalf("AddUnprocessedContacts failed: %v", err)
+			}
+
+			entries := manager.GetUnprocessedEntries()
+
+			if tc.expected {
+				// Should be skipped (known contact)
+				if len(entries) != 0 {
+					t.Errorf("Expected no unprocessed entries (number should be recognized as known), but got %d entries", len(entries))
+					for _, entry := range entries {
+						t.Errorf("Unexpected entry: %s -> %v", entry.PhoneNumber, entry.ContactNames)
+					}
+				}
+			} else {
+				// Should be added to unprocessed
+				if len(entries) != 1 {
+					t.Errorf("Expected 1 unprocessed entry, but got %d", len(entries))
+				} else {
+					entry := entries[0]
+					normalized := normalizePhoneNumber(tc.address)
+					if entry.PhoneNumber != normalized {
+						t.Errorf("Expected normalized phone number '%s', got '%s'", normalized, entry.PhoneNumber)
+					}
+					if len(entry.ContactNames) != 1 || entry.ContactNames[0] != "Oscar Wilde" {
+						t.Errorf("Expected contact name 'Oscar Wilde', got %v", entry.ContactNames)
+					}
+				}
+			}
+		})
+	}
+
+	// Test the specific bug scenario from full-test.sh
+	t.Run("specific_bug_scenario", func(t *testing.T) {
+		// Reset unprocessed entries
+		manager.unprocessed = make(map[string][]string)
+
+		// This mimics the scenario where "5555550004" is already in contacts (Jim Henson)
+		// but the import encounters "Oscar Wilde" with the same number
+		err = manager.AddUnprocessedContacts("5555550004", "Oscar Wilde")
+		if err != nil {
+			t.Fatalf("AddUnprocessedContacts failed: %v", err)
+		}
+
+		entries := manager.GetUnprocessedEntries()
+		if len(entries) != 0 {
+			t.Errorf("Expected no unprocessed entries (5555550004 should be recognized as known), but got %d entries", len(entries))
+			for _, entry := range entries {
+				t.Errorf("Bug reproduced: number %s appears in both contacts and unprocessed with names %v", entry.PhoneNumber, entry.ContactNames)
+			}
+		}
+	})
+}
+
 func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) {
 	manager := NewContactsManager("")
 
@@ -959,4 +1097,152 @@ func TestContactsManager_SaveContacts_AtomicOperation(t *testing.T) {
 	if _, err := os.Stat(tempPath); !os.IsNotExist(err) {
 		t.Error("Temp file should be cleaned up after successful save")
 	}
+}
+
+func TestContactsManager_SaveContacts_ConsistentOrdering(t *testing.T) {
+	t.Parallel()
+
+	// Test that multiple saves produce identical output
+	// even when entries are added in different order
+	tempDir1 := t.TempDir()
+	tempDir2 := t.TempDir()
+	contactsPath1 := filepath.Join(tempDir1, "contacts.yaml")
+	contactsPath2 := filepath.Join(tempDir2, "contacts.yaml")
+
+	// Create two managers and add same data in different order
+	manager1 := NewContactsManager(tempDir1)
+	manager2 := NewContactsManager(tempDir2)
+
+	// Add unprocessed contacts in different order
+	// Manager 1: add in ascending order
+	manager1.AddUnprocessedContact("5551111111", "Alice")
+	manager1.AddUnprocessedContact("5552222222", "Bob")
+	manager1.AddUnprocessedContact("5553333333", "Charlie")
+	manager1.AddUnprocessedContact("5554444444", "Diana")
+
+	// Manager 2: add in descending order
+	manager2.AddUnprocessedContact("5554444444", "Diana")
+	manager2.AddUnprocessedContact("5553333333", "Charlie")
+	manager2.AddUnprocessedContact("5552222222", "Bob")
+	manager2.AddUnprocessedContact("5551111111", "Alice")
+
+	// Save both files
+	err1 := manager1.SaveContacts(contactsPath1)
+	if err1 != nil {
+		t.Fatalf("SaveContacts failed for manager1: %v", err1)
+	}
+
+	err2 := manager2.SaveContacts(contactsPath2)
+	if err2 != nil {
+		t.Fatalf("SaveContacts failed for manager2: %v", err2)
+	}
+
+	// Read both files
+	content1, err := os.ReadFile(contactsPath1) // #nosec G304
+	if err != nil {
+		t.Fatalf("Failed to read file 1: %v", err)
+	}
+
+	content2, err := os.ReadFile(contactsPath2) // #nosec G304
+	if err != nil {
+		t.Fatalf("Failed to read file 2: %v", err)
+	}
+
+	// Files should be identical despite different insertion order
+	if !bytes.Equal(content1, content2) {
+		t.Errorf("Files should be identical but differ:\nFile 1:\n%s\n\nFile 2:\n%s",
+			string(content1), string(content2))
+	}
+
+	// Verify the ordering matches what GetUnprocessedEntries would return
+	entries := manager1.GetUnprocessedEntries()
+	expectedOrder := []string{"5551111111", "5552222222", "5553333333", "5554444444"}
+
+	for i, entry := range entries {
+		if entry.PhoneNumber != expectedOrder[i] {
+			t.Errorf("Expected phone number %s at position %d, got %s",
+				expectedOrder[i], i, entry.PhoneNumber)
+		}
+	}
+}
+
+func TestContactsManager_SaveContacts_OrderingMatchesGetter(t *testing.T) {
+	t.Parallel()
+
+	// Verify SaveContacts output order matches GetUnprocessedEntries
+	tempDir := t.TempDir()
+	contactsPath := filepath.Join(tempDir, "contacts.yaml")
+	manager := NewContactsManager(tempDir)
+
+	// Add entries with some complexity: international formats, different lengths
+	testCases := []struct {
+		phone string
+		name  string
+	}{
+		{"+15551234567", "International"},
+		{"555", "Short"},
+		{"5551234567", "Standard"},
+		{"+33123456789", "European"},
+		{"5559999999", "High"},
+		{"5550000000", "Low"},
+	}
+
+	// Add entries in non-sorted order
+	for _, tc := range testCases {
+		manager.AddUnprocessedContact(tc.phone, tc.name)
+	}
+
+	// Get expected order from getter method
+	expectedEntries := manager.GetUnprocessedEntries()
+
+	// Save contacts
+	err := manager.SaveContacts(contactsPath)
+	if err != nil {
+		t.Fatalf("SaveContacts failed: %v", err)
+	}
+
+	// Load the saved file and check ordering
+	var contactsData Data
+	content, err := os.ReadFile(contactsPath) // #nosec G304
+	if err != nil {
+		t.Fatalf("Failed to read saved file: %v", err)
+	}
+
+	err = yaml.Unmarshal(content, &contactsData)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal YAML: %v", err)
+	}
+
+	// Compare ordering
+	if len(contactsData.Unprocessed) != len(expectedEntries) {
+		t.Fatalf("Expected %d unprocessed entries, got %d",
+			len(expectedEntries), len(contactsData.Unprocessed))
+	}
+
+	for i, savedEntry := range contactsData.Unprocessed {
+		expectedEntry := expectedEntries[i]
+		if savedEntry.PhoneNumber != expectedEntry.PhoneNumber {
+			t.Errorf("Expected phone number %s at position %d, got %s",
+				expectedEntry.PhoneNumber, i, savedEntry.PhoneNumber)
+		}
+
+		// Check contact names are also properly sorted
+		if !equalStringSlices(savedEntry.ContactNames, expectedEntry.ContactNames) {
+			t.Errorf("Contact names mismatch for %s: expected %v, got %v",
+				savedEntry.PhoneNumber, expectedEntry.ContactNames, savedEntry.ContactNames)
+		}
+	}
+}
+
+// Helper function to compare string slices
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
