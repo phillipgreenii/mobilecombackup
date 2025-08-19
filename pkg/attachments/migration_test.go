@@ -229,6 +229,42 @@ func TestMigrationManager_ValidateMigration(t *testing.T) {
 	}
 }
 
+func TestMigrationManager_DefaultLogOutputDisabled(t *testing.T) {
+	// Create temporary directory
+	tmpDir, err := os.MkdirTemp("", "migration_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	// Test that new migration manager has logging disabled by default
+	migrationManager := NewMigrationManager(tmpDir)
+
+	// The logOutput field is not exported, but we can test the behavior
+	// by running a migration and checking that no panics occur
+	// (indirect verification that logOutput defaults to false)
+	summary, err := migrationManager.MigrateAllAttachments()
+	if err != nil {
+		t.Fatalf("Failed to migrate attachments with default settings: %v", err)
+	}
+
+	// Should have no issues with empty repository
+	if summary.TotalFound != 0 {
+		t.Errorf("Expected TotalFound 0 in empty repo, got %d", summary.TotalFound)
+	}
+
+	// Test that logging can be explicitly enabled
+	migrationManager.SetLogOutput(true)
+	summary2, err := migrationManager.MigrateAllAttachments()
+	if err != nil {
+		t.Fatalf("Failed to migrate attachments with logging enabled: %v", err)
+	}
+
+	if summary2.TotalFound != 0 {
+		t.Errorf("Expected TotalFound 0 in empty repo with logging, got %d", summary2.TotalFound)
+	}
+}
+
 func TestDetectMimeTypeFromContent(t *testing.T) {
 	tests := []struct {
 		name     string

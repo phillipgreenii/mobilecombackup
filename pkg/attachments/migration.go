@@ -21,7 +21,7 @@ func NewMigrationManager(repoPath string) *MigrationManager {
 	return &MigrationManager{
 		repoPath:  repoPath,
 		dryRun:    false,
-		logOutput: true,
+		logOutput: false, // Default to quiet operation - can be enabled via SetLogOutput(true)
 	}
 }
 
