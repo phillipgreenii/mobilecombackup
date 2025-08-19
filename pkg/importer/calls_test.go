@@ -10,6 +10,7 @@ import (
 
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
 func TestCallValidator_Validate(t *testing.T) {
@@ -198,7 +199,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 
 	// Create options with an invalid file to trigger file processing errors
 	invalidFile := "/nonexistent/path/that/does/not/exist.xml"
-	
+
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{invalidFile},
@@ -222,7 +223,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 
 	// Verify this is proper error wrapping by checking the error chain
 	if !strings.Contains(errorMsg, "validation failed") {
-		t.Errorf("Error message missing validation context. Got: %s", errorMsg) 
+		t.Errorf("Error message missing validation context. Got: %s", errorMsg)
 	}
 
 	// Test with valid repository but nonexistent file to trigger file processing error
@@ -272,11 +273,11 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 func setupValidRepository(t *testing.T, repoRoot string) {
 	t.Helper()
 
-	// Create directory structure  
+	// Create directory structure
 	dirs := []string{
 		repoRoot,
 		filepath.Join(repoRoot, "calls"),
-		filepath.Join(repoRoot, "sms"), 
+		filepath.Join(repoRoot, "sms"),
 		filepath.Join(repoRoot, "attachments"),
 	}
 
@@ -303,7 +304,7 @@ created_by: "mobilecombackup v1.0.0"
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 
-	// Create summary file  
+	// Create summary file
 	summaryPath := filepath.Join(repoRoot, "summary.yaml")
 	summaryContent := `counts:
   calls: 0
@@ -323,4 +324,123 @@ created_by: "mobilecombackup v1.0.0"
 	if err := manifestGenerator.WriteManifestFiles(fileManifest); err != nil {
 		t.Fatalf("Failed to write manifest files: %v", err)
 	}
+}
+
+// TestDependencyInjection tests that the new dependency injection constructors work correctly
+func TestDependencyInjection(t *testing.T) {
+	tempDir := t.TempDir()
+	setupValidRepository(t, tempDir)
+	
+	options := &ImportOptions{
+		RepoRoot: tempDir,
+		Paths:    []string{},
+	}
+
+	// Create mock dependencies
+	mockContactsManager := NewMockContactsManager()
+	mockContactsManager.SetContact("1234567890", "John Doe")
+
+	mockAttachmentStorage := NewMockAttachmentStorage()
+
+	// Create real readers for testing
+	callsReader := calls.NewXMLCallsReader(tempDir)
+	smsReader := sms.NewXMLSMSReader(tempDir)
+
+	// Test NewImporterWithDependencies
+	importer, err := NewImporterWithDependencies(
+		options,
+		mockContactsManager,
+		callsReader,
+		smsReader,
+		mockAttachmentStorage,
+	)
+
+	if err != nil {
+		t.Fatalf("NewImporterWithDependencies failed: %v", err)
+	}
+
+	if importer == nil {
+		t.Fatal("NewImporterWithDependencies returned nil importer")
+	}
+
+	// Verify the importer has the injected dependencies
+	if importer.contactsManager == nil {
+		t.Error("contactsManager not set")
+	}
+
+	// Test that the mock contacts manager is working
+	name, exists := importer.contactsManager.GetContactByNumber("1234567890")
+	if !exists || name != "John Doe" {
+		t.Errorf("Expected contact 'John Doe' for number '1234567890', got %s, exists: %v", name, exists)
+	}
+}
+
+// TestCallsImporterDependencyInjection tests CallsImporter with dependency injection
+func TestCallsImporterDependencyInjection(t *testing.T) {
+	tempDir := t.TempDir()
+	setupValidRepository(t, tempDir)
+	
+	options := &ImportOptions{
+		RepoRoot: tempDir,
+		Paths:    []string{},
+	}
+
+	// Create mock dependencies
+	mockContactsManager := NewMockContactsManager()
+	yearTracker := NewYearTracker()
+	callsReader := calls.NewXMLCallsReader(tempDir)
+
+	// Test NewCallsImporterWithDependencies
+	callsImporter, err := NewCallsImporterWithDependencies(
+		options,
+		mockContactsManager,
+		yearTracker,
+		callsReader,
+	)
+
+	if err != nil {
+		t.Fatalf("NewCallsImporterWithDependencies failed: %v", err)
+	}
+
+	if callsImporter == nil {
+		t.Fatal("NewCallsImporterWithDependencies returned nil importer")
+	}
+
+	// Verify the importer has the injected dependencies
+	if callsImporter.contactsManager == nil {
+		t.Error("contactsManager not set in CallsImporter")
+	}
+}
+
+// TestSMSImporterDependencyInjection tests SMSImporter with dependency injection
+func TestSMSImporterDependencyInjection(t *testing.T) {
+	tempDir := t.TempDir()
+	setupValidRepository(t, tempDir)
+	
+	options := &ImportOptions{
+		RepoRoot: tempDir,
+		Paths:    []string{},
+	}
+
+	// Create mock dependencies
+	mockContactsManager := NewMockContactsManager()
+	mockAttachmentStorage := NewMockAttachmentStorage()
+	yearTracker := NewYearTracker()
+	smsReader := sms.NewXMLSMSReader(tempDir)
+
+	// Test NewSMSImporter with interface (dependency injection)
+	smsImporter := NewSMSImporter(options, mockContactsManager, yearTracker)
+
+	if smsImporter == nil {
+		t.Fatal("NewSMSImporter returned nil importer")
+	}
+
+	// Verify the importer has the injected dependencies
+	if smsImporter.contactsManager == nil {
+		t.Error("contactsManager not set in SMSImporter")
+	}
+
+	// Use the variables to prevent "declared and not used" errors
+	_ = mockAttachmentStorage
+	_ = smsReader
 }

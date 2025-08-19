@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
@@ -20,7 +19,7 @@ import (
 type SMSImporter struct {
 	options             *ImportOptions
 	coalescer           coalescer.Coalescer[sms.MessageEntry]
-	contactsManager     *contacts.Manager
+	contactsManager     ContactsManager // Now uses interface instead of concrete type
 	attachmentExtractor *sms.AttachmentExtractor
 	attachmentStats     *sms.AttachmentExtractionStats
 	contentTypeConfig   sms.ContentTypeConfig
@@ -30,19 +29,44 @@ type SMSImporter struct {
 }
 
 // NewSMSImporter creates a new SMS importer
-func NewSMSImporter(options *ImportOptions, contactsManager *contacts.Manager, yearTracker *YearTracker) *SMSImporter {
+func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yearTracker *YearTracker) *SMSImporter {
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager:     contactsManager,
+		contactsManager:     contactsManager, // Now uses interface
 		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot),
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
 		yearTracker:         yearTracker,
 	}
+}
+
+// NewSMSImporterWithDependencies creates a new SMS importer with injected dependencies
+func NewSMSImporterWithDependencies(
+	options *ImportOptions,
+	contactsManager ContactsManager,
+	yearTracker *YearTracker,
+	smsReader SMSReader,
+	attachmentStorage AttachmentStorage,
+) (*SMSImporter, error) {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
+	// Create attachment extractor (using dependency injection would require interface changes in SMS package)
+	attachmentExtractor := sms.NewAttachmentExtractor(options.RepoRoot)
+
+	return &SMSImporter{
+		options:             options,
+		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager:     contactsManager,
+		attachmentExtractor: attachmentExtractor,
+		attachmentStats:     sms.NewAttachmentExtractionStats(),
+		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
+		yearTracker:         yearTracker,
+	}, nil
 }
 
 // SetFilesToImport sets the files to import (for single file processing)

@@ -16,6 +16,181 @@ import (
 )
 
 // YearTracker tracks per-year statistics during import
+// Service layer interfaces for dependency injection
+// These interfaces abstract domain layer dependencies
+
+// ContactsManager interface defines the contract for contacts management
+type ContactsManager interface {
+	LoadContacts() error
+	GetContactByNumber(number string) (string, bool)
+	AddUnprocessedContacts(addresses, contactNames string) error
+	AddUnprocessedContact(phone, name string)
+	SaveContacts(path string) error
+
+	// Context-aware methods
+	LoadContactsContext(ctx context.Context) error
+	AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error
+	SaveContactsContext(ctx context.Context, path string) error
+}
+
+// AttachmentStorage interface defines the contract for attachment storage
+type AttachmentStorage interface {
+	Store(hash string, data []byte, metadata attachments.AttachmentInfo) error
+	GetPath(hash string) (string, error)
+	Exists(hash string) bool
+}
+
+// CallsReader interface embeds the existing calls.Reader interface
+type CallsReader interface {
+	calls.Reader
+}
+
+// SMSReader interface embeds the existing sms.Reader interface
+type SMSReader interface {
+	sms.Reader
+}
+
+// Mock implementations for testing
+
+// MockContactsManager provides a mock implementation of ContactsManager for testing
+type MockContactsManager struct {
+	contacts           map[string]string // number -> name
+	unprocessedEntries map[string][]string
+	loadError          error
+	saveError          error
+}
+
+// NewMockContactsManager creates a new mock contacts manager
+func NewMockContactsManager() *MockContactsManager {
+	return &MockContactsManager{
+		contacts:           make(map[string]string),
+		unprocessedEntries: make(map[string][]string),
+	}
+}
+
+func (m *MockContactsManager) LoadContacts() error {
+	return m.loadError
+}
+
+func (m *MockContactsManager) GetContactByNumber(number string) (string, bool) {
+	name, exists := m.contacts[number]
+	return name, exists
+}
+
+func (m *MockContactsManager) AddUnprocessedContacts(addresses, contactNames string) error {
+	// Simple implementation for testing
+	m.unprocessedEntries[addresses] = []string{contactNames}
+	return nil
+}
+
+func (m *MockContactsManager) AddUnprocessedContact(phone, name string) {
+	if m.unprocessedEntries[phone] == nil {
+		m.unprocessedEntries[phone] = []string{}
+	}
+	m.unprocessedEntries[phone] = append(m.unprocessedEntries[phone], name)
+}
+
+func (m *MockContactsManager) SaveContacts(path string) error {
+	return m.saveError
+}
+
+func (m *MockContactsManager) LoadContactsContext(ctx context.Context) error {
+	return m.LoadContacts()
+}
+
+func (m *MockContactsManager) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
+	return m.AddUnprocessedContacts(addresses, contactNames)
+}
+
+func (m *MockContactsManager) SaveContactsContext(ctx context.Context, path string) error {
+	return m.SaveContacts(path)
+}
+
+// SetContact allows tests to set up known contacts
+func (m *MockContactsManager) SetContact(number, name string) {
+	m.contacts[number] = name
+}
+
+// SetLoadError allows tests to simulate load errors
+func (m *MockContactsManager) SetLoadError(err error) {
+	m.loadError = err
+}
+
+// SetSaveError allows tests to simulate save errors
+func (m *MockContactsManager) SetSaveError(err error) {
+	m.saveError = err
+}
+
+// MockAttachmentStorage provides a mock implementation of AttachmentStorage for testing
+type MockAttachmentStorage struct {
+	attachments map[string][]byte
+	metadata    map[string]attachments.AttachmentInfo
+	storeError  error
+	pathError   error
+}
+
+// Interface compliance tests - these ensure our concrete types implement the interfaces
+
+// Verify contacts.Manager implements ContactsManager interface
+var _ ContactsManager = (*contacts.Manager)(nil)
+
+// Verify attachments.DirectoryAttachmentStorage implements AttachmentStorage interface
+var _ AttachmentStorage = (*attachments.DirectoryAttachmentStorage)(nil)
+
+// Verify calls.XMLCallsReader implements CallsReader interface
+var _ CallsReader = (*calls.XMLCallsReader)(nil)
+
+// Verify sms.XMLSMSReader implements SMSReader interface
+var _ SMSReader = (*sms.XMLSMSReader)(nil)
+
+// NewMockAttachmentStorage creates a new mock attachment storage
+func NewMockAttachmentStorage() *MockAttachmentStorage {
+	return &MockAttachmentStorage{
+		attachments: make(map[string][]byte),
+		metadata:    make(map[string]attachments.AttachmentInfo),
+	}
+}
+
+func (m *MockAttachmentStorage) Store(hash string, data []byte, metadata attachments.AttachmentInfo) error {
+	if m.storeError != nil {
+		return m.storeError
+	}
+	m.attachments[hash] = data
+	m.metadata[hash] = metadata
+	return nil
+}
+
+func (m *MockAttachmentStorage) GetPath(hash string) (string, error) {
+	if m.pathError != nil {
+		return "", m.pathError
+	}
+	if _, exists := m.attachments[hash]; !exists {
+		return "", fmt.Errorf("attachment not found: %s", hash)
+	}
+	return fmt.Sprintf("attachments/%s/%s", hash[:2], hash), nil
+}
+
+func (m *MockAttachmentStorage) Exists(hash string) bool {
+	_, exists := m.attachments[hash]
+	return exists
+}
+
+// SetStoreError allows tests to simulate store errors
+func (m *MockAttachmentStorage) SetStoreError(err error) {
+	m.storeError = err
+}
+
+// SetPathError allows tests to simulate path errors
+func (m *MockAttachmentStorage) SetPathError(err error) {
+	m.pathError = err
+}
+
+// GetStoredData allows tests to verify stored data
+func (m *MockAttachmentStorage) GetStoredData(hash string) ([]byte, bool) {
+	data, exists := m.attachments[hash]
+	return data, exists
+}
+
 type YearTracker struct {
 	initial    map[int]int // Entries loaded from existing repository
 	added      map[int]int // New entries added during import
@@ -106,7 +281,7 @@ type Importer struct {
 	options         *ImportOptions
 	callsImporter   *CallsImporter
 	smsImporter     *SMSImporter
-	contactsManager *contacts.Manager
+	contactsManager ContactsManager // Now uses interface instead of concrete type
 	callsTracker    *YearTracker
 	smsTracker      *YearTracker
 }
@@ -133,6 +308,45 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 
 	// Create SMS importer
 	smsImporter := NewSMSImporter(options, contactsManager, smsTracker)
+
+	return &Importer{
+		options:         options,
+		callsImporter:   callsImporter,
+		smsImporter:     smsImporter,
+		contactsManager: contactsManager,
+		callsTracker:    callsTracker,
+		smsTracker:      smsTracker,
+	}, nil
+}
+
+// NewImporterWithDependencies creates a new importer with injected dependencies
+func NewImporterWithDependencies(
+	options *ImportOptions,
+	contactsManager ContactsManager,
+	callsReader CallsReader,
+	smsReader SMSReader,
+	attachmentStorage AttachmentStorage,
+) (*Importer, error) {
+	// Validate repository
+	if err := validateRepository(options.RepoRoot); err != nil {
+		return nil, fmt.Errorf("invalid repository: %w", err)
+	}
+
+	// Create year trackers
+	callsTracker := NewYearTracker()
+	smsTracker := NewYearTracker()
+
+	// Create calls importer with dependency injection
+	callsImporter, err := NewCallsImporterWithDependencies(options, contactsManager, callsTracker, callsReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create calls importer: %w", err)
+	}
+
+	// Create SMS importer with dependency injection
+	smsImporter, err := NewSMSImporterWithDependencies(options, contactsManager, smsTracker, smsReader, attachmentStorage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SMS importer: %w", err)
+	}
 
 	return &Importer{
 		options:         options,

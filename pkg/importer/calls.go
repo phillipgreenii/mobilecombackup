@@ -13,7 +13,6 @@ import (
 
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreen/mobilecombackup/pkg/security"
 )
 
@@ -24,15 +23,41 @@ type CallsImporter struct {
 	writer          *calls.XMLCallsWriter
 	validator       *CallValidator
 	rejWriter       RejectionWriter
-	contactsManager *contacts.Manager
+	contactsManager ContactsManager // Now uses interface instead of concrete type
 	yearTracker     *YearTracker
 }
 
 // NewCallsImporter creates a new calls importer
 func NewCallsImporter(
 	options *ImportOptions,
-	contactsManager *contacts.Manager,
+	contactsManager ContactsManager, // Now uses interface
 	yearTracker *YearTracker,
+) (*CallsImporter, error) {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
+	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create calls writer: %w", err)
+	}
+
+	return &CallsImporter{
+		options:         options,
+		coalescer:       calls.NewCallCoalescer(),
+		writer:          writer,
+		validator:       NewCallValidator(),
+		rejWriter:       NewXMLRejectionWriter(options.RepoRoot),
+		contactsManager: contactsManager,
+		yearTracker:     yearTracker,
+	}, nil
+}
+
+// NewCallsImporterWithDependencies creates a new calls importer with injected dependencies
+func NewCallsImporterWithDependencies(
+	options *ImportOptions,
+	contactsManager ContactsManager,
+	yearTracker *YearTracker,
+	callsReader CallsReader,
 ) (*CallsImporter, error) {
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
