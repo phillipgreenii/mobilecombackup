@@ -44,7 +44,7 @@ if [[ $(ls -1 "$repodir/calls" | wc -l) -eq 0 ]]; then
 fi
 
 echo ">> Should have calls with Jim Henson's phone number"
-if [[ $( grep Henson -r calls | wc -l) -eq 0 ]]; then
+if [[ $( grep Henson -r "$repodir/calls" | wc -l) -eq 0 ]]; then
 	echo "ERROR: Jim Henon's phone number is not in calls" >&2
 	exit 2
 fi

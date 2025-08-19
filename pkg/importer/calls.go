@@ -207,8 +207,28 @@ func (v *CallValidator) Validate(call *calls.Call) []string {
 }
 
 // extractContact extracts contact information from a call record
-func (ci *CallsImporter) extractContact(call *calls.Call) {
+// resolveContact attempts to resolve contact name from existing contacts.
+// Returns true if the contact was successfully resolved from repository data.
+func (ci *CallsImporter) resolveContact(call *calls.Call) bool {
+	if ci.contactsManager == nil || call.Number == "" {
+		return false
+	}
+
+	if knownName, exists := ci.contactsManager.GetContactByNumber(call.Number); exists {
+		call.ContactName = knownName
+		return true // Contact was resolved from existing data
+	}
+
+	return false // Contact was not found in existing data
+}
+
+func (ci *CallsImporter) extractContact(call *calls.Call, wasResolved bool) {
 	if ci.contactsManager == nil {
+		return
+	}
+
+	// Skip extraction if contact was already resolved from existing data
+	if wasResolved {
 		return
 	}
 
@@ -320,8 +340,9 @@ func (ci *CallsImporter) processCalls(xmlCalls []struct {
 			continue
 		}
 
-		// Extract contact information for valid calls
-		ci.extractContact(call)
+		// Resolve contact from existing contacts first, then extract if needed
+		wasResolved := ci.resolveContact(call)
+		ci.extractContact(call, wasResolved)
 
 		// Add to coalescer (checks for duplicates)
 		entry := calls.CallEntry{Call: call}

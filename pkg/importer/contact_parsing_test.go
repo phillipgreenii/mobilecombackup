@@ -22,15 +22,15 @@ func TestContactParsing_MultipleContactNames(t *testing.T) {
 
 		// Test single contact name
 		call1 := &calls.Call{Number: "15555551234", ContactName: "John Doe"}
-		callsImporter.extractContact(call1)
+		callsImporter.extractContact(call1, false)
 
 		// Test multiple contact names separated by comma
 		call2 := &calls.Call{Number: "15555556789", ContactName: "Jane Smith, Bob Wilson"}
-		callsImporter.extractContact(call2)
+		callsImporter.extractContact(call2, false)
 
 		// Test multiple contact names with extra spaces
 		call3 := &calls.Call{Number: "15555550000", ContactName: "Alice Brown,  Charlie Davis , Eve White"}
-		callsImporter.extractContact(call3)
+		callsImporter.extractContact(call3, false)
 
 		// Get unprocessed entries
 		entries := contactsManager.GetUnprocessedEntries()
@@ -145,15 +145,15 @@ func TestContactParsing_EmptyAndSingleContacts(t *testing.T) {
 
 	// Test empty contact name
 	call1 := &calls.Call{Number: "15555551234", ContactName: ""}
-	callsImporter.extractContact(call1)
+	callsImporter.extractContact(call1, false)
 
 	// Test empty number
 	call2 := &calls.Call{Number: "", ContactName: "John Doe"}
-	callsImporter.extractContact(call2)
+	callsImporter.extractContact(call2, false)
 
 	// Test comma with empty parts
 	call3 := &calls.Call{Number: "15555556789", ContactName: "John Doe, , "}
-	callsImporter.extractContact(call3)
+	callsImporter.extractContact(call3, false)
 
 	// Get unprocessed entries
 	entries := contactsManager.GetUnprocessedEntries()
@@ -184,17 +184,17 @@ func TestContactParsing_UnknownContactFiltering(t *testing.T) {
 
 		// Test various unknown contact patterns
 		call1 := &calls.Call{Number: "15555551234", ContactName: "(Unknown)"}
-		callsImporter.extractContact(call1)
+		callsImporter.extractContact(call1, false)
 
 		call2 := &calls.Call{Number: "15555556789", ContactName: "null"}
-		callsImporter.extractContact(call2)
+		callsImporter.extractContact(call2, false)
 
 		call3 := &calls.Call{Number: "15555550000", ContactName: ""}
-		callsImporter.extractContact(call3)
+		callsImporter.extractContact(call3, false)
 
 		// Test mixed valid and unknown contacts
 		call4 := &calls.Call{Number: "15555551111", ContactName: "John Doe, (Unknown), Jane Smith, null"}
-		callsImporter.extractContact(call4)
+		callsImporter.extractContact(call4, false)
 
 		// Get unprocessed entries
 		entries := contactsManager.GetUnprocessedEntries()

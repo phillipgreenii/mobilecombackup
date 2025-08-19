@@ -271,8 +271,9 @@ func (si *SMSImporter) streamAndProcessMessages(limitedReader *io.LimitedReader,
 			msg = mmsMsg
 		}
 
-		// Extract contact information for valid messages
-		si.extractContacts(msg)
+		// Resolve contact from existing contacts first, then extract if needed
+		msg, wasResolved := si.resolveContacts(msg)
+		si.extractContacts(msg, wasResolved)
 
 		// Create entry and check for duplicates
 		entry := sms.NewMessageEntry(msg)
@@ -467,8 +468,72 @@ func calculateFileHash(filePath string) (string, error) {
 }
 
 // extractContacts extracts contact names from SMS/MMS messages
-func (si *SMSImporter) extractContacts(msg sms.Message) {
+// resolveContacts attempts to resolve contact names from existing contacts.
+// Returns true if any contacts were successfully resolved from repository data.
+func (si *SMSImporter) resolveContacts(msg sms.Message) (sms.Message, bool) {
 	if si.contactsManager == nil {
+		return msg, false
+	}
+
+	resolved := false
+
+	// Resolve contacts in SMS
+	if smsMsg, ok := msg.(sms.SMS); ok {
+		if si.resolveSMSContact(&smsMsg) {
+			resolved = true
+			msg = smsMsg // Update the interface with the modified struct
+		}
+	}
+
+	// Resolve contacts in MMS
+	if mmsMsg, ok := msg.(sms.MMS); ok {
+		if si.resolveMMSContacts(&mmsMsg) {
+			resolved = true
+			msg = mmsMsg // Update the interface with the modified struct
+		}
+	}
+
+	return msg, resolved
+}
+
+// resolveSMSContact attempts to resolve contact name for SMS messages
+func (si *SMSImporter) resolveSMSContact(smsMsg *sms.SMS) bool {
+	if smsMsg.Address == "" {
+		return false
+	}
+
+	if knownName, exists := si.contactsManager.GetContactByNumber(smsMsg.Address); exists {
+		smsMsg.ContactName = knownName
+		return true
+	}
+
+	return false
+}
+
+// resolveMMSContacts attempts to resolve contact names for MMS messages
+func (si *SMSImporter) resolveMMSContacts(mmsMsg *sms.MMS) bool {
+	if mmsMsg.Address == "" {
+		return false
+	}
+
+	if knownName, exists := si.contactsManager.GetContactByNumber(mmsMsg.Address); exists {
+		mmsMsg.ContactName = knownName
+		return true
+	}
+
+	return false
+}
+
+// extractContacts extracts contact information from SMS/MMS messages.
+// If wasResolved is true, extraction is skipped since the contact was already resolved from existing data.
+
+func (si *SMSImporter) extractContacts(msg sms.Message, wasResolved bool) {
+	if si.contactsManager == nil {
+		return
+	}
+
+	// Skip extraction if contact was already resolved from existing data
+	if wasResolved {
 		return
 	}
 
