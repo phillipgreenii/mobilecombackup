@@ -152,6 +152,10 @@ mcp__serena__replace_symbol_body
 - Continue processing on individual failures
 - Collect and report all errors at end
 
+### XML Security
+- Always use `security.NewSecureXMLDecoder` for XML parsing
+- Direct `xml.NewDecoder` usage is prohibited (XXE vulnerability)
+
 ### File Organization
 - `types.go`: Structs and interfaces
 - `reader.go`: Main implementation
