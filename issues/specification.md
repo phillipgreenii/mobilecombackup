@@ -325,6 +325,30 @@ All file operations handling external input use the security path validator (`pk
 
 Path validation ensures all file operations remain within repository boundaries and prevents access to parent directories or sensitive system locations.
 
+### XML Security (BUG-055)
+All XML parsing operations use secure XML decoders to prevent XML External Entity (XXE) attacks and other XML-based vulnerabilities:
+
+**Security Implementation:**
+- **Secure XML Decoder**: All XML parsing uses `security.NewSecureXMLDecoder` wrapper from `pkg/security/xml.go`
+- **XXE Protection**: External entity resolution and DTD processing are disabled by default
+- **Direct Usage Prevention**: `xml.NewDecoder` usage is prohibited and detected via linting rules
+- **Comprehensive Coverage**: Secure parsing implemented across all XML processing components (calls, SMS, MMS, autofix operations)
+
+**Security Controls:**
+- **Development Guidelines**: XML security requirements documented in CLAUDE.md
+- **Linting Integration**: Forbidigo linter configured to detect unsafe XML decoder usage
+- **Testing**: Comprehensive XXE regression tests verify protection against malicious XML payloads
+- **Documentation**: ADR-0003 documents the XML parsing security approach and implementation
+
+**Protected Components:**
+- `pkg/calls/xml_reader.go`: Call log XML parsing
+- `pkg/sms/xml_reader.go`: SMS/MMS XML parsing  
+- `pkg/importer/calls.go`: Import operation XML processing
+- `pkg/autofix/autofix.go`: Validation and repair XML processing
+- All test files and XML processing utilities
+
+This comprehensive XML security implementation prevents XXE attacks, SSRF vulnerabilities, and other XML-based security threats while maintaining full compatibility with legitimate backup file processing.
+
 ### Timezone Considerations
 - The `readable_date` field uses the timezone of where the backup was performed
 - When writing to the repository, all `readable_date` fields will be recalculated using EST
@@ -1814,6 +1838,56 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Standard Format**: Consistent commit messages with issue references and proper attribution
 
 This auto-commit behavior ensures a clear development history while reducing manual overhead in the issue implementation workflow.
+
+### Pre-Commit Hook Optimization (FEAT-072)
+
+The project includes an optimized pre-commit hook system that intelligently skips expensive test operations for documentation-only changes, significantly improving developer productivity while maintaining all safety guarantees.
+
+#### Optimization Logic
+The pre-commit hook analyzes staged files using `git diff --cached --name-only` to determine the commit type:
+
+```bash
+is_markdown_only_commit() {
+    staged_files=$(git diff --cached --name-only --diff-filter=AMDRC)
+    
+    if [ -z "$staged_files" ]; then
+        return 1  # No staged files
+    fi
+    
+    for file in $staged_files; do
+        case "$file" in
+            *.md|*.markdown) continue ;;
+            *) return 1 ;;  # Non-markdown file found
+        esac
+    done
+    
+    return 0  # All staged files are markdown
+}
+```
+
+#### Check Strategies
+- **Markdown-only commits**: Runs formatter and linter only (skips tests)
+- **Mixed/code commits**: Runs all checks (formatter, tests, linter)
+- **Empty commits**: Runs all checks (safety default)
+
+#### Performance Achievements
+- **Markdown-only commits**: 6-7s execution time (70%+ improvement from ~30s baseline)
+- **Code commits**: <30s execution time (unchanged, maintains full quality checks)
+- **Detection overhead**: ~0.1s (minimal impact)
+
+#### Safety Guarantees
+- **Preserved Quality Checks**: Formatter and linter always run for all commits
+- **Conservative Logic**: Any mixed content triggers full quality pipeline
+- **Bypass Mechanism**: `git commit --no-verify` still available when needed
+- **Clear Messaging**: Users informed about optimization decisions and performance metrics
+
+#### Integration
+- **Installation**: Included in standard `devbox run install-hooks` workflow
+- **Compatibility**: Works seamlessly with existing devbox scripts
+- **User Experience**: Clear progress indicators show which optimization path is taken
+- **Edge Cases**: Handles file renames, deletions, case sensitivity, and complex git operations
+
+This optimization specifically targets the common developer workflow of making documentation updates, reducing friction while maintaining all essential quality controls.
 
 ## Continuous Integration with Devbox (FEAT-026)
 
