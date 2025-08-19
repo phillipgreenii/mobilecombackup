@@ -22,7 +22,7 @@ echo ">> Info should work with empty repository"
 echo ">> Setting adding contacts.yaml"
 cat > "$repodir/contacts.yaml" << EOF
 contacts: 
-    - name: "Oscar Wilde"
+    - name: "Jim Henson"
       numbers:
         - "5555550004"
 EOF
@@ -40,6 +40,12 @@ echo ">> Validate Repository after Successful Import"
 echo ">> Should have imported calls"
 if [[ $(ls -1 "$repodir/calls" | wc -l) -eq 0 ]]; then
 	echo "ERROR: No calls found" >&2
+	exit 2
+fi
+
+echo ">> Should have calls with Jim Henson's phone number"
+if [[ $( grep Henson -r calls | wc -l) -eq 0 ]]; then
+	echo "ERROR: Jim Henon's phone number is not in calls" >&2
 	exit 2
 fi
 
@@ -61,11 +67,6 @@ if [[ $(yq --exit-status '.unprocessed[] | length > 0 ' "$repodir/contacts.yaml"
 	exit 2
 fi
 
-echo ">> Should not have Oscar Wilde's phone number as unprocessed contact"
-if [[ $(yq --exit-status '.unprocessed[] | select(.phone_number == "5555550004") | length == 0 ' "$repodir/contacts.yaml"  > /dev/null) -ne 0 ]]; then
-	echo "ERROR: Known contact, Oscar Wilde's phone number is listed in unprocessed contacts found" >&2
-	exit 2
-fi
 
 echo ">> Info should work with imported data"
 ./mobilecombackup info --repo-root="$repodir"
