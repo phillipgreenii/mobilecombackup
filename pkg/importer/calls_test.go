@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
@@ -207,7 +208,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 	}
 
 	// Try to create importer - this will fail due to invalid repository
-	_, err := NewImporter(options)
+	_, err := NewImporter(options, logging.NewNullLogger())
 
 	// Verify error contains proper context
 	if err == nil {
@@ -236,7 +237,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(validOptions)
+	importer, err := NewImporter(validOptions, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer with valid repository: %v", err)
 	}
@@ -353,6 +354,7 @@ func TestDependencyInjection(t *testing.T) {
 		callsReader,
 		smsReader,
 		mockAttachmentStorage,
+		logging.NewNullLogger(),
 	)
 
 	if err != nil {

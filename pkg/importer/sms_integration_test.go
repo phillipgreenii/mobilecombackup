@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
 
@@ -51,7 +52,7 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreen/mobilecombackup/pkg/calls"
 	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 	"github.com/phillipgreen/mobilecombackup/pkg/validation"
 )
@@ -287,7 +288,7 @@ type Importer struct {
 }
 
 // NewImporter creates a new importer
-func NewImporter(options *ImportOptions) (*Importer, error) {
+func NewImporter(options *ImportOptions, logger logging.Logger) (*Importer, error) {
 	// Validate repository
 	if err := validateRepository(options.RepoRoot); err != nil {
 		return nil, fmt.Errorf("invalid repository: %w", err)
@@ -306,8 +307,8 @@ func NewImporter(options *ImportOptions) (*Importer, error) {
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
 
-	// Create SMS importer
-	smsImporter := NewSMSImporter(options, contactsManager, smsTracker)
+	// Create SMS importer with logger
+	smsImporter := NewSMSImporterWithLogger(options, contactsManager, smsTracker, logger)
 
 	return &Importer{
 		options:         options,
@@ -326,6 +327,7 @@ func NewImporterWithDependencies(
 	callsReader CallsReader,
 	smsReader SMSReader,
 	attachmentStorage AttachmentStorage,
+	logger logging.Logger,
 ) (*Importer, error) {
 	// Validate repository
 	if err := validateRepository(options.RepoRoot); err != nil {
@@ -342,8 +344,9 @@ func NewImporterWithDependencies(
 		return nil, fmt.Errorf("failed to create calls importer: %w", err)
 	}
 
-	// Create SMS importer with dependency injection
-	smsImporter, err := NewSMSImporterWithDependencies(options, contactsManager, smsTracker, smsReader, attachmentStorage)
+	// Create SMS importer with dependency injection and logger
+	smsImporter, err := NewSMSImporterWithDependenciesAndLogger(
+		options, contactsManager, smsTracker, smsReader, attachmentStorage, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SMS importer: %w", err)
 	}

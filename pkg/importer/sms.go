@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/phillipgreen/mobilecombackup/pkg/security"
 	"github.com/phillipgreen/mobilecombackup/pkg/sms"
 )
@@ -28,7 +29,7 @@ type SMSImporter struct {
 	// rejectWriter *XMLRejectionWriter
 }
 
-// NewSMSImporter creates a new SMS importer
+// NewSMSImporter creates a new SMS importer with null logger (for backward compatibility)
 func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yearTracker *YearTracker) *SMSImporter {
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
@@ -36,15 +37,33 @@ func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yea
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager:     contactsManager, // Now uses interface
-		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot),
+		contactsManager:     contactsManager,                              // Now uses interface
+		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot), // Uses null logger
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
 		yearTracker:         yearTracker,
 	}
 }
 
-// NewSMSImporterWithDependencies creates a new SMS importer with injected dependencies
+// NewSMSImporterWithLogger creates a new SMS importer with a logger
+func NewSMSImporterWithLogger(
+	options *ImportOptions, contactsManager ContactsManager, yearTracker *YearTracker, logger logging.Logger,
+) *SMSImporter {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
+	return &SMSImporter{
+		options:             options,
+		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager:     contactsManager,
+		attachmentExtractor: sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger),
+		attachmentStats:     sms.NewAttachmentExtractionStats(),
+		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
+		yearTracker:         yearTracker,
+	}
+}
+
+// NewSMSImporterWithDependencies creates a new SMS importer with injected dependencies (uses null logger)
 func NewSMSImporterWithDependencies(
 	options *ImportOptions,
 	contactsManager ContactsManager,
@@ -55,8 +74,34 @@ func NewSMSImporterWithDependencies(
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 
-	// Create attachment extractor (using dependency injection would require interface changes in SMS package)
+	// Create attachment extractor with null logger (for backward compatibility)
 	attachmentExtractor := sms.NewAttachmentExtractor(options.RepoRoot)
+
+	return &SMSImporter{
+		options:             options,
+		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
+		contactsManager:     contactsManager,
+		attachmentExtractor: attachmentExtractor,
+		attachmentStats:     sms.NewAttachmentExtractionStats(),
+		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
+		yearTracker:         yearTracker,
+	}, nil
+}
+
+// NewSMSImporterWithDependenciesAndLogger creates a new SMS importer with injected dependencies and logger
+func NewSMSImporterWithDependenciesAndLogger(
+	options *ImportOptions,
+	contactsManager ContactsManager,
+	yearTracker *YearTracker,
+	smsReader SMSReader,
+	attachmentStorage AttachmentStorage,
+	logger logging.Logger,
+) (*SMSImporter, error) {
+	// Set defaults for size limits if not specified
+	options.SetDefaults()
+
+	// Create attachment extractor with logger
+	attachmentExtractor := sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger)
 
 	return &SMSImporter{
 		options:             options,

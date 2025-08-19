@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 )
 
 func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
@@ -41,7 +43,7 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}

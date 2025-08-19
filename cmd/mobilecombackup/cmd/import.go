@@ -160,7 +160,7 @@ func createImportOptions(resolvedRepoRoot string, paths []string) (*importer.Imp
 
 // createImporter creates and validates the importer instance
 func createImporter(options *importer.ImportOptions) (*importer.Importer, error) {
-	imp, err := importer.NewImporter(options)
+	imp, err := importer.NewImporter(options, GetLogger())
 	if err != nil {
 		effectiveQuiet := options.Quiet
 		if !effectiveQuiet {

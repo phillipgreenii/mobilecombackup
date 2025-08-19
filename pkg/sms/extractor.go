@@ -4,11 +4,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 )
 
 // Action constants for attachment extraction results
@@ -27,13 +27,24 @@ const (
 type AttachmentExtractor struct {
 	attachmentManager *attachments.AttachmentManager
 	repoRoot          string
+	logger            logging.Logger
 }
 
-// NewAttachmentExtractor creates a new attachment extractor
+// NewAttachmentExtractor creates a new attachment extractor with default (null) logger
 func NewAttachmentExtractor(repoRoot string) *AttachmentExtractor {
 	return &AttachmentExtractor{
 		attachmentManager: attachments.NewAttachmentManager(repoRoot),
 		repoRoot:          repoRoot,
+		logger:            logging.NewNullLogger(),
+	}
+}
+
+// NewAttachmentExtractorWithLogger creates a new attachment extractor with a specific logger
+func NewAttachmentExtractorWithLogger(repoRoot string, logger logging.Logger) *AttachmentExtractor {
+	return &AttachmentExtractor{
+		attachmentManager: attachments.NewAttachmentManager(repoRoot),
+		repoRoot:          repoRoot,
+		logger:            logger,
 	}
 }
 
@@ -151,8 +162,13 @@ func GetDefaultContentTypeConfig() ContentTypeConfig {
 // determineExtractableContent determines what content to extract from the MMS part
 func (ae *AttachmentExtractor) determineExtractableContent(part *MMSPart) (string, bool, *AttachmentExtractionResult) {
 	// Log extraction attempt for debugging and auditing
-	log.Printf("[ATTACHMENT] Processing part: ContentType=%s, DataLen=%d, TextLen=%d, ContentDisp=%s, Filename=%s",
-		part.ContentType, len(part.Data), len(part.Text), part.ContentDisp, part.Filename)
+	ae.logger.Debug().
+		Str("content_type", part.ContentType).
+		Int("data_len", len(part.Data)).
+		Int("text_len", len(part.Text)).
+		Str("content_disp", part.ContentDisp).
+		Str("filename", part.Filename).
+		Msg("Processing MMS part")
 
 	// Check if this is explicitly marked as an attachment
 	isExplicitAttachment := strings.ToLower(part.ContentDisp) == "attachment"
@@ -166,16 +182,19 @@ func (ae *AttachmentExtractor) determineExtractableContent(part *MMSPart) (strin
 		// Binary data (base64 encoded)
 		contentToExtract = part.Data
 		isBase64 = true
-		log.Printf("[ATTACHMENT] Found base64 data, size: %d bytes", len(contentToExtract))
+		ae.logger.Debug().Int("size_bytes", len(contentToExtract)).Msg("Found base64 data")
 	case part.Text != "" && part.Text != "null" && isExplicitAttachment:
 		// Text content marked as attachment
 		contentToExtract = part.Text
 		isBase64 = false
-		log.Printf("[ATTACHMENT] Found text content marked as attachment, size: %d bytes", len(contentToExtract))
+		ae.logger.Debug().Int("size_bytes", len(contentToExtract)).Msg("Found text content marked as attachment")
 	default:
 		// No extractable content - skip
-		log.Printf("[ATTACHMENT] No extractable content found - Data='%s', Text='%s', ExplicitAttachment=%t",
-			part.Data, part.Text, isExplicitAttachment)
+		ae.logger.Debug().
+			Str("data", part.Data).
+			Str("text", part.Text).
+			Bool("explicit_attachment", isExplicitAttachment).
+			Msg("No extractable content found")
 		return "", false, &AttachmentExtractionResult{
 			Action:     ActionSkipped,
 			Reason:     "no-data",
@@ -196,8 +215,11 @@ func (ae *AttachmentExtractor) validateExtractionRequirements(
 	// Check content type extraction decision with comprehensive logging
 	decision := ae.shouldExtractContentType(part.ContentType, isExplicitAttachment, config)
 	if !decision.ShouldExtract {
-		log.Printf("[ATTACHMENT] Content type filtering: %s - %s (category: %s)",
-			decision.Reason, part.ContentType, decision.Category)
+		ae.logger.Debug().
+			Str("reason", decision.Reason).
+			Str("content_type", part.ContentType).
+			Str("category", decision.Category).
+			Msg("Content type filtered out")
 		return &AttachmentExtractionResult{
 			Action:     ActionSkipped,
 			Reason:     "content-type-filtered",
@@ -205,14 +227,16 @@ func (ae *AttachmentExtractor) validateExtractionRequirements(
 		}
 	}
 
-	log.Printf("[ATTACHMENT] Content type approved for extraction: %s - %s",
-		part.ContentType, decision.Reason)
+	ae.logger.Debug().
+		Str("content_type", part.ContentType).
+		Str("reason", decision.Reason).
+		Msg("Content type approved for extraction")
 
 	// For text content, skip size check as text attachments can be small
 	// For binary content, skip small files (likely metadata)
 	if isBase64 && len(contentToExtract) < 1024 {
 		// Too small - skip
-		log.Printf("[ATTACHMENT] Skipping small binary content: %d bytes (threshold: 1024)", len(contentToExtract))
+		ae.logger.Debug().Int("size_bytes", len(contentToExtract)).Int("threshold", 1024).Msg("Skipping small binary content")
 		return &AttachmentExtractionResult{
 			Action:     ActionSkipped,
 			Reason:     "too-small",
@@ -221,7 +245,7 @@ func (ae *AttachmentExtractor) validateExtractionRequirements(
 	}
 
 	// Proceed with extraction
-	log.Printf("[ATTACHMENT] Proceeding with extraction for content type: %s", part.ContentType)
+	ae.logger.Debug().Str("content_type", part.ContentType).Msg("Proceeding with extraction")
 	return nil
 }
 
@@ -233,18 +257,18 @@ func (ae *AttachmentExtractor) decodeContent(contentToExtract string, isBase64 b
 
 	if isBase64 {
 		// Decode base64 data
-		log.Printf("[ATTACHMENT] Decoding base64 data (%d chars)", len(contentToExtract))
+		ae.logger.Debug().Int("chars", len(contentToExtract)).Msg("Decoding base64 data")
 		decodedData, err = base64.StdEncoding.DecodeString(contentToExtract)
 		if err != nil {
 			// Failed to decode base64 data
-			log.Printf("[ATTACHMENT] Failed to decode base64 data: %v", err)
+			ae.logger.Debug().Err(err).Msg("Failed to decode base64 data")
 			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
 		}
-		log.Printf("[ATTACHMENT] Decoded to %d bytes", len(decodedData))
+		ae.logger.Debug().Int("bytes", len(decodedData)).Msg("Successfully decoded base64 data")
 	} else {
 		// Use text content as-is (UTF-8 encoded)
 		decodedData = []byte(contentToExtract)
-		log.Printf("[ATTACHMENT] Using text content as-is: %d bytes", len(decodedData))
+		ae.logger.Debug().Int("bytes", len(decodedData)).Msg("Using text content as-is")
 	}
 
 	return decodedData, nil
@@ -256,12 +280,12 @@ func (ae *AttachmentExtractor) handleAttachmentStorage(part *MMSPart, decodedDat
 	hasher := sha256.New()
 	hasher.Write(decodedData)
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
-	log.Printf("[ATTACHMENT] Calculated hash: %s", hash)
+	ae.logger.Debug().Str("hash", hash).Msg("Calculated attachment hash")
 
 	// Check if attachment already exists
 	exists, err := ae.attachmentManager.AttachmentExists(hash)
 	if err != nil {
-		log.Printf("[ATTACHMENT] Failed to check attachment existence: %v", err)
+		ae.logger.Debug().Err(err).Msg("Failed to check attachment existence")
 		return nil, fmt.Errorf("failed to check attachment existence: %w", err)
 	}
 
@@ -277,11 +301,11 @@ func (ae *AttachmentExtractor) referenceExistingAttachment(hash string, decodedD
 	// Attachment already exists, get its current path
 	attachment, err := ae.attachmentManager.GetAttachment(hash)
 	if err != nil {
-		log.Printf("[ATTACHMENT] Failed to get existing attachment path: %v", err)
+		ae.logger.Debug().Err(err).Msg("Failed to get existing attachment path")
 		return nil, fmt.Errorf("failed to get existing attachment path: %w", err)
 	}
 
-	log.Printf("[ATTACHMENT] Attachment already exists, referencing: %s", attachment.Path)
+	ae.logger.Debug().Str("path", attachment.Path).Msg("Attachment already exists, referencing")
 	return &AttachmentExtractionResult{
 		Action:         ActionReferenced,
 		Hash:           hash,
@@ -311,18 +335,18 @@ func (ae *AttachmentExtractor) createNewAttachment(
 
 	// Store attachment with new format
 	if err := storage.Store(hash, decodedData, metadata); err != nil {
-		log.Printf("[ATTACHMENT] Failed to store attachment: %v", err)
+		ae.logger.Debug().Err(err).Msg("Failed to store attachment")
 		return nil, fmt.Errorf("failed to store attachment: %w", err)
 	}
 
 	// Get the path for the stored attachment
 	attachmentPath, err := storage.GetPath(hash)
 	if err != nil {
-		log.Printf("[ATTACHMENT] Failed to get stored attachment path: %v", err)
+		ae.logger.Debug().Err(err).Msg("Failed to get stored attachment path")
 		return nil, fmt.Errorf("failed to get stored attachment path: %w", err)
 	}
 
-	log.Printf("[ATTACHMENT] Successfully extracted attachment: %s (%d bytes)", attachmentPath, len(decodedData))
+	ae.logger.Debug().Str("path", attachmentPath).Int("bytes", len(decodedData)).Msg("Successfully extracted attachment")
 	return &AttachmentExtractionResult{
 		Action:         ActionExtracted,
 		Hash:           hash,
@@ -348,7 +372,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 		decision.ShouldExtract = false
 		decision.Reason = "missing content type header"
 		decision.Category = CategoryUnknown
-		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: missing content type header")
 		return decision
 	}
 
@@ -359,7 +383,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 		decision.ShouldExtract = false
 		decision.Reason = "empty content type after normalization"
 		decision.Category = CategoryUnknown
-		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: empty after normalization")
 		return decision
 	}
 
@@ -368,7 +392,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 		decision.ShouldExtract = true
 		decision.Reason = "whitelisted binary type"
 		decision.Category = "binary"
-		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: whitelisted binary type")
 		return decision
 	}
 
@@ -377,7 +401,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 		decision.ShouldExtract = false
 		decision.Reason = "text content - keeping inline"
 		decision.Category = "text"
-		log.Printf("[ATTACHMENT] Content type decision: %+v", decision)
+		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: text content kept inline")
 		return decision
 	}
 
@@ -385,7 +409,10 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 	decision.ShouldExtract = false
 	decision.Reason = fmt.Sprintf("unknown content type: %s", normalizedType)
 	decision.Category = CategoryUnknown
-	log.Printf("[ATTACHMENT] Content type decision: %+v (ExplicitAttachment: %t)", decision, isExplicitAttachment)
+	ae.logger.Debug().
+		Interface("decision", decision).
+		Bool("explicit_attachment", isExplicitAttachment).
+		Msg("Content type decision: unknown content type")
 	return decision
 }
 

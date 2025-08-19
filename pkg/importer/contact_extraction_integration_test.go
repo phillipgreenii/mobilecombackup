@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/phillipgreen/mobilecombackup/pkg/logging"
 	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
 )
 
@@ -138,7 +139,7 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -282,7 +283,7 @@ unprocessed:
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -361,7 +362,7 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -438,7 +439,7 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -505,7 +506,7 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -562,7 +563,7 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
@@ -640,7 +641,7 @@ func testContactExtraction(t *testing.T, testXML, fileName, filter string, expec
 		Quiet:    true,
 	}
 
-	importer, err := NewImporter(options)
+	importer, err := NewImporter(options, logging.NewNullLogger())
 	if err != nil {
 		t.Fatalf("Failed to create importer: %v", err)
 	}
