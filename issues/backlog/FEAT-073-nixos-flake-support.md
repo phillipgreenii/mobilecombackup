@@ -40,6 +40,7 @@ This enhancement expands the project's accessibility to the growing NixOS and Ni
 - [ ] Implement version injection matching `scripts/build-version.sh` behavior exactly
 - [ ] Support all binary subcommands (import, export, validate, version, etc.)
 - [ ] Preserve CLI flags and configuration file support
+- [ ] Ensure `nix flake check` validates the flake successfully
 
 #### Installation Methods
 - [ ] Support `nix run github:phillipgreen/mobilecombackup` usage pattern (unstable/main)
@@ -49,18 +50,13 @@ This enhancement expands the project's accessibility to the growing NixOS and Ni
 - [ ] Enable NixOS module integration via `environment.systemPackages`
 - [ ] Support home-manager integration for user-level installation
 
-#### Development Environment
-- [ ] Support development environment setup via flake (`nix develop`)
-- [ ] Provide equivalent tools from devbox.json in development shell
-- [ ] Include Go compiler, golangci-lint, gotestsum, and other dev tools
-- [ ] Preserve devbox shell init hooks where applicable
-
 #### Documentation Requirements
 - [ ] Update README.md with Nix installation instructions for both stable and unstable
 - [ ] Document GitHub release workflow for Nix users
 - [ ] Provide NixOS configuration examples
 - [ ] Include troubleshooting guide for common Nix issues
 - [ ] Add flake usage examples to docs/INSTALLATION.md (create if needed)
+- [ ] Clearly document that devbox remains the primary development environment
 
 ### Non-Functional Requirements
 #### Build & Reproducibility
@@ -75,7 +71,8 @@ This enhancement expands the project's accessibility to the growing NixOS and Ni
 - [ ] Support multiple architectures: x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin
 - [ ] Maintain compatibility with Nix 2.4+ (flakes experimental feature)
 - [ ] Work with both standalone Nix and NixOS systems
-- [ ] Development environment should provide same tools as devbox
+- [ ] Flake must pass `nix flake check` validation
+- [ ] Package must be installable and runnable without errors
 
 #### Performance & Resources
 - [ ] Installation size should be reasonable (<50MB including dependencies)
@@ -88,22 +85,26 @@ This enhancement expands the project's accessibility to the growing NixOS and Ni
 - [ ] Version output format must be identical to current implementation
 - [ ] Handle missing git information gracefully (e.g., in tarball downloads)
 - [ ] Support version extraction from both git tags and VERSION file
+- [ ] Leverage existing VERSION file and release workflow without modification
+- [ ] Minimize version update locations (ideally just VERSION file)
 
 ## Design
 ### Approach
 Create a standard Nix flake that:
 1. **Package Definition**: Uses `buildGoModule` to create the mobilecombackup package
 2. **Version Injection**: Implements equivalent of build-version.sh logic using Nix
-3. **Development Shell**: Provides equivalent environment to devbox shell
-4. **Multiple Outputs**: Supports both package installation and development workflows
-5. **GitHub Integration**: Works when referenced directly from GitHub URL
+3. **Package-Only Focus**: Provides installable package without development shell
+4. **GitHub Integration**: Works when referenced directly from GitHub URL
+5. **Validation**: Ensures flake passes `nix flake check` for quality assurance
+
+**Note**: Development continues to use devbox exclusively. The Nix flake is for package distribution only.
 
 ### Technical Architecture
 #### Flake Structure
 - **inputs**: nixpkgs (unstable), flake-utils for multi-platform support
-- **outputs**: packages.default (binary), devShells.default (development environment)
+- **outputs**: packages.default (binary) - no development shell
 - **overlays**: Optional overlay for integration with existing Nix configurations
-- **checks**: Build verification and basic smoke tests
+- **checks**: Build verification, flake validation, and version format tests
 
 #### Version Detection Strategy
 ```
@@ -232,22 +233,11 @@ in
 - Consider using `vendorSha256 = null` during development, fixed hash for releases
 - Ensure `go.mod` and `go.sum` are included in source
 
-#### Development Environment Mapping
-```nix
-# Map devbox.json packages to Nix equivalents
-devShell = pkgs.mkShell {
-  buildInputs = with pkgs; [
-    go_1_24           # go@1.24
-    gopls             # gopls@latest  
-    golangci-lint     # golangci-lint@latest
-    gotestsum         # gotestsum@latest
-    ast-grep          # ast-grep@latest
-    jq                # jq@latest
-    yq                # yq@latest
-    # Note: deno, viu, claude-code, uv may need special handling
-  ];
-};
-```
+#### Development Environment Strategy
+- **No Nix development shell** - Development uses devbox exclusively
+- **Single configuration source** - All development tools configured in devbox.json only
+- **Clear separation** - Nix for package distribution, devbox for development
+- **Documentation clarity** - All development docs point to devbox commands
 
 #### Cross-Platform Support
 - Use `flake-utils.lib.eachDefaultSystem` for multi-architecture support
@@ -256,16 +246,20 @@ devShell = pkgs.mkShell {
 - Ensure CGO_ENABLED=0 for static binary builds (matching current build)
 
 #### CI/CD Integration
-- Add `nix flake check` to GitHub Actions workflow (optional, non-blocking)
-- Document in release checklist: "Test Nix flake builds before tagging"
+- Add `nix flake check` to GitHub Actions workflow for validation
+- Ensure `nix flake check` verifies the flake can be installed and run
+- Document in release checklist: "Verify Nix flake check passes before tagging"
 - Consider caching Nix store in CI for faster builds
 - Add smoke test: `nix run .#mobilecombackup -- --version`
+- Flake check should validate version format and basic functionality
 
 #### Documentation Strategy
 - Update README.md with prominent Nix installation section
-- Create docs/NIX_INSTALLATION.md for detailed instructions
+- Create docs/NIX_INSTALLATION.md for detailed package installation instructions
+- Clearly state that devbox is the only supported development environment
 - Add troubleshooting for common issues (flakes not enabled, etc.)
 - Provide examples for both end-users and NixOS system administrators
+- Remove any references to `nix develop` from all documentation
 
 ### Git Repository & GitHub Configuration
 #### Repository Requirements
@@ -274,36 +268,32 @@ devShell = pkgs.mkShell {
 - **Branch Protection**: Main branch remains the unstable/development branch
 - **Flake File**: `flake.nix` must be committed to the repository root
 
-#### Current Release Process (from docs/VERSION_MANAGEMENT.md)
-The project already has a well-defined release process that is compatible with Nix flake requirements:
+#### Simplified Release Process
+The existing release process works perfectly with Nix flakes:
 
-1. **Development Phase**:
-   - VERSION file contains development version (e.g., `2.1.0-dev`)
-   - Builds show format: `2.1.0-dev-g1234567` (base + git hash)
-   - Main branch serves as unstable/development channel
-
-2. **Release Creation**:
+1. **Single Version Source**: VERSION file is the only place to update version
+2. **Simple Release Command**:
    ```bash
-   # Create and push git tag (triggers GitHub Actions release)
-   git tag v2.1.0
-   git push origin v2.1.0
-   
-   # GitHub Actions automatically builds release binaries on v* tags
-   # Release builds show clean version: 2.1.0
+   # One-step release (could be scripted)
+   git tag v2.1.0 && git push origin v2.1.0
    ```
+3. **Automatic Processing**:
+   - GitHub Actions builds release binaries automatically
+   - Nix users can immediately install via `?ref=v2.1.0`
+   - Version shows clean semantic version (e.g., "2.1.0")
 
-3. **Post-Release**:
+4. **Post-Release**:
    ```bash
-   # Update VERSION for next development cycle
+   # Update VERSION for next cycle
    echo "2.2.0-dev" > VERSION
-   git add VERSION
-   git commit -m "Start v2.2.0 development"
+   git add VERSION && git commit -m "Start v2.2.0 development"
    ```
 
-4. **GitHub Actions Integration**:
-   - Release workflow triggers on `v*` tags (see `.github/workflows/release.yml`)
-   - Builds versioned binaries with clean semantic version
-   - Uses `fetch-depth: 0` for full git history (required for version detection)
+**Key Benefits**:
+- Version only updated in VERSION file
+- Single command can trigger release
+- No changes needed to existing workflow
+- Fully automated after tag push
 
 #### Flake Compatibility Requirements
 - **No changes needed to existing release process** - Current workflow is fully compatible
@@ -472,38 +462,22 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
           drv = self.packages.${system}.default;
         };
         
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            go_1_24
-            gopls
-            golangci-lint
-            gotestsum
-            ast-grep
-            jq
-            yq
-            ripgrep
-            fd
-          ];
-          
-          shellHook = ''
-            echo "📋 Nix development environment loaded"
-            echo ""
-            echo "Available commands:"
-            echo "  go build ./cmd/mobilecombackup  - Build the binary"
-            echo "  go test ./...                   - Run tests"
-            echo "  golangci-lint run               - Run linter"
-            echo "  nix build                       - Build with Nix"
-            echo "  nix run                         - Run the binary"
-            echo ""
-            echo "Version: $(${self.packages.${system}.default}/bin/mobilecombackup --version 2>/dev/null || echo 'not built')"
-          '';
-        };
+        # No development shell - use devbox for development
+        # This flake is for package distribution only
         
-        # Optional: provide checks for CI
+        # Checks for nix flake check validation
         checks = {
+          # Verify package builds
           build = self.packages.${system}.default;
           
-          # Version format check
+          # Verify binary runs and shows help
+          runnable = pkgs.runCommand "check-runnable" {} ''
+            ${self.packages.${system}.default}/bin/mobilecombackup --help > /dev/null
+            echo "✓ Binary runs successfully"
+            touch $out
+          '';
+          
+          # Verify version format
           version = pkgs.runCommand "check-version" {} ''
             VERSION=$(${self.packages.${system}.default}/bin/mobilecombackup --version)
             echo "Version: $VERSION"
@@ -516,6 +490,15 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
               echo "✗ Version format is incorrect"
               exit 1
             fi
+          '';
+          
+          # Verify all subcommands are accessible
+          subcommands = pkgs.runCommand "check-subcommands" {} ''
+            for cmd in import export validate info init version; do
+              ${self.packages.${system}.default}/bin/mobilecombackup $cmd --help > /dev/null 2>&1
+              echo "✓ Subcommand '$cmd' works"
+            done
+            touch $out
           '';
         };
       }
@@ -567,22 +550,26 @@ When creating a new release that Nix users can install:
 ## Tasks
 ### Research & Planning
 - [ ] Research best practices for Go flakes with version injection
-- [ ] Study similar Go projects with Nix flakes (e.g., Hugo, Caddy)
+- [ ] Study similar Go projects with package-only Nix flakes
 - [ ] Determine optimal nixpkgs channel (unstable vs stable)
 - [ ] Decide on flake.lock commit strategy (commit vs .gitignore)
+- [ ] Design simplified release process/script
 
 ### Implementation
-- [ ] Create initial flake.nix with basic package definition
+- [ ] Create initial flake.nix with package definition (no dev shell)
 - [ ] Implement version injection equivalent to build-version.sh
 - [ ] Add proper flake metadata (description, maintainers)
 - [ ] Compute and set correct vendorHash for Go modules
-- [ ] Add development shell with devbox-equivalent tools
 - [ ] Implement multi-platform support using flake-utils
 - [ ] Add overlay output for advanced users
-- [ ] Create flake checks for build verification
+- [ ] Create comprehensive flake checks (build, run, version, subcommands)
+- [ ] Ensure flake passes `nix flake check` validation
+- [ ] Create release helper script for one-command releases (optional)
 
 ### Testing & Validation
-- [ ] Test flake locally with `nix build`, `nix run`, `nix develop`
+- [ ] Test flake locally with `nix build` and `nix run`
+- [ ] Verify `nix flake check` passes all validations
+- [ ] Test that flake can be installed and run successfully
 - [ ] Verify binary functionality (import, export, validate commands)
 - [ ] Test GitHub URL usage pattern for main branch (unstable)
 - [ ] Test GitHub URL usage pattern with ?ref= for tags (stable)
@@ -591,24 +578,30 @@ When creating a new release that Nix users can install:
 - [ ] Test version selection strategies (main, tags, commits, branches)
 - [ ] Verify version output matches existing build system format exactly
 - [ ] Test offline builds after initial fetch
-- [ ] Validate development shell has all required tools
 - [ ] Test `nix profile` installation and removal
+- [ ] Validate all flake checks work correctly
+- [ ] Test simplified release process end-to-end
 
 ### Documentation
-- [ ] Update README.md with comprehensive Nix installation instructions
-- [ ] Create docs/NIX_INSTALLATION.md with detailed guide
+- [ ] Update README.md with Nix package installation instructions
+- [ ] Create docs/NIX_INSTALLATION.md for package installation only
+- [ ] Update all docs to clarify devbox-only development
 - [ ] Add Nix-specific notes to docs/VERSION_MANAGEMENT.md
 - [ ] Create example NixOS system configuration snippets
 - [ ] Document home-manager integration example
 - [ ] Add troubleshooting section for common Nix issues
 - [ ] Document vendorHash update process
-- [ ] Create release checklist addition for Nix verification
+- [ ] Create release checklist addition for `nix flake check` verification
+- [ ] Document simplified release process/script
+- [ ] Remove any `nix develop` references from documentation
 
 ### CI/CD Integration
-- [ ] Add flake check to CI pipeline (optional, informational only)
-- [ ] Document flake testing in release process
+- [ ] Add `nix flake check` to CI pipeline for validation
+- [ ] Configure flake check to verify installation and runtime
+- [ ] Document flake check requirement in release process
 - [ ] Update release workflow documentation
 - [ ] Consider adding Nix cache configuration
+- [ ] Ensure flake check validates all critical functionality
 
 ## Testing
 ### Unit Tests
@@ -633,12 +626,12 @@ When creating a new release that Nix users can install:
 - Test with sample backup files from testdata/
 - Confirm version output format matches exactly
 
-#### Development Environment Testing
-- Test development workflow with `nix develop`
-- Verify Go compilation works in dev shell
-- Test running tests with gotestsum
-- Verify linting with golangci-lint
-- Test devbox equivalent commands work
+#### Flake Validation Testing
+- Test `nix flake check` passes all checks
+- Verify flake metadata is correct
+- Test flake outputs are properly defined
+- Verify checks validate installation capability
+- Test checks validate runtime functionality
 
 #### Reproducibility Testing
 - Validate flake works without internet after initial fetch
@@ -661,9 +654,12 @@ When creating a new release that Nix users can install:
 - [ ] Version string matches format: "X.Y.Z" (stable) or "X.Y.Z-dev-gHASH" (unstable)
 - [ ] All CLI commands function identically to devbox build
 - [ ] Installation via GitHub URL works without local clone
-- [ ] Development environment provides all necessary tools
+- [ ] `nix flake check` passes all validations
+- [ ] Flake can be installed and run without errors
 - [ ] Builds are reproducible across different machines
-- [ ] Documentation is clear and complete
+- [ ] Documentation clearly states devbox-only development
+- [ ] Release process is simplified (ideally single command)
+- [ ] Version updates required in only one location (VERSION file)
 
 ## Risks and Mitigations
 ### Technical Risks
@@ -683,10 +679,10 @@ When creating a new release that Nix users can install:
   - **Mitigation**: Use GitHub Actions matrix for Nix-specific jobs
 
 ### Dependency Risks
-- **Risk**: Dependency bloat in development shell
-  - **Mitigation**: Mirror only essential tools from devbox.json
-  - **Mitigation**: Document which tools are excluded and why
-  - **Mitigation**: Provide minimal and full development shell variants
+- **Risk**: User confusion about development environment
+  - **Mitigation**: No Nix development shell provided
+  - **Mitigation**: Clear documentation that devbox is the only dev environment
+  - **Mitigation**: All development commands reference devbox only
 
 - **Risk**: vendorHash maintenance burden
   - **Mitigation**: Document update process clearly
@@ -722,9 +718,11 @@ When creating a new release that Nix users can install:
   - **Mitigation**: Use automated dependency updates if committing
 
 - **Risk**: Release process complexity
-  - **Mitigation**: Minimal changes to existing workflow
-  - **Mitigation**: Add Nix-specific validation to release checklist
-  - **Mitigation**: Automate Nix testing in release pipeline
+  - **Mitigation**: Keep existing simple workflow unchanged
+  - **Mitigation**: Provide optional one-command release script
+  - **Mitigation**: Version only updated in VERSION file
+  - **Mitigation**: Add `nix flake check` to release checklist
+  - **Mitigation**: Automate flake validation in CI
 
 ## References
 ### Related Features
@@ -792,13 +790,13 @@ The Nix flake will integrate seamlessly with the current release workflow:
 
 ### Implementation Priority
 1. **Phase 1**: Basic flake with package definition and version injection
-2. **Phase 2**: Development shell and multi-platform support
-3. **Phase 3**: Documentation and CI integration
-4. **Phase 4**: Community feedback and optimization
+2. **Phase 2**: Comprehensive flake checks and multi-platform support
+3. **Phase 3**: Documentation (package-only) and CI integration
+4. **Phase 4**: Simplified release tooling and community feedback
 
 ### Open Questions for Product Decision
 1. Should flake.lock be committed initially or added to .gitignore?
-2. Should we provide a minimal dev shell or full devbox parity?
-3. Should Nix CI checks be required or informational only?
-4. Should we support overlay output in initial version?
-5. How should we handle tools not available in nixpkgs (claude-code, etc.)?
+2. Should `nix flake check` be required or informational in CI?
+3. Should we support overlay output in initial version?
+4. Should we create a release helper script for one-command releases?
+5. Should flake check failures block releases?
