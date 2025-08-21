@@ -2120,3 +2120,46 @@ The SonarQube analysis integrates seamlessly with the existing CI pipeline:
 
 This integration maintains the established quality workflow while adding comprehensive code quality analysis and historical tracking capabilities.
 
+## Recently Completed Features
+
+This section tracks significant features and improvements completed in the project. For full implementation details, see the completed issues in `issues/completed/`.
+
+### FEAT-067: Progress Tracking Implementation (Completed)
+Enhanced user experience with real-time progress tracking across all commands:
+- **Streaming validation** with live progress updates
+- **Automatic verbosity** detection based on TTY status
+- **Repository-wide validation** with detailed phase reporting
+- **Performance improvements** through optimized streaming
+- See `issues/completed/FEAT-067-*.md` for implementation details
+
+### FEAT-066: Error Resilience Enhancement (Completed)
+Comprehensive error handling improvements throughout the codebase:
+- **Graceful degradation** - continue processing on non-fatal errors
+- **Error collection** and aggregation with detailed reporting
+- **Context preservation** in error messages for better debugging
+- **Partial success handling** with clear success/failure counts
+- See `issues/completed/FEAT-066-*.md` for implementation details
+
+### BUG-071: Validation Performance Fix (Completed)
+Resolved critical validation performance issues:
+- **Fixed goroutine leaks** in concurrent validation
+- **Optimized memory usage** for large repositories
+- **Improved cancellation handling** with proper context propagation
+- **Enhanced error reporting** during validation failures
+- See `issues/completed/BUG-071-*.md` for implementation details
+
+### FEAT-072: Pre-commit Hook Optimization (Completed)
+Optimized development workflow with intelligent pre-commit hooks:
+- **Markdown-only commits** run in ~6 seconds (formatter + linter only)
+- **Code commits** run full suite in <30 seconds target
+- **Automatic detection** of change types for optimal checks
+- **Clear feedback** with performance metrics
+- See `issues/completed/FEAT-072-*.md` for implementation details
+
+### FEAT-064: Interface Evolution - Validation Cleanup (Active)
+Currently refactoring validation interfaces for better maintainability:
+- Simplifying validation API surface
+- Improving error handling patterns
+- Enhancing testability of validation components
+- See `issues/active/FEAT-064-*.md` for current progress
+

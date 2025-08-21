@@ -60,6 +60,27 @@ For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLO
 4. **Implement**: Use `/implement-issue FEAT-XXX` command
 5. **Complete**: Updates move to `issues/completed/`
 
+## Documentation Rules
+
+### Living Documentation
+- **issues/specification.md** is a **living representation** of the project
+- **MUST be updated** whenever documentation changes to match current system state
+- Serves as the single source of truth for current architecture and capabilities
+
+### Completed Issues Policy
+- **Completed issues** (in `issues/completed/`) should **NOT be updated**
+- They serve as historical records of what was implemented
+- **Allowed exceptions only**:
+  - Adding cross-references to newer issues that modified the functionality
+  - Minor text improvements (typos, readability) that don't change interpretation
+  
+### Documentation Update Workflow
+1. **Always review** `issues/specification.md` when updating docs
+2. **Verify** code state matches documentation
+3. **Update** specification.md if system has evolved
+4. **Preserve** completed issues as historical records
+5. **Cross-reference** when newer issues supersede older ones
+
 ## Task Completion Requirements
 
 For detailed task completion requirements and verification workflow, see [Task Completion](docs/TASK_COMPLETION.md).

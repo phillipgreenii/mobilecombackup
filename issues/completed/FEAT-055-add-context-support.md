@@ -373,6 +373,8 @@ func runImportCommand(cmd *cobra.Command, args []string) error {
 - [ ] Add resource cleanup patterns for context cancellation
 - [ ] Update progress reporters to handle context cancellation
 
+*Note: Progress reporting and streaming validation with context support was later enhanced in FEAT-067*
+
 ### Phase 3: CLI Integration (Week 3)
 - [ ] Add timeout flags to CLI commands: `--timeout`, `--import-timeout`
 - [ ] Add signal handling for graceful cancellation (SIGINT, SIGTERM)
