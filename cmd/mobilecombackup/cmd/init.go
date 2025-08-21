@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

@@ -177,7 +177,7 @@ Priority Order (matching build-version.sh):
   # Metadata
   meta = with lib; {
     description = "Tool for processing mobile phone backup files";
-    homepage = "https://github.com/phillipgreen/mobilecombackup";
+    homepage = "https://github.com/phillipgreenii/mobilecombackup";
     license = licenses.mit;  # Update to actual license
     maintainers = with maintainers; [ ];  # Add maintainer info
     platforms = platforms.unix;
@@ -343,14 +343,14 @@ nix run github:phillipgreen/mobilecombackup?ref=v2.0.0 -- --help
 nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
 
 # List available releases
-# Visit: https://github.com/phillipgreen/mobilecombackup/releases
+# Visit: https://github.com/phillipgreenii/mobilecombackup/releases
 
 ### NixOS System Configuration
 { pkgs, ... }:
 {
   environment.systemPackages = [
     (pkgs.callPackage (fetchGit {
-      url = "https://github.com/phillipgreen/mobilecombackup";
+      url = "https://github.com/phillipgreenii/mobilecombackup";
       ref = "v2.0.0"; # Use specific release tag
       # ref = "main"; # Or use main for latest development
     }) {})
@@ -448,7 +448,7 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
             
             meta = with pkgs.lib; {
               description = "Tool for processing mobile phone backup files";
-              homepage = "https://github.com/phillipgreen/mobilecombackup";
+              homepage = "https://github.com/phillipgreenii/mobilecombackup";
               license = licenses.mit;  # Update to actual license
               maintainers = [ ];
               platforms = platforms.unix;

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 )
 
 func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {

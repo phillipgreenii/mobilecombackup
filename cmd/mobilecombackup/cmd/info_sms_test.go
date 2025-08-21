@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 func TestSMSMMSTypeCounting(t *testing.T) {

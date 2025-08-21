@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup/cmd"
+	"github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup/cmd"
 )
 
 var (

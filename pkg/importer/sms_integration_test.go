@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {

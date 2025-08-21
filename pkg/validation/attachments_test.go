@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 // mockAttachmentReader implements AttachmentReader for testing

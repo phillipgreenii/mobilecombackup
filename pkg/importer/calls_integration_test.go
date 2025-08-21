@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/calls"
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 )
 
 func TestCallsImporter_ImportEmptyRepository(t *testing.T) {

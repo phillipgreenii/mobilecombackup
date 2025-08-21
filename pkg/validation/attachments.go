@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 // AttachmentsValidator validates attachments directory and files using AttachmentReader

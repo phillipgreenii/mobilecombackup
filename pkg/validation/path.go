@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	customerrors "github.com/phillipgreen/mobilecombackup/pkg/errors"
+	customerrors "github.com/phillipgreenii/mobilecombackup/pkg/errors"
 )
 
 // MaxPathLength defines the maximum allowed path length to prevent resource exhaustion attacks

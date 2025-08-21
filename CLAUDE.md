@@ -258,7 +258,7 @@ grep -r "Call" .
 - NEVER skip verification steps
 - NEVER use `git commit --no-verify`
 - Task completion REQUIRES successful commit with ALL checks passing
-- Use full import paths: `github.com/phillipgreen/mobilecombackup/pkg/...`
+- Use full import paths: `github.com/phillipgreenii/mobilecombackup/pkg/...`
 - Timestamps are milliseconds (divide by 1000 for Unix time)
 - XML "null" values should be treated as empty
 - Create temp files in `tmp/` directory (not `/tmp`)

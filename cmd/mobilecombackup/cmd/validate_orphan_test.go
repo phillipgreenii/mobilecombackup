@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
-	"github.com/phillipgreen/mobilecombackup/pkg/validation"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
 )
 
 const (

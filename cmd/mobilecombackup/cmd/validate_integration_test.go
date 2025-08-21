@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/validation"
+	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
 )
 
 // TestValidateCommandIntegration tests the validate command via the CLI

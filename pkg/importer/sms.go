@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
-	"github.com/phillipgreen/mobilecombackup/pkg/security"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/coalescer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/security"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 // SMSImporter handles SMS/MMS import operations

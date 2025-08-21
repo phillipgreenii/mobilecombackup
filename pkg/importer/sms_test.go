@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 func TestSMSImporter_ImportFile(t *testing.T) {

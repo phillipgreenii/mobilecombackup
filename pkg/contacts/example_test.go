@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 )
 
 const (

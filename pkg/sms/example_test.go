@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 // Example demonstrates basic usage of the SMSReader

@@ -194,7 +194,7 @@ Projects achieved excellent test coverage through systematic testing:
 ### Common Issues and Solutions
 - **Devbox environment problems**: Use `devbox run command` to run commands without entering the shell
 - **Legacy code conflicts**: Remove old implementations when starting fresh features
-- **Import path issues**: Always use full module path `github.com/phillipgreen/mobilecombackup/pkg/...`
+- **Import path issues**: Always use full module path `github.com/phillipgreenii/mobilecombackup/pkg/...`
 - **Date conversion**: Timestamps are in milliseconds, not seconds - divide by 1000 for Unix time
 - **Empty vs null**: XML attributes with value "null" should be treated as empty/zero values
 - **MMS type field**: Use `msg_box` (1=received, 2=sent) not `m_type` for message direction

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 // mockSMSReader implements SMSReader for testing

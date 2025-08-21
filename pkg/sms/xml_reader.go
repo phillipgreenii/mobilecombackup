@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/security"
-	"github.com/phillipgreen/mobilecombackup/pkg/types"
+	"github.com/phillipgreenii/mobilecombackup/pkg/security"
+	"github.com/phillipgreenii/mobilecombackup/pkg/types"
 )
 
 const (

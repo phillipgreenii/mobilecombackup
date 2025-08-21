@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/coalescer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/coalescer"
 )
 
 // MessageEntry wraps a Message to implement the coalescer.Entry interface

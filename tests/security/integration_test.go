@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/autofix"
-	"github.com/phillipgreen/mobilecombackup/pkg/security"
-	"github.com/phillipgreen/mobilecombackup/pkg/validation"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/autofix"
+	"github.com/phillipgreenii/mobilecombackup/pkg/security"
+	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
 )
 
 // TestAttachmentStorage_SecurityIntegration tests that attachment storage is protected against directory traversal

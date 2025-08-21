@@ -17,10 +17,10 @@ Introduce abstraction interfaces between service and domain layers to reduce cou
 ```go
 // pkg/importer/importer.go lines 10-14
 import (
-    "github.com/phillipgreen/mobilecombackup/pkg/calls"
-    "github.com/phillipgreen/mobilecombackup/pkg/sms"
-    "github.com/phillipgreen/mobilecombackup/pkg/contacts"
-    "github.com/phillipgreen/mobilecombackup/pkg/attachments"
+    "github.com/phillipgreenii/mobilecombackup/pkg/calls"
+    "github.com/phillipgreenii/mobilecombackup/pkg/sms"
+    "github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+    "github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 )
 ```
 

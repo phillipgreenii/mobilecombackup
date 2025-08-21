@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 	"github.com/spf13/cobra"
 )
 

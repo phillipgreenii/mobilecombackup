@@ -31,7 +31,7 @@ This guide helps agents automatically fix common issues that arise during the ve
 **Fix**: 
 ```go
 // Add missing import
-import "github.com/phillipgreen/mobilecombackup/pkg/missing"
+import "github.com/phillipgreenii/mobilecombackup/pkg/missing"
 
 // Or fix typo in function name
 ```
@@ -179,7 +179,7 @@ goimports -w .
 **Fix**:
 ```go
 // Add missing import
-import "github.com/phillipgreen/mobilecombackup/pkg/types"
+import "github.com/phillipgreenii/mobilecombackup/pkg/types"
 
 // Or import from standard library
 import "fmt"
@@ -277,7 +277,7 @@ err := ProcessData(ctx, "data")
 **Fix**:
 ```go
 // Use full import path
-import "github.com/phillipgreen/mobilecombackup/pkg/calls"
+import "github.com/phillipgreenii/mobilecombackup/pkg/calls"
 
 // Not relative paths
 // import "../calls" ← Wrong

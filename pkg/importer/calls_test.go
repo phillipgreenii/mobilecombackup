@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/calls"
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
-	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 )
 
 func TestCallValidator_Validate(t *testing.T) {

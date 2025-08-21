@@ -17,7 +17,7 @@ func TestMainIntegration(t *testing.T) {
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command(
 		"go", "build", "-o", binPath,
-		"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup",
+		"github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup",
 	) // #nosec G204
 
 	// Build the binary
@@ -109,7 +109,7 @@ func TestVersionInjection(t *testing.T) {
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command("go", "build",
 		"-ldflags", "-X main.Version=1.2.3",
-		"-o", binPath, "github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup") // #nosec G204
+		"-o", binPath, "github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup") // #nosec G204
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -134,7 +134,7 @@ func TestHelpSubcommand(t *testing.T) {
 	binPath := filepath.Join(t.TempDir(), "mobilecombackup")
 	cmd := exec.Command(
 		"go", "build", "-o", binPath,
-		"github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup",
+		"github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup",
 	) // #nosec G204
 
 	output, err := cmd.CombinedOutput()

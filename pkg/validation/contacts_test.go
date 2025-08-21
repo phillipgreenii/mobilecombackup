@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 )
 
 // mockContactsReader implements Reader for testing

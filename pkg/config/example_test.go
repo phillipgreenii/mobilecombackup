@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/config"
+	"github.com/phillipgreenii/mobilecombackup/pkg/config"
 )
 
 // ExampleLoader_LoadWithDefaults demonstrates loading configuration with default precedence

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 )
 
 // Action constants for attachment extraction results

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/calls"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"gopkg.in/yaml.v3"
 )
 

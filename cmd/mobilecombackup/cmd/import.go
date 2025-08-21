@@ -8,8 +8,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/importer"
-	"github.com/phillipgreen/mobilecombackup/pkg/security"
+	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/spf13/cobra"
 )
 

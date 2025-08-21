@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 )
 
 // Config represents the complete application configuration

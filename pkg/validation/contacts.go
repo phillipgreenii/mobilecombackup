@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 )
 
 // ContactsValidator validates contacts file and data using Reader

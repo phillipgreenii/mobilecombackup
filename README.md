@@ -13,7 +13,7 @@ A command-line tool for processing mobile phone backup files (Call and SMS logs 
 
 ```bash
 # Clone the repository
-git clone https://github.com/phillipgreen/mobilecombackup.git
+git clone https://github.com/phillipgreenii/mobilecombackup.git
 cd mobilecombackup
 
 # Build with automatic version injection (recommended)
@@ -21,10 +21,10 @@ devbox run build-cli
 
 # Or build manually with version information
 VERSION=$(bash scripts/build-version.sh)
-go build -ldflags "-X main.Version=$VERSION" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
+go build -ldflags "-X main.Version=$VERSION" -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup
 
 # Basic build without version (for development only)
-go build -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
+go build -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup
 ```
 
 ## Usage

@@ -88,9 +88,9 @@ else
     test_start=$(date +%s)
     if ! devbox run tests 2>&1 | tee /tmp/test_output.log; then
         # Check if failures are only in security tests (which have known issues)
-        if grep -q "FAIL.*github.com/phillipgreen/mobilecombackup/tests/security" /tmp/test_output.log && \
-           ! grep -q "FAIL.*github.com/phillipgreen/mobilecombackup/pkg/" /tmp/test_output.log && \
-           ! grep -q "FAIL.*github.com/phillipgreen/mobilecombackup/cmd/" /tmp/test_output.log; then
+        if grep -q "FAIL.*github.com/phillipgreenii/mobilecombackup/tests/security" /tmp/test_output.log && \
+           ! grep -q "FAIL.*github.com/phillipgreenii/mobilecombackup/pkg/" /tmp/test_output.log && \
+           ! grep -q "FAIL.*github.com/phillipgreenii/mobilecombackup/cmd/" /tmp/test_output.log; then
             echo "⚠️  Security tests failed (known issues), but core tests passed"
             echo "   Continuing with commit..."
         else

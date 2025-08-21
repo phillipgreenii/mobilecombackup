@@ -933,7 +933,7 @@ All commands support the following global flags:
 
 The CLI supports version injection during build:
 ```bash
-go build -ldflags "-X main.Version=1.2.3" -o mobilecombackup github.com/phillipgreen/mobilecombackup/cmd/mobilecombackup
+go build -ldflags "-X main.Version=1.2.3" -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup
 ```
 
 Version output format: `mobilecombackup version X.Y.Z`

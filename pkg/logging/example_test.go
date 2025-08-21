@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 )
 
 // ExampleLogger demonstrates basic logging usage

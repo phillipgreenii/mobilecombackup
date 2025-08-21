@@ -43,7 +43,7 @@ const (
 Use helper functions to create structured errors with automatic context:
 
 ```go
-import customerrors "github.com/phillipgreen/mobilecombackup/pkg/errors"
+import customerrors "github.com/phillipgreenii/mobilecombackup/pkg/errors"
 
 // Validation error with automatic file/line context
 err := customerrors.NewValidationError("validate user input", originalErr)

@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/calls"
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
-	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
-	"github.com/phillipgreen/mobilecombackup/pkg/security"
-	"github.com/phillipgreen/mobilecombackup/pkg/sms"
+	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreenii/mobilecombackup/pkg/security"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/cobra"
 )
 

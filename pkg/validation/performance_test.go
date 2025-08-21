@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreen/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 )
 
 func TestDefaultPerformanceOptions(t *testing.T) {

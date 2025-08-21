@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/validation"
+	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
 )
 
 // TestAutofixer_Integration_FullRepository tests autofix on a complete repository structure

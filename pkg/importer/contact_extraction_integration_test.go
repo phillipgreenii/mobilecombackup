@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/logging"
-	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 )
 
 // setupTestRepository creates a complete test repository with all required files

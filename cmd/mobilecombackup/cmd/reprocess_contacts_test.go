@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/manifest"
+	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 	"gopkg.in/yaml.v3"
 )
 

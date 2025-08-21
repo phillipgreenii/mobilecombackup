@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phillipgreen/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 )
 
 func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
