@@ -379,43 +379,15 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
       let
         pkgs = nixpkgs.legacyPackages.${system};
         
-        # Version detection matching build-version.sh
+        # Version detection matching build-version.sh using flake attributes
         detectVersion = src: let
           versionFile = builtins.readFile (src + "/VERSION");
           baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
-          gitDir = src + "/.git";
-          hasGit = builtins.pathExists gitDir;
-          
-          # Try to get git information
-          gitInfo = if hasGit then
-            let
-              headFile = gitDir + "/HEAD";
-              headContent = if builtins.pathExists headFile 
-                then builtins.readFile headFile 
-                else "";
-              isTag = pkgs.lib.hasPrefix "ref: refs/tags/" headContent;
-              tagName = if isTag 
-                then pkgs.lib.removePrefix "ref: refs/tags/" headContent
-                else "";
-            in {
-              isTag = isTag;
-              tagName = pkgs.lib.removeSuffix "\n" tagName;
-              shortRev = if !isTag && headContent != ""
-                then builtins.substring 0 7 (pkgs.lib.removeSuffix "\n" headContent)
-                else "unknown";
-            }
-          else {
-            isTag = false;
-            tagName = "";
-            shortRev = "unknown";
-          };
         in
-          if gitInfo.isTag && gitInfo.tagName != "" then
-            # Release build: use git tag version (remove v prefix)
-            pkgs.lib.removePrefix "v" gitInfo.tagName
-          else if gitInfo.shortRev != "unknown" then
-            # Development build: append git hash
-            "${baseVersion}-dev-g${gitInfo.shortRev}"
+          # Use flake self attributes instead of reading .git directory
+          if self ? rev then
+            # Development version with git hash from flake
+            "${baseVersion}-dev-g${builtins.substring 0 7 self.rev}"
           else if baseVersion != "" then
             # Fallback to VERSION file
             "${baseVersion}-dev"
@@ -431,8 +403,8 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
             
             src = ./.;
             
-            # Update this hash when go.mod/go.sum changes
-            vendorHash = "sha256-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+            # Compute with: lib.fakeHash initially, then use real hash from error
+            vendorHash = lib.fakeHash;
             
             # Match current build flags
             ldflags = [
@@ -449,7 +421,7 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
             meta = with pkgs.lib; {
               description = "Tool for processing mobile phone backup files";
               homepage = "https://github.com/phillipgreenii/mobilecombackup";
-              license = licenses.mit;  # Update to actual license
+              license = lib.licenses.unfree;  # BLOCKER: Actual license unknown - requires LICENSE file
               maintainers = [ ];
               platforms = platforms.unix;
             };
@@ -793,6 +765,62 @@ The Nix flake will integrate seamlessly with the current release workflow:
 2. **Phase 2**: Comprehensive flake checks and multi-platform support
 3. **Phase 3**: Documentation (package-only) and CI integration
 4. **Phase 4**: Simplified release tooling and community feedback
+
+## Critical Implementation Blockers
+
+The following issues must be resolved before this specification is ready for implementation:
+
+### 1. **License Information** (BLOCKER)
+- **Issue**: No LICENSE file exists in repository, but flake requires license metadata
+- **Required**: Determine project license and create LICENSE file
+- **Current**: Unknown - project has no explicit license
+- **Action**: Add LICENSE file (suggest MIT for Go CLI tools) and update flake.nix accordingly
+
+### 2. **vendorHash Bootstrap Process** (BLOCKER)  
+- **Issue**: Cannot build flake without correct vendorHash from go.sum
+- **Required**: Document process to compute initial vendorHash
+- **Solution**: Use `lib.fakeHash` initially, then capture real hash from build error
+- **Process**:
+  ```bash
+  # Step 1: Use lib.fakeHash in vendorHash
+  # Step 2: Run nix build, capture error with real hash
+  # Step 3: Replace lib.fakeHash with real hash from error
+  ```
+
+### 3. **Version Detection Implementation** (BLOCKER)
+- **Issue**: Current pseudo-code reads .git directory directly (not allowed in flakes)
+- **Required**: Use flake-native attributes for version detection
+- **Solution**: Replace git directory reading with flake self attributes
+- **Fixed Implementation**:
+  ```nix
+  version = 
+    if self ? rev then
+      let
+        versionFile = builtins.readFile (src + "/VERSION");
+        baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
+      in "${baseVersion}-dev-g${builtins.substring 0 7 self.rev}"
+    else
+      let
+        versionFile = builtins.readFile (src + "/VERSION");
+      in pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
+  ```
+
+### 4. **CI Testing Integration** (BLOCKER)
+- **Issue**: No concrete plan for testing flake builds in CI
+- **Required**: Add flake check to prevent broken flakes in main branch
+- **Solution**: Add GitHub Actions job:
+  ```yaml
+  test-nix-flake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v22
+      - name: Test flake
+        run: |
+          nix flake check
+          nix build .#mobilecombackup
+          ./result/bin/mobilecombackup --version
+  ```
 
 ### Open Questions for Product Decision
 1. Should flake.lock be committed initially or added to .gitignore?
