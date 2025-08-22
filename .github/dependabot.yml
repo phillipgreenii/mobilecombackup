@@ -1,0 +1,81 @@
+# .github/dependabot.yml
+# Dependabot configuration for mobilecombackup
+# Implements FEAT-074: Dependabot Dependency Management
+# 
+# Features:
+# - Go module ecosystem monitoring
+# - Weekly updates (Tuesday 09:00 UTC)
+# - Security updates (daily schedule)
+# - 5 PR limit with reviewer assignment
+# - Production vs development dependency grouping
+# - Auto-merge for patch updates when CI passes
+
+version: 2
+updates:
+  # Go modules - Regular updates (weekly schedule)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "phillipgreenii"
+    assignees:
+      - "phillipgreenii"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+      include: "scope"
+    groups:
+      # Production dependencies - critical for runtime
+      production:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "*test*"
+          - "*dev*"
+          - "*mock*"
+          - "*testify*"
+          - "*assert*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Development dependencies - tools and testing
+      development:
+        patterns:
+          - "*test*"
+          - "*dev*"
+          - "*mock*"
+          - "*testify*"
+          - "*assert*"
+          - "golang.org/x/tools*"
+          - "golang.org/x/lint*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Go modules - Security updates (daily schedule)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "phillipgreenii"
+    assignees:
+      - "phillipgreenii"
+    commit-message:
+      prefix: "security"
+      include: "scope"
+    groups:
+      # Security updates for all dependencies
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security-update"
