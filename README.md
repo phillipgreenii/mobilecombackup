@@ -9,6 +9,31 @@ A command-line tool for processing mobile phone backup files (Call and SMS logs 
 
 ## Installation
 
+### Using Nix Flakes
+
+If you have Nix with flakes enabled, you can install mobilecombackup directly:
+
+```bash
+# Run without installing
+nix run github:phillipgreenii/mobilecombackup -- --help
+
+# Install to profile
+nix profile install github:phillipgreenii/mobilecombackup
+
+# Add to your flake.nix inputs for reproducible builds
+{
+  inputs = {
+    mobilecombackup.url = "github:phillipgreenii/mobilecombackup";
+  };
+}
+```
+
+The Nix flake provides:
+- **Smart version detection**: Automatically detects release tags or development versions
+- **Static binary**: No runtime dependencies, works on any Linux system
+- **Multi-platform**: Supports x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin
+- **Quality checks**: Built-in validation tests ensuring binary functionality
+
 ### Building from Source
 
 ```bash

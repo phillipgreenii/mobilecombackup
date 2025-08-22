@@ -45,7 +45,8 @@
             src = ./.;
             
             # Bootstrap with lib.fakeHash, then replace with real hash from build error
-            vendorHash = pkgs.lib.fakeHash;
+            #vendorHash = pkgs.lib.fakeHash;
+            vendorHash = "sha256-R/1lfhkQN1Dr7qcusLVEmqv6s0dcNkHDyzHrQCEaSY8=";
             
             # Match current build flags from build-version.sh
             ldflags = [
@@ -54,7 +55,7 @@
             ];
             
             # Static binary matching current build
-            CGO_ENABLED = 0;
+            env.CGO_ENABLED = 0;
             
             # Build from CLI entry point
             subPackages = [ "cmd/mobilecombackup" ];
@@ -117,7 +118,7 @@
             ${self.packages.${system}.default}/bin/mobilecombackup --help > help_output.txt
             
             # Verify help contains expected content
-            if grep -q "Tool for processing mobile phone backup files" help_output.txt; then
+            if grep -q "processes call logs and SMS/MMS messages" help_output.txt; then
               echo "✓ Help output contains description"
               touch $out
             else
