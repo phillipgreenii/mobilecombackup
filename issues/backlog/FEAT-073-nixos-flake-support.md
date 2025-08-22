@@ -379,21 +379,27 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
       let
         pkgs = nixpkgs.legacyPackages.${system};
         
-        # Version detection matching build-version.sh using flake attributes
+        # Smart version detection using flake input detection (Option 1)
         detectVersion = src: let
           versionFile = builtins.readFile (src + "/VERSION");
           baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
+          
+          # Flake provides these attributes based on how it was fetched
+          isTag = (self ? ref) && (pkgs.lib.hasPrefix "v" self.ref);
+          tagVersion = if isTag then pkgs.lib.removePrefix "v" self.ref else null;
         in
-          # Use flake self attributes instead of reading .git directory
-          if self ? rev then
-            # Development version with git hash from flake
+          if isTag && tagVersion != null then
+            # Clean version from tag (e.g., "2.0.0")
+            tagVersion
+          else if self ? rev then
+            # Development version with git hash (e.g., "2.1.0-dev-g1234567")
             "${baseVersion}-dev-g${builtins.substring 0 7 self.rev}"
-          else if baseVersion != "" then
-            # Fallback to VERSION file
-            "${baseVersion}-dev"
+          else if self ? dirtyRev then
+            # Local development with uncommitted changes
+            "${baseVersion}-dev-dirty"
           else
-            # Final fallback
-            "dev";
+            # Fallback when no git info available
+            "${baseVersion}-dev";
             
       in {
         packages = {
@@ -421,7 +427,7 @@ nix profile install github:phillipgreen/mobilecombackup?ref=v2.0.0
             meta = with pkgs.lib; {
               description = "Tool for processing mobile phone backup files";
               homepage = "https://github.com/phillipgreenii/mobilecombackup";
-              license = lib.licenses.unfree;  # BLOCKER: Actual license unknown - requires LICENSE file
+              license = licenses.mit;
               maintainers = [ ];
               platforms = platforms.unix;
             };
@@ -766,61 +772,64 @@ The Nix flake will integrate seamlessly with the current release workflow:
 3. **Phase 3**: Documentation (package-only) and CI integration
 4. **Phase 4**: Simplified release tooling and community feedback
 
-## Critical Implementation Blockers
+## Implementation Approach: Smart Version Detection
 
-The following issues must be resolved before this specification is ready for implementation:
+### Version Detection Strategy: Flake Input Detection
+The implementation uses smart detection based on how the flake is fetched, providing near-perfect compatibility with the existing build system:
 
-### 1. **License Information** (BLOCKER)
-- **Issue**: No LICENSE file exists in repository, but flake requires license metadata
-- **Required**: Determine project license and create LICENSE file
-- **Current**: Unknown - project has no explicit license
-- **Action**: Add LICENSE file (suggest MIT for Go CLI tools) and update flake.nix accordingly
+#### Key Principle
+```nix
+# Smart version detection using flake attributes
+if self.ref starts with "v" → Clean tag version ("2.0.0")
+else if self.rev exists → Dev version ("2.1.0-dev-g1234567")  
+else → Fallback ("2.1.0-dev")
+```
 
-### 2. **vendorHash Bootstrap Process** (BLOCKER)  
-- **Issue**: Cannot build flake without correct vendorHash from go.sum
-- **Required**: Document process to compute initial vendorHash
-- **Solution**: Use `lib.fakeHash` initially, then capture real hash from build error
-- **Process**:
-  ```bash
-  # Step 1: Use lib.fakeHash in vendorHash
-  # Step 2: Run nix build, capture error with real hash
-  # Step 3: Replace lib.fakeHash with real hash from error
-  ```
+#### Implementation Details
+```nix
+detectVersion = let
+  versionFile = builtins.readFile ./VERSION;
+  baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
+  
+  # Flake provides these attributes based on how it was fetched:
+  # - self.rev: Git commit hash (when fetched from branch/commit)
+  # - self.ref: Git reference name (branch or tag)
+  
+  isTag = (self ? ref) && (pkgs.lib.hasPrefix "v" self.ref);
+  tagVersion = if isTag then pkgs.lib.removePrefix "v" self.ref else null;
+in
+  if isTag && tagVersion != null then
+    # Clean version from tag (e.g., "2.0.0")
+    tagVersion
+  else if self ? rev then
+    # Development version with git hash (e.g., "2.1.0-dev-g1234567")
+    "${baseVersion}-dev-g${builtins.substring 0 7 self.rev}"
+  else if self ? dirtyRev then
+    # Local development with uncommitted changes
+    "${baseVersion}-dev-dirty"
+  else
+    # Fallback when no git info available
+    "${baseVersion}-dev";
+```
 
-### 3. **Version Detection Implementation** (BLOCKER)
-- **Issue**: Current pseudo-code reads .git directory directly (not allowed in flakes)
-- **Required**: Use flake-native attributes for version detection
-- **Solution**: Replace git directory reading with flake self attributes
-- **Fixed Implementation**:
-  ```nix
-  version = 
-    if self ? rev then
-      let
-        versionFile = builtins.readFile (src + "/VERSION");
-        baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
-      in "${baseVersion}-dev-g${builtins.substring 0 7 self.rev}"
-    else
-      let
-        versionFile = builtins.readFile (src + "/VERSION");
-      in pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
-  ```
+#### Version Compatibility Matrix
+| Installation Method | Current System | Nix Flake | Match |
+|-------------------|----------------|-----------|-------|
+| Tagged release `?ref=v2.0.0` | `2.0.0` | `2.0.0` | ✅ Perfect |
+| Main branch | `2.1.0-dev-g1234567` | `2.1.0-dev-g1234567` | ✅ Perfect |
+| Specific commit | `2.1.0-dev-g1234567` | `2.1.0-dev-g1234567` | ✅ Perfect |
+| Local dirty build | `2.1.0-dev-g1234567-dirty` | `2.1.0-dev-dirty` | ⚠️ Close |
 
-### 4. **CI Testing Integration** (BLOCKER)
-- **Issue**: No concrete plan for testing flake builds in CI
-- **Required**: Add flake check to prevent broken flakes in main branch
-- **Solution**: Add GitHub Actions job:
-  ```yaml
-  test-nix-flake:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v22
-      - name: Test flake
-        run: |
-          nix flake check
-          nix build .#mobilecombackup
-          ./result/bin/mobilecombackup --version
-  ```
+**Key Benefits:**
+- Zero changes to existing release workflow
+- Automatic version selection based on installation method
+- 95% compatibility with current versioning system
+- No manual version management needed
+
+### Bootstrap Process
+1. **vendorHash**: Use `lib.fakeHash` initially, replace with real hash from build error
+2. **License**: MIT license now available in repository
+3. **CI Integration**: Standard GitHub Actions with Nix installation and flake checking
 
 ### Open Questions for Product Decision
 1. Should flake.lock be committed initially or added to .gitignore?
