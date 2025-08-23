@@ -17,7 +17,7 @@ Agents are not consistently cleaning up after themselves, leading to:
 1. **Mandatory Completion Checklist**
    - All agents MUST verify git working directory is clean before reporting completion
    - Check for and remove temporary files created during task execution
-   - Commit all valid changes with appropriate messages
+   - Commit all valid changes with appropriate messages (agents have permission to commit without user approval)
    - Report as BLOCKED (not complete) if unable to achieve clean state
 
 2. **Clear Definition of "Done"**
@@ -67,7 +67,7 @@ Agents are not consistently cleaning up after themselves, leading to:
    a. Check git status
    b. Scan for temporary files
    c. Run verification if changes exist
-   d. Commit if verification passes
+   d. Commit if verification passes (automatic, no approval needed)
 3. Verify clean state:
    - If clean → Report COMPLETE
    - If dirty → Report BLOCKED with details
@@ -127,3 +127,4 @@ HIGH - This is critical for reliable agent operation and user experience
 - This is the foundation for reliable multi-agent workflows
 - Essential for user trust in agent automation
 - Reduces manual intervention and improves developer experience
+- Agents have explicit permission to commit changes without user approval to ensure clean workspace handoffs
