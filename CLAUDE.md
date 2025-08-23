@@ -54,11 +54,33 @@ repository/
 For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLOW.md).
 
 ### Quick Reference
-1. **Create issue**: Use `/create-feature` or `/create-bug` commands
+1. **Create issue**: Use automation script or slash commands
+   - **Preferred**: `./issues/create-issue.sh FEATURE "title"` or `./issues/create-issue.sh BUG "title"`
+   - **Alternative**: `/create-feature` or `/create-bug` commands
 2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
 3. **Ready issue**: Move to `issues/ready/` when planned
 4. **Implement**: Use `/implement-issue FEAT-XXX` command
 5. **Complete**: Updates move to `issues/completed/`
+
+### Issue Creation Automation (FEAT-075)
+The project includes an automated issue creation script that reduces manual overhead:
+
+```bash
+# Create new feature issue
+./issues/create-issue.sh FEATURE "implement user authentication"
+# Creates: issues/backlog/FEAT-076-implement-user-authentication.md
+
+# Create new bug issue  
+./issues/create-issue.sh BUG "validation fails on empty input"
+# Creates: issues/backlog/BUG-077-validation-fails-on-empty-input.md
+```
+
+**Benefits:**
+- Automatic sequential numbering across all issue types
+- Kebab-case title conversion with comprehensive error handling
+- Template copying and title replacement
+- Comprehensive validation and colorized feedback
+- Executes in under 1 second
 
 ## Documentation Rules
 

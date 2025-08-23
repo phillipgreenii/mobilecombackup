@@ -2120,6 +2120,116 @@ The SonarQube analysis integrates seamlessly with the existing CI pipeline:
 
 This integration maintains the established quality workflow while adding comprehensive code quality analysis and historical tracking capabilities.
 
+## Issue Management and Automation
+
+### Issue Creation Automation (FEAT-075)
+
+The project includes an automated issue creation script that streamlines the development workflow by handling issue numbering, template selection, and file placement automatically.
+
+#### Script Location and Usage
+```bash
+# Script location
+./issues/create-issue.sh
+
+# Usage
+./issues/create-issue.sh TYPE TITLE
+
+# Examples
+./issues/create-issue.sh FEATURE "implement user authentication"
+./issues/create-issue.sh BUG "validation fails on empty input"
+```
+
+#### Key Features
+- **Automatic Sequential Numbering**: Scans all issue directories to find the next sequential number
+- **Cross-Type Numbering**: Supports both FEAT-XXX and BUG-XXX with unified numbering sequence
+- **Kebab-Case Conversion**: Automatically converts titles to proper kebab-case format
+- **Template Integration**: Copies appropriate templates and updates titles automatically
+- **Comprehensive Validation**: Validates inputs, templates, and environment before execution
+- **Colorized Output**: Provides clear success/error feedback with color coding
+
+#### Technical Implementation
+- **Octal Number Handling**: Fixed critical issue with leading zeros using `$((10#$current_num))` for proper base-10 conversion
+- **Hash-Based Deduplication**: Prevents file collisions with atomic file creation checks
+- **Error Resilience**: Comprehensive validation and error handling for all edge cases
+- **Performance**: Executes in under 1 second for typical repositories
+
+#### Integration with Development Workflow
+- **Agent Integration**: Preferred method for issue creation in Claude Code workflows
+- **Template Management**: Automatically handles feature_template.md and bug_template.md
+- **Directory Structure**: Places new issues in issues/backlog/ for standard workflow
+- **File Naming**: Generates consistent FEAT-XXX-kebab-title.md format
+
+This automation significantly reduces manual overhead and ensures consistency across issue creation while maintaining all quality standards.
+
+## Dependency Management (FEAT-074)
+
+### Overview
+
+The project uses GitHub Dependabot for automated dependency management, providing continuous monitoring of dependencies for security vulnerabilities and version updates. This ensures the project stays current with security patches and dependency improvements while maintaining stability.
+
+### Configuration
+
+**Configuration File**: `.github/dependabot.yml`
+
+**Key Features:**
+- **Dual Update Schedules**: 
+  - Regular updates: Weekly on Tuesday at 09:00 UTC (5 PR limit)
+  - Security updates: Daily at 06:00 UTC (10 PR limit)
+- **Smart Dependency Grouping**:
+  - Production dependencies: All runtime dependencies (excludes test/dev tools)
+  - Development dependencies: Testing, mocking, and tooling packages
+  - Security updates: All dependencies when security vulnerabilities found
+- **Controlled Update Strategy**:
+  - Only minor and patch updates for stability (no major version auto-updates)
+  - Security updates take precedence with dedicated schedule
+  - Automatic reviewer assignment (@phillipgreenii)
+
+### Update Categories
+
+**Production Dependencies:**
+- All Go modules used at runtime
+- Excludes testing frameworks and development tools
+- Conservative update policy (minor/patch only)
+
+**Development Dependencies:**
+- Testing frameworks (*test*, *testify*, *assert*, *mock*)
+- Go tooling (golang.org/x/tools, golang.org/x/lint)
+- Development utilities and linters
+
+**Security Updates:**
+- Daily monitoring for all dependencies
+- Higher PR limit (10) for urgent security patches
+- Automatic creation of security-focused pull requests
+
+### Benefits
+
+**Security Posture:**
+- Automated vulnerability scanning and patching
+- Daily monitoring prevents security drift
+- Prioritized handling of security-critical updates
+
+**Maintenance Efficiency:**
+- Reduced manual dependency maintenance overhead
+- Controlled update frequency prevents PR overwhelming
+- Clear separation of production vs development dependencies
+
+**Code Quality:**
+- Integration with existing CI/CD pipeline
+- All updates validated through full test suite
+- Consistent commit message formatting with proper prefixes
+
+### Integration
+
+**CI/CD Pipeline:**
+- All Dependabot PRs trigger full CI pipeline
+- Automatic validation through existing test suite
+- Compatible with pre-commit hooks (FEAT-072)
+
+**Quality Checks:**
+- Formatter, tests, linter, and build verification
+- No bypass of existing quality gates
+- Maintains project stability standards
+
 ## Recently Completed Features
 
 This section tracks significant features and improvements completed in the project. For full implementation details, see the completed issues in `issues/completed/`.
@@ -2155,6 +2265,14 @@ Optimized development workflow with intelligent pre-commit hooks:
 - **Automatic detection** of change types for optimal checks
 - **Clear feedback** with performance metrics
 - See `issues/completed/FEAT-072-*.md` for implementation details
+
+### FEAT-074: Dependabot Dependency Management (Completed)
+Automated dependency management system implementation:
+- **Dual update schedules**: Weekly regular updates, daily security updates
+- **Smart dependency grouping**: Production vs development dependency separation
+- **Controlled update strategy**: Minor/patch only with security prioritization
+- **CI/CD integration**: Full pipeline validation for all dependency updates
+- See `issues/completed/FEAT-074-*.md` for implementation details
 
 ### FEAT-064: Interface Evolution - Validation Cleanup (Active)
 Currently refactoring validation interfaces for better maintainability:
