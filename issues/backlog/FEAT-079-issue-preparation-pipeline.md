@@ -113,16 +113,25 @@ Options:
    - Reviews technical approach and architecture
    - Validates against existing patterns
    - Ensures scalability and maintainability
+   - **Required Tools**: Read, Write, Edit, Grep, mcp__serena__find_symbol, mcp__serena__get_symbols_overview
+   - **Model**: sonnet
+   - **Extends**: base-review-agent (from FEAT-082)
 
 2. **test-strategy-reviewer**
    - Ensures comprehensive test coverage
    - Adds specific test scenarios
    - Validates testing approach
+   - **Required Tools**: Read, Write, Edit, Grep, TodoWrite
+   - **Model**: sonnet
+   - **Extends**: base-review-agent (from FEAT-082)
 
 3. **implementation-planner**
    - Creates detailed task breakdown
    - Adds time/complexity estimates
    - Identifies dependencies
+   - **Required Tools**: Read, Write, Edit, TodoWrite
+   - **Model**: sonnet
+   - **Extends**: base-review-agent (from FEAT-082)
 
 ## Tasks
 - [ ] Create `/prepare-issue` slash command
@@ -168,8 +177,10 @@ Options:
 - [ ] 90% of issues pass pipeline without human intervention
 
 ## Dependencies
-- FEAT-077: Agent Completion Protocol (ensures clean handoffs)
-- FEAT-078: Workspace Cleanup Agent (for recovery scenarios)
+- **FEAT-077: Agent Completion Protocol** (ensures clean handoffs) - REQUIRED, now in ready/
+- **FEAT-078: Workspace Cleanup Agent** (for recovery scenarios) - REQUIRED, now in ready/
+
+**Note**: This issue depends on FEAT-077 and FEAT-078 being implemented first. Both dependencies are now in the ready/ directory and should be implemented before this issue.
 
 ## Priority
 HIGH - Significantly improves issue preparation workflow
@@ -186,3 +197,5 @@ HIGH - Significantly improves issue preparation workflow
 - May want to add skip conditions for simple issues
 - Could extend to support batch processing of multiple issues
 - Future enhancement: ML-based review suggestions
+- **Implementation Order**: After FEAT-077 and FEAT-078 are complete
+- New agents should be created with clear specifications before implementation
