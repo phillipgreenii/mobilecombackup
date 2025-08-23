@@ -103,6 +103,124 @@ The project includes an automated issue creation script that reduces manual over
 4. **Preserve** completed issues as historical records
 5. **Cross-reference** when newer issues supersede older ones
 
+## Documentation Architecture & Guidelines
+
+**CRITICAL**: README.md MUST stay under 300 lines to prevent bloat and ensure discoverability.
+
+### Documentation Structure
+
+The project follows a hierarchical documentation structure designed to optimize user experience:
+
+```
+README.md (<300 lines)     # Project overview, quick install, basic usage, navigation
+├── docs/INSTALLATION.md   # Comprehensive installation methods & troubleshooting  
+├── docs/CLI_REFERENCE.md  # Complete command documentation & examples
+├── docs/DEVELOPMENT.md    # Development setup, testing, CI/CD workflows
+├── docs/DEPLOYMENT.md     # Production deployment & Docker usage
+├── docs/INDEX.md          # Documentation navigation guide
+└── docs/                  # Specialized documentation (existing structure)
+    ├── ARCHITECTURE.md    # System design & architectural decisions
+    ├── GIT_WORKFLOW.md    # Git standards & commit rules
+    ├── VERIFICATION_WORKFLOW.md  # Quality verification commands
+    └── [other specialized docs]
+```
+
+### Documentation Placement Decision Tree
+
+When adding or updating documentation, use this decision tree:
+
+**Step 1: Is this essential for new users?**
+- **YES** → Add to README.md (if under 300 line limit)
+- **NO** → Continue to Step 2
+
+**Step 2: What type of content is this?**
+- **Installation methods/troubleshooting** → docs/INSTALLATION.md
+- **CLI commands/usage examples** → docs/CLI_REFERENCE.md  
+- **Development workflows/setup** → docs/DEVELOPMENT.md
+- **Production deployment** → docs/DEPLOYMENT.md
+- **System architecture/design** → docs/ARCHITECTURE.md
+- **Git/commit standards** → docs/GIT_WORKFLOW.md
+- **Testing/quality workflows** → docs/VERIFICATION_WORKFLOW.md
+- **Issue management workflows** → docs/ISSUE_WORKFLOW.md
+- **Other specialized topics** → Create appropriate docs/[TOPIC].md
+
+**Step 3: README.md Content Rules**
+README.md should ONLY contain:
+1. Project overview & badges (10-15 lines)
+2. Quick installation (basic method only) (15-20 lines)
+3. Essential usage examples (2-3 basic commands) (30-40 lines)
+4. Documentation navigation (clear links to detailed docs) (20-30 lines)
+5. Contributing quick start (basic info only) (10-15 lines)
+6. License & essential links (5-10 lines)
+
+**Step 4: Content Migration Strategy**
+When README.md approaches 280 lines:
+1. Identify non-essential content for migration
+2. Move detailed examples to appropriate docs/ files
+3. Replace with summary + link to detailed documentation
+4. Test all navigation links work correctly
+
+### Agent Documentation Guidelines
+
+**For ALL agents working on this project:**
+
+1. **NEVER add detailed content to README.md**
+   - README.md is for overview and navigation only
+   - Detailed information belongs in specialized docs/ files
+
+2. **Always check README.md line count**
+   - Use `wc -l README.md` to verify line count
+   - If approaching 280 lines, migrate content before adding
+
+3. **Use appropriate documentation files**
+   - Follow the decision tree above for placement
+   - Create new docs/ files only when necessary
+   - Update docs/INDEX.md when adding new documentation
+
+4. **Maintain cross-references**
+   - Update all related documentation when making changes
+   - Ensure links between documents remain valid
+   - Use absolute paths for all documentation links
+
+5. **Content quality standards**
+   - Keep each documentation file focused on single responsibility
+   - Use clear headings and navigation
+   - Include examples relevant to the specific topic
+   - Avoid duplication between files
+
+### Documentation Validation Requirements
+
+Before completing any documentation task:
+
+1. **Line Count Verification**
+   ```bash
+   wc -l README.md  # Must be < 300 lines
+   ```
+
+2. **Link Validation**
+   - Test all internal links work correctly
+   - Verify cross-references between documents
+   - Ensure navigation flows logically
+
+3. **Content Completeness**
+   - All information preserved in appropriate locations
+   - No gaps in documentation coverage
+   - Clear navigation between related topics
+
+4. **User Experience Testing**
+   - New user can find installation in <30 seconds
+   - Developer can find contribution info in <1 minute
+   - Documentation flows from high-level to detailed
+
+### Memory Files for Documentation Architecture
+
+The following memory files preserve documentation architecture decisions:
+
+- **Documentation Architecture Standards**: Core principles and structure
+- **README Content Limits**: Specific content rules and line count requirements
+- **Content Migration Patterns**: Examples of what content goes where
+- **FEAT-076 Implementation**: Rationale and goals for documentation restructuring
+
 ## Task Completion Requirements
 
 For detailed task completion requirements and verification workflow, see [Task Completion](docs/TASK_COMPLETION.md).
