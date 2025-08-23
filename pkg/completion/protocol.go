@@ -443,7 +443,7 @@ func NewWorkspaceCleanup(verifyCommands []string, tempDirs []string) *WorkspaceC
 	if len(tempDirs) > 0 {
 		cp.TempDirs = tempDirs
 	}
-	
+
 	return &WorkspaceCleanup{
 		CompletionProtocol: cp,
 		SafetyChecks:       true,
@@ -598,9 +598,9 @@ func (wc *WorkspaceCleanup) categorizeChanges(ws *WorkspaceState) []CategorizedC
 // categorizeFile determines the category of a file based on its path and extension
 func (wc *WorkspaceCleanup) categorizeFile(filename string) ChangeCategory {
 	// Test files
-	if strings.Contains(filename, "_test.go") || 
-	   strings.Contains(filename, "/testdata/") ||
-	   strings.HasPrefix(filename, "testdata/") {
+	if strings.Contains(filename, "_test.go") ||
+		strings.Contains(filename, "/testdata/") ||
+		strings.HasPrefix(filename, "testdata/") {
 		return CategoryTest
 	}
 

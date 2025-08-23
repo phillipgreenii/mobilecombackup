@@ -1796,28 +1796,55 @@ Automatic code formatting is integrated into the development workflow to ensure 
 - Quality verification process updated to include formatting as first step
 - Comprehensive documentation in CLAUDE.md Code Formatting Best Practices section
 
+### Agent Completion Protocol (FEAT-077)
+
+All agents implement a mandatory completion protocol to ensure clean workspace handoffs and reliable task completion. The protocol is provided by `pkg/completion/protocol.go` and enforces strict completion standards.
+
+#### Completion Requirements
+Agents are ONLY allowed to report tasks as "COMPLETE" when:
+- Git working directory is CLEAN (no modified/untracked files)
+- All temporary files removed from configured temp directories
+- All changes committed successfully with proper attribution
+- All verification commands pass (formatter, tests, linter, build)
+
+#### Protocol Implementation
+The `CompletionProtocol` provides the following workflow:
+1. **AnalyzeWorkspace()**: Parses `git status --porcelain` and scans temp directories
+2. **RunVerification()**: Executes configurable verification commands when changes exist
+3. **CommitChanges()**: Stages and commits with standardized messages
+4. **CleanupTemporaryFiles()**: Removes temporary files from configured directories
+5. **EnsureCleanCompletion()**: Orchestrates full protocol with proper error handling
+
+#### Status Reporting
+- **COMPLETE**: Workspace is clean, all changes committed, verification passed
+- **BLOCKED**: Unable to achieve clean state with specific resolution steps
+- **IN_PROGRESS**: Protocol is currently executing
+- **PENDING**: Task work not yet started
+
+Agents MUST report BLOCKED status (not COMPLETE) if unable to achieve clean workspace state.
+
 ### Auto-Commit Behavior
 
-All Claude commands and agents are configured with automatic commit functionality to streamline the development workflow:
+All Claude commands and agents are configured with automatic commit functionality that integrates with the completion protocol:
 
 #### When Auto-Commit Occurs
 - After completing each TodoWrite task in `/implement-issue`
 - After creating feature documents with `/create-feature`  
 - After creating bug documents with `/create-bug`
 - After completing documentation updates in agents
+- **Enforced by completion protocol** for all agent task completions
 
-#### File Detection Strategy
-Agents use git status comparison to identify only the files they modified during a task:
+#### Workspace State Analysis
+The completion protocol uses `git status --porcelain` for precise file state detection:
 
 ```bash
-# Before starting task
-git status --porcelain > /tmp/before_task
-
-# After completing task
-git status --porcelain > /tmp/after_task
-
-# Stage only changed files (never use git add .)
-comm -13 /tmp/before_task /tmp/after_task | cut -c4- | xargs -r git add
+# Git status parsing in completion protocol
+git status --porcelain
+# Output format:
+# XY filename
+# M  modified-file.go    (modified, not staged)
+# ?? untracked-file.go  (untracked)
+# A  staged-file.go     (staged for commit)
 ```
 
 #### Commit Message Format
@@ -1832,12 +1859,52 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 #### Key Features
-- **Smart File Detection**: Only stages files actually modified during the task
-- **Verification First**: Auto-commit only occurs after successful tests, build, and lint verification
-- **Error Handling**: Agents stop and ask for user guidance if commits fail unexpectedly
+- **Mandatory Verification**: Auto-commit only occurs after successful completion protocol verification
+- **Atomic Operations**: All changes staged and committed together for consistency
+- **Error Handling**: Agents report BLOCKED status with specific resolution steps on commit failures
 - **Standard Format**: Consistent commit messages with issue references and proper attribution
+- **Temporary File Cleanup**: Automatic removal of files from `tmp/` and `/tmp/` directories
+- **Security Annotations**: Proper #nosec annotations for necessary command execution
 
-This auto-commit behavior ensures a clear development history while reducing manual overhead in the issue implementation workflow.
+#### Integration with Quality Pipeline
+The completion protocol integrates with the existing quality pipeline:
+1. **Format**: `devbox run formatter` - Code formatting verification
+2. **Test**: `devbox run tests` - Unit and integration test execution  
+3. **Lint**: `devbox run linter` - Static analysis and style checks
+4. **Build**: `devbox run build-cli` - Compilation verification
+
+This ensures that all agent-committed code meets project quality standards before being committed to the repository.
+
+### Enhanced Workspace Cleanup (FEAT-078)
+
+The completion protocol includes advanced workspace cleanup capabilities that provide intelligent change categorization and optimized verification workflows. These enhancements extend the base completion protocol with sophisticated workspace analysis.
+
+#### Advanced Workspace Analysis
+The enhanced protocol provides:
+- **Git State Detection**: Identifies active merge/rebase/cherry-pick operations
+- **Intelligent File Categorization**: Automatically categorizes changes by type:
+  - `CODE`: Go, Python, JavaScript, etc. (non-test files)
+  - `TEST`: Test files (*_test.go, *.spec.*, test directories)
+  - `DOC`: Documentation files (*.md, *.rst, docs/ directories)
+  - `CONFIG`: Configuration files (*.yaml, *.json, .* files, config/)
+  - `OTHER`: All other file types
+
+#### Smart Verification Optimization
+Based on change categories, the system intelligently determines verification requirements:
+- **Documentation-only changes**: Format + lint only (skips expensive tests)
+- **Test-only changes**: Format + test + lint (skips build for performance)
+- **Code/Config changes**: Full verification (format + test + lint + build)
+- **Mixed changes**: Full verification for safety
+
+#### Workspace Cleanup Features
+- **Dry Run Mode**: Preview cleanup operations without making changes
+- **Safety Checks**: Prevents cleanup during active git operations
+- **Atomic Operations**: All changes staged and committed together
+- **Automatic Commit Messages**: Generated based on change types and categories
+- **Temporary File Cleanup**: Configurable temp directory cleanup
+- **Error Recovery**: Detailed error messages with resolution steps
+
+This enhanced protocol maintains full backward compatibility while providing significant performance improvements for documentation workflows.
 
 ### Pre-Commit Hook Optimization (FEAT-072)
 
