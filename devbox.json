@@ -94,6 +94,18 @@
       ],
       "smart-verify": [
         "./mobilecombackup smart-verify"
+      ],
+      "test-fast": [
+        "./mobilecombackup test-runner --mode=fast"
+      ],
+      "test-smart": [
+        "./mobilecombackup test-runner --mode=smart --order=fail-fast"
+      ],
+      "test-cached": [
+        "./mobilecombackup test-runner --cache-dir=.test-cache"
+      ],
+      "test-clear-cache": [
+        "./mobilecombackup test-runner --clear-cache"
       ]
     }
   }

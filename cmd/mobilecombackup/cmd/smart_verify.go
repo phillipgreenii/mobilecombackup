@@ -514,7 +514,7 @@ func getChangeCount() int {
 
 	countStr := strings.TrimSpace(string(output))
 	var count int
-	fmt.Sscanf(countStr, "%d", &count)
+	_, _ = fmt.Sscanf(countStr, "%d", &count)
 	if count == 0 {
 		count = 1
 	}
