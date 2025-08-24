@@ -214,6 +214,7 @@ type Logger interface {
 	Info(msg string, fields ...interface{})
 	Warn(msg string, fields ...interface{})
 	Error(msg string, fields ...interface{})
+	Debug(msg string, fields ...interface{})
 }
 
 // DocSyncState represents the current state of documentation synchronization
@@ -980,9 +981,11 @@ func (r *RBACController) initializeDefaultPermissions() {
 	defaultPermissions := []types.SecurityPermission{
 		{ID: "doc.read", Name: "Read Documentation", Resource: "doc", Action: "read", Description: "Read documentation files"},
 		{ID: "doc.write", Name: "Write Documentation", Resource: "doc", Action: "write", Description: "Modify documentation files"},
-		{ID: "doc.sync", Name: "Sync Documentation", Resource: "doc", Action: "sync", Description: "Execute documentation synchronization"},
+		{ID: "doc.sync", Name: "Sync Documentation", Resource: "doc", Action: "sync",
+			Description: "Execute documentation synchronization"},
 		{ID: "config.read", Name: "Read Configuration", Resource: "config", Action: "read", Description: "Read system configuration"},
-		{ID: "config.write", Name: "Write Configuration", Resource: "config", Action: "write", Description: "Modify system configuration"},
+		{ID: "config.write", Name: "Write Configuration", Resource: "config", Action: "write",
+			Description: "Modify system configuration"},
 		{ID: "audit.read", Name: "Read Audit Logs", Resource: "audit", Action: "read", Description: "Access audit log information"},
 		{ID: "user.manage", Name: "Manage Users", Resource: "user", Action: "manage", Description: "Create, update, and delete users"},
 		{ID: "role.manage", Name: "Manage Roles", Resource: "role", Action: "manage", Description: "Create, update, and delete roles"},
@@ -1267,7 +1270,7 @@ func (a *AuditLoggerImpl) eventMatchesQuery(event types.AuditEvent, queryLower s
 func (a *AuditLoggerImpl) persistEvent(event types.AuditEvent) error {
 	// Create log directory if it doesn't exist
 	logDir := filepath.Dir(a.logFile)
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0750); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
@@ -1278,7 +1281,7 @@ func (a *AuditLoggerImpl) persistEvent(event types.AuditEvent) error {
 	}
 
 	// Append to log file with newline
-	file, err := os.OpenFile(a.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(a.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
@@ -1476,6 +1479,1553 @@ type SecurityValidatorImpl struct {
 	allowedHTMLTags   map[string]bool
 	allowedAttributes map[string]bool
 	mu                sync.RWMutex
+}
+
+// DocAnalyzer defines the interface for documentation analysis operations
+type DocAnalyzer interface {
+	// ScanCodebase analyzes the codebase using Serena MCP tools
+	ScanCodebase(rootPath string) (*CodebaseSnapshot, error)
+
+	// ScanDocumentation analyzes documentation files for API references
+	ScanDocumentation(docPaths []string) (*DocumentationSnapshot, error)
+
+	// CompareCodeAndDocs compares code against documentation
+	CompareCodeAndDocs(code *CodebaseSnapshot, docs *DocumentationSnapshot) (*AnalysisReport, error)
+
+	// GenerateReport creates formatted reports from analysis results
+	GenerateReport(report *AnalysisReport, format ReportFormat) ([]byte, error)
+}
+
+// CodebaseSnapshot represents extracted information from codebase
+type CodebaseSnapshot struct {
+	Timestamp  time.Time               `json:"timestamp"`
+	RootPath   string                  `json:"root_path"`
+	Packages   map[string]*PackageInfo `json:"packages"`
+	PublicAPIs []*APIDefinition        `json:"public_apis"`
+	Interfaces []*InterfaceDefinition  `json:"interfaces"`
+	Types      []*TypeDefinition       `json:"types"`
+	Functions  []*FunctionDefinition   `json:"functions"`
+	Constants  []*ConstantDefinition   `json:"constants"`
+	Variables  []*VariableDefinition   `json:"variables"`
+	FileHashes map[string]string       `json:"file_hashes"` // SHA-256 of file contents
+	Checksum   string                  `json:"checksum"`    // Overall snapshot checksum
+}
+
+// DocumentationSnapshot represents extracted information from documentation
+type DocumentationSnapshot struct {
+	Timestamp     time.Time              `json:"timestamp"`
+	DocumentPaths []string               `json:"document_paths"`
+	APIReferences []*APIReference        `json:"api_references"`
+	CodeExamples  []*CodeExample         `json:"code_examples"`
+	Interfaces    []*DocumentedInterface `json:"interfaces"`
+	Functions     []*DocumentedFunction  `json:"functions"`
+	Types         []*DocumentedType      `json:"types"`
+	UsagePatterns []*UsagePattern        `json:"usage_patterns"`
+	FileHashes    map[string]string      `json:"file_hashes"` // SHA-256 of file contents
+	Checksum      string                 `json:"checksum"`    // Overall snapshot checksum
+}
+
+// AnalysisReport contains the results of comparing code against documentation
+type AnalysisReport struct {
+	Timestamp       time.Time                `json:"timestamp"`
+	CodeSnapshot    *CodebaseSnapshot        `json:"code_snapshot"`
+	DocsSnapshot    *DocumentationSnapshot   `json:"docs_snapshot"`
+	Inconsistencies []*Inconsistency         `json:"inconsistencies"`
+	MissingDocs     []*MissingDocumentation  `json:"missing_docs"`
+	OrphanedDocs    []*OrphanedDocumentation `json:"orphaned_docs"`
+	BreakingChanges []*BreakingChange        `json:"breaking_changes"`
+	NewFeatures     []*NewFeature            `json:"new_features"`
+	Summary         *AnalysisSummary         `json:"summary"`
+	Checksum        string                   `json:"checksum"`
+}
+
+// PackageInfo contains information about a Go package
+type PackageInfo struct {
+	Name        string            `json:"name"`
+	Path        string            `json:"path"`
+	ImportPath  string            `json:"import_path"`
+	Files       []string          `json:"files"`
+	IsPublic    bool              `json:"is_public"`
+	Description string            `json:"description"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// APIDefinition represents a public API element from code
+type APIDefinition struct {
+	Name          string            `json:"name"`
+	Type          string            `json:"type"` // "function", "method", "type", "interface", "constant", "variable"
+	Package       string            `json:"package"`
+	FilePath      string            `json:"file_path"`
+	LineNumber    int               `json:"line_number"`
+	Signature     string            `json:"signature"`
+	Documentation string            `json:"documentation"`
+	IsExported    bool              `json:"is_exported"`
+	IsDeprecated  bool              `json:"is_deprecated"`
+	Tags          []string          `json:"tags"`
+	Metadata      map[string]string `json:"metadata"`
+}
+
+// InterfaceDefinition represents an interface from code
+type InterfaceDefinition struct {
+	Name          string              `json:"name"`
+	Package       string              `json:"package"`
+	FilePath      string              `json:"file_path"`
+	LineNumber    int                 `json:"line_number"`
+	Methods       []*MethodDefinition `json:"methods"`
+	Documentation string              `json:"documentation"`
+	IsExported    bool                `json:"is_exported"`
+	Metadata      map[string]string   `json:"metadata"`
+}
+
+// TypeDefinition represents a type from code
+type TypeDefinition struct {
+	Name          string              `json:"name"`
+	Kind          string              `json:"kind"` // "struct", "alias", "primitive"
+	Package       string              `json:"package"`
+	FilePath      string              `json:"file_path"`
+	LineNumber    int                 `json:"line_number"`
+	Fields        []*FieldDefinition  `json:"fields"`
+	Methods       []*MethodDefinition `json:"methods"`
+	Documentation string              `json:"documentation"`
+	IsExported    bool                `json:"is_exported"`
+	Metadata      map[string]string   `json:"metadata"`
+}
+
+// FunctionDefinition represents a function from code
+type FunctionDefinition struct {
+	Name          string                 `json:"name"`
+	Package       string                 `json:"package"`
+	FilePath      string                 `json:"file_path"`
+	LineNumber    int                    `json:"line_number"`
+	Signature     string                 `json:"signature"`
+	Parameters    []*ParameterDefinition `json:"parameters"`
+	Returns       []*ReturnDefinition    `json:"returns"`
+	Documentation string                 `json:"documentation"`
+	IsExported    bool                   `json:"is_exported"`
+	IsMethod      bool                   `json:"is_method"`
+	Receiver      *ReceiverDefinition    `json:"receiver,omitempty"`
+	Metadata      map[string]string      `json:"metadata"`
+}
+
+// MethodDefinition represents a method from code
+type MethodDefinition struct {
+	Name          string                 `json:"name"`
+	Signature     string                 `json:"signature"`
+	Parameters    []*ParameterDefinition `json:"parameters"`
+	Returns       []*ReturnDefinition    `json:"returns"`
+	Documentation string                 `json:"documentation"`
+	IsExported    bool                   `json:"is_exported"`
+	Metadata      map[string]string      `json:"metadata"`
+}
+
+// FieldDefinition represents a struct field from code
+type FieldDefinition struct {
+	Name          string            `json:"name"`
+	Type          string            `json:"type"`
+	Tag           string            `json:"tag"`
+	Documentation string            `json:"documentation"`
+	IsExported    bool              `json:"is_exported"`
+	Metadata      map[string]string `json:"metadata"`
+}
+
+// ParameterDefinition represents a function parameter
+type ParameterDefinition struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Variadic bool   `json:"variadic"`
+}
+
+// ReturnDefinition represents a function return value
+type ReturnDefinition struct {
+	Name string `json:"name,omitempty"`
+	Type string `json:"type"`
+}
+
+// ReceiverDefinition represents a method receiver
+type ReceiverDefinition struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Pointer bool   `json:"pointer"`
+}
+
+// ConstantDefinition represents a constant from code
+type ConstantDefinition struct {
+	Name          string            `json:"name"`
+	Type          string            `json:"type"`
+	Value         string            `json:"value"`
+	Package       string            `json:"package"`
+	FilePath      string            `json:"file_path"`
+	LineNumber    int               `json:"line_number"`
+	Documentation string            `json:"documentation"`
+	IsExported    bool              `json:"is_exported"`
+	Metadata      map[string]string `json:"metadata"`
+}
+
+// VariableDefinition represents a variable from code
+type VariableDefinition struct {
+	Name          string            `json:"name"`
+	Type          string            `json:"type"`
+	Package       string            `json:"package"`
+	FilePath      string            `json:"file_path"`
+	LineNumber    int               `json:"line_number"`
+	Documentation string            `json:"documentation"`
+	IsExported    bool              `json:"is_exported"`
+	IsGlobal      bool              `json:"is_global"`
+	Metadata      map[string]string `json:"metadata"`
+}
+
+// APIReference represents an API reference found in documentation
+type APIReference struct {
+	Name        string            `json:"name"`
+	Type        string            `json:"type"` // "function", "method", "type", "interface"
+	Package     string            `json:"package"`
+	FilePath    string            `json:"file_path"`
+	LineNumber  int               `json:"line_number"`
+	Context     string            `json:"context"` // Surrounding text context
+	Description string            `json:"description"`
+	Examples    []*CodeExample    `json:"examples"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// CodeExample represents a code example found in documentation
+type CodeExample struct {
+	Code           string            `json:"code"`
+	Language       string            `json:"language"`
+	FilePath       string            `json:"file_path"`
+	LineNumber     int               `json:"line_number"`
+	Description    string            `json:"description"`
+	IsRunnable     bool              `json:"is_runnable"`
+	ExpectedOutput string            `json:"expected_output,omitempty"`
+	Metadata       map[string]string `json:"metadata"`
+}
+
+// DocumentedInterface represents an interface documented in markdown
+type DocumentedInterface struct {
+	Name        string              `json:"name"`
+	Package     string              `json:"package"`
+	FilePath    string              `json:"file_path"`
+	LineNumber  int                 `json:"line_number"`
+	Description string              `json:"description"`
+	Methods     []*DocumentedMethod `json:"methods"`
+	Examples    []*CodeExample      `json:"examples"`
+	Metadata    map[string]string   `json:"metadata"`
+}
+
+// DocumentedFunction represents a function documented in markdown
+type DocumentedFunction struct {
+	Name        string              `json:"name"`
+	Package     string              `json:"package"`
+	FilePath    string              `json:"file_path"`
+	LineNumber  int                 `json:"line_number"`
+	Signature   string              `json:"signature"`
+	Description string              `json:"description"`
+	Parameters  []*DocumentedParam  `json:"parameters"`
+	Returns     []*DocumentedReturn `json:"returns"`
+	Examples    []*CodeExample      `json:"examples"`
+	Metadata    map[string]string   `json:"metadata"`
+}
+
+// DocumentedType represents a type documented in markdown
+type DocumentedType struct {
+	Name        string              `json:"name"`
+	Package     string              `json:"package"`
+	FilePath    string              `json:"file_path"`
+	LineNumber  int                 `json:"line_number"`
+	Description string              `json:"description"`
+	Fields      []*DocumentedField  `json:"fields"`
+	Methods     []*DocumentedMethod `json:"methods"`
+	Examples    []*CodeExample      `json:"examples"`
+	Metadata    map[string]string   `json:"metadata"`
+}
+
+// DocumentedMethod represents a method documented in markdown
+type DocumentedMethod struct {
+	Name        string              `json:"name"`
+	Signature   string              `json:"signature"`
+	Description string              `json:"description"`
+	Parameters  []*DocumentedParam  `json:"parameters"`
+	Returns     []*DocumentedReturn `json:"returns"`
+	Examples    []*CodeExample      `json:"examples"`
+	Metadata    map[string]string   `json:"metadata"`
+}
+
+// DocumentedField represents a field documented in markdown
+type DocumentedField struct {
+	Name        string            `json:"name"`
+	Type        string            `json:"type"`
+	Description string            `json:"description"`
+	Required    bool              `json:"required"`
+	Default     string            `json:"default"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// DocumentedParam represents a parameter documented in markdown
+type DocumentedParam struct {
+	Name        string            `json:"name"`
+	Type        string            `json:"type"`
+	Description string            `json:"description"`
+	Required    bool              `json:"required"`
+	Default     string            `json:"default"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// DocumentedReturn represents a return value documented in markdown
+type DocumentedReturn struct {
+	Name        string            `json:"name,omitempty"`
+	Type        string            `json:"type"`
+	Description string            `json:"description"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// UsagePattern represents a usage pattern found in documentation
+type UsagePattern struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Pattern     string            `json:"pattern"`
+	FilePath    string            `json:"file_path"`
+	LineNumber  int               `json:"line_number"`
+	Examples    []*CodeExample    `json:"examples"`
+	Frequency   int               `json:"frequency"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// Inconsistency represents a mismatch between code and documentation
+type Inconsistency struct {
+	ID          string                `json:"id"`
+	Type        InconsistencyType     `json:"type"`
+	Severity    InconsistencySeverity `json:"severity"`
+	Title       string                `json:"title"`
+	Description string                `json:"description"`
+	CodeRef     *SourceReference      `json:"code_ref,omitempty"`
+	DocsRef     *SourceReference      `json:"docs_ref,omitempty"`
+	Expected    string                `json:"expected"`
+	Actual      string                `json:"actual"`
+	Suggestions []string              `json:"suggestions"`
+	Metadata    map[string]string     `json:"metadata"`
+}
+
+// MissingDocumentation represents code that lacks documentation
+type MissingDocumentation struct {
+	ID          string                `json:"id"`
+	Type        string                `json:"type"` // "function", "type", "interface", etc.
+	Name        string                `json:"name"`
+	Package     string                `json:"package"`
+	CodeRef     *SourceReference      `json:"code_ref"`
+	Severity    InconsistencySeverity `json:"severity"`
+	Description string                `json:"description"`
+	Suggestions []string              `json:"suggestions"`
+	Metadata    map[string]string     `json:"metadata"`
+}
+
+// OrphanedDocumentation represents documentation without corresponding code
+type OrphanedDocumentation struct {
+	ID          string                `json:"id"`
+	Name        string                `json:"name"`
+	Type        string                `json:"type"`
+	DocsRef     *SourceReference      `json:"docs_ref"`
+	Severity    InconsistencySeverity `json:"severity"`
+	Description string                `json:"description"`
+	Suggestions []string              `json:"suggestions"`
+	Metadata    map[string]string     `json:"metadata"`
+}
+
+// BreakingChange represents a breaking change detected in code
+type BreakingChange struct {
+	ID           string               `json:"id"`
+	Type         string               `json:"type"` // "signature_change", "removal", "behavior_change"
+	Name         string               `json:"name"`
+	Package      string               `json:"package"`
+	CodeRef      *SourceReference     `json:"code_ref"`
+	DocsRef      *SourceReference     `json:"docs_ref,omitempty"`
+	OldSignature string               `json:"old_signature"`
+	NewSignature string               `json:"new_signature"`
+	Impact       BreakingChangeImpact `json:"impact"`
+	Description  string               `json:"description"`
+	Suggestions  []string             `json:"suggestions"`
+	Metadata     map[string]string    `json:"metadata"`
+}
+
+// NewFeature represents a new feature detected in code
+type NewFeature struct {
+	ID          string            `json:"id"`
+	Type        string            `json:"type"` // "function", "type", "interface", "method"
+	Name        string            `json:"name"`
+	Package     string            `json:"package"`
+	CodeRef     *SourceReference  `json:"code_ref"`
+	Signature   string            `json:"signature"`
+	Description string            `json:"description"`
+	IsPublic    bool              `json:"is_public"`
+	Suggestions []string          `json:"suggestions"`
+	Metadata    map[string]string `json:"metadata"`
+}
+
+// AnalysisSummary provides a high-level summary of the analysis results
+type AnalysisSummary struct {
+	TotalInconsistencies    int                    `json:"total_inconsistencies"`
+	CriticalInconsistencies int                    `json:"critical_inconsistencies"`
+	HighInconsistencies     int                    `json:"high_inconsistencies"`
+	MediumInconsistencies   int                    `json:"medium_inconsistencies"`
+	LowInconsistencies      int                    `json:"low_inconsistencies"`
+	MissingDocsCount        int                    `json:"missing_docs_count"`
+	OrphanedDocsCount       int                    `json:"orphaned_docs_count"`
+	BreakingChangesCount    int                    `json:"breaking_changes_count"`
+	NewFeaturesCount        int                    `json:"new_features_count"`
+	CodebaseSize            *CodebaseSize          `json:"codebase_size"`
+	DocumentationCoverage   *DocumentationCoverage `json:"documentation_coverage"`
+	QualityScore            float64                `json:"quality_score"` // 0.0-1.0
+	Recommendations         []string               `json:"recommendations"`
+}
+
+// CodebaseSize provides metrics about the codebase
+type CodebaseSize struct {
+	TotalFiles  int `json:"total_files"`
+	TotalLines  int `json:"total_lines"`
+	PublicAPIs  int `json:"public_apis"`
+	PrivateAPIs int `json:"private_apis"`
+	Interfaces  int `json:"interfaces"`
+	Types       int `json:"types"`
+	Functions   int `json:"functions"`
+	Methods     int `json:"methods"`
+}
+
+// DocumentationCoverage provides metrics about documentation coverage
+type DocumentationCoverage struct {
+	TotalDocFiles      int     `json:"total_doc_files"`
+	DocumentedAPIs     int     `json:"documented_apis"`
+	UndocumentedAPIs   int     `json:"undocumented_apis"`
+	CoveragePercentage float64 `json:"coverage_percentage"`
+	ExampleCoverage    float64 `json:"example_coverage"`
+	UpToDatePercentage float64 `json:"up_to_date_percentage"`
+}
+
+// SourceReference represents a reference to a location in source code or documentation
+type SourceReference struct {
+	FilePath    string `json:"file_path"`
+	LineNumber  int    `json:"line_number"`
+	ColumnStart int    `json:"column_start,omitempty"`
+	ColumnEnd   int    `json:"column_end,omitempty"`
+	Context     string `json:"context,omitempty"` // Surrounding text for context
+}
+
+// InconsistencyType represents the type of inconsistency
+type InconsistencyType string
+
+const (
+	InconsistencyTypeSignatureMismatch     InconsistencyType = "signature_mismatch"
+	InconsistencyTypeParameterMismatch     InconsistencyType = "parameter_mismatch"
+	InconsistencyTypeReturnMismatch        InconsistencyType = "return_mismatch"
+	InconsistencyTypeBehaviorMismatch      InconsistencyType = "behavior_mismatch"
+	InconsistencyTypeExampleOutdated       InconsistencyType = "example_outdated"
+	InconsistencyTypeDocumentationMissing  InconsistencyType = "documentation_missing"
+	InconsistencyTypeDocumentationOrphaned InconsistencyType = "documentation_orphaned"
+)
+
+// InconsistencySeverity represents the severity level of an inconsistency
+type InconsistencySeverity string
+
+const (
+	InconsistencySeverityCritical InconsistencySeverity = "critical"
+	InconsistencySeverityHigh     InconsistencySeverity = "high"
+	InconsistencySeverityMedium   InconsistencySeverity = "medium"
+	InconsistencySeverityLow      InconsistencySeverity = "low"
+)
+
+// BreakingChangeImpact represents the impact level of a breaking change
+type BreakingChangeImpact string
+
+const (
+	BreakingChangeImpactMajor BreakingChangeImpact = "major"
+	BreakingChangeImpactMinor BreakingChangeImpact = "minor"
+	BreakingChangeImpactPatch BreakingChangeImpact = "patch"
+)
+
+// ReportFormat represents the output format for reports
+type ReportFormat string
+
+const (
+	ReportFormatJSON     ReportFormat = "json"
+	ReportFormatText     ReportFormat = "text"
+	ReportFormatMarkdown ReportFormat = "markdown"
+	ReportFormatHTML     ReportFormat = "html"
+)
+
+// DocAnalyzerImpl implements the DocAnalyzer interface
+type DocAnalyzerImpl struct {
+	logger         Logger
+	stateManager   *DocSyncStateManager
+	rbacController *RBACController
+	auditLogger    *AuditLoggerImpl
+	config         *DocAnalyzerConfig
+	mu             sync.RWMutex
+}
+
+// DocAnalyzerConfig contains configuration for the documentation analyzer
+type DocAnalyzerConfig struct {
+	MaxFileSize               int64    `yaml:"max_file_size" json:"max_file_size"`                             // Maximum file size to analyze (bytes)
+	SupportedExtensions       []string `yaml:"supported_extensions" json:"supported_extensions"`               // File extensions to analyze
+	ExcludePatterns           []string `yaml:"exclude_patterns" json:"exclude_patterns"`                       // Patterns to exclude from analysis
+	IncludePatterns           []string `yaml:"include_patterns" json:"include_patterns"`                       // Patterns to include in analysis
+	DocumentationPaths        []string `yaml:"documentation_paths" json:"documentation_paths"`                 // Paths to search for documentation
+	IgnorePrivateAPIs         bool     `yaml:"ignore_private_apis" json:"ignore_private_apis"`                 // Whether to ignore non-exported APIs
+	EnableIncrementalAnalysis bool     `yaml:"enable_incremental_analysis" json:"enable_incremental_analysis"` // Enable incremental analysis
+	CacheEnabled              bool     `yaml:"cache_enabled" json:"cache_enabled"`                             // Enable caching of analysis results
+	CacheTTL                  int      `yaml:"cache_ttl" json:"cache_ttl"`                                     // Cache TTL in seconds
+	MaxConcurrency            int      `yaml:"max_concurrency" json:"max_concurrency"`                         // Maximum concurrent analysis operations
+	TimeoutSeconds            int      `yaml:"timeout_seconds" json:"timeout_seconds"`                         // Analysis timeout in seconds
+	AnalysisDepth             int      `yaml:"analysis_depth" json:"analysis_depth"`                           // Depth of analysis (1=shallow, 3=deep)
+}
+
+// NewDocAnalyzer creates a new documentation analyzer instance
+func NewDocAnalyzer(
+	logger Logger,
+	stateManager *DocSyncStateManager,
+	rbacController *RBACController,
+	auditLogger *AuditLoggerImpl,
+	config *DocAnalyzerConfig,
+) *DocAnalyzerImpl {
+	return &DocAnalyzerImpl{
+		logger:         logger,
+		stateManager:   stateManager,
+		rbacController: rbacController,
+		auditLogger:    auditLogger,
+		config:         config,
+	}
+}
+
+// DefaultDocAnalyzerConfig returns default configuration for the documentation analyzer
+func DefaultDocAnalyzerConfig() *DocAnalyzerConfig {
+	return &DocAnalyzerConfig{
+		MaxFileSize:               10 * 1024 * 1024, // 10MB
+		SupportedExtensions:       []string{".go", ".md", ".rst", ".txt"},
+		ExcludePatterns:           []string{"vendor/", "node_modules/", ".git/", "*.test", "*_test.go"},
+		IncludePatterns:           []string{"*.go", "*.md"},
+		DocumentationPaths:        []string{"docs/", "README.md", "*.md"},
+		IgnorePrivateAPIs:         true,
+		EnableIncrementalAnalysis: true,
+		CacheEnabled:              true,
+		CacheTTL:                  3600, // 1 hour
+		MaxConcurrency:            4,
+		TimeoutSeconds:            300, // 5 minutes
+		AnalysisDepth:             2,   // Medium depth
+	}
+}
+
+// ScanCodebase analyzes the codebase using Serena MCP tools
+func (d *DocAnalyzerImpl) ScanCodebase(rootPath string) (*CodebaseSnapshot, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// Audit log the analysis operation
+	if d.auditLogger != nil {
+		d.auditLogger.LogEvent(types.AuditEvent{
+			UserID:   "doc_analyzer",
+			Action:   "scan_codebase", 
+			Resource: rootPath,
+			Result:   "initiated",
+			Details: map[string]interface{}{
+				"root_path": rootPath,
+				"timestamp": time.Now().UTC(),
+			},
+		})
+	}
+
+	snapshot := &CodebaseSnapshot{
+		Timestamp:  time.Now().UTC(),
+		RootPath:   rootPath,
+		Packages:   make(map[string]*PackageInfo),
+		PublicAPIs: make([]*APIDefinition, 0),
+		Interfaces: make([]*InterfaceDefinition, 0),
+		Types:      make([]*TypeDefinition, 0),
+		Functions:  make([]*FunctionDefinition, 0),
+		Constants:  make([]*ConstantDefinition, 0),
+		Variables:  make([]*VariableDefinition, 0),
+		FileHashes: make(map[string]string),
+	}
+
+	// Use Serena MCP tools for semantic analysis
+	d.logger.Info("Starting codebase analysis", map[string]interface{}{
+		"root_path": rootPath,
+		"config":    d.config,
+	})
+
+	// Step 1: Discover Go packages using Serena MCP
+	err := d.discoverPackages(rootPath, snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to discover packages: %w", err)
+	}
+
+	// Step 2: Analyze each package for symbols
+	for _, pkg := range snapshot.Packages {
+		if err := d.analyzePackage(pkg, snapshot); err != nil {
+			d.logger.Error("Failed to analyze package", map[string]interface{}{
+				"package": pkg.Name,
+				"error":   err,
+			})
+			// Continue with other packages rather than failing completely
+			continue
+		}
+	}
+
+	// Step 3: Calculate file hashes for change detection
+	if err := d.calculateFileHashes(rootPath, snapshot); err != nil {
+		d.logger.Warn("Failed to calculate file hashes", map[string]interface{}{
+			"error": err,
+		})
+	}
+
+	// Calculate overall checksum for the snapshot
+	checksum, err := d.calculateSnapshotChecksum(snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate snapshot checksum: %w", err)
+	}
+	snapshot.Checksum = checksum
+
+	d.logger.Info("Codebase analysis complete", map[string]interface{}{
+		"packages":    len(snapshot.Packages),
+		"public_apis": len(snapshot.PublicAPIs),
+		"interfaces":  len(snapshot.Interfaces),
+		"types":       len(snapshot.Types),
+		"functions":   len(snapshot.Functions),
+	})
+
+	return snapshot, nil
+}
+
+// ScanDocumentation analyzes documentation files for API references
+func (d *DocAnalyzerImpl) ScanDocumentation(docPaths []string) (*DocumentationSnapshot, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// Audit log the analysis operation
+	if d.auditLogger != nil {
+		d.auditLogger.LogEvent(types.AuditEvent{
+			UserID:   "doc_analyzer",
+			Action:   "scan_documentation",
+			Resource: "multiple_paths",
+			Result:   "initiated",
+			Details: map[string]interface{}{
+				"doc_paths": docPaths,
+				"timestamp": time.Now().UTC(),
+			},
+		})
+	}
+
+	snapshot := &DocumentationSnapshot{
+		Timestamp:     time.Now().UTC(),
+		DocumentPaths: docPaths,
+		APIReferences: make([]*APIReference, 0),
+		CodeExamples:  make([]*CodeExample, 0),
+		Interfaces:    make([]*DocumentedInterface, 0),
+		Functions:     make([]*DocumentedFunction, 0),
+		Types:         make([]*DocumentedType, 0),
+		UsagePatterns: make([]*UsagePattern, 0),
+		FileHashes:    make(map[string]string),
+	}
+
+	// TODO: This method will parse markdown files and extract API references
+	// Implementation will be added in the next step
+
+	d.logger.Info("ScanDocumentation called", map[string]interface{}{
+		"doc_paths": docPaths,
+		"config":    d.config,
+	})
+
+	// Calculate checksum for the snapshot
+	checksum, err := d.calculateDocSnapshotChecksum(snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate documentation snapshot checksum: %w", err)
+	}
+	snapshot.Checksum = checksum
+
+	return snapshot, nil
+}
+
+// CompareCodeAndDocs compares code against documentation
+func (d *DocAnalyzerImpl) CompareCodeAndDocs(code *CodebaseSnapshot, docs *DocumentationSnapshot) (*AnalysisReport, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// Audit log the comparison operation
+	if d.auditLogger != nil {
+		d.auditLogger.LogEvent(types.AuditEvent{
+			UserID:   "doc_analyzer",
+			Action:   "compare_code_and_docs",
+			Resource: "analysis",
+			Result:   "initiated", 
+			Details: map[string]interface{}{
+				"code_checksum": code.Checksum,
+				"docs_checksum": docs.Checksum,
+				"timestamp":     time.Now().UTC(),
+			},
+		})
+	}
+
+	report := &AnalysisReport{
+		Timestamp:       time.Now().UTC(),
+		CodeSnapshot:    code,
+		DocsSnapshot:    docs,
+		Inconsistencies: make([]*Inconsistency, 0),
+		MissingDocs:     make([]*MissingDocumentation, 0),
+		OrphanedDocs:    make([]*OrphanedDocumentation, 0),
+		BreakingChanges: make([]*BreakingChange, 0),
+		NewFeatures:     make([]*NewFeature, 0),
+	}
+
+	// TODO: This method will implement the comparison algorithms
+	// Implementation will be added in the next step
+
+	d.logger.Info("CompareCodeAndDocs called", map[string]interface{}{
+		"code_apis": len(code.PublicAPIs),
+		"doc_refs":  len(docs.APIReferences),
+	})
+
+	// Generate summary
+	summary := d.generateAnalysisSummary(report)
+	report.Summary = summary
+
+	// Calculate checksum for the report
+	checksum, err := d.calculateReportChecksum(report)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate report checksum: %w", err)
+	}
+	report.Checksum = checksum
+
+	return report, nil
+}
+
+// GenerateReport creates formatted reports from analysis results
+func (d *DocAnalyzerImpl) GenerateReport(report *AnalysisReport, format ReportFormat) ([]byte, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	// Audit log the report generation
+	if d.auditLogger != nil {
+		d.auditLogger.LogEvent(types.AuditEvent{
+			UserID:   "doc_analyzer",
+			Action:   "generate_report",
+			Resource: string(format),
+			Result:   "initiated",
+			Details: map[string]interface{}{
+				"report_checksum": report.Checksum,
+				"format":          string(format),
+				"timestamp":       time.Now().UTC(),
+			},
+		})
+	}
+
+	switch format {
+	case ReportFormatJSON:
+		return d.generateJSONReport(report)
+	case ReportFormatText:
+		return d.generateTextReport(report)
+	case ReportFormatMarkdown:
+		return d.generateMarkdownReport(report)
+	case ReportFormatHTML:
+		return d.generateHTMLReport(report)
+	default:
+		return nil, fmt.Errorf("unsupported report format: %s", format)
+	}
+}
+
+// Helper methods for checksum calculation
+func (d *DocAnalyzerImpl) calculateSnapshotChecksum(snapshot *CodebaseSnapshot) (string, error) {
+	// Create a deterministic representation for checksum
+	data := fmt.Sprintf("%s|%d|%d|%d|%d|%d|%d",
+		snapshot.RootPath,
+		len(snapshot.PublicAPIs),
+		len(snapshot.Interfaces),
+		len(snapshot.Types),
+		len(snapshot.Functions),
+		len(snapshot.Constants),
+		len(snapshot.Variables))
+
+	hash := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", hash), nil
+}
+
+func (d *DocAnalyzerImpl) calculateDocSnapshotChecksum(snapshot *DocumentationSnapshot) (string, error) {
+	// Create a deterministic representation for checksum
+	data := fmt.Sprintf("%d|%d|%d|%d|%d|%d",
+		len(snapshot.APIReferences),
+		len(snapshot.CodeExamples),
+		len(snapshot.Interfaces),
+		len(snapshot.Functions),
+		len(snapshot.Types),
+		len(snapshot.UsagePatterns))
+
+	hash := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", hash), nil
+}
+
+func (d *DocAnalyzerImpl) calculateReportChecksum(report *AnalysisReport) (string, error) {
+	// Create a deterministic representation for checksum
+	data := fmt.Sprintf("%s|%s|%d|%d|%d|%d|%d",
+		report.CodeSnapshot.Checksum,
+		report.DocsSnapshot.Checksum,
+		len(report.Inconsistencies),
+		len(report.MissingDocs),
+		len(report.OrphanedDocs),
+		len(report.BreakingChanges),
+		len(report.NewFeatures))
+
+	hash := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", hash), nil
+}
+
+// Helper method to generate analysis summary
+func (d *DocAnalyzerImpl) generateAnalysisSummary(report *AnalysisReport) *AnalysisSummary {
+	summary := &AnalysisSummary{
+		MissingDocsCount:     len(report.MissingDocs),
+		OrphanedDocsCount:    len(report.OrphanedDocs),
+		BreakingChangesCount: len(report.BreakingChanges),
+		NewFeaturesCount:     len(report.NewFeatures),
+		CodebaseSize: &CodebaseSize{
+			PublicAPIs: len(report.CodeSnapshot.PublicAPIs),
+			Interfaces: len(report.CodeSnapshot.Interfaces),
+			Types:      len(report.CodeSnapshot.Types),
+			Functions:  len(report.CodeSnapshot.Functions),
+		},
+		DocumentationCoverage: &DocumentationCoverage{
+			TotalDocFiles:  len(report.DocsSnapshot.DocumentPaths),
+			DocumentedAPIs: len(report.DocsSnapshot.APIReferences),
+		},
+		Recommendations: make([]string, 0),
+	}
+
+	// Count inconsistencies by severity
+	for _, inconsistency := range report.Inconsistencies {
+		summary.TotalInconsistencies++
+		switch inconsistency.Severity {
+		case InconsistencySeverityCritical:
+			summary.CriticalInconsistencies++
+		case InconsistencySeverityHigh:
+			summary.HighInconsistencies++
+		case InconsistencySeverityMedium:
+			summary.MediumInconsistencies++
+		case InconsistencySeverityLow:
+			summary.LowInconsistencies++
+		}
+	}
+
+	// Calculate quality score (simple algorithm for now)
+	totalAPIs := len(report.CodeSnapshot.PublicAPIs)
+	documentedAPIs := len(report.DocsSnapshot.APIReferences)
+	if totalAPIs > 0 {
+		summary.DocumentationCoverage.CoveragePercentage = float64(documentedAPIs) / float64(totalAPIs) * 100.0
+	}
+
+	// Simple quality score calculation
+	if totalAPIs > 0 {
+		coverage := summary.DocumentationCoverage.CoveragePercentage / 100.0
+		inconsistencyPenalty := float64(summary.TotalInconsistencies) / float64(totalAPIs)
+		summary.QualityScore = coverage - (inconsistencyPenalty * 0.5)
+		if summary.QualityScore < 0 {
+			summary.QualityScore = 0
+		}
+		if summary.QualityScore > 1 {
+			summary.QualityScore = 1
+		}
+	}
+
+	// Generate basic recommendations
+	if summary.CriticalInconsistencies > 0 {
+		summary.Recommendations = append(summary.Recommendations, "Address critical documentation inconsistencies immediately")
+	}
+	if summary.DocumentationCoverage.CoveragePercentage < 50.0 {
+		summary.Recommendations = append(summary.Recommendations, "Improve documentation coverage for public APIs")
+	}
+	if summary.OrphanedDocsCount > 0 {
+		summary.Recommendations = append(summary.Recommendations, "Remove or update orphaned documentation")
+	}
+
+	return summary
+}
+
+// Report generation methods
+func (d *DocAnalyzerImpl) generateJSONReport(report *AnalysisReport) ([]byte, error) {
+	return json.MarshalIndent(report, "", "  ")
+}
+
+func (d *DocAnalyzerImpl) generateTextReport(report *AnalysisReport) ([]byte, error) {
+	var buf strings.Builder
+
+	buf.WriteString("Documentation Analysis Report\n")
+	buf.WriteString("=============================\n\n")
+	buf.WriteString(fmt.Sprintf("Generated: %s\n", report.Timestamp.Format(time.RFC3339)))
+	buf.WriteString(fmt.Sprintf("Code Snapshot: %s\n", report.CodeSnapshot.Checksum[:8]))
+	buf.WriteString(fmt.Sprintf("Docs Snapshot: %s\n\n", report.DocsSnapshot.Checksum[:8]))
+
+	// Summary section
+	buf.WriteString("Summary\n")
+	buf.WriteString("-------\n")
+	if report.Summary != nil {
+		buf.WriteString(fmt.Sprintf("Quality Score: %.2f/1.00\n", report.Summary.QualityScore))
+		buf.WriteString(fmt.Sprintf("Documentation Coverage: %.1f%%\n", report.Summary.DocumentationCoverage.CoveragePercentage))
+		buf.WriteString(fmt.Sprintf("Total Inconsistencies: %d\n", report.Summary.TotalInconsistencies))
+		buf.WriteString(fmt.Sprintf("Missing Documentation: %d\n", report.Summary.MissingDocsCount))
+		buf.WriteString(fmt.Sprintf("Orphaned Documentation: %d\n", report.Summary.OrphanedDocsCount))
+		buf.WriteString(fmt.Sprintf("Breaking Changes: %d\n", report.Summary.BreakingChangesCount))
+		buf.WriteString(fmt.Sprintf("New Features: %d\n\n", report.Summary.NewFeaturesCount))
+
+		if len(report.Summary.Recommendations) > 0 {
+			buf.WriteString("Recommendations\n")
+			buf.WriteString("---------------\n")
+			for _, rec := range report.Summary.Recommendations {
+				buf.WriteString(fmt.Sprintf("- %s\n", rec))
+			}
+			buf.WriteString("\n")
+		}
+	}
+
+	// Detailed sections would be added here in a full implementation
+	buf.WriteString("Report generated by Documentation Synchronization System\n")
+
+	return []byte(buf.String()), nil
+}
+
+func (d *DocAnalyzerImpl) generateMarkdownReport(report *AnalysisReport) ([]byte, error) {
+	var buf strings.Builder
+
+	buf.WriteString("# Documentation Analysis Report\n\n")
+	buf.WriteString(fmt.Sprintf("**Generated:** %s  \n", report.Timestamp.Format(time.RFC3339)))
+	buf.WriteString(fmt.Sprintf("**Code Snapshot:** `%s`  \n", report.CodeSnapshot.Checksum[:8]))
+	buf.WriteString(fmt.Sprintf("**Docs Snapshot:** `%s`  \n\n", report.DocsSnapshot.Checksum[:8]))
+
+	// Summary section
+	buf.WriteString("## Summary\n\n")
+	if report.Summary != nil {
+		buf.WriteString(fmt.Sprintf("- **Quality Score:** %.2f/1.00\n", report.Summary.QualityScore))
+		buf.WriteString(fmt.Sprintf("- **Documentation Coverage:** %.1f%%\n", report.Summary.DocumentationCoverage.CoveragePercentage))
+		buf.WriteString(fmt.Sprintf("- **Total Inconsistencies:** %d\n", report.Summary.TotalInconsistencies))
+		buf.WriteString(fmt.Sprintf("- **Missing Documentation:** %d\n", report.Summary.MissingDocsCount))
+		buf.WriteString(fmt.Sprintf("- **Orphaned Documentation:** %d\n", report.Summary.OrphanedDocsCount))
+		buf.WriteString(fmt.Sprintf("- **Breaking Changes:** %d\n", report.Summary.BreakingChangesCount))
+		buf.WriteString(fmt.Sprintf("- **New Features:** %d\n\n", report.Summary.NewFeaturesCount))
+
+		if len(report.Summary.Recommendations) > 0 {
+			buf.WriteString("## Recommendations\n\n")
+			for _, rec := range report.Summary.Recommendations {
+				buf.WriteString(fmt.Sprintf("- %s\n", rec))
+			}
+			buf.WriteString("\n")
+		}
+	}
+
+	buf.WriteString("---\n")
+	buf.WriteString("*Report generated by Documentation Synchronization System*\n")
+
+	return []byte(buf.String()), nil
+}
+
+func (d *DocAnalyzerImpl) generateHTMLReport(report *AnalysisReport) ([]byte, error) {
+	var buf strings.Builder
+
+	buf.WriteString("<!DOCTYPE html>\n<html>\n<head>\n")
+	buf.WriteString("<title>Documentation Analysis Report</title>\n")
+	buf.WriteString("<style>body{font-family:Arial,sans-serif;margin:2em;}h1{color:#333;}.summary{background:#f5f5f5;padding:1em;border-radius:5px;}</style>\n")
+	buf.WriteString("</head>\n<body>\n")
+
+	buf.WriteString("<h1>Documentation Analysis Report</h1>\n")
+	buf.WriteString(fmt.Sprintf("<p><strong>Generated:</strong> %s</p>\n", report.Timestamp.Format(time.RFC3339)))
+	buf.WriteString(fmt.Sprintf("<p><strong>Code Snapshot:</strong> <code>%s</code></p>\n", report.CodeSnapshot.Checksum[:8]))
+	buf.WriteString(fmt.Sprintf("<p><strong>Docs Snapshot:</strong> <code>%s</code></p>\n", report.DocsSnapshot.Checksum[:8]))
+
+	if report.Summary != nil {
+		buf.WriteString("<div class=\"summary\">\n<h2>Summary</h2>\n<ul>\n")
+		buf.WriteString(fmt.Sprintf("<li><strong>Quality Score:</strong> %.2f/1.00</li>\n", report.Summary.QualityScore))
+		buf.WriteString(fmt.Sprintf("<li><strong>Documentation Coverage:</strong> %.1f%%</li>\n", report.Summary.DocumentationCoverage.CoveragePercentage))
+		buf.WriteString(fmt.Sprintf("<li><strong>Total Inconsistencies:</strong> %d</li>\n", report.Summary.TotalInconsistencies))
+		buf.WriteString(fmt.Sprintf("<li><strong>Missing Documentation:</strong> %d</li>\n", report.Summary.MissingDocsCount))
+		buf.WriteString(fmt.Sprintf("<li><strong>Orphaned Documentation:</strong> %d</li>\n", report.Summary.OrphanedDocsCount))
+		buf.WriteString(fmt.Sprintf("<li><strong>Breaking Changes:</strong> %d</li>\n", report.Summary.BreakingChangesCount))
+		buf.WriteString(fmt.Sprintf("<li><strong>New Features:</strong> %d</li>\n", report.Summary.NewFeaturesCount))
+		buf.WriteString("</ul>\n</div>\n")
+	}
+
+	buf.WriteString("<hr>\n<p><em>Report generated by Documentation Synchronization System</em></p>\n")
+	buf.WriteString("</body>\n</html>\n")
+
+	return []byte(buf.String()), nil
+}
+
+// discoverPackages discovers Go packages in the rootPath using directory traversal
+func (d *DocAnalyzerImpl) discoverPackages(rootPath string, snapshot *CodebaseSnapshot) error {
+	// This is a simplified implementation - in a full system, we might use more sophisticated
+	// package discovery. For now, we'll scan for Go files and group by directory.
+
+	// TODO: In a complete implementation, we would use Serena MCP tools to discover packages
+	// For now, we'll implement a basic directory traversal approach
+
+	return filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories and non-Go files
+		if info.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+
+		// Skip test files if configured
+		if d.config.IgnorePrivateAPIs && strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+
+		// Skip files matching exclude patterns
+		for _, pattern := range d.config.ExcludePatterns {
+			if matched, _ := filepath.Match(pattern, path); matched {
+				return nil
+			}
+		}
+
+		// Get package directory
+		pkgDir := filepath.Dir(path)
+		relPkgDir, err := filepath.Rel(rootPath, pkgDir)
+		if err != nil {
+			return err
+		}
+
+		// Create or update package info
+		pkgKey := relPkgDir
+		if pkgKey == "." {
+			pkgKey = "main"
+		}
+
+		pkg, exists := snapshot.Packages[pkgKey]
+		if !exists {
+			// Extract package name from the first Go file in the directory
+			pkgName, err := d.extractPackageName(path)
+			if err != nil {
+				d.logger.Warn("Failed to extract package name", map[string]interface{}{
+					"file":  path,
+					"error": err,
+				})
+				pkgName = "unknown"
+			}
+
+			pkg = &PackageInfo{
+				Name:        pkgName,
+				Path:        pkgDir,
+				ImportPath:  d.buildImportPath(rootPath, pkgDir),
+				Files:       make([]string, 0),
+				IsPublic:    !strings.Contains(relPkgDir, "internal"),
+				Description: "",
+				Metadata:    make(map[string]string),
+			}
+			snapshot.Packages[pkgKey] = pkg
+		}
+
+		pkg.Files = append(pkg.Files, path)
+		return nil
+	})
+}
+
+// analyzePackage analyzes a single package using Serena MCP tools
+func (d *DocAnalyzerImpl) analyzePackage(pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	d.logger.Debug("Analyzing package", map[string]interface{}{
+		"package": pkg.Name,
+		"files":   len(pkg.Files),
+	})
+
+	// Analyze each file in the package
+	for _, filePath := range pkg.Files {
+		if err := d.analyzeFile(filePath, pkg, snapshot); err != nil {
+			d.logger.Error("Failed to analyze file", map[string]interface{}{
+				"file":  filePath,
+				"error": err,
+			})
+			// Continue with other files
+			continue
+		}
+	}
+
+	return nil
+}
+
+// analyzeFile analyzes a single Go file using Serena MCP tools
+func (d *DocAnalyzerImpl) analyzeFile(filePath string, pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	d.logger.Debug("Analyzing file", map[string]interface{}{
+		"file":    filePath,
+		"package": pkg.Name,
+	})
+
+	// Read the file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	// Parse the Go file using the standard AST parser
+	// Note: This is a simplified implementation. In a full system, we would use
+	// go/parser, go/ast, and go/doc for complete semantic analysis
+
+	relPath, _ := filepath.Rel(snapshot.RootPath, filePath)
+
+	// Extract functions using regex patterns (simplified approach)
+	if err := d.extractFunctions(content, filePath, relPath, pkg, snapshot); err != nil {
+		d.logger.Warn("Failed to extract functions", map[string]interface{}{
+			"file":  filePath,
+			"error": err,
+		})
+	}
+
+	// Extract types using regex patterns (simplified approach)
+	if err := d.extractTypes(content, filePath, relPath, pkg, snapshot); err != nil {
+		d.logger.Warn("Failed to extract types", map[string]interface{}{
+			"file":  filePath,
+			"error": err,
+		})
+	}
+
+	// Extract interfaces using regex patterns (simplified approach)
+	if err := d.extractInterfaces(content, filePath, relPath, pkg, snapshot); err != nil {
+		d.logger.Warn("Failed to extract interfaces", map[string]interface{}{
+			"file":  filePath,
+			"error": err,
+		})
+	}
+
+	// Extract constants and variables using regex patterns (simplified approach)
+	if err := d.extractConstantsAndVariables(content, filePath, relPath, pkg, snapshot); err != nil {
+		d.logger.Warn("Failed to extract constants and variables", map[string]interface{}{
+			"file":  filePath,
+			"error": err,
+		})
+	}
+
+	return nil
+}
+
+// calculateFileHashes calculates SHA-256 hashes for all relevant files
+func (d *DocAnalyzerImpl) calculateFileHashes(rootPath string, snapshot *CodebaseSnapshot) error {
+	for _, pkg := range snapshot.Packages {
+		for _, filePath := range pkg.Files {
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				d.logger.Warn("Failed to read file for hashing", map[string]interface{}{
+					"file":  filePath,
+					"error": err,
+				})
+				continue
+			}
+
+			hash := sha256.Sum256(content)
+			relPath, _ := filepath.Rel(rootPath, filePath)
+			snapshot.FileHashes[relPath] = fmt.Sprintf("%x", hash)
+		}
+	}
+	return nil
+}
+
+// extractPackageName extracts the package name from a Go file
+func (d *DocAnalyzerImpl) extractPackageName(filePath string) (string, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	// Simple regex to extract package name
+	packageRegex := regexp.MustCompile(`(?m)^package\s+(\w+)`)
+	matches := packageRegex.FindStringSubmatch(string(content))
+	if len(matches) < 2 {
+		return "", fmt.Errorf("could not find package declaration in %s", filePath)
+	}
+
+	return matches[1], nil
+}
+
+// buildImportPath constructs the import path for a package
+func (d *DocAnalyzerImpl) buildImportPath(rootPath, pkgDir string) string {
+	// This is a simplified implementation
+	// In practice, this would need to determine the module path and construct proper import paths
+	relPath, _ := filepath.Rel(rootPath, pkgDir)
+	if relPath == "." {
+		return "main"
+	}
+	return relPath
+}
+
+// extractFunctions extracts function definitions from Go source code
+func (d *DocAnalyzerImpl) extractFunctions(content []byte, filePath, relPath string, pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	// Simplified regex-based extraction for demonstration
+	// In a production system, this would use go/parser and go/ast
+
+	funcRegex := regexp.MustCompile(`(?m)^func\s+(\*?\w+\s+)?(\w+)\s*\([^)]*\)\s*(\([^)]*\))?\s*(\w+)?\s*{`)
+	matches := funcRegex.FindAllStringSubmatch(string(content), -1)
+
+	lines := strings.Split(string(content), "\n")
+
+	for _, match := range matches {
+		if len(match) < 3 {
+			continue
+		}
+
+		receiver := strings.TrimSpace(match[1])
+		name := match[2]
+		// returns := match[3]  // Could be used for return type extraction
+
+		// Skip if not exported and we're ignoring private APIs
+		if d.config.IgnorePrivateAPIs && !isExported(name) {
+			continue
+		}
+
+		// Find line number
+		lineNum := d.findLineNumber(string(content), match[0])
+
+		// Extract documentation (simple approach - look for comment block before function)
+		documentation := d.extractDocumentation(lines, lineNum-1)
+
+		funcDef := &FunctionDefinition{
+			Name:          name,
+			Package:       pkg.Name,
+			FilePath:      relPath,
+			LineNumber:    lineNum,
+			Signature:     match[0],                 // Simplified - would be more precise in full implementation
+			Parameters:    []*ParameterDefinition{}, // Would parse parameters properly
+			Returns:       []*ReturnDefinition{},    // Would parse returns properly
+			Documentation: documentation,
+			IsExported:    isExported(name),
+			IsMethod:      receiver != "",
+			Metadata: map[string]string{
+				"extraction_method": "regex",
+				"receiver":          receiver,
+			},
+		}
+
+		if receiver != "" {
+			funcDef.Receiver = &ReceiverDefinition{
+				Name:    strings.TrimSpace(strings.Trim(receiver, "*")),
+				Type:    strings.TrimSpace(receiver),
+				Pointer: strings.Contains(receiver, "*"),
+			}
+		}
+
+		snapshot.Functions = append(snapshot.Functions, funcDef)
+
+		// Add to public APIs if exported
+		if funcDef.IsExported {
+			api := &APIDefinition{
+				Name:          funcDef.Name,
+				Type:          "function",
+				Package:       pkg.Name,
+				FilePath:      relPath,
+				LineNumber:    funcDef.LineNumber,
+				Signature:     funcDef.Signature,
+				Documentation: funcDef.Documentation,
+				IsExported:    true,
+				IsDeprecated:  strings.Contains(strings.ToLower(documentation), "deprecated"),
+				Tags:          []string{"function"},
+				Metadata:      funcDef.Metadata,
+			}
+			if funcDef.IsMethod {
+				api.Tags = append(api.Tags, "method")
+			}
+			snapshot.PublicAPIs = append(snapshot.PublicAPIs, api)
+		}
+	}
+
+	return nil
+}
+
+// extractTypes extracts type definitions from Go source code
+func (d *DocAnalyzerImpl) extractTypes(content []byte, filePath, relPath string, pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	// Simplified regex-based extraction
+	typeRegex := regexp.MustCompile(`(?m)^type\s+(\w+)\s+(struct|interface|[^{]*)\s*{?`)
+	matches := typeRegex.FindAllStringSubmatch(string(content), -1)
+
+	lines := strings.Split(string(content), "\n")
+
+	for _, match := range matches {
+		if len(match) < 3 {
+			continue
+		}
+
+		name := match[1]
+		kind := match[2]
+
+		// Skip if not exported and we're ignoring private APIs
+		if d.config.IgnorePrivateAPIs && !isExported(name) {
+			continue
+		}
+
+		// Find line number
+		lineNum := d.findLineNumber(string(content), match[0])
+
+		// Extract documentation
+		documentation := d.extractDocumentation(lines, lineNum-1)
+
+		typeDef := &TypeDefinition{
+			Name:          name,
+			Kind:          kind,
+			Package:       pkg.Name,
+			FilePath:      relPath,
+			LineNumber:    lineNum,
+			Fields:        []*FieldDefinition{},  // Would be populated in full implementation
+			Methods:       []*MethodDefinition{}, // Would be populated in full implementation
+			Documentation: documentation,
+			IsExported:    isExported(name),
+			Metadata: map[string]string{
+				"extraction_method": "regex",
+				"raw_definition":    match[0],
+			},
+		}
+
+		snapshot.Types = append(snapshot.Types, typeDef)
+
+		// Add to public APIs if exported
+		if typeDef.IsExported {
+			api := &APIDefinition{
+				Name:          typeDef.Name,
+				Type:          "type",
+				Package:       pkg.Name,
+				FilePath:      relPath,
+				LineNumber:    typeDef.LineNumber,
+				Signature:     match[0],
+				Documentation: typeDef.Documentation,
+				IsExported:    true,
+				IsDeprecated:  strings.Contains(strings.ToLower(documentation), "deprecated"),
+				Tags:          []string{"type", kind},
+				Metadata:      typeDef.Metadata,
+			}
+			snapshot.PublicAPIs = append(snapshot.PublicAPIs, api)
+		}
+	}
+
+	return nil
+}
+
+// extractInterfaces extracts interface definitions from Go source code
+func (d *DocAnalyzerImpl) extractInterfaces(content []byte, filePath, relPath string, pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	// Simplified regex-based extraction for interfaces
+	interfaceRegex := regexp.MustCompile(`(?m)^type\s+(\w+)\s+interface\s*{`)
+	matches := interfaceRegex.FindAllStringSubmatch(string(content), -1)
+
+	lines := strings.Split(string(content), "\n")
+
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+
+		name := match[1]
+
+		// Skip if not exported and we're ignoring private APIs
+		if d.config.IgnorePrivateAPIs && !isExported(name) {
+			continue
+		}
+
+		// Find line number
+		lineNum := d.findLineNumber(string(content), match[0])
+
+		// Extract documentation
+		documentation := d.extractDocumentation(lines, lineNum-1)
+
+		interfaceDef := &InterfaceDefinition{
+			Name:          name,
+			Package:       pkg.Name,
+			FilePath:      relPath,
+			LineNumber:    lineNum,
+			Methods:       []*MethodDefinition{}, // Would be populated in full implementation
+			Documentation: documentation,
+			IsExported:    isExported(name),
+			Metadata: map[string]string{
+				"extraction_method": "regex",
+				"raw_definition":    match[0],
+			},
+		}
+
+		snapshot.Interfaces = append(snapshot.Interfaces, interfaceDef)
+
+		// Add to public APIs if exported
+		if interfaceDef.IsExported {
+			api := &APIDefinition{
+				Name:          interfaceDef.Name,
+				Type:          "interface",
+				Package:       pkg.Name,
+				FilePath:      relPath,
+				LineNumber:    interfaceDef.LineNumber,
+				Signature:     match[0],
+				Documentation: interfaceDef.Documentation,
+				IsExported:    true,
+				IsDeprecated:  strings.Contains(strings.ToLower(documentation), "deprecated"),
+				Tags:          []string{"interface"},
+				Metadata:      interfaceDef.Metadata,
+			}
+			snapshot.PublicAPIs = append(snapshot.PublicAPIs, api)
+		}
+	}
+
+	return nil
+}
+
+// extractConstantsAndVariables extracts const and var declarations
+func (d *DocAnalyzerImpl) extractConstantsAndVariables(content []byte, filePath, relPath string, pkg *PackageInfo, snapshot *CodebaseSnapshot) error {
+	lines := strings.Split(string(content), "\n")
+
+	// Extract constants
+	constRegex := regexp.MustCompile(`(?m)^(const\s+(\w+)\s*=\s*([^/\n]+))`)
+	constMatches := constRegex.FindAllStringSubmatch(string(content), -1)
+
+	for _, match := range constMatches {
+		if len(match) < 4 {
+			continue
+		}
+
+		name := match[2]
+		value := strings.TrimSpace(match[3])
+
+		// Skip if not exported and we're ignoring private APIs
+		if d.config.IgnorePrivateAPIs && !isExported(name) {
+			continue
+		}
+
+		// Find line number
+		lineNum := d.findLineNumber(string(content), match[0])
+
+		// Extract documentation
+		documentation := d.extractDocumentation(lines, lineNum-1)
+
+		constDef := &ConstantDefinition{
+			Name:          name,
+			Type:          "unknown", // Would be determined in full implementation
+			Value:         value,
+			Package:       pkg.Name,
+			FilePath:      relPath,
+			LineNumber:    lineNum,
+			Documentation: documentation,
+			IsExported:    isExported(name),
+			Metadata: map[string]string{
+				"extraction_method": "regex",
+				"raw_definition":    match[1],
+			},
+		}
+
+		snapshot.Constants = append(snapshot.Constants, constDef)
+
+		// Add to public APIs if exported
+		if constDef.IsExported {
+			api := &APIDefinition{
+				Name:          constDef.Name,
+				Type:          "constant",
+				Package:       pkg.Name,
+				FilePath:      relPath,
+				LineNumber:    constDef.LineNumber,
+				Signature:     match[1],
+				Documentation: constDef.Documentation,
+				IsExported:    true,
+				IsDeprecated:  strings.Contains(strings.ToLower(documentation), "deprecated"),
+				Tags:          []string{"constant"},
+				Metadata:      constDef.Metadata,
+			}
+			snapshot.PublicAPIs = append(snapshot.PublicAPIs, api)
+		}
+	}
+
+	// Extract variables
+	varRegex := regexp.MustCompile(`(?m)^(var\s+(\w+)\s*([^=\n]*)?(\s*=\s*[^/\n]+)?)`)
+	varMatches := varRegex.FindAllStringSubmatch(string(content), -1)
+
+	for _, match := range varMatches {
+		if len(match) < 3 {
+			continue
+		}
+
+		name := match[2]
+
+		// Skip if not exported and we're ignoring private APIs
+		if d.config.IgnorePrivateAPIs && !isExported(name) {
+			continue
+		}
+
+		// Find line number
+		lineNum := d.findLineNumber(string(content), match[0])
+
+		// Extract documentation
+		documentation := d.extractDocumentation(lines, lineNum-1)
+
+		varDef := &VariableDefinition{
+			Name:          name,
+			Type:          "unknown", // Would be determined in full implementation
+			Package:       pkg.Name,
+			FilePath:      relPath,
+			LineNumber:    lineNum,
+			Documentation: documentation,
+			IsExported:    isExported(name),
+			IsGlobal:      true, // Package-level variables are global
+			Metadata: map[string]string{
+				"extraction_method": "regex",
+				"raw_definition":    match[1],
+			},
+		}
+
+		snapshot.Variables = append(snapshot.Variables, varDef)
+
+		// Add to public APIs if exported
+		if varDef.IsExported {
+			api := &APIDefinition{
+				Name:          varDef.Name,
+				Type:          "variable",
+				Package:       pkg.Name,
+				FilePath:      relPath,
+				LineNumber:    varDef.LineNumber,
+				Signature:     match[1],
+				Documentation: varDef.Documentation,
+				IsExported:    true,
+				IsDeprecated:  strings.Contains(strings.ToLower(documentation), "deprecated"),
+				Tags:          []string{"variable"},
+				Metadata:      varDef.Metadata,
+			}
+			snapshot.PublicAPIs = append(snapshot.PublicAPIs, api)
+		}
+	}
+
+	return nil
+}
+
+// Helper functions
+func isExported(name string) bool {
+	if len(name) == 0 {
+		return false
+	}
+	first := rune(name[0])
+	return first >= 'A' && first <= 'Z'
+}
+
+func (d *DocAnalyzerImpl) findLineNumber(content, match string) int {
+	index := strings.Index(content, match)
+	if index == -1 {
+		return 1
+	}
+	return strings.Count(content[:index], "\n") + 1
+}
+
+func (d *DocAnalyzerImpl) extractDocumentation(lines []string, lineIndex int) string {
+	var docLines []string
+
+	// Look backwards from the function/type declaration for comment blocks
+	for i := lineIndex - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+
+		// Empty line breaks the documentation block
+		if line == "" {
+			break
+		}
+
+		// Documentation comment
+		if strings.HasPrefix(line, "//") {
+			comment := strings.TrimSpace(strings.TrimPrefix(line, "//"))
+			docLines = append([]string{comment}, docLines...) // Prepend to maintain order
+		} else if strings.HasPrefix(line, "/*") && strings.HasSuffix(line, "*/") {
+			// Single line block comment
+			comment := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(line, "/*"), "*/"))
+			docLines = append([]string{comment}, docLines...)
+		} else {
+			// Non-comment line breaks the documentation block
+			break
+		}
+	}
+
+	return strings.Join(docLines, " ")
 }
 
 // NewSecurityValidator creates a new security validator with default settings

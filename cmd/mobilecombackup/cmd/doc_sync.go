@@ -492,6 +492,7 @@ func loadDocSyncConfig() (*DocSyncConfig, error) {
 	}
 
 	// Load existing configuration
+	// #nosec G304 - configPath is validated and controlled by application
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read configuration file: %w", err)

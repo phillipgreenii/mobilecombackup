@@ -1,0 +1,23 @@
+enabled: true
+watch_mode: false
+auto_fix: false
+enabled_agents:
+    - analyzer
+    - codesync
+    - quality
+agent_timeout: 300
+include_patterns:
+    - '*.md'
+    - '*.go'
+    - '*.yaml'
+    - '*.yml'
+exclude_patterns:
+    - vendor/**
+    - node_modules/**
+    - .git/**
+    - tmp/**
+max_concurrency: 4
+batch_size: 10
+log_level: info
+backup_enabled: true
+backup_retention_days: 30
