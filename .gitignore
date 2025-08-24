@@ -71,3 +71,9 @@ cover/
 #
 # Temporary files for development
 tmp/
+
+#########
+# FEAT-079: Pipeline state files
+#
+.pipeline-state/
+*.lock

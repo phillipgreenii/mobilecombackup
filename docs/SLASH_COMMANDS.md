@@ -26,6 +26,52 @@ Validate if an issue has enough detail for implementation:
 - **Auto-commits the file movement** with standardized message format
 - **Prevents file handling issues** by using proper git mv workflow
 
+### `/prepare-issue FEAT-XXX or BUG-XXX [options]`
+Orchestrate comprehensive multi-agent review pipeline to prepare issue for implementation:
+- **5-Stage Pipeline Process**: Sequential agent reviews with clean handoffs
+- **Stage 1: Specification Review** (spec-review-engineer) - validates completeness and clarity
+- **Stage 2: Technical Design Review** (technical-design-reviewer) - validates architecture and approach
+- **Stage 3: Test Strategy Review** (test-strategy-reviewer) - ensures comprehensive test coverage
+- **Stage 4: Implementation Planning** (implementation-planner) - creates detailed task breakdown
+- **Stage 5: Final Readiness Validation** - verifies all criteria met and moves to ready/
+- **State Persistence**: JSON-based state tracking for resume capability (`.pipeline-state/`)
+- **Auto-commits after each stage** with clean agent handoffs and atomic improvements
+- **Interruption Handling**: Graceful failure recovery and resume from last successful stage
+- **Progress Reporting**: Real-time status updates and completion summary
+- **Quality Assurance**: Each agent commits improvements before passing to next stage
+
+**Options:**
+- `--skip-stage <stage>` - Skip specific review stage (spec, tech-design, test-strategy, implementation, final)
+- `--fast` - Run minimal reviews with reduced validation criteria
+- `--strict` - Enhanced review criteria with additional validation steps
+- `--resume` - Resume pipeline from last successful stage (auto-detected from state)
+
+**Pipeline Architecture:**
+```
+Backlog → [Pipeline] → Ready
+          │
+     ┌────▼────┐
+     │Stage 1  │ spec-review-engineer
+     │Spec     │ (completeness, clarity)
+     └────┬────┘
+     ┌────▼────┐
+     │Stage 2  │ technical-design-reviewer
+     │Tech     │ (architecture, patterns)
+     └────┬────┘
+     ┌────▼────┐
+     │Stage 3  │ test-strategy-reviewer
+     │Test     │ (coverage, scenarios)
+     └────┬────┘
+     ┌────▼────┐
+     │Stage 4  │ implementation-planner
+     │Planning │ (tasks, estimates)
+     └────┬────┘
+     ┌────▼────┐
+     │Stage 5  │ Final Validation
+     │Ready    │ (move to ready/)
+     └─────────┘
+```
+
 ### `/review-issue FEAT-XXX or BUG-XXX`
 Review an issue specification for completeness and clarity:
 - **Uses spec-review-engineer agent** for thorough specification review
@@ -97,6 +143,7 @@ All slash commands include sophisticated auto-commit functionality with quality 
 
 ### When Auto-Commit Occurs
 - **After completing each TodoWrite task** in `/implement-issue` (with full verification)
+- **After each pipeline stage completion** in `/prepare-issue` (with agent handoff protocol)
 - **After creating feature documents** with `/create-feature`
 - **After creating bug documents** with `/create-bug`
 - **After moving issues to ready** with `/ready-issue`
