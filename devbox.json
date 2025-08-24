@@ -91,6 +91,9 @@
       ],
       "ccusage": [
 	      "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"
+      ],
+      "smart-verify": [
+        "./mobilecombackup smart-verify"
       ]
     }
   }
