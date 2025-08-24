@@ -28,19 +28,25 @@ var (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new mobilecombackup repository",
-	Long: `Initialize a new mobilecombackup repository with the required directory structure.
+	Long: `Initialize a new mobilecombackup repository in the specified directory.
 
-Creates the following directories:
-- calls/      For call log XML files
-- sms/        For SMS/MMS XML files  
-- attachments/ For extracted attachment files
+Creates the required directory structure and configuration files needed for
+storing and managing mobile backup data. The repository will be created with:
+- Directory structure for calls, SMS, and attachments
+- Configuration and marker files
+- Empty contacts database
+- Manifest files for integrity checking
 
-Also creates:
-- .mobilecombackup.yaml  Repository marker file with version info
-- contacts.yaml          Empty contacts file
-- summary.yaml           Initial summary with zero counts
-- files.yaml             File manifest tracking all repository files
-- files.yaml.sha256      Checksum file for manifest verification`,
+By default, creates repository in current directory. Use --repo-root to specify
+a different location.`,
+	Example: `  # Initialize in current directory
+  mobilecombackup init
+  
+  # Initialize in specific directory
+  mobilecombackup init --repo-root /path/to/backup
+  
+  # Preview what would be created (dry run)
+  mobilecombackup init --dry-run`,
 	RunE: runInit,
 }
 

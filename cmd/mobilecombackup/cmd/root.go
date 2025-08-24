@@ -33,6 +33,8 @@ mobile phone backup files, removing duplicates and organizing by year.`,
 	SilenceUsage:  false,
 }
 
+// agents.go will be a separate file for agent template management
+
 // Execute runs the root command for the CLI
 func Execute() error {
 	return rootCmd.Execute()
