@@ -268,3 +268,103 @@ type DocSyncMetrics struct {
 	ConsistencyScore      float64 `json:"consistency_score" yaml:"consistency_score"`
 	QualityScore          float64 `json:"quality_score" yaml:"quality_score"`
 }
+
+// Security Framework Types for FEAT-084
+
+// SecurityRole represents a role in the RBAC system
+type SecurityRole struct {
+	ID          string   `json:"id" yaml:"id"`
+	Name        string   `json:"name" yaml:"name"`
+	Description string   `json:"description" yaml:"description"`
+	Permissions []string `json:"permissions" yaml:"permissions"`
+	ParentRoles []string `json:"parent_roles" yaml:"parent_roles"`
+}
+
+// SecurityPermission represents a specific permission
+type SecurityPermission struct {
+	ID          string `json:"id" yaml:"id"`
+	Name        string `json:"name" yaml:"name"`
+	Resource    string `json:"resource" yaml:"resource"`
+	Action      string `json:"action" yaml:"action"`
+	Description string `json:"description" yaml:"description"`
+}
+
+// SecurityUser represents a user in the system
+type SecurityUser struct {
+	ID       string   `json:"id" yaml:"id"`
+	Username string   `json:"username" yaml:"username"`
+	Roles    []string `json:"roles" yaml:"roles"`
+	Active   bool     `json:"active" yaml:"active"`
+}
+
+// SecurityContext provides security context for operations
+type SecurityContext struct {
+	User        SecurityUser      `json:"user" yaml:"user"`
+	SessionID   string            `json:"session_id" yaml:"session_id"`
+	Permissions []string          `json:"permissions" yaml:"permissions"`
+	Metadata    map[string]string `json:"metadata" yaml:"metadata"`
+	CreatedAt   int64             `json:"created_at" yaml:"created_at"`
+	ExpiresAt   int64             `json:"expires_at" yaml:"expires_at"`
+}
+
+// AuditEvent represents a security event for audit logging
+type AuditEvent struct {
+	ID        string                 `json:"id" yaml:"id"`
+	Timestamp int64                  `json:"timestamp" yaml:"timestamp"`
+	UserID    string                 `json:"user_id" yaml:"user_id"`
+	Action    string                 `json:"action" yaml:"action"`
+	Resource  string                 `json:"resource" yaml:"resource"`
+	Result    string                 `json:"result" yaml:"result"` // success, failure, denied
+	Details   map[string]interface{} `json:"details" yaml:"details"`
+	IPAddress string                 `json:"ip_address" yaml:"ip_address"`
+	UserAgent string                 `json:"user_agent" yaml:"user_agent"`
+}
+
+// SecurityValidationResult represents the result of a security validation
+type SecurityValidationResult struct {
+	Valid    bool     `json:"valid" yaml:"valid"`
+	Errors   []string `json:"errors" yaml:"errors"`
+	Warnings []string `json:"warnings" yaml:"warnings"`
+	Context  string   `json:"context" yaml:"context"`
+}
+
+// Security Interface Definitions
+
+// SecurityContextManager manages security contexts and sessions
+type SecurityContextManager interface {
+	CreateContext(user SecurityUser, sessionID string) (SecurityContext, error)
+	ValidateContext(ctx SecurityContext) SecurityValidationResult
+	RefreshContext(ctx SecurityContext) (SecurityContext, error)
+	RevokeContext(sessionID string) error
+	GetUserPermissions(userID string) ([]string, error)
+}
+
+// AuditLogger handles security event logging and retrieval
+type AuditLogger interface {
+	LogEvent(event AuditEvent) error
+	GetEvents(userID string, fromTime, toTime int64) ([]AuditEvent, error)
+	GetEventsByAction(action string, fromTime, toTime int64) ([]AuditEvent, error)
+	GetEventsByResource(resource string, fromTime, toTime int64) ([]AuditEvent, error)
+	SearchEvents(query string, fromTime, toTime int64) ([]AuditEvent, error)
+}
+
+// AccessController manages role-based access control
+type AccessController interface {
+	CheckPermission(ctx SecurityContext, resource, action string) bool
+	GetUserRoles(userID string) ([]SecurityRole, error)
+	GetRolePermissions(roleID string) ([]SecurityPermission, error)
+	AssignRole(userID, roleID string) error
+	RevokeRole(userID, roleID string) error
+	CreateRole(role SecurityRole) error
+	UpdateRole(role SecurityRole) error
+	DeleteRole(roleID string) error
+}
+
+// SecurityValidator provides security validation utilities
+type SecurityValidator interface {
+	ValidateInput(input string, inputType string) SecurityValidationResult
+	SanitizeInput(input string, inputType string) string
+	ValidatePermissions(permissions []string) SecurityValidationResult
+	ValidateRole(role SecurityRole) SecurityValidationResult
+	ValidateUser(user SecurityUser) SecurityValidationResult
+}
