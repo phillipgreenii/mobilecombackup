@@ -3,15 +3,17 @@
   "packages": [
     "ast-grep@latest",
     "deno@2",
+    "fd@latest",
     "go@1.24",
     "gopls@latest",
     "golangci-lint@latest",
     "gotestsum@latest",
     "jq@latest",
+    "ripgrep@latest",
+    "uv@latest",
     "viu@latest",
     "yq@latest",
-    "claude-code@1.0.72",
-    "uv@latest"
+    "claude-code@1.0.72"
   ],
   "shell": {
     "init_hook": [

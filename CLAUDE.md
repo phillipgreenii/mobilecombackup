@@ -81,6 +81,8 @@ These tools are defined in `devbox.json` and automatically available in the devb
 
 **Code Analysis:**
 - `ast-grep@latest` - Structural code search and refactoring for Go
+- `fd@latest` - Fast file finder (alternative to find)
+- `ripgrep@latest` - Fast text search (alternative to grep)
 
 **Data Processing:**
 - `jq@latest` - JSON query and manipulation tool
@@ -133,13 +135,13 @@ devbox run ccusage           # Monitor Claude Code usage
 ### Tool Availability Rules
 
 **✅ Available in devbox shell:**
-- All 11 tools listed above with specified versions
+- All 13 tools listed above with specified versions
 - All `devbox run` commands
 - Git operations (system git)
 - Standard shell commands (bash, etc.)
 
 **❌ NOT available outside devbox shell:**
-- `ast-grep`, `gopls`, `golangci-lint`, `gotestsum`
+- `ast-grep`, `fd`, `ripgrep`, `gopls`, `golangci-lint`, `gotestsum`
 - Specific Go version (1.24)
 - `jq`, `yq`, `viu`, `deno`, `uv`, `claude-code`
 - Project-specific `devbox run` commands
@@ -188,6 +190,8 @@ which ast-grep  # Should show path in /nix/store/...
 ```bash
 # Check all devbox-provided tools are available
 ast-grep --version
+fd --version
+ripgrep --version
 gopls version
 golangci-lint --version
 gotestsum --version
@@ -257,7 +261,7 @@ When you run `devbox shell`, these commands run automatically:
 - **Declarative**: Environment defined in `devbox.json`
 - **Versioned**: Specific tool versions guaranteed (e.g., Go 1.24)
 - **Fast**: Nix caching makes environment activation quick
-- **Comprehensive**: All 11 tools in one `devbox shell` command
+- **Comprehensive**: All 13 tools in one `devbox shell` command
 
 **Alternative:** If devbox isn't available, see [Development Guide - Manual Setup](docs/DEVELOPMENT.md#manual-setup) for installing tools individually.
 
