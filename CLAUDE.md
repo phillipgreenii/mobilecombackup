@@ -6,6 +6,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Go command-line tool for processing mobile phone backup files (Call and SMS logs in XML format). It coalesces multiple backup files, removes duplicates, extracts attachments, and organizes data by year.
 
+## Quick Commands Reference
+
+### Most Common Development Commands
+```bash
+# Environment
+devbox shell              # Enter development environment
+devbox run ci             # Run full CI pipeline (format + test + lint + build)
+
+# Testing & Quality
+devbox run test           # Run all tests
+devbox run formatter      # Format code
+devbox run linter         # Run linter
+
+# Building
+devbox run build-cli      # Build CLI with version info
+```
+
+### Issue Workflow Commands
+```bash
+# Create issues
+/create-feature "description"    # Create new feature issue
+/create-bug "description"        # Create new bug issue
+
+# Prepare issues
+/review-issue FEAT-XXX           # Review issue specification
+/ready-issue FEAT-XXX            # Move to ready/ when complete
+
+# Implement issues
+/implement-issue FEAT-XXX        # Start implementation (moves to active/)
+
+# Batch operations
+/ready-backlog-issues            # Process all backlog issues
+/plan-and-implement-ready-issues # Implement all ready issues
+```
+
+### File Locations Quick Reference
+- **Source code**: `pkg/` (Go packages) and `cmd/mobilecombackup/` (CLI)
+- **Documentation**: `docs/` (specialized docs) and `README.md` (overview)
+- **Issues**: `issues/{backlog,ready,active,completed}/`
+- **Templates**: `issues/{feature_template,bug_template}.md`
+- **Scripts**: `scripts/` and `issues/create-issue.sh`
+
 ## Development Commands
 
 For verification workflow and quality commands, see [Verification Workflow](docs/VERIFICATION_WORKFLOW.md).
