@@ -145,6 +145,76 @@ The project includes an automated issue creation script that reduces manual over
 4. **Preserve** completed issues as historical records
 5. **Cross-reference** when newer issues supersede older ones
 
+### Documentation Health Dashboard Maintenance
+
+The project maintains a documentation health dashboard in `docs/INDEX.md` that tracks metrics and quality indicators.
+
+**Automated Updates** (No Agent Action Required):
+- Metrics are automatically updated by `scripts/update-doc-health.sh` via pre-commit hooks
+- Automated metrics include: file counts, line counts, broken links, freshness, validation status
+- These update on every commit that touches documentation files
+
+**Agent Responsibilities** (Update When Needed):
+Agents MUST update the qualitative sections in `docs/INDEX.md` dashboard when:
+
+1. **After completing documentation tasks** that:
+   - Add new documentation files (update Coverage by Category)
+   - Close documentation gaps (remove from Known Gaps, update coverage status)
+   - Identify new gaps (add to Known Gaps)
+   - Significantly restructure existing docs (update Recent Significant Changes)
+
+2. **When health status changes**:
+   - Coverage drops below 90% in any category (update status to ⚠️ or 🟠)
+   - All gaps in a category are closed (update status to ✅)
+   - Critical issues arise (update Overall Health assessment)
+
+3. **During periodic reviews**:
+   - Weekly: Review and update Action Items based on automated metrics
+   - When running `/review-and-update-documentation` command
+   - When stale docs are identified (>45 days old)
+
+**What to Update** (Agent-Maintained Sections):
+```markdown
+### Overall Health: 🟢/🟡/🟠/🔴
+<!-- Update if assessment changes -->
+
+### Coverage by Category
+<!-- Update when new docs added or gaps closed -->
+
+### Known Gaps
+<!-- Add when gaps identified, remove when closed -->
+
+### Action Items
+<!-- Update priorities based on automated metrics -->
+
+### Recent Significant Changes
+<!-- Add entry for major documentation work -->
+```
+
+**How to Update**:
+1. Read current dashboard state from `docs/INDEX.md`
+2. Update only the agent-maintained sections (marked with comments)
+3. Do NOT modify auto-generated sections (timestamps, metrics, freshness)
+4. Include brief explanation in commit message
+5. Dashboard will auto-update metrics on commit
+
+**Example Agent Update**:
+```markdown
+# Agent completed Docker troubleshooting documentation
+
+Updates to docs/INDEX.md dashboard:
+1. Coverage by Category: Troubleshooting ✅ Complete (was ⚠️ Good)
+2. Known Gaps: Removed "Docker troubleshooting"
+3. Action Items: Marked "Add Docker troubleshooting" as complete
+4. Recent Changes: Added entry about new Docker guide
+```
+
+**When NOT to Update**:
+- Minor typo fixes that don't affect coverage
+- Formatting/style changes only
+- Updating metadata (Last Updated dates)
+- Changes to automated metrics sections
+
 ## Documentation Architecture & Guidelines
 
 **CRITICAL**: README.md MUST stay under 300 lines to prevent bloat and ensure discoverability.
@@ -218,6 +288,7 @@ When README.md approaches 280 lines:
    - Follow the decision tree above for placement
    - Create new docs/ files only when necessary
    - Update docs/INDEX.md when adding new documentation
+   - Update docs/INDEX.md dashboard after significant documentation changes
 
 4. **Maintain cross-references**
    - Update all related documentation when making changes
@@ -513,6 +584,9 @@ This section documents frequent mistakes agents make and how to avoid them.
 
 **❌ NEVER DO**: Create documentation files without updating docs/INDEX.md
 **✅ DO INSTEAD**: Update INDEX.md when adding new documentation
+
+**❌ NEVER DO**: Complete documentation tasks without updating docs/INDEX.md dashboard
+**✅ DO INSTEAD**: Update dashboard qualitative sections after significant doc changes
 
 ### Quick Fixes
 
