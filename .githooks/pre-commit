@@ -75,6 +75,12 @@ if is_markdown_only_commit; then
     fi
     docs_time=$(($(date +%s) - docs_start))
 
+    # Update documentation health dashboard (silent, fast)
+    if bash scripts/update-doc-health.sh > /dev/null 2>&1; then
+        # Stage the updated dashboard
+        git add docs/INDEX.md 2>/dev/null || true
+    fi
+
     # Performance summary for markdown-only commits
     total_time=$(($(date +%s) - start_time))
     echo ""
@@ -134,6 +140,12 @@ else
         exit 1
     fi
     docs_time=$(($(date +%s) - docs_start))
+
+    # Update documentation health dashboard (silent, fast)
+    if bash scripts/update-doc-health.sh > /dev/null 2>&1; then
+        # Stage the updated dashboard
+        git add docs/INDEX.md 2>/dev/null || true
+    fi
 
     # Performance summary for full checks
     total_time=$(($(date +%s) - start_time))
