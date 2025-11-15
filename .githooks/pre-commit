@@ -54,7 +54,7 @@ if is_markdown_only_commit; then
     format_time=$(($(date +%s) - format_start))
     
     # 2. Run linter (fast, should complete in ~5s)
-    echo "🔍 2/2 Running linter..."
+    echo "🔍 2/3 Running linter..."
     lint_start=$(date +%s)
     if ! devbox run linter; then
         echo "❌ Linting check failed!"
@@ -63,12 +63,23 @@ if is_markdown_only_commit; then
         exit 1
     fi
     lint_time=$(($(date +%s) - lint_start))
-    
+
+    # 3. Run documentation validation (fast, should complete in ~1s)
+    echo "📚 3/3 Validating documentation..."
+    docs_start=$(date +%s)
+    if ! bash scripts/validate-docs.sh; then
+        echo "❌ Documentation validation failed!"
+        echo "   Fix documentation issues before committing"
+        echo "   Use 'git commit --no-verify' to bypass in emergencies"
+        exit 1
+    fi
+    docs_time=$(($(date +%s) - docs_start))
+
     # Performance summary for markdown-only commits
     total_time=$(($(date +%s) - start_time))
     echo ""
     echo "✅ Markdown-only checks passed!"
-    echo "⏱️  Performance: ${total_time}s total (formatter: ${format_time}s, linter: ${lint_time}s)"
+    echo "⏱️  Performance: ${total_time}s total (formatter: ${format_time}s, linter: ${lint_time}s, docs: ${docs_time}s)"
     test_time="0 (skipped)"
 else
     echo "🔧 Detected code changes - running full quality checks..."
@@ -103,7 +114,7 @@ else
     test_time=$(($(date +%s) - test_start))
 
     # 3. Run linter (fast, should complete in ~5s)
-    echo "🔍 3/3 Running linter..."
+    echo "🔍 3/4 Running linter..."
     lint_start=$(date +%s)
     if ! devbox run linter; then
         echo "❌ Linting check failed!"
@@ -113,11 +124,22 @@ else
     fi
     lint_time=$(($(date +%s) - lint_start))
 
+    # 4. Run documentation validation (fast, should complete in ~1s)
+    echo "📚 4/4 Validating documentation..."
+    docs_start=$(date +%s)
+    if ! bash scripts/validate-docs.sh; then
+        echo "❌ Documentation validation failed!"
+        echo "   Fix documentation issues before committing"
+        echo "   Use 'git commit --no-verify' to bypass in emergencies"
+        exit 1
+    fi
+    docs_time=$(($(date +%s) - docs_start))
+
     # Performance summary for full checks
     total_time=$(($(date +%s) - start_time))
     echo ""
     echo "✅ All pre-commit checks passed!"
-    echo "⏱️  Performance: ${total_time}s total (formatter: ${format_time}s, tests: ${test_time}s, linter: ${lint_time}s)"
+    echo "⏱️  Performance: ${total_time}s total (formatter: ${format_time}s, tests: ${test_time}s, linter: ${lint_time}s, docs: ${docs_time}s)"
 
     # Performance warning if hooks are too slow
     if [ $total_time -gt 30 ]; then

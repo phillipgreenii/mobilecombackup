@@ -2,6 +2,14 @@
 
 Complete guide to installing MobileComBackup on all supported platforms.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [CLI Reference](CLI_REFERENCE.md) | [Troubleshooting](TROUBLESHOOTING.md) | [Development Guide](DEVELOPMENT.md)
+**Prerequisites**: Nix with flakes (recommended) or Go 1.24+
+
+---
+
 ## Quick Install (Recommended)
 
 ### Using Nix Flakes

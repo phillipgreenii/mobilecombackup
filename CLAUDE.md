@@ -455,6 +455,75 @@ grep -r "Call" .
 - **Specification**: `issues/specification.md` - Detailed technical specs
 - **Next Steps**: `issues/next_steps.md` - Current priorities
 
+## Common Pitfalls and Anti-Patterns
+
+This section documents frequent mistakes agents make and how to avoid them.
+
+### Git and Staging Mistakes
+
+**❌ NEVER DO**: `git add .` (stages everything including unrelated files)
+**✅ DO INSTEAD**: `git add pkg/specific/file.go pkg/specific/file_test.go` (stage only modified files)
+
+**❌ NEVER DO**: `git commit --no-verify` (skips pre-commit hooks)
+**✅ DO INSTEAD**: Fix the issues causing hook failures, then commit normally
+
+**❌ NEVER DO**: Commit files you didn't modify for this task
+**✅ DO INSTEAD**: Use `git status` before and after to identify only your changes
+
+### Verification Mistakes
+
+**❌ NEVER DO**: Mark task complete before running verification workflow
+**✅ DO INSTEAD**: Run formatter → tests → linter → build-cli, THEN mark complete
+
+**❌ NEVER DO**: Skip verification because "it's just documentation"
+**✅ DO INSTEAD**: Always run full verification - markdown commits skip tests automatically
+
+**❌ NEVER DO**: Mark task complete with failing tests/linter
+**✅ DO INSTEAD**: Fix ALL issues before marking complete
+
+### TodoWrite Mistakes
+
+**❌ NEVER DO**: Have multiple tasks as `in_progress` simultaneously
+**✅ DO INSTEAD**: Only ONE task `in_progress` at a time
+
+**❌ NEVER DO**: Batch multiple task completions at once
+**✅ DO INSTEAD**: Mark each task complete immediately after finishing it
+
+**❌ NEVER DO**: Use TodoWrite for trivial single-step tasks
+**✅ DO INSTEAD**: Reserve TodoWrite for complex multi-step tasks (3+ steps)
+
+### Code Analysis Mistakes
+
+**❌ NEVER DO**: Use `grep` or `ripgrep` for finding Go functions/types
+**✅ DO INSTEAD**: Use Serena MCP tools (`mcp__serena__find_symbol`) for semantic search
+
+**❌ NEVER DO**: Modify code without understanding structure first
+**✅ DO INSTEAD**: Use `mcp__serena__get_symbols_overview` before making changes
+
+**❌ NEVER DO**: Use `xml.NewDecoder` directly for XML parsing
+**✅ DO INSTEAD**: Always use `security.NewSecureXMLDecoder` to prevent XXE vulnerabilities
+
+### Documentation Mistakes
+
+**❌ NEVER DO**: Add detailed content to README.md (line limit: 300)
+**✅ DO INSTEAD**: Add to appropriate docs/ file and link from README
+
+**❌ NEVER DO**: Update completed issues in `issues/completed/`
+**✅ DO INSTEAD**: Cross-reference from new issues if functionality changed
+
+**❌ NEVER DO**: Create documentation files without updating docs/INDEX.md
+**✅ DO INSTEAD**: Update INDEX.md when adding new documentation
+
+### Quick Fixes
+
+When stuck on common issues:
+
+1. **Tests failing**: Run `devbox run formatter` first - formatting fixes many test issues
+2. **Linter errors**: Check if it's an import issue - run `go mod tidy`
+3. **Build failing**: Verify all imports use full paths: `github.com/phillipgreenii/mobilecombackup/pkg/...`
+4. **Git hook blocking**: Check `.githooks/pre-commit` - it auto-detects markdown-only commits
+5. **Can't find package**: Verify it exists in `pkg/` directory with correct name
+
 ## Important Reminders
 
 - ALWAYS format before testing or committing

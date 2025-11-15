@@ -2,6 +2,14 @@
 
 Comprehensive documentation for all MobileComBackup commands, flags, and usage examples.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Installation Guide](INSTALLATION.md) | [Development Guide](DEVELOPMENT.md) | [Troubleshooting](TROUBLESHOOTING.md)
+**Prerequisites**: MobileComBackup installed (see [Installation Guide](INSTALLATION.md))
+
+---
+
 ## Quick Start
 
 Get started in 5 minutes with the most common workflow:

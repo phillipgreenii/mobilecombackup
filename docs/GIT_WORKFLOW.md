@@ -2,6 +2,14 @@
 
 This document defines the standard Git workflow and commit rules that must be followed throughout the project.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Task Completion](TASK_COMPLETION.md) | [Development Guide](DEVELOPMENT.md)
+**Prerequisites**: Git installed, pre-commit hooks configured
+
+---
+
 ## Core Principles
 
 ### ABSOLUTE COMMIT RULE

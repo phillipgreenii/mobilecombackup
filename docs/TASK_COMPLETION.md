@@ -2,6 +2,14 @@
 
 This document defines what it means for a task to be "complete" and the mandatory requirements that must be met before marking any TodoWrite task as finished.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Git Workflow](GIT_WORKFLOW.md) | [Issue Workflow](ISSUE_WORKFLOW.md)
+**Prerequisites**: Understanding of TodoWrite tool, verification commands
+
+---
+
 ## Definition of Complete
 
 A task is **COMPLETE** only when:

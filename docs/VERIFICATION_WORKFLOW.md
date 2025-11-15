@@ -2,6 +2,14 @@
 
 This document defines the standard verification workflow that must be followed before marking any task complete or committing code changes.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Git Workflow](GIT_WORKFLOW.md) | [Task Completion](TASK_COMPLETION.md) | [Development Guide](DEVELOPMENT.md)
+**Prerequisites**: Devbox shell environment, pre-commit hooks installed
+
+---
+
 ## Overview
 
 The verification workflow ensures code quality, consistency, and functionality through a series of mandatory checks. **All verification commands must pass before any task can be marked complete.**
