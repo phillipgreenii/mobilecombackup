@@ -238,6 +238,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 		RepoRoot: repoRoot,
 		Paths:    []string{invalidFile}, // File that doesn't exist
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(validOptions, logging.NewNullLogger())

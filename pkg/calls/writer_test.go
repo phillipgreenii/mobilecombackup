@@ -148,8 +148,8 @@ func TestXMLCallsWriter_WriteCalls(t *testing.T) {
 func TestXMLCallsWriter_WriteCalls_Empty(t *testing.T) {
 	t.Parallel()
 
-	repoPath := filepath.Join(t.TempDir(), "calls")
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
+	repoPath := "/test/calls"
 	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
@@ -192,8 +192,8 @@ func TestXMLCallsWriter_WriteCalls_Empty(t *testing.T) {
 func TestXMLCallsWriter_WriteCalls_ReadableDateEST(t *testing.T) {
 	t.Parallel()
 
-	repoPath := filepath.Join(t.TempDir(), "calls")
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
+	repoPath := "/test/calls"
 	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
