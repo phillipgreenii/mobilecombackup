@@ -574,7 +574,7 @@ func (si *SMSImporter) processContactInfo(address, contactName string) {
 	// Check if this is a multi-address message (contains ~ separator)
 	if strings.Contains(address, "~") {
 		// Use the multi-address parsing method that handles ~ and , separators
-		err := si.contactsManager.AddUnprocessedContacts(address, contactName)
+		err := si.contactsManager.AddUnprocessedContacts(context.Background(), address, contactName)
 		if err != nil {
 			// If multi-address parsing fails, don't use fallback - this prevents double processing
 			// Just skip this contact extraction

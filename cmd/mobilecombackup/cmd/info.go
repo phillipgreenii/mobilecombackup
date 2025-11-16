@@ -222,7 +222,7 @@ func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 
 		// Get date range by streaming calls
 		var earliest, latest time.Time
-		err = reader.StreamCallsForYear(context.Background(), ctx, year, func(call calls.Call) error {
+		err = reader.StreamCallsForYear(ctx, year, func(call calls.Call) error {
 			timestamp := call.Timestamp()
 			if earliest.IsZero() || timestamp.Before(earliest) {
 				earliest = timestamp
@@ -279,7 +279,7 @@ func gatherSMSStatsForYear(reader sms.Reader, year int) (MessageInfo, error) {
 
 	// Count SMS vs MMS and get date range by streaming messages
 	var earliest, latest time.Time
-	err = reader.StreamMessagesForYear(context.Background(), ctx, year, func(msg sms.Message) error {
+	err = reader.StreamMessagesForYear(ctx, year, func(msg sms.Message) error {
 		timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
 
 		updateDateRange(&earliest, &latest, timestamp)

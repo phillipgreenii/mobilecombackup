@@ -23,16 +23,11 @@ import (
 
 // ContactsManager interface defines the contract for contacts management
 type ContactsManager interface {
-	LoadContacts() error
+	LoadContacts(ctx context.Context) error
 	GetContactByNumber(number string) (string, bool)
-	AddUnprocessedContacts(addresses, contactNames string) error
+	AddUnprocessedContacts(ctx context.Context, addresses, contactNames string) error
 	AddUnprocessedContact(phone, name string)
-	SaveContacts(path string) error
-
-	// Context-aware methods
-	LoadContactsContext(ctx context.Context) error
-	AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error
-	SaveContactsContext(ctx context.Context, path string) error
+	SaveContacts(ctx context.Context, path string) error
 }
 
 // AttachmentStorage interface defines the contract for attachment storage
@@ -70,7 +65,7 @@ func NewMockContactsManager() *MockContactsManager {
 	}
 }
 
-func (m *MockContactsManager) LoadContacts() error {
+func (m *MockContactsManager) LoadContacts(_ context.Context) error {
 	return m.loadError
 }
 
@@ -79,7 +74,7 @@ func (m *MockContactsManager) GetContactByNumber(number string) (string, bool) {
 	return name, exists
 }
 
-func (m *MockContactsManager) AddUnprocessedContacts(addresses, contactNames string) error {
+func (m *MockContactsManager) AddUnprocessedContacts(_ context.Context, addresses, contactNames string) error {
 	// Simple implementation for testing
 	m.unprocessedEntries[addresses] = []string{contactNames}
 	return nil
@@ -92,20 +87,8 @@ func (m *MockContactsManager) AddUnprocessedContact(phone, name string) {
 	m.unprocessedEntries[phone] = append(m.unprocessedEntries[phone], name)
 }
 
-func (m *MockContactsManager) SaveContacts(path string) error {
+func (m *MockContactsManager) SaveContacts(_ context.Context, path string) error {
 	return m.saveError
-}
-
-func (m *MockContactsManager) LoadContactsContext(ctx context.Context) error {
-	return m.LoadContacts(context.Background())
-}
-
-func (m *MockContactsManager) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
-	return m.AddUnprocessedContacts(addresses, contactNames)
-}
-
-func (m *MockContactsManager) SaveContactsContext(ctx context.Context, path string) error {
-	return m.SaveContacts(path)
 }
 
 // SetContact allows tests to set up known contacts
@@ -510,7 +493,7 @@ func (imp *Importer) writeRepository() error {
 
 	// Save contacts.yaml with any extracted contact names
 	contactsPath := filepath.Join(imp.options.RepoRoot, "contacts.yaml")
-	if err := imp.contactsManager.SaveContacts(contactsPath); err != nil {
+	if err := imp.contactsManager.SaveContacts(context.Background(), contactsPath); err != nil {
 		return fmt.Errorf("failed to save contacts: %w", err)
 	}
 

@@ -22,7 +22,7 @@ func ExampleXMLSMSReader() {
 
 	// Read all messages from a specific year
 	if len(years) > 0 {
-		messages, err := reader.ReadMessages(years[0])
+		messages, err := reader.ReadMessages(context.Background(), years[0])
 		if err != nil {
 			log.Fatal(err)
 		}

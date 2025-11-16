@@ -173,7 +173,7 @@ func mergeAndSaveContacts(resolvedRepoRoot string, contactsManager *contacts.Man
 
 	// Save updated contacts
 	contactsPath := filepath.Join(resolvedRepoRoot, "contacts.yaml")
-	if err := contactsManager.SaveContacts(contactsPath); err != nil {
+	if err := contactsManager.SaveContacts(context.Background(), contactsPath); err != nil {
 		return fmt.Errorf("failed to save updated contacts: %w", err)
 	}
 

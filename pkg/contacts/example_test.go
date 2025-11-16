@@ -210,14 +210,14 @@ func ExampleManager_AddUnprocessedContacts() {
 	manager := contacts.NewContactsManager(tempDir)
 
 	// Single address and contact name
-	err := manager.AddUnprocessedContacts("5551234567", "John Doe")
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567", "John Doe")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
 	// Multiple addresses separated by ~ with corresponding names separated by ,
-	err = manager.AddUnprocessedContacts("5559876543~5551111111", "Jane Smith,Bob Wilson")
+	err = manager.AddUnprocessedContacts(context.Background(), "5559876543~5551111111", "Jane Smith,Bob Wilson")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -241,7 +241,7 @@ func ExampleManager_AddUnprocessedContacts_countMismatch() {
 	manager := contacts.NewContactsManager("")
 
 	// Address count doesn't match contact name count - this will return an error
-	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe")
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567~5559876543", "John Doe")
 	if err != nil {
 		fmt.Printf("Validation error: %v\n", err)
 	}
@@ -311,7 +311,7 @@ func Example_knownContactFiltering() {
 	_ = manager.LoadContacts(context.Background())
 
 	// Try to add both known and unknown contacts
-	_ = manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
+	_ = manager.AddUnprocessedContacts(context.Background(), "5551234567~5559876543", "John Doe,Jane Smith")
 
 	entries := manager.GetUnprocessedEntries()
 	fmt.Printf("Unprocessed entries: %d\n", len(entries))

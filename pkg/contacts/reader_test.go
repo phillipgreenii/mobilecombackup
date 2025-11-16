@@ -628,7 +628,7 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	manager.AddUnprocessedContact("5551234567", "Johnny")             // Same number, different name
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -732,7 +732,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	manager.AddUnprocessedContact("5559876543", "New Contact")
 
 	// Save
-	err = manager.SaveContacts(contactsPath)
+	err = manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -1088,7 +1088,7 @@ func TestContactsManager_SaveContacts_AtomicOperation(t *testing.T) {
 	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -1128,12 +1128,12 @@ func TestContactsManager_SaveContacts_ConsistentOrdering(t *testing.T) {
 	manager2.AddUnprocessedContact("5551111111", "Alice")
 
 	// Save both files
-	err1 := manager1.SaveContacts(contactsPath1)
+	err1 := manager1.SaveContacts(context.Background(), contactsPath1)
 	if err1 != nil {
 		t.Fatalf("SaveContacts failed for manager1: %v", err1)
 	}
 
-	err2 := manager2.SaveContacts(contactsPath2)
+	err2 := manager2.SaveContacts(context.Background(), contactsPath2)
 	if err2 != nil {
 		t.Fatalf("SaveContacts failed for manager2: %v", err2)
 	}
@@ -1197,7 +1197,7 @@ func TestContactsManager_SaveContacts_OrderingMatchesGetter(t *testing.T) {
 	expectedEntries := manager.GetUnprocessedEntries()
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}

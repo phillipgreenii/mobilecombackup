@@ -22,7 +22,7 @@ func ExampleXMLCallsReader() {
 
 	// Read all calls from a specific year
 	if len(years) > 0 {
-		callsFromYear, err := reader.ReadCalls(years[0])
+		callsFromYear, err := reader.ReadCalls(context.Background(), years[0])
 		if err != nil {
 			log.Fatal(err)
 		}
