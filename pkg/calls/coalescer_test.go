@@ -260,3 +260,58 @@ func TestCallEntry_HashConsistency(t *testing.T) {
 		}
 	}
 }
+
+func TestNewCallCoalescer(t *testing.T) {
+	t.Parallel()
+
+	coalescer := NewCallCoalescer()
+	if coalescer == nil {
+		t.Fatal("NewCallCoalescer() returned nil")
+	}
+
+	// Test that we can add entries
+	call := &Call{
+		Number:   "1234567890",
+		Duration: 120,
+		Date:     1234567890000,
+		Type:     Incoming,
+	}
+	entry := CallEntry{Call: call}
+	coalescer.Add(entry)
+
+	// Test that we can get results
+	results := coalescer.GetAll()
+	if len(results) != 1 {
+		t.Errorf("GetAll() length = %d, expected 1", len(results))
+	}
+
+	// Test deduplication
+	call2 := &Call{
+		Number:   "1234567890",
+		Duration: 120,
+		Date:     1234567890000,
+		Type:     Incoming,
+	}
+	entry2 := CallEntry{Call: call2}
+	coalescer.Add(entry2)
+
+	results = coalescer.GetAll()
+	if len(results) != 1 {
+		t.Errorf("Coalescer should deduplicate, got %d results, expected 1", len(results))
+	}
+
+	// Test different calls are both kept
+	call3 := &Call{
+		Number:   "0987654321",
+		Duration: 60,
+		Date:     1234567891000,
+		Type:     Outgoing,
+	}
+	entry3 := CallEntry{Call: call3}
+	coalescer.Add(entry3)
+
+	results = coalescer.GetAll()
+	if len(results) != 2 {
+		t.Errorf("Coalescer should keep different calls, got %d results, expected 2", len(results))
+	}
+}

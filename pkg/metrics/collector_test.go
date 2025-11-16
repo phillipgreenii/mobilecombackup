@@ -218,3 +218,19 @@ func TestDefaultConfig(t *testing.T) {
 		t.Error("Expected detailed metrics to be disabled by default")
 	}
 }
+
+func TestPrometheusMetrics_GetPrometheusRegistry(t *testing.T) {
+	config := &Config{
+		Enabled:   true,
+		Namespace: "test",
+		Subsystem: "unit",
+	}
+
+	metrics := NewPrometheusMetrics(config)
+	registry := metrics.GetPrometheusRegistry()
+
+	if registry == nil {
+		t.Error("GetPrometheusRegistry() returned nil for enabled metrics")
+	}
+
+}
