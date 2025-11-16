@@ -247,7 +247,7 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 
 // displayCallsStatistics displays call statistics in the summary
 func displayCallsStatistics(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != "calls" {
+	if importFilter != "" && importFilter != callsDir {
 		return
 	}
 
@@ -291,7 +291,7 @@ func displayYearStats(yearStats map[int]*importer.YearStat) {
 
 // displayAttachmentStatistics displays attachment statistics in the summary
 func displayAttachmentStatistics(summary *importer.ImportSummary) {
-	if (importFilter == "" || importFilter == "sms") && summary.Attachments.Total.Total > 0 {
+	if (importFilter == "" || importFilter == smsDir) && summary.Attachments.Total.Total > 0 {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
 			summary.Attachments.Total.Total, summary.Attachments.Total.New,
@@ -314,7 +314,7 @@ func displayRejectionStatistics(summary *importer.ImportSummary) {
 
 // displayCallsRejections displays call-specific rejection statistics
 func displayCallsRejections(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != "calls" {
+	if importFilter != "" && importFilter != callsDir {
 		return
 	}
 
@@ -353,7 +353,7 @@ func displayRejectionBreakdown(rejections map[string]*importer.RejectionStats) {
 
 // displaySMSRejections displays SMS-specific rejection statistics
 func displaySMSRejections() {
-	if importFilter == "" || importFilter == "sms" {
+	if importFilter == "" || importFilter == smsDir {
 		// TODO: Track SMS-specific rejections separately
 		fmt.Printf("  SMS: 0\n")
 	}

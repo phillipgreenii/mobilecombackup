@@ -286,7 +286,7 @@ func NewImportContext(options *importer.ImportOptions, outputJSON, dryRun, noErr
 // HandleImportError handles errors from the import process.
 func (ctx *ImportContext) HandleImportError(err error) {
 	if !ctx.Quiet {
-		fmt.Fprintf(ctx.Output, "Import failed: %v\n", err)
+		_, _ = fmt.Fprintf(ctx.Output, "Import failed: %v\n", err)
 	}
 	ctx.ExitHandler.Exit(2)
 }
