@@ -3,25 +3,28 @@ package calls
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // XMLCallsWriter writes calls to XML files in the repository
 type XMLCallsWriter struct {
 	repoPath string
+	fs       afero.Fs
 }
 
 // NewXMLCallsWriter creates a new XML calls writer
-func NewXMLCallsWriter(repoPath string) (*XMLCallsWriter, error) {
+func NewXMLCallsWriter(repoPath string, fs afero.Fs) (*XMLCallsWriter, error) {
 	// Ensure the calls directory exists
-	if err := os.MkdirAll(repoPath, 0750); err != nil {
+	if err := fs.MkdirAll(repoPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create calls directory: %w", err)
 	}
 
 	return &XMLCallsWriter{
 		repoPath: repoPath,
+		fs:       fs,
 	}, nil
 }
 
@@ -36,7 +39,7 @@ func (w *XMLCallsWriter) WriteCalls(filename string, calls []*Call) error {
 
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
-	file, err := os.Create(filepath) // #nosec G304
+	file, err := w.fs.Create(filepath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}

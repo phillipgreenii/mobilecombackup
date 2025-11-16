@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -64,7 +66,7 @@ func calculateExpectedHash(base64Data string) string {
 }
 
 func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -166,7 +168,7 @@ func TestAttachmentExtractor_ShouldExtractContentType(t *testing.T) {
 
 // TestAttachmentExtractor_ContentTypeEdgeCases tests comprehensive edge cases for content type handling
 func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -239,7 +241,7 @@ func TestAttachmentExtractor_ContentTypeEdgeCases(t *testing.T) {
 // TestAttachmentExtractor_LoggingBehavior tests that logging is comprehensive and correct
 func TestAttachmentExtractor_LoggingBehavior(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Test that each decision path logs appropriately
@@ -288,7 +290,7 @@ func TestAttachmentExtractor_LoggingBehavior(t *testing.T) {
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create test PNG data
@@ -340,7 +342,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Image(t *testing.T) {
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_Duplicate(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create test data
@@ -388,7 +390,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_Duplicate(t *testing.T) {
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_SkipConditions(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -466,7 +468,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_SkipConditions(t *testing
 
 func TestAttachmentExtractor_ExtractAttachmentFromPart_InvalidBase64(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create invalid base64 data that's large enough to pass the size filter
@@ -488,7 +490,7 @@ func TestAttachmentExtractor_ExtractAttachmentFromPart_InvalidBase64(t *testing.
 
 func TestAttachmentExtractor_ExtractAttachmentsFromMMS(t *testing.T) {
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create MMS with multiple parts

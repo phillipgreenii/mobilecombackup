@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -82,7 +83,7 @@ func TestAttachmentManager_Integration_WithTestData(t *testing.T) {
 		t.Skip("No attachment files found in test data")
 	}
 
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Test basic functionality with copied data
 	attachments, err := manager.ListAttachments()
@@ -134,7 +135,7 @@ func TestAttachmentManager_Integration_WithTestData(t *testing.T) {
 
 func TestAttachmentManager_Integration_EmptyRepository(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Test with empty repository (no attachments directory)
 	attachments, err := manager.ListAttachments()
@@ -168,7 +169,7 @@ func TestAttachmentManager_Integration_LargeRepository(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create a repository with many attachments for performance testing
 	numAttachments := 100
@@ -250,7 +251,7 @@ func TestAttachmentManager_Integration_CrossReference(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test attachments
 	testContents := []string{
@@ -323,7 +324,7 @@ func TestAttachmentManager_Integration_CorruptedFiles(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create a corrupted attachment (content doesn't match hash)
 	content := []byte("correct content")
@@ -367,7 +368,7 @@ func TestAttachmentManager_Integration_ValidationErrors(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create various validation problems
 	attachmentsDir := filepath.Join(tempDir, "attachments")

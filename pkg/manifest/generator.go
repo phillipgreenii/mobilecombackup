@@ -70,18 +70,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
 // Generator handles generation and management of file manifests
 type Generator struct {
 	repositoryRoot string
+	fs             afero.Fs
 }
 
 // NewManifestGenerator creates a new manifest generator
-func NewManifestGenerator(repositoryRoot string) *Generator {
+func NewManifestGenerator(repositoryRoot string, fs afero.Fs) *Generator {
 	return &Generator{
 		repositoryRoot: repositoryRoot,
+		fs:             fs,
 	}
 }
 
@@ -96,7 +99,7 @@ func (g *Generator) GenerateFileManifest() (*FileManifest, error) {
 		Files:     []FileEntry{},
 	}
 
-	err := filepath.Walk(g.repositoryRoot, func(path string, info os.FileInfo, err error) error {
+	err := afero.Walk(g.fs, g.repositoryRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -119,7 +122,7 @@ func (g *Generator) GenerateFileManifest() (*FileManifest, error) {
 		}
 
 		// Calculate SHA-256 hash
-		hash, err := calculateFileHash(path)
+		hash, err := g.calculateFileHash(path)
 		if err != nil {
 			return fmt.Errorf("failed to calculate hash for %s: %w", relPath, err)
 		}
@@ -167,7 +170,7 @@ func (g *Generator) WriteChecksumOnly() error {
 	checksumPath := filepath.Join(g.repositoryRoot, "files.yaml.sha256")
 
 	// Check if checksum file already exists
-	if _, err := os.Stat(checksumPath); err == nil {
+	if _, err := g.fs.Stat(checksumPath); err == nil {
 		// File exists, don't overwrite
 		return nil
 	}
@@ -213,13 +216,13 @@ func (g *Generator) writeManifest(manifest *FileManifest) error {
 
 	// Write to file atomically
 	tempPath := manifestPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := afero.WriteFile(g.fs, tempPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write temporary files manifest: %w", err)
 	}
 
 	// Atomic rename
-	if err := os.Rename(tempPath, manifestPath); err != nil {
-		_ = os.Remove(tempPath) // Clean up temp file, ignore error
+	if err := g.fs.Rename(tempPath, manifestPath); err != nil {
+		_ = g.fs.Remove(tempPath) // Clean up temp file, ignore error
 		return fmt.Errorf("failed to rename files manifest: %w", err)
 	}
 
@@ -232,7 +235,7 @@ func (g *Generator) writeManifestChecksum() error {
 	checksumPath := filepath.Join(g.repositoryRoot, "files.yaml.sha256")
 
 	// Calculate hash of files.yaml
-	hash, err := calculateFileHash(manifestPath)
+	hash, err := g.calculateFileHash(manifestPath)
 	if err != nil {
 		return fmt.Errorf("failed to calculate files.yaml hash: %w", err)
 	}
@@ -242,13 +245,13 @@ func (g *Generator) writeManifestChecksum() error {
 
 	// Write to file atomically
 	tempPath := checksumPath + ".tmp"
-	if err := os.WriteFile(tempPath, []byte(checksumContent), 0600); err != nil {
+	if err := afero.WriteFile(g.fs, tempPath, []byte(checksumContent), 0600); err != nil {
 		return fmt.Errorf("failed to write temporary checksum file: %w", err)
 	}
 
 	// Atomic rename
-	if err := os.Rename(tempPath, checksumPath); err != nil {
-		_ = os.Remove(tempPath) // Clean up temp file, ignore error
+	if err := g.fs.Rename(tempPath, checksumPath); err != nil {
+		_ = g.fs.Remove(tempPath) // Clean up temp file, ignore error
 		return fmt.Errorf("failed to rename checksum file: %w", err)
 	}
 
@@ -256,8 +259,8 @@ func (g *Generator) writeManifestChecksum() error {
 }
 
 // calculateFileHash calculates SHA-256 hash of a file
-func calculateFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath) // #nosec G304
+func (g *Generator) calculateFileHash(filePath string) (string, error) {
+	file, err := g.fs.Open(filePath) // #nosec G304
 	if err != nil {
 		return "", err
 	}

@@ -9,6 +9,8 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 	"gopkg.in/yaml.v3"
+
+	"github.com/spf13/afero"
 )
 
 func TestReprocessContactsManifestUpdate(t *testing.T) {
@@ -42,7 +44,7 @@ func TestReprocessContactsManifestUpdate(t *testing.T) {
 	}
 
 	// Generate initial manifest
-	manifestGenerator := manifest.NewManifestGenerator(tempDir)
+	manifestGenerator := manifest.NewManifestGenerator(tempDir, afero.NewOsFs())
 	initialManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("Failed to generate initial manifest: %v", err)

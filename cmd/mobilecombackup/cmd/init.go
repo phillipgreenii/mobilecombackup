@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -330,7 +331,7 @@ func createSummaryFile(repoRoot string, dryRun bool, result *InitResult, created
 func createManifestFiles(repoRoot string, dryRun bool, result *InitResult, createdPaths *[]string, rollback func()) error {
 	// Create files.yaml and files.yaml.sha256 using manifest generator
 	if !dryRun {
-		manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+		manifestGenerator := manifest.NewManifestGenerator(repoRoot, afero.NewOsFs())
 		fileManifest, err := manifestGenerator.GenerateFileManifest()
 		if err != nil {
 			rollback()

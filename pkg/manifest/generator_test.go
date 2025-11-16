@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"github.com/spf13/afero"
 )
 
 func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
@@ -16,7 +17,7 @@ func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
 	// Create test structure
 	createTestRepository(t, tempDir)
 
-	generator := NewManifestGenerator(tempDir)
+	generator := NewManifestGenerator(tempDir, afero.NewOsFs())
 	manifest, err := generator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("GenerateFileManifest failed: %v", err)
@@ -78,7 +79,7 @@ func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generator := NewManifestGenerator(tempDir)
+	generator := NewManifestGenerator(tempDir, afero.NewOsFs())
 	manifest, err := generator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("GenerateFileManifest failed: %v", err)
@@ -113,7 +114,7 @@ func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 	tempDir := t.TempDir()
 	createTestRepository(t, tempDir)
 
-	generator := NewManifestGenerator(tempDir)
+	generator := NewManifestGenerator(tempDir, afero.NewOsFs())
 	manifest, err := generator.GenerateFileManifest()
 	if err != nil {
 		t.Fatal(err)
@@ -137,7 +138,8 @@ func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 	}
 
 	// Verify checksum is correct
-	expectedHash, err := calculateFileHash(manifestPath)
+	hashGenerator := NewManifestGenerator(tempDir, afero.NewOsFs())
+	expectedHash, err := hashGenerator.calculateFileHash(manifestPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +174,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 	tempDir := t.TempDir()
 	createTestRepository(t, tempDir)
 
-	generator := NewManifestGenerator(tempDir)
+	generator := NewManifestGenerator(tempDir, afero.NewOsFs())
 	manifest, err := generator.GenerateFileManifest()
 	if err != nil {
 		t.Fatal(err)
@@ -227,7 +229,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 }
 
 func TestManifestGenerator_ShouldSkipFile(t *testing.T) {
-	generator := NewManifestGenerator("/test")
+	generator := NewManifestGenerator("/test", afero.NewOsFs())
 
 	testCases := []struct {
 		file     string
@@ -264,7 +266,8 @@ func TestCalculateFileHash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hash, err := calculateFileHash(testFile)
+	generator := NewManifestGenerator(tempDir, afero.NewOsFs())
+	hash, err := generator.calculateFileHash(testFile)
 	if err != nil {
 		t.Fatalf("calculateFileHash failed: %v", err)
 	}

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // Benchmark the optimized streaming storage vs traditional approach
@@ -18,7 +20,7 @@ func BenchmarkAttachmentStorage_StoreFromReader(b *testing.B) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test different file sizes
 	sizes := []struct {
@@ -90,7 +92,7 @@ func BenchmarkAttachmentStorage_Store(b *testing.B) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test different file sizes
 	sizes := []struct {
@@ -164,7 +166,7 @@ func BenchmarkAttachmentStorage_MemoryUsage(b *testing.B) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Large file for memory usage testing
 	dataSize := 10 * 1024 * 1024 // 10MB
@@ -222,7 +224,7 @@ func BenchmarkAttachmentStorage_Concurrent(b *testing.B) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Medium-sized data for concurrent testing
 	dataSize := 100 * 1024 // 100KB
@@ -292,7 +294,7 @@ func BenchmarkAttachmentStorage_HashVerification(b *testing.B) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	dataSize := 1024 * 1024 // 1MB
 	data := make([]byte, dataSize)

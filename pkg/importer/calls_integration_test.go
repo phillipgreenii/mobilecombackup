@@ -7,6 +7,8 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+
+	"github.com/spf13/afero"
 )
 
 func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
@@ -35,6 +37,7 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: repoRoot,
 		DryRun:   false,
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create contacts manager for test
@@ -131,6 +134,7 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: repoRoot,
 		DryRun:   false,
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create contacts manager for test
@@ -206,6 +210,7 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: repoRoot,
 		DryRun:   false,
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create contacts manager for test
@@ -309,6 +314,7 @@ func TestCallsImporter_OrderPreservation(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: repoRoot,
 		DryRun:   false,
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create contacts manager for test

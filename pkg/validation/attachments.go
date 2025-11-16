@@ -8,6 +8,7 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/spf13/afero"
 )
 
 // AttachmentsValidator validates attachments directory and files using AttachmentReader
@@ -30,6 +31,7 @@ type AttachmentsValidatorImpl struct {
 	repositoryRoot   string
 	attachmentReader attachments.AttachmentReader
 	smsReader        sms.Reader
+	fs               afero.Fs
 }
 
 // NewAttachmentsValidator creates a new attachments validator
@@ -37,11 +39,13 @@ func NewAttachmentsValidator(
 	repositoryRoot string,
 	attachmentReader attachments.AttachmentReader,
 	smsReader sms.Reader,
+	fs afero.Fs,
 ) AttachmentsValidator {
 	return &AttachmentsValidatorImpl{
 		repositoryRoot:   repositoryRoot,
 		attachmentReader: attachmentReader,
 		smsReader:        smsReader,
+		fs:               fs,
 	}
 }
 
@@ -410,8 +414,8 @@ func (v *AttachmentsValidatorImpl) validateNewFormatStructure(attachmentsList []
 	var violations []Violation
 
 	// Get attachment manager to check formats
-	attachmentManager := attachments.NewAttachmentManager(v.repositoryRoot)
-	storage := attachments.NewDirectoryAttachmentStorage(v.repositoryRoot)
+	attachmentManager := attachments.NewAttachmentManager(v.repositoryRoot, v.fs)
+	storage := attachments.NewDirectoryAttachmentStorage(v.repositoryRoot, v.fs)
 
 	for _, attachment := range attachmentsList {
 		// Check if this is a new format attachment

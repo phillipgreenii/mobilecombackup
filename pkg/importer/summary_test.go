@@ -8,6 +8,8 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"gopkg.in/yaml.v3"
+
+	"github.com/spf13/afero"
 )
 
 func TestGenerateSummaryFile(t *testing.T) {
@@ -42,7 +44,7 @@ func TestGenerateSummaryFile(t *testing.T) {
 	}
 
 	// Write call files
-	writer, err := calls.NewXMLCallsWriter(callsDir)
+	writer, err := calls.NewXMLCallsWriter(callsDir, afero.NewOsFs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +63,7 @@ func TestGenerateSummaryFile(t *testing.T) {
 	}
 
 	// Write SMS files
-	smsWriter, err := sms.NewXMLSMSWriter(smsDir)
+	smsWriter, err := sms.NewXMLSMSWriter(smsDir, afero.NewOsFs())
 	if err != nil {
 		t.Fatal(err)
 	}

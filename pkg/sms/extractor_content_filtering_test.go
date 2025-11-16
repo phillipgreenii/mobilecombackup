@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -12,7 +14,7 @@ const (
 )
 
 func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create SMIL content that would normally be large enough to extract
@@ -63,7 +65,7 @@ func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
 }
 
 func TestContentTypeFiltering_TextPlainNotExtracted(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create large text content
@@ -95,7 +97,7 @@ func TestContentTypeFiltering_TextPlainNotExtracted(t *testing.T) {
 }
 
 func TestContentTypeFiltering_VCardNotExtracted(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create vCard content
@@ -133,7 +135,7 @@ END:VCARD` + strings.Repeat("\nEXTRA:padding", 50)
 }
 
 func TestContentTypeFiltering_WAPContainerNotExtracted(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create WAP container content
@@ -159,7 +161,7 @@ func TestContentTypeFiltering_WAPContainerNotExtracted(t *testing.T) {
 }
 
 func TestContentTypeFiltering_ImageExtracted(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create image content (reuse helper from main test file)
@@ -186,7 +188,7 @@ func TestContentTypeFiltering_ImageExtracted(t *testing.T) {
 }
 
 func TestContentTypeFiltering_ContentTypeWithParameters(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -237,7 +239,7 @@ func TestContentTypeFiltering_ContentTypeWithParameters(t *testing.T) {
 }
 
 func TestContentTypeFiltering_MixedMMSParts(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create MMS with mix of extractable and non-extractable parts

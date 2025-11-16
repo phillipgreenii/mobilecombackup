@@ -14,6 +14,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+	"github.com/spf13/afero"
 )
 
 // YearTracker tracks per-year statistics during import
@@ -552,7 +553,7 @@ func validateRepository(repoRoot string) error {
 	// Create readers required for validation
 	callsReader := calls.NewXMLCallsReader(repoRoot)
 	smsReader := sms.NewXMLSMSReader(repoRoot)
-	attachmentReader := attachments.NewAttachmentManager(repoRoot)
+	attachmentReader := attachments.NewAttachmentManager(repoRoot, afero.NewOsFs())
 	contactsReader := contacts.NewContactsManager(repoRoot)
 
 	validator := validation.NewRepositoryValidator(
@@ -561,6 +562,7 @@ func validateRepository(repoRoot string) error {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	report, err := validator.ValidateRepositoryContext(context.Background())

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -17,7 +19,7 @@ const (
 // Example demonstrates basic usage of the AttachmentManager
 func ExampleAttachmentManager() {
 	// Create a manager for a repository
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	// Get attachment by hash
 	hash := testAttachmentHash
@@ -35,7 +37,7 @@ func ExampleAttachmentManager() {
 
 // Example demonstrates reading attachment content
 func ExampleAttachmentManager_ReadAttachment() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hash := testAttachmentHash
 	content, err := manager.ReadAttachment(hash)
@@ -49,7 +51,7 @@ func ExampleAttachmentManager_ReadAttachment() {
 
 // Example demonstrates verifying attachment integrity
 func ExampleAttachmentManager_VerifyAttachment() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hash := testAttachmentHash
 	verified, err := manager.VerifyAttachment(hash)
@@ -66,7 +68,7 @@ func ExampleAttachmentManager_VerifyAttachment() {
 
 // Example demonstrates listing all attachments
 func ExampleAttachmentManager_ListAttachments() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	attachments, err := manager.ListAttachments()
 	if err != nil {
@@ -81,7 +83,7 @@ func ExampleAttachmentManager_ListAttachments() {
 
 // Example demonstrates streaming attachments for memory efficiency
 func ExampleAttachmentManager_StreamAttachments() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	var totalSize int64
 	var count int
@@ -104,7 +106,7 @@ func ExampleAttachmentManager_StreamAttachments() {
 
 // Example demonstrates finding orphaned attachments
 func ExampleAttachmentManager_FindOrphanedAttachments() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	// Get referenced hashes from SMS reader (example)
 	referencedHashes := map[string]bool{
@@ -126,7 +128,7 @@ func ExampleAttachmentManager_FindOrphanedAttachments() {
 
 // Example demonstrates validating attachment directory structure
 func ExampleAttachmentManager_ValidateAttachmentStructure() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	err := manager.ValidateAttachmentStructure()
 	if err != nil {
@@ -139,7 +141,7 @@ func ExampleAttachmentManager_ValidateAttachmentStructure() {
 
 // Example demonstrates getting attachment statistics
 func ExampleAttachmentManager_GetAttachmentStats() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	// Get referenced hashes from SMS reader
 	referencedHashes := map[string]bool{
@@ -160,7 +162,7 @@ func ExampleAttachmentManager_GetAttachmentStats() {
 
 // Example demonstrates checking if attachment exists
 func ExampleAttachmentManager_AttachmentExists() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hashes := []string{
 		testAttachmentHash,
@@ -185,7 +187,7 @@ func ExampleAttachmentManager_AttachmentExists() {
 
 // Example demonstrates getting attachment path
 func ExampleAttachmentManager_GetAttachmentPath() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hash := testAttachmentHash
 	path := manager.GetAttachmentPath(hash)
@@ -201,7 +203,7 @@ func ExampleAttachmentManager_GetAttachmentPath() {
 
 // Example demonstrates error handling patterns
 func ExampleAttachmentManager_errorHandling() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	// Example 1: Invalid hash format
 	_, err := manager.GetAttachment("invalid-hash")
@@ -229,7 +231,7 @@ func ExampleAttachmentManager_errorHandling() {
 
 // Example demonstrates working with attachment metadata
 func ExampleAttachment() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hash := testAttachmentHash
 	attachment, err := manager.GetAttachment(hash)
@@ -260,7 +262,7 @@ func ExampleAttachment() {
 // Example demonstrates using the new DirectoryAttachmentStorage
 func ExampleDirectoryAttachmentStorage() {
 	// Create storage instance (example paths only - not executed)
-	// storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+	// storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository", afero.NewOsFs())
 
 	// Example of how to store a new attachment
 	hash := emptyFileHash
@@ -297,7 +299,7 @@ func ExampleDirectoryAttachmentStorage() {
 
 // Example demonstrates retrieving attachment metadata
 func ExampleDirectoryAttachmentStorage_GetMetadata() {
-	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+	storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository", afero.NewOsFs())
 
 	hash := emptyFileHash
 	metadata, err := storage.GetMetadata(hash)
@@ -373,7 +375,7 @@ func ExampleGenerateFilename() {
 // Example demonstrates migration from legacy format
 func ExampleMigrationManager() {
 	// Create migration manager
-	migrationManager := attachments.NewMigrationManager("/path/to/repository")
+	migrationManager := attachments.NewMigrationManager("/path/to/repository", afero.NewOsFs())
 
 	// Check current migration status
 	status, err := migrationManager.GetMigrationStatus()
@@ -404,7 +406,7 @@ func ExampleMigrationManager() {
 
 // Example demonstrates dry run migration
 func ExampleMigrationManager_dryRun() {
-	migrationManager := attachments.NewMigrationManager("/path/to/repository")
+	migrationManager := attachments.NewMigrationManager("/path/to/repository", afero.NewOsFs())
 
 	// Enable dry run mode
 	migrationManager.SetDryRun(true)
@@ -424,7 +426,7 @@ func ExampleMigrationManager_dryRun() {
 
 // Example demonstrates attachment format detection
 func ExampleAttachmentManager_formatDetection() {
-	manager := attachments.NewAttachmentManager("/path/to/repository")
+	manager := attachments.NewAttachmentManager("/path/to/repository", afero.NewOsFs())
 
 	hash := emptyFileHash
 
@@ -434,7 +436,7 @@ func ExampleAttachmentManager_formatDetection() {
 		fmt.Printf("Attachment %s uses new directory format\n", hash[:8])
 
 		// Access metadata
-		storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository")
+		storage := attachments.NewDirectoryAttachmentStorage("/path/to/repository", afero.NewOsFs())
 		metadata, err := storage.GetMetadata(hash)
 		if err == nil {
 			fmt.Printf("  Original name: %s\n", metadata.OriginalName)

@@ -15,6 +15,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -207,7 +208,7 @@ func createValidationComponents(absPath string) validation.RepositoryValidator {
 	// Create readers
 	callsReader := calls.NewXMLCallsReader(absPath)
 	smsReader := sms.NewXMLSMSReader(absPath)
-	attachmentReader := attachments.NewAttachmentManager(absPath)
+	attachmentReader := attachments.NewAttachmentManager(absPath, afero.NewOsFs())
 	contactsReader := contacts.NewContactsManager(absPath)
 
 	// Create validator
@@ -217,6 +218,7 @@ func createValidationComponents(absPath string) validation.RepositoryValidator {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 }
 
@@ -285,7 +287,7 @@ func processAutofix(
 // processOrphanRemoval handles orphan attachment removal
 func processOrphanRemoval(result *ValidationResult, absPath string, reporter ProgressReporter) error {
 	smsReader := sms.NewXMLSMSReader(absPath)
-	attachmentReader := attachments.NewAttachmentManager(absPath)
+	attachmentReader := attachments.NewAttachmentManager(absPath, afero.NewOsFs())
 
 	orphanResult, err := removeOrphanAttachmentsWithProgress(smsReader, attachmentReader, reporter)
 	if err != nil {
@@ -378,7 +380,7 @@ func runAutofixWithProgress(
 	}
 
 	// Create autofixer
-	autofixer := autofix.NewAutofixer(repoPath, autofixReporter)
+	autofixer := autofix.NewAutofixer(repoPath, autofixReporter, afero.NewOsFs())
 
 	// Set up autofix options
 	options := autofix.Options{

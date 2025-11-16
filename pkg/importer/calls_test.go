@@ -12,6 +12,8 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+
+	"github.com/spf13/afero"
 )
 
 func TestCallValidator_Validate(t *testing.T) {
@@ -205,6 +207,7 @@ func TestImporter_ErrorContextPreservation(t *testing.T) {
 		RepoRoot: tempDir,
 		Paths:    []string{invalidFile},
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	// Try to create importer - this will fail due to invalid repository
@@ -316,7 +319,7 @@ created_by: "mobilecombackup v1.0.0"
 	}
 
 	// Generate and write manifest files
-	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot, afero.NewOsFs())
 	fileManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("Failed to generate file manifest: %v", err)
@@ -335,6 +338,7 @@ func TestDependencyInjection(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create mock dependencies
@@ -385,6 +389,7 @@ func TestCallsImporterDependencyInjection(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create mock dependencies
@@ -422,6 +427,7 @@ func TestSMSImporterDependencyInjection(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
+		Fs: afero.NewOsFs(),
 	}
 
 	// Create mock dependencies

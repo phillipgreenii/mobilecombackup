@@ -2,6 +2,8 @@ package importer
 
 import (
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // ImportSummary tracks statistics for an import operation
@@ -122,6 +124,8 @@ type ImportOptions struct {
 	MaxXMLSize int64
 	// Maximum message size (default: 10MB)
 	MaxMessageSize int64
+	// Filesystem interface for testing
+	Fs afero.Fs
 }
 
 // SetDefaults sets default values for ImportOptions fields that are zero-valued

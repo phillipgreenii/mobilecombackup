@@ -9,6 +9,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/spf13/afero"
 )
 
 // RepositoryValidator performs comprehensive repository validation using all reader APIs
@@ -55,6 +56,7 @@ type RepositoryValidatorImpl struct {
 	smsValidator         SMSValidator
 	attachmentsValidator AttachmentsValidator
 	contactsValidator    ContactsValidator
+	fs                   afero.Fs
 }
 
 // NewRepositoryValidator creates a comprehensive repository validator
@@ -64,6 +66,7 @@ func NewRepositoryValidator(
 	smsReader sms.Reader,
 	attachmentReader attachments.AttachmentReader,
 	contactsReader contacts.Reader,
+	fs afero.Fs,
 ) RepositoryValidator {
 	return &RepositoryValidatorImpl{
 		repositoryRoot:       repositoryRoot,
@@ -72,8 +75,9 @@ func NewRepositoryValidator(
 		checksumValidator:    NewChecksumValidator(repositoryRoot),
 		callsValidator:       NewCallsValidator(repositoryRoot, callsReader),
 		smsValidator:         NewSMSValidator(repositoryRoot, smsReader),
-		attachmentsValidator: NewAttachmentsValidator(repositoryRoot, attachmentReader, smsReader),
+		attachmentsValidator: NewAttachmentsValidator(repositoryRoot, attachmentReader, smsReader, fs),
 		contactsValidator:    NewContactsValidator(repositoryRoot, contactsReader),
+		fs:                   fs,
 	}
 }
 

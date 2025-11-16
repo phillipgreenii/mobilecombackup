@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
 	customerrors "github.com/phillipgreenii/mobilecombackup/pkg/errors"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"gopkg.in/yaml.v3"
@@ -18,13 +19,15 @@ import (
 type DirectoryAttachmentStorage struct {
 	repoPath      string
 	pathValidator *security.PathValidator
+	fs            afero.Fs
 }
 
 // NewDirectoryAttachmentStorage creates a new directory-based attachment storage
-func NewDirectoryAttachmentStorage(repoPath string) *DirectoryAttachmentStorage {
+func NewDirectoryAttachmentStorage(repoPath string, fs afero.Fs) *DirectoryAttachmentStorage {
 	return &DirectoryAttachmentStorage{
 		repoPath:      repoPath,
 		pathValidator: security.NewPathValidator(repoPath),
+		fs:            fs,
 	}
 }
 
@@ -50,7 +53,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	}
 
 	// Create directory
-	if err := os.MkdirAll(fullDirPath, 0750); err != nil {
+	if err := das.fs.MkdirAll(fullDirPath, 0750); err != nil {
 		return fmt.Errorf("failed to create attachment directory: %w", err)
 	}
 
@@ -67,7 +70,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	}
 
 	// Write attachment file
-	if err := os.WriteFile(attachmentPath, data, 0600); err != nil {
+	if err := afero.WriteFile(das.fs, attachmentPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write attachment file: %w", err)
 	}
 
@@ -87,7 +90,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := os.WriteFile(metadataPath, metadataData, 0600); err != nil {
+	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0600); err != nil {
 		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
@@ -115,7 +118,7 @@ func (das *DirectoryAttachmentStorage) StoreFromReader(hash string, data io.Read
 	}
 
 	// Atomically move temp file to final location
-	if err := os.Rename(tempFile, attachmentPath); err != nil {
+	if err := das.fs.Rename(tempFile, attachmentPath); err != nil {
 		return fmt.Errorf("failed to move temp file to final location: %w", err)
 	}
 
@@ -166,7 +169,7 @@ func (das *DirectoryAttachmentStorage) createAttachmentDirectory(validatedDirPat
 	}
 
 	// Create directory
-	if err := os.MkdirAll(fullDirPath, 0750); err != nil {
+	if err := das.fs.MkdirAll(fullDirPath, 0750); err != nil {
 		// Check if it's a disk space issue
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)
@@ -185,7 +188,7 @@ func (das *DirectoryAttachmentStorage) streamDataToTempFile(
 	tempFile := attachmentPath + ".tmp"
 
 	// Create temp file
-	file, err := os.Create(tempFile) // #nosec G304
+	file, err := das.fs.Create(tempFile) // #nosec G304
 	if err != nil {
 		if strings.Contains(err.Error(), "no space left") {
 			return metadata, "", fmt.Errorf("%w: %v", ErrDiskFull, err)
@@ -198,7 +201,7 @@ func (das *DirectoryAttachmentStorage) streamDataToTempFile(
 	defer func() {
 		_ = file.Close()
 		if cleanupOnError {
-			_ = os.Remove(tempFile) // Clean up temp file if something goes wrong
+			_ = das.fs.Remove(tempFile) // Clean up temp file if something goes wrong
 		}
 	}()
 
@@ -223,7 +226,7 @@ func (das *DirectoryAttachmentStorage) streamDataToTempFile(
 
 // streamWithHashVerification streams data while calculating and verifying hash
 func (das *DirectoryAttachmentStorage) streamWithHashVerification(
-	file *os.File, data io.Reader, expectedHash string,
+	file afero.File, data io.Reader, expectedHash string,
 ) (int64, error) {
 	// Create hash writer for verification
 	hasher := sha256.New()
@@ -255,24 +258,24 @@ func (das *DirectoryAttachmentStorage) writeMetadataFile(
 	metadataRelPath, err := das.pathValidator.JoinAndValidate(validatedDirPath, "metadata.yaml")
 	if err != nil {
 		// Clean up attachment file if metadata fails
-		_ = os.Remove(attachmentPath)
+		_ = das.fs.Remove(attachmentPath)
 		return fmt.Errorf("invalid metadata file path: %w", err)
 	}
 
 	metadataPath, err := das.pathValidator.GetSafePath(metadataRelPath)
 	if err != nil {
-		_ = os.Remove(attachmentPath)
+		_ = das.fs.Remove(attachmentPath)
 		return fmt.Errorf("failed to get safe metadata path: %w", err)
 	}
 
 	metadataData, err := yaml.Marshal(metadata)
 	if err != nil {
-		_ = os.Remove(attachmentPath) // Cleanup attempt - ignore error
+		_ = das.fs.Remove(attachmentPath) // Cleanup attempt - ignore error
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := os.WriteFile(metadataPath, metadataData, 0600); err != nil {
-		_ = os.Remove(attachmentPath) // Cleanup attempt - ignore error
+	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0600); err != nil {
+		_ = das.fs.Remove(attachmentPath) // Cleanup attempt - ignore error
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)
 		}
@@ -303,8 +306,11 @@ func (das *DirectoryAttachmentStorage) GetPath(hash string) (string, error) {
 	}
 
 	// Check if directory exists
-	if _, err := os.Stat(fullDirPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("attachment directory not found: %s", hash)
+	if _, err := das.fs.Stat(fullDirPath); err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("attachment directory not found: %s", hash)
+		}
+		return "", fmt.Errorf("failed to check directory: %w", err)
 	}
 
 	// Read metadata to get filename
@@ -350,7 +356,7 @@ func (das *DirectoryAttachmentStorage) GetMetadata(hash string) (AttachmentInfo,
 		return AttachmentInfo{}, fmt.Errorf("failed to get safe metadata path: %w", err)
 	}
 
-	data, err := os.ReadFile(metadataPath) // #nosec G304
+	data, err := afero.ReadFile(das.fs, metadataPath) // #nosec G304
 	if err != nil {
 		return AttachmentInfo{}, fmt.Errorf("failed to read metadata file: %w", err)
 	}
@@ -383,10 +389,7 @@ func (das *DirectoryAttachmentStorage) Exists(hash string) bool {
 		return false
 	}
 
-	stat, err := os.Stat(fullDirPath)
-	if os.IsNotExist(err) {
-		return false
-	}
+	stat, err := das.fs.Stat(fullDirPath)
 	if err != nil {
 		return false
 	}
@@ -407,7 +410,7 @@ func (das *DirectoryAttachmentStorage) Exists(hash string) bool {
 		return false
 	}
 
-	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+	if _, err := das.fs.Stat(metadataPath); err != nil {
 		return false
 	}
 
@@ -491,7 +494,7 @@ func (das *DirectoryAttachmentStorage) ReadAttachment(hash string) ([]byte, erro
 		return nil, err
 	}
 
-	data, err := os.ReadFile(filePath) // #nosec G304
+	data, err := afero.ReadFile(das.fs, filePath) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to read attachment file: %w", err)
 	}

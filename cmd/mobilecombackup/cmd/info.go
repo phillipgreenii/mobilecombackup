@@ -13,6 +13,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -146,7 +147,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 	// Create readers
 	callsReader := calls.NewXMLCallsReader(repoPath)
 	smsReader := sms.NewXMLSMSReader(repoPath)
-	attachmentReader := attachments.NewAttachmentManager(repoPath)
+	attachmentReader := attachments.NewAttachmentManager(repoPath, afero.NewOsFs())
 	contactsReader := contacts.NewContactsManager(repoPath)
 
 	// Gather calls statistics

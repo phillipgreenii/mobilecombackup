@@ -2,10 +2,11 @@ package calls
 
 import (
 	"encoding/xml"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestNewXMLCallsWriter(t *testing.T) {
@@ -18,19 +19,20 @@ func TestNewXMLCallsWriter(t *testing.T) {
 	}{
 		{
 			name:      "valid directory",
-			repoPath:  filepath.Join(t.TempDir(), "calls"),
+			repoPath:  "/calls",
 			shouldErr: false,
 		},
 		{
 			name:      "nested directory",
-			repoPath:  filepath.Join(t.TempDir(), "repo", "calls"),
+			repoPath:  "/repo/calls",
 			shouldErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer, err := NewXMLCallsWriter(tt.repoPath)
+			fs := afero.NewMemMapFs()
+			writer, err := NewXMLCallsWriter(tt.repoPath, fs)
 
 			if tt.shouldErr {
 				if err == nil {
@@ -48,7 +50,7 @@ func TestNewXMLCallsWriter(t *testing.T) {
 			}
 
 			// Verify directory was created
-			if _, err := os.Stat(tt.repoPath); os.IsNotExist(err) {
+			if _, err := fs.Stat(tt.repoPath); err != nil {
 				t.Errorf("Directory %s was not created", tt.repoPath)
 			}
 		})
@@ -58,8 +60,9 @@ func TestNewXMLCallsWriter(t *testing.T) {
 func TestXMLCallsWriter_WriteCalls(t *testing.T) {
 	t.Parallel()
 
-	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewMemMapFs()
+	repoPath := "/calls"
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -87,13 +90,13 @@ func TestXMLCallsWriter_WriteCalls(t *testing.T) {
 
 	// Verify file was created
 	filePath := filepath.Join(repoPath, filename)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := fs.Stat(filePath); err != nil {
 		t.Errorf("File %s was not created", filePath)
 		return
 	}
 
 	// Read and verify file contents
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -146,7 +149,8 @@ func TestXMLCallsWriter_WriteCalls_Empty(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -161,7 +165,7 @@ func TestXMLCallsWriter_WriteCalls_Empty(t *testing.T) {
 
 	// Verify file was created
 	filePath := filepath.Join(repoPath, filename)
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -189,7 +193,8 @@ func TestXMLCallsWriter_WriteCalls_ReadableDateEST(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -213,7 +218,7 @@ func TestXMLCallsWriter_WriteCalls_ReadableDateEST(t *testing.T) {
 
 	// Read file
 	filePath := filepath.Join(repoPath, filename)
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -247,7 +252,8 @@ func TestXMLCallsWriter_WriteCalls_AllCallTypes(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -267,7 +273,7 @@ func TestXMLCallsWriter_WriteCalls_AllCallTypes(t *testing.T) {
 
 	// Verify all calls were written
 	filePath := filepath.Join(repoPath, filename)
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -312,7 +318,8 @@ func TestXMLCallsWriter_WriteCalls_SpecialCharacters(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -335,7 +342,7 @@ func TestXMLCallsWriter_WriteCalls_SpecialCharacters(t *testing.T) {
 
 	// Read and parse file
 	filePath := filepath.Join(repoPath, filename)
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -366,7 +373,8 @@ func TestXMLCallsWriter_WriteCalls_UpdatesReadableDate(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -391,7 +399,7 @@ func TestXMLCallsWriter_WriteCalls_UpdatesReadableDate(t *testing.T) {
 
 	// Verify readable_date was updated
 	filePath := filepath.Join(repoPath, filename)
-	content, err := os.ReadFile(filePath)
+	content, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
@@ -429,7 +437,8 @@ func TestXMLCallsWriter_WriteCalls_FilePermissions(t *testing.T) {
 	t.Parallel()
 
 	repoPath := filepath.Join(t.TempDir(), "calls")
-	writer, err := NewXMLCallsWriter(repoPath)
+	fs := afero.NewOsFs()
+	writer, err := NewXMLCallsWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("Failed to create writer: %v", err)
 	}
@@ -446,7 +455,7 @@ func TestXMLCallsWriter_WriteCalls_FilePermissions(t *testing.T) {
 
 	// Verify file was created and is readable
 	filePath := filepath.Join(repoPath, filename)
-	info, err := os.Stat(filePath)
+	info, err := fs.Stat(filePath)
 	if err != nil {
 		t.Fatalf("Failed to stat file: %v", err)
 	}
@@ -456,7 +465,7 @@ func TestXMLCallsWriter_WriteCalls_FilePermissions(t *testing.T) {
 	}
 
 	// Verify we can read it
-	_, err = os.ReadFile(filePath)
+	_, err = afero.ReadFile(fs, filePath)
 	if err != nil {
 		t.Errorf("Failed to read created file: %v", err)
 	}

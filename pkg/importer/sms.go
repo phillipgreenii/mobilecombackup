@@ -38,7 +38,7 @@ func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yea
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
 		contactsManager:     contactsManager,                              // Now uses interface
-		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot), // Uses null logger
+		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot, options.Fs), // Uses null logger
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
 		yearTracker:         yearTracker,
@@ -56,7 +56,7 @@ func NewSMSImporterWithLogger(
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
 		contactsManager:     contactsManager,
-		attachmentExtractor: sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger),
+		attachmentExtractor: sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger, options.Fs),
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
 		yearTracker:         yearTracker,
@@ -75,7 +75,7 @@ func NewSMSImporterWithDependencies(
 	options.SetDefaults()
 
 	// Create attachment extractor with null logger (for backward compatibility)
-	attachmentExtractor := sms.NewAttachmentExtractor(options.RepoRoot)
+	attachmentExtractor := sms.NewAttachmentExtractor(options.RepoRoot, options.Fs)
 
 	return &SMSImporter{
 		options:             options,
@@ -101,7 +101,7 @@ func NewSMSImporterWithDependenciesAndLogger(
 	options.SetDefaults()
 
 	// Create attachment extractor with logger
-	attachmentExtractor := sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger)
+	attachmentExtractor := sms.NewAttachmentExtractorWithLogger(options.RepoRoot, logger, options.Fs)
 
 	return &SMSImporter{
 		options:             options,
@@ -420,7 +420,7 @@ func (si *SMSImporter) WriteRepository() error {
 
 		// Create writer for this year
 		smsDir := filepath.Join(si.options.RepoRoot, "sms")
-		writer, err := sms.NewXMLSMSWriter(smsDir)
+		writer, err := sms.NewXMLSMSWriter(smsDir, si.options.Fs)
 		if err != nil {
 			return fmt.Errorf("failed to create writer: %w", err)
 		}

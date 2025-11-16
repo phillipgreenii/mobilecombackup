@@ -1,16 +1,17 @@
 package sms
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestNewXMLSMSWriter(t *testing.T) {
-	tmpDir := t.TempDir()
-	repoPath := filepath.Join(tmpDir, "sms")
+	fs := afero.NewMemMapFs()
+	repoPath := filepath.Join("/", "sms")
 
-	writer, err := NewXMLSMSWriter(repoPath)
+	writer, err := NewXMLSMSWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("NewXMLSMSWriter failed: %v", err)
 	}
@@ -20,16 +21,16 @@ func TestNewXMLSMSWriter(t *testing.T) {
 	}
 
 	// Verify directory was created
-	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+	if _, err := fs.Stat(repoPath); err != nil {
 		t.Error("Directory was not created")
 	}
 }
 
 func TestXMLSMSWriter_WriteMessages(t *testing.T) {
-	tmpDir := t.TempDir()
-	repoPath := filepath.Join(tmpDir, "sms")
+	fs := afero.NewMemMapFs()
+	repoPath := filepath.Join("/", "sms")
 
-	writer, err := NewXMLSMSWriter(repoPath)
+	writer, err := NewXMLSMSWriter(repoPath, fs)
 	if err != nil {
 		t.Fatalf("NewXMLSMSWriter failed: %v", err)
 	}
@@ -51,7 +52,7 @@ func TestXMLSMSWriter_WriteMessages(t *testing.T) {
 
 	// Verify file was created
 	filePath := filepath.Join(repoPath, filename)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := fs.Stat(filePath); err != nil {
 		t.Error("File was not created")
 	}
 }
