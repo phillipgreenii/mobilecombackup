@@ -473,7 +473,7 @@ func findOrphanedAttachments(
 	smsReader sms.Reader, attachmentReader *attachments.AttachmentManager,
 ) ([]*attachments.Attachment, int, error) {
 	// Get all attachment references from SMS messages
-	referencedHashes, err := smsReader.GetAllAttachmentRefs()
+	referencedHashes, err := smsReader.GetAllAttachmentRefs(context.Background())
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get attachment references: %w", err)
 	}

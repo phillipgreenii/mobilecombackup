@@ -418,31 +418,31 @@ func (m *mockSMSReader) ValidateSMSFile(_ int) error {
 // Context-aware method implementations for mock
 
 func (m *mockSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]sms.Message, error) {
-	return m.ReadMessages(year)
+	return m.ReadMessages(context.Background(), year)
 }
 
 func (m *mockSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, callback func(sms.Message) error) error {
-	return m.StreamMessagesForYear(year, callback)
+	return m.StreamMessagesForYear(context.Background(), year, callback)
 }
 
 func (m *mockSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
-	return m.GetAttachmentRefs(year)
+	return m.GetAttachmentRefs(context.Background(), year)
 }
 
 func (m *mockSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
-	return m.GetAllAttachmentRefs()
+	return m.GetAllAttachmentRefs(context.Background())
 }
 
 func (m *mockSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	return m.GetAvailableYears()
+	return m.GetAvailableYears(context.Background())
 }
 
 func (m *mockSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
-	return m.GetMessageCount(year)
+	return m.GetMessageCount(context.Background(), year)
 }
 
 func (m *mockSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
-	return m.ValidateSMSFile(year)
+	return m.ValidateSMSFile(context.Background(), year)
 }
 
 func createTestAttachment(t *testing.T, repoPath, hash, content string) {

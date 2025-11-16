@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -124,7 +125,7 @@ func (si *SMSImporter) LoadRepository() error {
 	reader := sms.NewXMLSMSReader(si.options.RepoRoot)
 
 	// Get all available years
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get available years: %w", err)
 	}
@@ -133,7 +134,7 @@ func (si *SMSImporter) LoadRepository() error {
 	totalLoaded := 0
 	for _, year := range years {
 		yearCount := 0
-		err := reader.StreamMessagesForYear(year, func(msg sms.Message) error {
+		err := reader.StreamMessagesForYear(context.Background(), year, func(msg sms.Message) error {
 			entry := sms.NewMessageEntry(msg)
 			si.coalescer.Add(entry)
 			yearCount++

@@ -97,7 +97,7 @@ func (m *MockContactsManager) SaveContacts(path string) error {
 }
 
 func (m *MockContactsManager) LoadContactsContext(ctx context.Context) error {
-	return m.LoadContacts()
+	return m.LoadContacts(context.Background())
 }
 
 func (m *MockContactsManager) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
@@ -411,7 +411,7 @@ func (imp *Importer) loadExistingRepository() error {
 	}
 
 	// Load contacts.yaml
-	if err := imp.contactsManager.LoadContacts(); err != nil {
+	if err := imp.contactsManager.LoadContacts(context.Background()); err != nil {
 		return fmt.Errorf("failed to load contacts: %w", err)
 	}
 

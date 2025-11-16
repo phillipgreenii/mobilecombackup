@@ -91,7 +91,8 @@ func (r *XMLCallsReader) parseCallElement(se xml.StartElement) (Call, error) {
 
 // StreamCalls streams all calls from the repository across all years
 func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
-	years, err := r.GetAvailableYears()
+	ctx := context.Background()
+	years, err := r.GetAvailableYears(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get available call years: %w", err)
 	}
@@ -102,7 +103,7 @@ func (r *XMLCallsReader) StreamCalls(callback func(*Call) error) error {
 	}
 
 	for _, year := range years {
-		if err := r.StreamCallsForYear(year, func(call Call) error {
+		if err := r.StreamCallsForYear(ctx, year, func(call Call) error {
 			return callback(&call)
 		}); err != nil {
 			return fmt.Errorf("failed to stream calls for year %d: %w", year, err)
@@ -117,10 +118,8 @@ func (r *XMLCallsReader) getCallsFilePath(year int) string {
 	return filepath.Join(r.repoRoot, "calls", fmt.Sprintf("calls-%d.xml", year))
 }
 
-// Context-aware method implementations
-
-// ReadCallsContext reads all calls from a specific year file with context support
-func (r *XMLCallsReader) ReadCallsContext(ctx context.Context, year int) ([]Call, error) {
+// ReadCalls reads all calls from a specific year file with context support
+func (r *XMLCallsReader) ReadCalls(ctx context.Context, year int) ([]Call, error) {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -129,7 +128,7 @@ func (r *XMLCallsReader) ReadCallsContext(ctx context.Context, year int) ([]Call
 	}
 
 	var calls []Call
-	err := r.StreamCallsForYearContext(ctx, year, func(call Call) error {
+	err := r.StreamCallsForYear(ctx, year, func(call Call) error {
 		calls = append(calls, call)
 		return nil
 	})
@@ -140,8 +139,8 @@ func (r *XMLCallsReader) ReadCallsContext(ctx context.Context, year int) ([]Call
 	return calls, nil
 }
 
-// StreamCallsForYearContext streams calls from a year file for memory efficiency with context support
-func (r *XMLCallsReader) StreamCallsForYearContext(ctx context.Context, year int, callback func(Call) error) error {
+// StreamCallsForYear streams calls from a year file for memory efficiency with context support
+func (r *XMLCallsReader) StreamCallsForYear(ctx context.Context, year int, callback func(Call) error) error {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -201,8 +200,8 @@ func (r *XMLCallsReader) streamCallElementsWithContext(
 	return nil
 }
 
-// GetAvailableYearsContext returns list of years with call data with context support
-func (r *XMLCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+// GetAvailableYears returns list of years with call data with context support
+func (r *XMLCallsReader) GetAvailableYears(ctx context.Context) ([]int, error) {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -247,8 +246,8 @@ func (r *XMLCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, e
 	return years, nil
 }
 
-// GetCallsCountContext returns total number of calls for a year with context support
-func (r *XMLCallsReader) GetCallsCountContext(ctx context.Context, year int) (int, error) {
+// GetCallsCount returns total number of calls for a year with context support
+func (r *XMLCallsReader) GetCallsCount(ctx context.Context, year int) (int, error) {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -297,8 +296,8 @@ func (r *XMLCallsReader) GetCallsCountContext(ctx context.Context, year int) (in
 	return 0, fmt.Errorf("calls element with count attribute not found")
 }
 
-// ValidateCallsFileContext validates XML structure and year consistency with context support
-func (r *XMLCallsReader) ValidateCallsFileContext(ctx context.Context, year int) error {
+// ValidateCallsFile validates XML structure and year consistency with context support
+func (r *XMLCallsReader) ValidateCallsFile(ctx context.Context, year int) error {
 	// Check context before starting
 	select {
 	case <-ctx.Done():
@@ -368,33 +367,6 @@ func (r *XMLCallsReader) ValidateCallsFileContext(ctx context.Context, year int)
 	}
 
 	return nil
-}
-
-// Legacy method implementations that delegate to context versions
-
-// ReadCalls delegates to ReadCallsContext with background context
-func (r *XMLCallsReader) ReadCalls(year int) ([]Call, error) {
-	return r.ReadCallsContext(context.Background(), year)
-}
-
-// StreamCallsForYear delegates to StreamCallsForYearContext with background context
-func (r *XMLCallsReader) StreamCallsForYear(year int, callback func(Call) error) error {
-	return r.StreamCallsForYearContext(context.Background(), year, callback)
-}
-
-// GetAvailableYears delegates to GetAvailableYearsContext with background context
-func (r *XMLCallsReader) GetAvailableYears() ([]int, error) {
-	return r.GetAvailableYearsContext(context.Background())
-}
-
-// GetCallsCount delegates to GetCallsCountContext with background context
-func (r *XMLCallsReader) GetCallsCount(year int) (int, error) {
-	return r.GetCallsCountContext(context.Background(), year)
-}
-
-// ValidateCallsFile delegates to ValidateCallsFileContext with background context
-func (r *XMLCallsReader) ValidateCallsFile(year int) error {
-	return r.ValidateCallsFileContext(context.Background(), year)
 }
 
 // extractCountAttribute extracts the count attribute from the calls element

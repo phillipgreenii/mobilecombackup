@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -84,7 +85,7 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
 
 	// Read back and verify
 	reader := calls.NewXMLCallsReader(repoRoot)
-	readCalls, err := reader.ReadCalls(2021)
+	readCalls, err := reader.ReadCalls(context.Background(), 2021)
 	if err != nil {
 		t.Fatalf("Failed to read calls: %v", err)
 	}
@@ -337,7 +338,7 @@ func TestCallsImporter_OrderPreservation(t *testing.T) {
 
 	// Read back and verify order
 	reader := calls.NewXMLCallsReader(repoRoot)
-	readCalls, err := reader.ReadCalls(2021)
+	readCalls, err := reader.ReadCalls(context.Background(), 2021)
 	if err != nil {
 		t.Fatalf("Failed to read calls: %v", err)
 	}

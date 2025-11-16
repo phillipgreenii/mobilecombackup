@@ -35,7 +35,14 @@ func NewContactsManager(repoPath string) *Manager {
 }
 
 // LoadContacts loads all contacts from contacts.yaml
-func (cm *Manager) LoadContacts() error {
+func (cm *Manager) LoadContacts(ctx context.Context) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	contactsData, err := cm.loadContactsFile()
 	if err != nil {
 		return err
@@ -249,9 +256,16 @@ func (cm *Manager) GetNumbersByContact(name string) ([]string, bool) {
 }
 
 // GetAllContacts returns all contacts
-func (cm *Manager) GetAllContacts() ([]*Contact, error) {
+func (cm *Manager) GetAllContacts(ctx context.Context) ([]*Contact, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	if !cm.loaded {
-		if err := cm.LoadContacts(); err != nil {
+		if err := cm.LoadContacts(ctx); err != nil {
 			return nil, err
 		}
 	}
@@ -358,7 +372,14 @@ func (cm *Manager) GetUnprocessedContacts() map[string][]string {
 }
 
 // AddUnprocessedContacts adds contacts from multi-address SMS parsing
-func (cm *Manager) AddUnprocessedContacts(addresses, contactNames string) error {
+func (cm *Manager) AddUnprocessedContacts(ctx context.Context, addresses, contactNames string) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Parse addresses separated by ~
 	addressList := strings.Split(addresses, "~")
 	// Parse contact names separated by ,
@@ -470,7 +491,14 @@ func (cm *Manager) addUnprocessedEntry(phone, name string) {
 }
 
 // SaveContacts writes the current state to contacts.yaml
-func (cm *Manager) SaveContacts(path string) error {
+func (cm *Manager) SaveContacts(ctx context.Context, path string) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Prepare data structure for YAML
 	contactsData := Data{
 		Contacts: make([]*Contact, 0, len(cm.contacts)),
@@ -509,50 +537,4 @@ func (cm *Manager) SaveContacts(path string) error {
 	}
 
 	return nil
-}
-
-// Context-aware method implementations
-
-// LoadContactsContext loads all contacts from contacts.yaml with context support
-func (cm *Manager) LoadContactsContext(ctx context.Context) error {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return cm.LoadContacts()
-}
-
-// GetAllContactsContext returns all contacts with context support
-func (cm *Manager) GetAllContactsContext(ctx context.Context) ([]*Contact, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	return cm.GetAllContacts()
-}
-
-// AddUnprocessedContactsContext adds contacts from multi-address SMS parsing with context support
-func (cm *Manager) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return cm.AddUnprocessedContacts(addresses, contactNames)
-}
-
-// SaveContactsContext writes the current state to contacts.yaml with context support
-func (cm *Manager) SaveContactsContext(ctx context.Context, path string) error {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return cm.SaveContacts(path)
 }

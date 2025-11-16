@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -49,7 +50,7 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []Violation {
 	var violations []Violation
 
 	// Get available years
-	years, err := v.callsReader.GetAvailableYears()
+	years, err := v.callsReader.GetAvailableYears(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     StructureViolation,
@@ -66,7 +67,7 @@ func (v *CallsValidatorImpl) ValidateCallsContent() []Violation {
 		filePath := filepath.Join("calls", fileName)
 
 		// Validate file structure and year consistency
-		if err := v.callsReader.ValidateCallsFile(year); err != nil {
+		if err := v.callsReader.ValidateCallsFile(context.Background(), year); err != nil {
 			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
@@ -90,7 +91,7 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Violation 
 	filePath := filepath.Join("calls", fileName)
 
 	// Stream calls to check year consistency without loading all into memory
-	err := v.callsReader.StreamCallsForYear(year, func(call calls.Call) error {
+	err := v.callsReader.StreamCallsForYear(context.Background(), year, func(call calls.Call) error {
 		callYear := call.Timestamp().UTC().Year()
 		if callYear != year {
 			violations = append(violations, Violation{

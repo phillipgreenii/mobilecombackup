@@ -489,21 +489,21 @@ type MockCallsReader struct {
 	Err        error
 }
 
-func (m *MockCallsReader) GetAvailableYears() ([]int, error) {
+func (m *MockCallsReader) GetAvailableYears(_ context.Context) ([]int, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.Years, nil
 }
 
-func (m *MockCallsReader) GetCallsCount(year int) (int, error) {
+func (m *MockCallsReader) GetCallsCount(_ context.Context, year int) (int, error) {
 	if m.Err != nil {
 		return 0, m.Err
 	}
 	return m.YearCounts[year], nil
 }
 
-func (m *MockCallsReader) StreamCallsForYear(year int, processor func(calls.Call) error) error {
+func (m *MockCallsReader) StreamCallsForYear(_ context.Context, year int, processor func(calls.Call) error) error {
 	if m.Err != nil {
 		return m.Err
 	}
@@ -515,36 +515,15 @@ func (m *MockCallsReader) StreamCallsForYear(year int, processor func(calls.Call
 	return nil
 }
 
-func (m *MockCallsReader) ReadCalls(year int) ([]calls.Call, error) {
+func (m *MockCallsReader) ReadCalls(_ context.Context, year int) ([]calls.Call, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.CallsData[year], nil
 }
 
-func (m *MockCallsReader) ValidateCallsFile(year int) error {
+func (m *MockCallsReader) ValidateCallsFile(_ context.Context, year int) error {
 	return m.Err
-}
-
-// Context-aware methods
-func (m *MockCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	return m.GetAvailableYears()
-}
-
-func (m *MockCallsReader) GetCallsCountContext(ctx context.Context, year int) (int, error) {
-	return m.GetCallsCount(year)
-}
-
-func (m *MockCallsReader) StreamCallsForYearContext(ctx context.Context, year int, processor func(calls.Call) error) error {
-	return m.StreamCallsForYear(year, processor)
-}
-
-func (m *MockCallsReader) ReadCallsContext(ctx context.Context, year int) ([]calls.Call, error) {
-	return m.ReadCalls(year)
-}
-
-func (m *MockCallsReader) ValidateCallsFileContext(ctx context.Context, year int) error {
-	return m.ValidateCallsFile(year)
 }
 
 // MockSMSReader implements sms.Reader for testing
@@ -556,21 +535,21 @@ type MockSMSReader struct {
 	Err            error
 }
 
-func (m *MockSMSReader) GetAvailableYears() ([]int, error) {
+func (m *MockSMSReader) GetAvailableYears(_ context.Context) ([]int, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.Years, nil
 }
 
-func (m *MockSMSReader) GetMessageCount(year int) (int, error) {
+func (m *MockSMSReader) GetMessageCount(_ context.Context, year int) (int, error) {
 	if m.Err != nil {
 		return 0, m.Err
 	}
 	return m.MessageCounts[year], nil
 }
 
-func (m *MockSMSReader) StreamMessagesForYear(year int, processor func(sms.Message) error) error {
+func (m *MockSMSReader) StreamMessagesForYear(_ context.Context, year int, processor func(sms.Message) error) error {
 	if m.Err != nil {
 		return m.Err
 	}
@@ -582,21 +561,21 @@ func (m *MockSMSReader) StreamMessagesForYear(year int, processor func(sms.Messa
 	return nil
 }
 
-func (m *MockSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
+func (m *MockSMSReader) GetAllAttachmentRefs(_ context.Context) (map[string]bool, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.AttachmentRefs, nil
 }
 
-func (m *MockSMSReader) ReadMessages(year int) ([]sms.Message, error) {
+func (m *MockSMSReader) ReadMessages(_ context.Context, year int) ([]sms.Message, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.MessagesData[year], nil
 }
 
-func (m *MockSMSReader) GetAttachmentRefs(year int) ([]string, error) {
+func (m *MockSMSReader) GetAttachmentRefs(_ context.Context, year int) ([]string, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -607,37 +586,8 @@ func (m *MockSMSReader) GetAttachmentRefs(year int) ([]string, error) {
 	return refs, nil
 }
 
-func (m *MockSMSReader) ValidateSMSFile(year int) error {
+func (m *MockSMSReader) ValidateSMSFile(_ context.Context, year int) error {
 	return m.Err
-}
-
-// Context-aware methods
-func (m *MockSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	return m.GetAvailableYears()
-}
-
-func (m *MockSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
-	return m.GetMessageCount(year)
-}
-
-func (m *MockSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, processor func(sms.Message) error) error {
-	return m.StreamMessagesForYear(year, processor)
-}
-
-func (m *MockSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
-	return m.GetAllAttachmentRefs()
-}
-
-func (m *MockSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]sms.Message, error) {
-	return m.ReadMessages(year)
-}
-
-func (m *MockSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
-	return m.GetAttachmentRefs(year)
-}
-
-func (m *MockSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
-	return m.ValidateSMSFile(year)
 }
 
 // MockContactsReader implements contacts.Reader for testing
@@ -646,7 +596,7 @@ type MockContactsReader struct {
 	Err   error
 }
 
-func (m *MockContactsReader) LoadContacts() error {
+func (m *MockContactsReader) LoadContacts(_ context.Context) error {
 	return m.Err
 }
 
@@ -662,7 +612,7 @@ func (m *MockContactsReader) GetNumbersByContact(name string) ([]string, bool) {
 	return nil, false
 }
 
-func (m *MockContactsReader) GetAllContacts() ([]*contacts.Contact, error) {
+func (m *MockContactsReader) GetAllContacts(_ context.Context) ([]*contacts.Contact, error) {
 	return nil, nil
 }
 
@@ -674,23 +624,11 @@ func (m *MockContactsReader) IsKnownNumber(number string) bool {
 	return false
 }
 
-func (m *MockContactsReader) AddUnprocessedContacts(addresses, contactNames string) error {
+func (m *MockContactsReader) AddUnprocessedContacts(_ context.Context, addresses, contactNames string) error {
 	return nil
 }
 
 func (m *MockContactsReader) GetUnprocessedEntries() []contacts.UnprocessedEntry {
-	return nil
-}
-
-func (m *MockContactsReader) LoadContactsContext(ctx context.Context) error {
-	return m.Err
-}
-
-func (m *MockContactsReader) GetAllContactsContext(ctx context.Context) ([]*contacts.Contact, error) {
-	return nil, nil
-}
-
-func (m *MockContactsReader) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
 	return nil
 }
 

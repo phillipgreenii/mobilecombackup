@@ -205,7 +205,7 @@ func readRepositoryMetadata(repoPath string, info *RepositoryInfo) error {
 
 func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 	ctx := context.Background()
-	years, err := reader.GetAvailableYearsContext(ctx)
+	years, err := reader.GetAvailableYears(ctx)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 		yearStats := YearInfo{}
 
 		// Get count
-		count, err := reader.GetCallsCountContext(ctx, year)
+		count, err := reader.GetCallsCount(ctx, year)
 		if err != nil {
 			return err
 		}
@@ -222,7 +222,7 @@ func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 
 		// Get date range by streaming calls
 		var earliest, latest time.Time
-		err = reader.StreamCallsForYearContext(ctx, year, func(call calls.Call) error {
+		err = reader.StreamCallsForYear(context.Background(), ctx, year, func(call calls.Call) error {
 			timestamp := call.Timestamp()
 			if earliest.IsZero() || timestamp.Before(earliest) {
 				earliest = timestamp
@@ -249,7 +249,7 @@ func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
 
 func gatherSMSStats(reader sms.Reader, info *RepositoryInfo) error {
 	ctx := context.Background()
-	years, err := reader.GetAvailableYearsContext(ctx)
+	years, err := reader.GetAvailableYears(ctx)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func gatherSMSStatsForYear(reader sms.Reader, year int) (MessageInfo, error) {
 	messageStats := MessageInfo{}
 
 	// Get total count
-	totalCount, err := reader.GetMessageCountContext(ctx, year)
+	totalCount, err := reader.GetMessageCount(ctx, year)
 	if err != nil {
 		return messageStats, err
 	}
@@ -279,7 +279,7 @@ func gatherSMSStatsForYear(reader sms.Reader, year int) (MessageInfo, error) {
 
 	// Count SMS vs MMS and get date range by streaming messages
 	var earliest, latest time.Time
-	err = reader.StreamMessagesForYearContext(ctx, year, func(msg sms.Message) error {
+	err = reader.StreamMessagesForYear(context.Background(), ctx, year, func(msg sms.Message) error {
 		timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
 
 		updateDateRange(&earliest, &latest, timestamp)
@@ -350,7 +350,7 @@ func gatherAttachmentStats(
 	}
 
 	// Find orphaned attachments
-	referencedHashes, err := smsReader.GetAllAttachmentRefsContext(ctx)
+	referencedHashes, err := smsReader.GetAllAttachmentRefs(ctx)
 	if err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ func gatherAttachmentStats(
 func gatherContactsStats(reader contacts.Reader, info *RepositoryInfo) error {
 	ctx := context.Background()
 	// Load contacts
-	err := reader.LoadContactsContext(ctx)
+	err := reader.LoadContacts(ctx)
 	if err != nil {
 		// Continue if contacts file doesn't exist
 		if os.IsNotExist(err) {

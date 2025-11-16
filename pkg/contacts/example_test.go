@@ -1,6 +1,7 @@
 package contacts_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ func ExampleManager() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 
 	// Load contacts from contacts.yaml
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func ExampleManager() {
 // Example demonstrates phone number lookup with various formats
 func ExampleManager_GetContactByNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	// All these formats will find the same contact if the number exists
 	testNumbers := []string{
@@ -63,7 +64,7 @@ func ExampleManager_GetContactByNumber() {
 // Example demonstrates getting all numbers for a contact
 func ExampleManager_GetNumbersByContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	// Get all numbers for a specific contact
 	numbers, found := manager.GetNumbersByContact("Bob Ross")
@@ -78,7 +79,7 @@ func ExampleManager_GetNumbersByContact() {
 // Example demonstrates checking if numbers are known
 func ExampleManager_IsKnownNumber() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	testNumbers := []string{
 		"5555551234",
@@ -98,9 +99,9 @@ func ExampleManager_IsKnownNumber() {
 // Example demonstrates iterating through all contacts
 func ExampleManager_GetAllContacts() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
-	contacts, err := manager.GetAllContacts()
+	contacts, err := manager.GetAllContacts(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,7 +118,7 @@ func ExampleManager_GetAllContacts() {
 // Example demonstrates contact existence checking
 func ExampleManager_ContactExists() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	contacts := []string{
 		"Bob Ross",
@@ -137,7 +138,7 @@ func ExampleManager_ContactExists() {
 // Example demonstrates handling the special "<unknown>" contact
 func ExampleManager_unknownContact() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	// Check if a number belongs to unknown contacts
 	name, found := manager.GetContactByNumber("8888888888")
@@ -160,7 +161,7 @@ func ExampleManager_errorHandling() {
 	manager := contacts.NewContactsManager("/path/to/repository")
 
 	// LoadContacts may fail for various reasons
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		// Handle different types of errors
 		fmt.Printf("Failed to load contacts: %v\n", err)
@@ -177,7 +178,7 @@ func ExampleManager_errorHandling() {
 // Example demonstrates phone number normalization behavior
 func Example_phoneNumberNormalization() {
 	manager := contacts.NewContactsManager("/path/to/repository")
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	// These variations all normalize to the same number
 	variations := []string{
@@ -272,7 +273,7 @@ unprocessed:
 	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 
 	manager := contacts.NewContactsManager(tempDir)
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		fmt.Printf("Error loading contacts: %v\n", err)
 		return
@@ -307,7 +308,7 @@ func Example_knownContactFiltering() {
 	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
 
 	manager := contacts.NewContactsManager(tempDir)
-	_ = manager.LoadContacts()
+	_ = manager.LoadContacts(context.Background())
 
 	// Try to add both known and unknown contacts
 	_ = manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")

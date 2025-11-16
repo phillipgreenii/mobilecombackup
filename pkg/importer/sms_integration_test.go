@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -79,7 +80,7 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 
 	// Read and verify the contents
 	reader := sms.NewXMLSMSReader(repoRoot)
-	messages, err := reader.ReadMessages(2014)
+	messages, err := reader.ReadMessages(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("Failed to read messages: %v", err)
 	}

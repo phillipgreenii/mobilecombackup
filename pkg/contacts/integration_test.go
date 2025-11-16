@@ -2,6 +2,7 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -52,7 +53,7 @@ func TestContactsManager_Integration_WithTestData(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed with test data: %v", err)
 	}
@@ -64,7 +65,7 @@ func TestContactsManager_Integration_WithTestData(t *testing.T) {
 	}
 
 	// Test basic functionality with loaded data
-	contacts, err := manager.GetAllContacts()
+	contacts, err := manager.GetAllContacts(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContacts failed: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestContactsManager_Integration_EmptyRepository(t *testing.T) {
 	manager := NewContactsManager(tempDir)
 
 	// Test with empty repository (no contacts.yaml)
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts should not fail for empty repository: %v", err)
 	}
@@ -101,7 +102,7 @@ func TestContactsManager_Integration_EmptyRepository(t *testing.T) {
 		t.Error("Empty repository should have 0 contacts")
 	}
 
-	contacts, err := manager.GetAllContacts()
+	contacts, err := manager.GetAllContacts(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContacts failed: %v", err)
 	}
@@ -146,7 +147,7 @@ func TestContactsManager_Integration_LargeContactList(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed with large contact list: %v", err)
 	}
@@ -183,7 +184,7 @@ func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("Initial LoadContacts failed: %v", err)
 	}
@@ -207,7 +208,7 @@ func TestContactsManager_Integration_ReloadContacts(t *testing.T) {
 	}
 
 	// Reload contacts
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("Reload LoadContacts failed: %v", err)
 	}
@@ -244,7 +245,7 @@ func TestContactsManager_Integration_PhoneNumberVariations(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -292,7 +293,7 @@ func TestContactsManager_Integration_UnknownContact(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}

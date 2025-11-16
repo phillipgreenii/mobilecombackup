@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -90,7 +91,7 @@ func setupReprocessContacts() (string, *contacts.Manager, reprocessInitialStats,
 	contactsManager := contacts.NewContactsManager(resolvedRepoRoot)
 
 	// Load existing contacts
-	if err := contactsManager.LoadContacts(); err != nil {
+	if err := contactsManager.LoadContacts(context.Background()); err != nil {
 		return "", nil, reprocessInitialStats{}, fmt.Errorf("failed to load existing contacts: %w", err)
 	}
 

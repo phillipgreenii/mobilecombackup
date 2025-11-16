@@ -40,9 +40,16 @@ func (r *XMLSMSReader) getSMSFilePath(year int) string {
 }
 
 // ReadMessages reads all messages from a specific year
-func (r *XMLSMSReader) ReadMessages(year int) ([]Message, error) {
+func (r *XMLSMSReader) ReadMessages(ctx context.Context, year int) ([]Message, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	var messages []Message
-	err := r.StreamMessagesForYear(year, func(msg Message) error {
+	err := r.StreamMessagesForYear(ctx, year, func(msg Message) error {
 		messages = append(messages, msg)
 		return nil
 	})
@@ -50,7 +57,14 @@ func (r *XMLSMSReader) ReadMessages(year int) ([]Message, error) {
 }
 
 // StreamMessagesForYear streams messages for memory efficiency
-func (r *XMLSMSReader) StreamMessagesForYear(year int, callback func(Message) error) error {
+func (r *XMLSMSReader) StreamMessagesForYear(ctx context.Context, year int, callback func(Message) error) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	filePath := r.getSMSFilePath(year)
 	file, err := os.Open(filePath) // nolint:gosec // Core functionality requires file reading
 	if err != nil {
@@ -703,7 +717,8 @@ func (r *XMLSMSReader) parseMMSAddress(decoder *xml.Decoder, startElement xml.St
 
 // StreamMessages streams all messages from the repository across all years
 func (r *XMLSMSReader) StreamMessages(callback func(Message) error) error {
-	years, err := r.GetAvailableYears()
+	ctx := context.Background()
+	years, err := r.GetAvailableYears(ctx)
 	if err != nil {
 		return err
 	}
@@ -714,7 +729,7 @@ func (r *XMLSMSReader) StreamMessages(callback func(Message) error) error {
 	}
 
 	for _, year := range years {
-		if err := r.StreamMessagesForYear(year, callback); err != nil {
+		if err := r.StreamMessagesForYear(ctx, year, callback); err != nil {
 			return err
 		}
 	}
@@ -723,7 +738,14 @@ func (r *XMLSMSReader) StreamMessages(callback func(Message) error) error {
 }
 
 // GetAvailableYears returns list of years with SMS data
-func (r *XMLSMSReader) GetAvailableYears() ([]int, error) {
+func (r *XMLSMSReader) GetAvailableYears(ctx context.Context) ([]int, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	smsDir := filepath.Join(r.repoRoot, "sms")
 	entries, err := os.ReadDir(smsDir)
 	if err != nil {
@@ -735,6 +757,13 @@ func (r *XMLSMSReader) GetAvailableYears() ([]int, error) {
 
 	var years []int
 	for _, entry := range entries {
+		// Check context periodically
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
 		if entry.IsDir() {
 			continue
 		}
@@ -757,7 +786,14 @@ func (r *XMLSMSReader) GetAvailableYears() ([]int, error) {
 }
 
 // GetMessageCount returns total number of messages for a year
-func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
+func (r *XMLSMSReader) GetMessageCount(ctx context.Context, year int) (int, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+	}
+
 	filePath := r.getSMSFilePath(year)
 	file, err := os.Open(filePath) // nolint:gosec // Core functionality requires file reading
 	if err != nil {
@@ -767,6 +803,13 @@ func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
 
 	decoder := security.NewSecureXMLDecoder(file)
 	for {
+		// Check context periodically
+		select {
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		default:
+		}
+
 		token, err := decoder.Token()
 		if err == io.EOF {
 			return 0, fmt.Errorf("no smses element found in file")
@@ -790,16 +833,23 @@ func (r *XMLSMSReader) GetMessageCount(year int) (int, error) {
 }
 
 // ValidateSMSFile validates XML structure and year consistency
-func (r *XMLSMSReader) ValidateSMSFile(year int) error {
+func (r *XMLSMSReader) ValidateSMSFile(ctx context.Context, year int) error {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Get declared count
-	declaredCount, err := r.GetMessageCount(year)
+	declaredCount, err := r.GetMessageCount(ctx, year)
 	if err != nil {
 		return fmt.Errorf("failed to get declared count: %w", err)
 	}
 
 	// Count actual messages
 	actualCount := 0
-	err = r.StreamMessagesForYear(year, func(msg Message) error {
+	err = r.StreamMessagesForYear(ctx, year, func(msg Message) error {
 		actualCount++
 
 		// Validate year consistency
@@ -825,9 +875,16 @@ func (r *XMLSMSReader) ValidateSMSFile(year int) error {
 }
 
 // GetAttachmentRefs returns all attachment references in a year
-func (r *XMLSMSReader) GetAttachmentRefs(year int) ([]string, error) {
+func (r *XMLSMSReader) GetAttachmentRefs(ctx context.Context, year int) ([]string, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	var refs []string
-	err := r.StreamMessagesForYear(year, func(msg Message) error {
+	err := r.StreamMessagesForYear(ctx, year, func(msg Message) error {
 		if mms, ok := msg.(MMS); ok {
 			for _, part := range mms.Parts {
 				if part.AttachmentRef != "" {
@@ -873,15 +930,29 @@ func extractHashFromAttachmentPath(attachmentPath string) string {
 }
 
 // GetAllAttachmentRefs returns all attachment references across all years as a map of hashes
-func (r *XMLSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
-	years, err := r.GetAvailableYears()
+func (r *XMLSMSReader) GetAllAttachmentRefs(ctx context.Context) (map[string]bool, error) {
+	// Check context before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	years, err := r.GetAvailableYears(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available years: %w", err)
 	}
 
 	allRefs := make(map[string]bool)
 	for _, year := range years {
-		refs, err := r.GetAttachmentRefs(year)
+		// Check context periodically
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		refs, err := r.GetAttachmentRefs(ctx, year)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get attachment refs for year %d: %w", year, err)
 		}
@@ -931,83 +1002,4 @@ func parseXMLCollection[T any](
 			}
 		}
 	}
-}
-
-// Context-aware method implementations
-
-// ReadMessagesContext reads all messages from a specific year with context support
-func (r *XMLSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]Message, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	return r.ReadMessages(year)
-}
-
-// StreamMessagesForYearContext streams messages for memory efficiency with context support
-func (r *XMLSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, callback func(Message) error) error {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return r.StreamMessagesForYear(year, callback)
-}
-
-// GetAttachmentRefsContext returns all attachment references in a year with context support
-func (r *XMLSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	return r.GetAttachmentRefs(year)
-}
-
-// GetAllAttachmentRefsContext returns all attachment references across all years with context support
-func (r *XMLSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	return r.GetAllAttachmentRefs()
-}
-
-// GetAvailableYearsContext returns list of years with SMS data with context support
-func (r *XMLSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	return r.GetAvailableYears()
-}
-
-// GetMessageCountContext returns total number of messages for a year with context support
-func (r *XMLSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err()
-	default:
-	}
-	return r.GetMessageCount(year)
-}
-
-// ValidateSMSFileContext validates XML structure and year consistency with context support
-func (r *XMLSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
-	// Check context before starting
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return r.ValidateSMSFile(year)
 }

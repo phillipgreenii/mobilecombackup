@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -13,7 +14,7 @@ func ExampleXMLSMSReader() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
 	// Get available years
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +36,7 @@ func ExampleXMLSMSReader_StreamMessages() {
 
 	// Stream messages for memory-efficient processing
 	messageCount := 0
-	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(context.Background(), 2014, func(msg sms.Message) error {
 		messageCount++
 		fmt.Printf("Message %d: %s -> %s (%d)\n",
 			messageCount, msg.GetAddress(), msg.GetContactName(), msg.GetType())
@@ -52,7 +53,7 @@ func ExampleXMLSMSReader_ValidateSMSFile() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
 	// Validate a specific year's SMS file
-	err := reader.ValidateSMSFile(2014)
+	err := reader.ValidateSMSFile(context.Background(), 2014)
 	if err != nil {
 		fmt.Printf("Validation failed: %v\n", err)
 		return
@@ -64,7 +65,7 @@ func ExampleXMLSMSReader_ValidateSMSFile() {
 func Example_messageInterface() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
-	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(context.Background(), 2014, func(msg sms.Message) error {
 		// Handle different message types
 		switch m := msg.(type) {
 		case sms.SMS:
@@ -89,16 +90,16 @@ func ExampleXMLSMSReader_GetMessageCount() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
 	// Get count without loading all messages into memory
-	count, err := reader.GetMessageCount(2014)
+	count, err := reader.GetMessageCount(context.Background(), 2014)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("2014 has %d messages\n", count)
 
 	// Check multiple years efficiently
-	years, _ := reader.GetAvailableYears()
+	years, _ := reader.GetAvailableYears(context.Background())
 	for _, year := range years {
-		count, err := reader.GetMessageCount(year)
+		count, err := reader.GetMessageCount(context.Background(), year)
 		if err != nil {
 			continue
 		}
@@ -110,7 +111,7 @@ func ExampleXMLSMSReader_GetMessageCount() {
 func ExampleMMS_parts() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
-	err := reader.StreamMessagesForYear(2014, func(msg sms.Message) error {
+	err := reader.StreamMessagesForYear(context.Background(), 2014, func(msg sms.Message) error {
 		if mms, ok := msg.(sms.MMS); ok {
 			fmt.Printf("MMS from %s:\n", mms.ContactName)
 
@@ -143,14 +144,14 @@ func ExampleXMLSMSReader_GetAttachmentRefs() {
 	reader := sms.NewXMLSMSReader("/path/to/repository")
 
 	// Get attachment references for a specific year
-	refs, err := reader.GetAttachmentRefs(2014)
+	refs, err := reader.GetAttachmentRefs(context.Background(), 2014)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("2014 has %d attachment references\n", len(refs))
 
 	// Get all attachment references across all years
-	allRefs, err := reader.GetAllAttachmentRefs()
+	allRefs, err := reader.GetAllAttachmentRefs(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}

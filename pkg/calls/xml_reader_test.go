@@ -1,6 +1,7 @@
 package calls
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,7 +35,7 @@ func TestXMLCallsReader_ReadCalls(t *testing.T) {
 	reader := NewXMLCallsReader(repoRoot)
 
 	// Test ReadCalls
-	calls, err := reader.ReadCalls(2014)
+	calls, err := reader.ReadCalls(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("ReadCalls failed: %v", err)
 	}
@@ -121,7 +122,7 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 	reader := NewXMLCallsReader(repoRoot)
 
 	var streamedCalls []Call
-	err = reader.StreamCallsForYear(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(context.Background(), 2014, func(call Call) error {
 		streamedCalls = append(streamedCalls, call)
 		return nil
 	})
@@ -177,7 +178,7 @@ func TestXMLCallsReader_GetAvailableYears(t *testing.T) {
 
 	reader := NewXMLCallsReader(repoRoot)
 
-	availableYears, err := reader.GetAvailableYears()
+	availableYears, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		t.Fatalf("GetAvailableYears failed: %v", err)
 	}
@@ -217,7 +218,7 @@ func TestXMLCallsReader_GetCallsCount(t *testing.T) {
 
 	reader := NewXMLCallsReader(repoRoot)
 
-	count, err := reader.GetCallsCount(2014)
+	count, err := reader.GetCallsCount(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("GetCallsCount failed: %v", err)
 	}
@@ -252,7 +253,7 @@ func TestXMLCallsReader_ValidateCallsFile(t *testing.T) {
 
 	reader := NewXMLCallsReader(repoRoot)
 
-	err = reader.ValidateCallsFile(2014)
+	err = reader.ValidateCallsFile(context.Background(), 2014)
 	if err != nil {
 		t.Errorf("ValidateCallsFile failed on valid file: %v", err)
 	}
@@ -283,7 +284,7 @@ func TestXMLCallsReader_ValidateCallsFile_CountMismatch(t *testing.T) {
 
 	reader := NewXMLCallsReader(repoRoot)
 
-	err = reader.ValidateCallsFile(2014)
+	err = reader.ValidateCallsFile(context.Background(), 2014)
 	if err == nil {
 		t.Error("ValidateCallsFile should have failed on count mismatch")
 	}
@@ -294,22 +295,22 @@ func TestXMLCallsReader_MissingFile(t *testing.T) {
 	reader := NewXMLCallsReader(tempDir)
 
 	// Test reading non-existent file
-	_, err := reader.ReadCalls(2014)
+	_, err := reader.ReadCalls(context.Background(), 2014)
 	if err == nil {
 		t.Error("ReadCalls should have failed on missing file")
 	}
 
-	err = reader.StreamCallsForYear(2014, func(Call) error { return nil })
+	err = reader.StreamCallsForYear(context.Background(), 2014, func(Call) error { return nil })
 	if err == nil {
 		t.Error("StreamCalls should have failed on missing file")
 	}
 
-	_, err = reader.GetCallsCount(2014)
+	_, err = reader.GetCallsCount(context.Background(), 2014)
 	if err == nil {
 		t.Error("GetCallsCount should have failed on missing file")
 	}
 
-	err = reader.ValidateCallsFile(2014)
+	err = reader.ValidateCallsFile(context.Background(), 2014)
 	if err == nil {
 		t.Error("ValidateCallsFile should have failed on missing file")
 	}
@@ -320,7 +321,7 @@ func TestXMLCallsReader_EmptyCallsDirectory(t *testing.T) {
 	reader := NewXMLCallsReader(tempDir)
 
 	// Test with non-existent calls directory
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		t.Fatalf("GetAvailableYears should handle missing directory: %v", err)
 	}

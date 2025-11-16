@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -51,14 +52,14 @@ func calculateRepositoryStats(repoRoot string) (*RepoStats, error) {
 
 	// Count calls
 	callsReader := calls.NewXMLCallsReader(repoRoot)
-	years, err := callsReader.GetAvailableYears()
+	years, err := callsReader.GetAvailableYears(context.Background())
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("failed to get call years: %w", err)
 	}
 
 	for _, year := range years {
 		yearsMap[year] = true
-		count, err := callsReader.GetCallsCount(year)
+		count, err := callsReader.GetCallsCount(context.Background(), year)
 		if err != nil {
 			return nil, fmt.Errorf("failed to count calls for year %d: %w", year, err)
 		}
@@ -67,14 +68,14 @@ func calculateRepositoryStats(repoRoot string) (*RepoStats, error) {
 
 	// Count SMS/MMS
 	smsReader := sms.NewXMLSMSReader(repoRoot)
-	years, err = smsReader.GetAvailableYears()
+	years, err = smsReader.GetAvailableYears(context.Background())
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("failed to get SMS years: %w", err)
 	}
 
 	for _, year := range years {
 		yearsMap[year] = true
-		count, err := smsReader.GetMessageCount(year)
+		count, err := smsReader.GetMessageCount(context.Background(), year)
 		if err != nil {
 			return nil, fmt.Errorf("failed to count SMS for year %d: %w", year, err)
 		}

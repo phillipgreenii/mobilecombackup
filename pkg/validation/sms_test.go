@@ -21,14 +21,14 @@ type mockSMSReader struct {
 	validateError     map[int]error
 }
 
-func (m *mockSMSReader) ReadMessages(year int) ([]sms.Message, error) {
+func (m *mockSMSReader) ReadMessages(_ context.Context, year int) ([]sms.Message, error) {
 	if messageList, exists := m.messages[year]; exists {
 		return messageList, nil
 	}
 	return nil, fmt.Errorf("no messages for year %d", year)
 }
 
-func (m *mockSMSReader) StreamMessagesForYear(year int, callback func(sms.Message) error) error {
+func (m *mockSMSReader) StreamMessagesForYear(_ context.Context, year int, callback func(sms.Message) error) error {
 	if messageList, exists := m.messages[year]; exists {
 		for _, message := range messageList {
 			if err := callback(message); err != nil {
@@ -40,32 +40,32 @@ func (m *mockSMSReader) StreamMessagesForYear(year int, callback func(sms.Messag
 	return fmt.Errorf("no messages for year %d", year)
 }
 
-func (m *mockSMSReader) GetAttachmentRefs(year int) ([]string, error) {
+func (m *mockSMSReader) GetAttachmentRefs(_ context.Context, year int) ([]string, error) {
 	if refs, exists := m.attachmentRefs[year]; exists {
 		return refs, nil
 	}
 	return []string{}, nil
 }
 
-func (m *mockSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
+func (m *mockSMSReader) GetAllAttachmentRefs(_ context.Context) (map[string]bool, error) {
 	if m.allAttachmentRefs == nil {
 		return nil, fmt.Errorf("mock error: allAttachmentRefs is nil")
 	}
 	return m.allAttachmentRefs, nil
 }
 
-func (m *mockSMSReader) GetAvailableYears() ([]int, error) {
+func (m *mockSMSReader) GetAvailableYears(_ context.Context) ([]int, error) {
 	return m.availableYears, nil
 }
 
-func (m *mockSMSReader) GetMessageCount(year int) (int, error) {
+func (m *mockSMSReader) GetMessageCount(_ context.Context, year int) (int, error) {
 	if count, exists := m.counts[year]; exists {
 		return count, nil
 	}
 	return 0, fmt.Errorf("no count for year %d", year)
 }
 
-func (m *mockSMSReader) ValidateSMSFile(year int) error {
+func (m *mockSMSReader) ValidateSMSFile(_ context.Context, year int) error {
 	if err, exists := m.validateError[year]; exists {
 		return err
 	}
@@ -75,31 +75,31 @@ func (m *mockSMSReader) ValidateSMSFile(year int) error {
 // Context-aware method implementations for mock
 
 func (m *mockSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]sms.Message, error) {
-	return m.ReadMessages(year)
+	return m.ReadMessages(context.Background(), year)
 }
 
 func (m *mockSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, callback func(sms.Message) error) error {
-	return m.StreamMessagesForYear(year, callback)
+	return m.StreamMessagesForYear(context.Background(), year, callback)
 }
 
 func (m *mockSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
-	return m.GetAttachmentRefs(year)
+	return m.GetAttachmentRefs(context.Background(), year)
 }
 
 func (m *mockSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
-	return m.GetAllAttachmentRefs()
+	return m.GetAllAttachmentRefs(context.Background())
 }
 
 func (m *mockSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	return m.GetAvailableYears()
+	return m.GetAvailableYears(context.Background())
 }
 
 func (m *mockSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
-	return m.GetMessageCount(year)
+	return m.GetMessageCount(context.Background(), year)
 }
 
 func (m *mockSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
-	return m.ValidateSMSFile(year)
+	return m.ValidateSMSFile(context.Background(), year)
 }
 
 // mockSMS implements sms.Message interface for testing

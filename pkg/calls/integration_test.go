@@ -1,6 +1,7 @@
 package calls
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -50,7 +51,7 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 	reader := NewXMLCallsReader(tempDir)
 
 	// Test ReadCalls with real data
-	calls, err := reader.ReadCalls(2014)
+	calls, err := reader.ReadCalls(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("ReadCalls failed with real data: %v", err)
 	}
@@ -80,7 +81,7 @@ func TestXMLCallsReader_Integration_WithTestData(t *testing.T) {
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamCallsForYear(2014, func(_ Call) error {
+	err = reader.StreamCallsForYear(context.Background(), 2014, func(_ Call) error {
 		streamedCount++
 		return nil
 	})
@@ -108,7 +109,7 @@ func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
 	reader := NewXMLCallsReader(tempDir)
 
 	// Test GetCallsCount with larger file - note the count attribute is wrong in test data
-	count, err := reader.GetCallsCount(2014)
+	count, err := reader.GetCallsCount(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("GetCallsCount failed: %v", err)
 	}
@@ -119,14 +120,14 @@ func TestXMLCallsReader_Integration_LargeFile(t *testing.T) {
 	}
 
 	// Test validation with larger file - this should fail due to count mismatch
-	err = reader.ValidateCallsFile(2014)
+	err = reader.ValidateCallsFile(context.Background(), 2014)
 	if err == nil {
 		t.Fatalf("ValidateCallsFile should have failed due to count mismatch in test file")
 	}
 
 	// Test streaming for memory efficiency
 	var streamedCalls []Call
-	err = reader.StreamCallsForYear(2014, func(call Call) error {
+	err = reader.StreamCallsForYear(context.Background(), 2014, func(call Call) error {
 		streamedCalls = append(streamedCalls, call)
 		return nil
 	})
@@ -184,7 +185,7 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	reader := NewXMLCallsReader(tempDir)
 
 	// Test that available years includes 2014
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		t.Fatalf("GetAvailableYears failed: %v", err)
 	}
@@ -194,7 +195,7 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	}
 
 	// Test count matches the scenario data - note this is from count attribute
-	count, err := reader.GetCallsCount(2014)
+	count, err := reader.GetCallsCount(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("GetCallsCount failed: %v", err)
 	}
@@ -204,7 +205,7 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	}
 
 	// Test reading all calls
-	calls, err := reader.ReadCalls(2014)
+	calls, err := reader.ReadCalls(context.Background(), 2014)
 	if err != nil {
 		t.Fatalf("ReadCalls failed: %v", err)
 	}
@@ -236,7 +237,7 @@ func TestXMLCallsReader_Integration_ScenarioData(t *testing.T) {
 	}
 
 	// Test validation fails due to count mismatch in the test data
-	err = reader.ValidateCallsFile(2014)
+	err = reader.ValidateCallsFile(context.Background(), 2014)
 	if err == nil {
 		t.Errorf("ValidateCallsFile should have failed due to count mismatch in test data")
 	}

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -51,7 +52,7 @@ func (v *ContactsValidatorImpl) ValidateContactsStructure() []Violation {
 	}
 
 	// Try to load contacts to validate file structure
-	err := v.contactsReader.LoadContacts()
+	err := v.contactsReader.LoadContacts(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     InvalidFormat,
@@ -87,7 +88,7 @@ func (v *ContactsValidatorImpl) loadContactsForValidation() ([]*contacts.Contact
 	var violations []Violation
 
 	// Load contacts first
-	err := v.contactsReader.LoadContacts()
+	err := v.contactsReader.LoadContacts(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     InvalidFormat,
@@ -99,7 +100,7 @@ func (v *ContactsValidatorImpl) loadContactsForValidation() ([]*contacts.Contact
 	}
 
 	// Get all contacts for validation
-	allContacts, err := v.contactsReader.GetAllContacts()
+	allContacts, err := v.contactsReader.GetAllContacts(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     InvalidFormat,
@@ -241,7 +242,7 @@ func (v *ContactsValidatorImpl) ValidateContactReferences(callContacts, smsConta
 	var violations []Violation
 
 	// Load contacts first
-	err := v.contactsReader.LoadContacts()
+	err := v.contactsReader.LoadContacts(context.Background())
 	if err != nil {
 		// If contacts can't be loaded, we can't validate references
 		// This is not necessarily an error if contacts.yaml doesn't exist
