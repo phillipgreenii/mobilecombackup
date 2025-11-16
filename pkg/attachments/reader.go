@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 var (
@@ -19,12 +20,14 @@ var (
 // AttachmentManager provides attachment management functionality
 type AttachmentManager struct {
 	repoPath string
+	fs       afero.Fs
 }
 
 // NewAttachmentManager creates a new AttachmentManager for the given repository path
-func NewAttachmentManager(repoPath string) *AttachmentManager {
+func NewAttachmentManager(repoPath string, fs afero.Fs) *AttachmentManager {
 	return &AttachmentManager{
 		repoPath: repoPath,
+		fs:       fs,
 	}
 }
 
@@ -67,10 +70,10 @@ func (am *AttachmentManager) IsNewFormat(hash string) bool {
 	fullDirPath := filepath.Join(am.repoPath, dirPath)
 
 	// Check if directory exists
-	if info, err := os.Stat(fullDirPath); err == nil && info.IsDir() {
+	if info, err := am.fs.Stat(fullDirPath); err == nil && info.IsDir() {
 		// Check if metadata.yaml exists in the directory
 		metadataPath := filepath.Join(fullDirPath, "metadata.yaml")
-		if _, err := os.Stat(metadataPath); err == nil {
+		if _, err := am.fs.Stat(metadataPath); err == nil {
 			return true
 		}
 	}
@@ -84,7 +87,7 @@ func (am *AttachmentManager) IsLegacyFormat(hash string) bool {
 	fullPath := filepath.Join(am.repoPath, legacyPath)
 
 	// Check if file exists and is not a directory
-	if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
+	if info, err := am.fs.Stat(fullPath); err == nil && !info.IsDir() {
 		return true
 	}
 
@@ -114,7 +117,7 @@ func (am *AttachmentManager) GetAttachment(hash string) (*Attachment, error) {
 
 	// Check new format first
 	if am.IsNewFormat(hash) {
-		storage := NewDirectoryAttachmentStorage(am.repoPath)
+		storage := NewDirectoryAttachmentStorage(am.repoPath, am.fs)
 		metadata, err := storage.GetMetadata(hash)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get metadata for new format attachment: %w", err)
@@ -136,7 +139,7 @@ func (am *AttachmentManager) GetAttachment(hash string) (*Attachment, error) {
 		relPath := am.GetAttachmentPath(hash)
 		fullPath := filepath.Join(am.repoPath, relPath)
 
-		info, err := os.Stat(fullPath)
+		info, err := am.fs.Stat(fullPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to stat legacy attachment %s: %w", hash, err)
 		}
@@ -170,7 +173,7 @@ func (am *AttachmentManager) ReadAttachment(hash string) ([]byte, error) {
 
 	// Check new format first
 	if am.IsNewFormat(hash) {
-		storage := NewDirectoryAttachmentStorage(am.repoPath)
+		storage := NewDirectoryAttachmentStorage(am.repoPath, am.fs)
 		return storage.ReadAttachment(hash)
 	}
 
@@ -179,7 +182,7 @@ func (am *AttachmentManager) ReadAttachment(hash string) ([]byte, error) {
 		relPath := am.GetAttachmentPath(hash)
 		fullPath := filepath.Join(am.repoPath, relPath)
 
-		data, err := os.ReadFile(fullPath) // #nosec G304
+		data, err := afero.ReadFile(am.fs, fullPath) // #nosec G304
 		if err != nil {
 			return nil, fmt.Errorf("failed to read legacy attachment %s: %w", hash, err)
 		}
@@ -222,13 +225,16 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 	attachmentsDir := filepath.Join(am.repoPath, "attachments")
 
 	// Check if attachments directory exists
-	if _, err := os.Stat(attachmentsDir); os.IsNotExist(err) {
-		// No attachments directory is not an error
-		return nil
+	if _, err := am.fs.Stat(attachmentsDir); err != nil {
+		if os.IsNotExist(err) {
+			// No attachments directory is not an error
+			return nil
+		}
+		return fmt.Errorf("failed to check attachments directory: %w", err)
 	}
 
 	// Read subdirectories (2-char prefixes)
-	entries, err := os.ReadDir(attachmentsDir)
+	entries, err := afero.ReadDir(am.fs, attachmentsDir)
 	if err != nil {
 		return fmt.Errorf("failed to read attachments directory: %w", err)
 	}
@@ -245,7 +251,7 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 
 		// Read files in this prefix directory
 		prefixDir := filepath.Join(attachmentsDir, prefix)
-		prefixEntries, err := os.ReadDir(prefixDir)
+		prefixEntries, err := afero.ReadDir(am.fs, prefixDir)
 		if err != nil {
 			// Log warning but continue with other directories
 			continue
@@ -280,7 +286,7 @@ func (am *AttachmentManager) StreamAttachments(callback func(*Attachment) error)
 // processNewFormatAttachment processes a new format attachment directory
 func (am *AttachmentManager) processNewFormatAttachment(prefixDir, hash string, callback func(*Attachment) error) error {
 	metadataPath := filepath.Join(prefixDir, hash, "metadata.yaml")
-	if _, err := os.Stat(metadataPath); err != nil {
+	if _, err := am.fs.Stat(metadataPath); err != nil {
 		return nil // Skip if no metadata file
 	}
 
@@ -294,13 +300,8 @@ func (am *AttachmentManager) processNewFormatAttachment(prefixDir, hash string, 
 
 // processLegacyFormatAttachment processes a legacy format attachment file
 func (am *AttachmentManager) processLegacyFormatAttachment(
-	hash string, entry fs.DirEntry, callback func(*Attachment) error,
+	hash string, info os.FileInfo, callback func(*Attachment) error,
 ) error {
-	info, err := entry.Info()
-	if err != nil {
-		return nil // Skip files we can't read
-	}
-
 	attachment := &Attachment{
 		Hash:   hash,
 		Path:   am.GetAttachmentPath(hash),
@@ -331,12 +332,15 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 	attachmentsDir := filepath.Join(am.repoPath, "attachments")
 
 	// Check if attachments directory exists
-	if _, err := os.Stat(attachmentsDir); os.IsNotExist(err) {
-		// No attachments directory is valid (empty repository)
-		return nil
+	if _, err := am.fs.Stat(attachmentsDir); err != nil {
+		if os.IsNotExist(err) {
+			// No attachments directory is valid (empty repository)
+			return nil
+		}
+		return fmt.Errorf("failed to check attachments directory: %w", err)
 	}
 
-	entries, err := os.ReadDir(attachmentsDir)
+	entries, err := afero.ReadDir(am.fs, attachmentsDir)
 	if err != nil {
 		return fmt.Errorf("failed to read attachments directory: %w", err)
 	}
@@ -364,7 +368,7 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 
 		// Validate files in subdirectory
 		subDir := filepath.Join(attachmentsDir, name)
-		subEntries, err := os.ReadDir(subDir)
+		subEntries, err := afero.ReadDir(am.fs, subDir)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("failed to read directory %s: %v", name, err))
 			continue
@@ -388,7 +392,7 @@ func (am *AttachmentManager) ValidateAttachmentStructure() error {
 
 				// Check if this is a valid new format directory (has metadata.yaml)
 				metadataPath := filepath.Join(subDir, entryName, "metadata.yaml")
-				if _, err := os.Stat(metadataPath); err == nil {
+				if _, err := am.fs.Stat(metadataPath); err == nil {
 					// Valid new format directory - no further validation needed here
 					continue
 				}

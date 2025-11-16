@@ -11,6 +11,8 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+
+	"github.com/spf13/afero"
 )
 
 func TestRepositoryValidatorImpl_ValidateRepository(t *testing.T) {
@@ -37,6 +39,7 @@ func TestRepositoryValidatorImpl_ValidateRepository(t *testing.T) {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	report, err := validator.ValidateRepositoryContext(context.Background())
@@ -108,6 +111,7 @@ created_by: "mobilecombackup v1.0.0"
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	report, err := validator.ValidateRepositoryContext(context.Background())
@@ -151,6 +155,7 @@ created_by: "mobilecombackup v2.0.0"
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	report, err := validator.ValidateRepositoryContext(context.Background())
@@ -208,6 +213,7 @@ func TestRepositoryValidatorImpl_ValidateStructure(t *testing.T) {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	violations := validator.ValidateStructureContext(context.Background())
@@ -307,6 +313,7 @@ func TestRepositoryValidatorImpl_ValidateContent(t *testing.T) {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	violations := validator.ValidateContentContext(context.Background())
@@ -354,6 +361,7 @@ func TestRepositoryValidatorImpl_ValidateConsistency(t *testing.T) {
 		smsReader,
 		attachmentReader,
 		contactsReader,
+		afero.NewOsFs(),
 	)
 
 	violations := validator.ValidateConsistencyContext(context.Background())
@@ -400,7 +408,7 @@ func TestRepositoryValidatorImpl_StatusDetermination(t *testing.T) {
 		checksumValidator:    NewChecksumValidator(tempDir),
 		callsValidator:       NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
 		smsValidator:         NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
-		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
+		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}, afero.NewOsFs()),
 		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
 	}
 
@@ -444,7 +452,7 @@ func TestRepositoryValidatorImpl_ContextCancellation(t *testing.T) {
 		checksumValidator:    NewChecksumValidator(tempDir),
 		callsValidator:       NewCallsValidator(tempDir, &mockCallsReader{availableYears: []int{}}),
 		smsValidator:         NewSMSValidator(tempDir, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
-		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}),
+		attachmentsValidator: NewAttachmentsValidator(tempDir, &mockAttachmentReader{attachments: []*attachments.Attachment{}}, &mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)}, afero.NewOsFs()),
 		contactsValidator:    NewContactsValidator(tempDir, &mockContactsReader{contacts: []*contacts.Contact{}}),
 	}
 
@@ -505,6 +513,7 @@ func TestRepositoryValidatorImpl_ErrorHandling(t *testing.T) {
 		smsReader,
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	violations := validator.ValidateConsistencyContext(context.Background())
@@ -532,6 +541,7 @@ func TestNewRepositoryValidator(t *testing.T) {
 		&mockSMSReader{},
 		&mockAttachmentReader{},
 		&mockContactsReader{},
+		afero.NewOsFs(),
 	)
 
 	if validator == nil {

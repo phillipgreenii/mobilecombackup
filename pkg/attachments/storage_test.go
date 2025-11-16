@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 func TestDirectoryAttachmentStorage_Store(t *testing.T) {
@@ -19,7 +21,7 @@ func TestDirectoryAttachmentStorage_Store(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test data
 	hash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -75,7 +77,7 @@ func TestDirectoryAttachmentStorage_GetMetadata(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test data
 	hash := "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
@@ -127,7 +129,7 @@ func TestDirectoryAttachmentStorage_GetPath(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test data
 	hash := "2cf24dba4f21d4288674d04eb6f1a906d4da8e88ba3b948ba84e0fb0e6d31e7"
@@ -166,7 +168,7 @@ func TestDirectoryAttachmentStorage_Exists(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test non-existent attachment
 	hash := "non-existent-hash"
@@ -203,7 +205,7 @@ func TestDirectoryAttachmentStorage_ReadAttachment(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test data
 	hash := "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
@@ -242,7 +244,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test data
 	originalData := []byte("hello from reader")
@@ -336,7 +338,7 @@ func TestGetFileExtension(t *testing.T) {
 
 func TestDirectoryAttachmentStorage_ErrorHandling(t *testing.T) {
 	tempDir := t.TempDir()
-	storage := NewDirectoryAttachmentStorage(tempDir)
+	storage := NewDirectoryAttachmentStorage(tempDir, afero.NewOsFs())
 
 	// Test 1: Invalid hash with null bytes should fail validation
 	invalidHash := "test\x00hash"
@@ -384,7 +386,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_ErrorHandling(t *testing.T) 
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test with reader that fails
 	failingReader := &failingReader{}
@@ -442,7 +444,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_Streaming(t *testing.T) {
 			}
 			defer func() { _ = os.RemoveAll(tmpDir) }()
 
-			storage := NewDirectoryAttachmentStorage(tmpDir)
+			storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 			// Generate test data
 			data := make([]byte, tt.dataSize)
@@ -501,7 +503,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_HashMismatch(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	data := "test content"
 	reader := strings.NewReader(data)
@@ -545,7 +547,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_AtomicOperations(t *testing.
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test with invalid hash to trigger error during validation
 	invalidHash := ""
@@ -580,7 +582,7 @@ func TestDirectoryAttachmentStorage_CustomErrors(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Test hash mismatch error
 	data := "test"
@@ -617,7 +619,7 @@ func TestDirectoryAttachmentStorage_StoreFromReader_MemoryEfficiency(t *testing.
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Create a large data stream (10MB)
 	dataSize := 10 * 1024 * 1024

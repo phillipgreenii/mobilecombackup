@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+
+	"github.com/spf13/afero"
 )
 
 func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
@@ -41,6 +43,7 @@ func TestSMSImporter_BUG023_FilesInCorrectDirectory(t *testing.T) {
 		Paths:    []string{smsFile},
 		Filter:   "sms",
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())

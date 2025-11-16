@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+	"github.com/spf13/afero"
 )
 
 // TestAutofixer_CanFix tests which violation types can be fixed
@@ -42,7 +43,7 @@ func TestAutofixer_CanFix(t *testing.T) {
 // TestAutofixer_DryRunMode tests dry-run functionality
 func TestAutofixer_DryRunMode(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -109,7 +110,7 @@ func TestAutofixer_DryRunMode(t *testing.T) {
 // TestAutofixer_CreateMissingDirectories tests directory creation
 func TestAutofixer_CreateMissingDirectories(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -163,7 +164,7 @@ func TestAutofixer_CreateMissingDirectories(t *testing.T) {
 // TestAutofixer_CreateMissingFiles tests file creation
 func TestAutofixer_CreateMissingFiles(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -237,7 +238,7 @@ func TestAutofixer_CreateMissingFiles(t *testing.T) {
 // TestAutofixer_SkipUnsafeViolations tests that unsafe violations are skipped
 func TestAutofixer_SkipUnsafeViolations(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -376,7 +377,7 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 		_ = os.Chmod(readOnlyDir, 0750) // nolint:gosec // Cleanup permissions
 	}()
 
-	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -417,7 +418,7 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 // TestAutofixer_XMLCountFix_Integration tests XML count fixing with real files
 func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	// Create test XML file with count mismatch
 	callsDir := filepath.Join(tempDir, "calls")
@@ -481,7 +482,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 func TestAutofixer_ErrorHandling(t *testing.T) {
 	// Use a non-existent directory to trigger errors
 	nonExistentDir := "/this/path/does/not/exist"
-	autofixer := NewAutofixer(nonExistentDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(nonExistentDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -531,14 +532,14 @@ func TestNewAutofixer(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Test with null reporter
-	autofixer1 := NewAutofixer(tempDir, nil)
+	autofixer1 := NewAutofixer(tempDir, nil, afero.NewOsFs())
 	if autofixer1 == nil {
 		t.Error("Expected autofixer to be created with nil reporter")
 	}
 
 	// Test with real reporter
 	reporter := &NullProgressReporter{}
-	autofixer2 := NewAutofixer(tempDir, reporter)
+	autofixer2 := NewAutofixer(tempDir, reporter, afero.NewOsFs())
 	if autofixer2 == nil {
 		t.Error("Expected autofixer to be created with reporter")
 	}
@@ -585,7 +586,7 @@ func createTestViolations() []validation.Violation {
 // TestAutofixer_ComprehensiveWorkflow tests a complete autofix workflow
 func TestAutofixer_ComprehensiveWorkflow(t *testing.T) {
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := createTestViolations()
 

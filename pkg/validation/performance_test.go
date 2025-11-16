@@ -9,6 +9,8 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+
+	"github.com/spf13/afero"
 )
 
 func TestDefaultPerformanceOptions(t *testing.T) {
@@ -42,6 +44,7 @@ func TestNewOptimizedRepositoryValidator(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	// Create optimized validator
@@ -73,6 +76,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_Sequential(t
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -107,6 +111,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_Parallel(t *
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -141,6 +146,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_ProgressCall
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -191,6 +197,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_Timeout(t *t
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -229,6 +236,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_EarlyTermina
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		attachmentReader,
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -258,6 +266,7 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_DefaultOptio
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -282,6 +291,7 @@ func TestOptimizedRepositoryValidator_ValidateAsync(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -319,6 +329,7 @@ func TestOptimizedRepositoryValidator_GetMetrics(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -359,6 +370,7 @@ func TestOptimizedRepositoryValidator_ClearCache(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -383,6 +395,7 @@ func TestOptimizedRepositoryValidator_BackwardCompatibility(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -446,6 +459,7 @@ func BenchmarkOptimizedValidation_Sequential(b *testing.B) {
 		&mockSMSReader{availableYears: []int{2023, 2024}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -470,6 +484,7 @@ func BenchmarkOptimizedValidation_Parallel(b *testing.B) {
 		&mockSMSReader{availableYears: []int{2023, 2024}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	optimized := NewOptimizedRepositoryValidator(baseValidator)
@@ -497,6 +512,7 @@ func TestParallelValidation_RaceDetection(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	validator := NewOptimizedRepositoryValidator(baseValidator)
@@ -544,6 +560,7 @@ func TestConcurrentViolationAppend(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	validator := NewOptimizedRepositoryValidator(baseValidator)
@@ -591,6 +608,7 @@ func TestProgressCallbackSynchronization(t *testing.T) {
 		&mockSMSReader{availableYears: []int{}, allAttachmentRefs: make(map[string]bool)},
 		&mockAttachmentReader{attachments: []*attachments.Attachment{}},
 		&mockContactsReader{contacts: []*contacts.Contact{}},
+		afero.NewOsFs(),
 	)
 
 	validator := NewOptimizedRepositoryValidator(baseValidator)

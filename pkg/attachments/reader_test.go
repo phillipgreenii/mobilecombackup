@@ -6,10 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestAttachmentManager_GetAttachmentPath(t *testing.T) {
-	manager := NewAttachmentManager("/tmp/test")
+	manager := NewAttachmentManager("/tmp/test", afero.NewOsFs())
 
 	tests := []struct {
 		hash     string
@@ -66,7 +68,7 @@ func TestIsValidHash(t *testing.T) {
 
 func TestAttachmentManager_GetAttachment_InvalidHash(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	_, err := manager.GetAttachment("invalid")
 	if err == nil {
@@ -76,7 +78,7 @@ func TestAttachmentManager_GetAttachment_InvalidHash(t *testing.T) {
 
 func TestAttachmentManager_GetAttachment_NonExistent(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
 	attachment, err := manager.GetAttachment(hash)
@@ -97,7 +99,7 @@ func TestAttachmentManager_GetAttachment_NonExistent(t *testing.T) {
 
 func TestAttachmentManager_GetAttachment_Existing(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test content and calculate its hash
 	content := []byte("test attachment content")
@@ -137,7 +139,7 @@ func TestAttachmentManager_GetAttachment_Existing(t *testing.T) {
 
 func TestAttachmentManager_ReadAttachment(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test content and calculate its hash
 	content := []byte("test attachment content for reading")
@@ -171,7 +173,7 @@ func TestAttachmentManager_ReadAttachment(t *testing.T) {
 
 func TestAttachmentManager_ReadAttachment_InvalidHash(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	_, err := manager.ReadAttachment("invalid")
 	if err == nil {
@@ -181,7 +183,7 @@ func TestAttachmentManager_ReadAttachment_InvalidHash(t *testing.T) {
 
 func TestAttachmentManager_ReadAttachment_NonExistent(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	hash := "ab54363e39c1234567890abcdef1234567890abcdef1234567890abcdef123456"
 	_, err := manager.ReadAttachment(hash)
@@ -192,7 +194,7 @@ func TestAttachmentManager_ReadAttachment_NonExistent(t *testing.T) {
 
 func TestAttachmentManager_VerifyAttachment(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test content and calculate its hash
 	content := []byte("test content for verification")
@@ -249,7 +251,7 @@ func TestAttachmentManager_VerifyAttachment(t *testing.T) {
 
 func TestAttachmentManager_AttachmentExists(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	hash := "3ceb5c413ee02895bf1f357a8c2cc2bec824f4d8aad13aeab69303f341c8b781"
 
@@ -288,7 +290,7 @@ func TestAttachmentManager_AttachmentExists(t *testing.T) {
 
 func TestAttachmentManager_StreamAttachments_EmptyRepository(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	var attachmentCount int
 	err := manager.StreamAttachments(func(_ *Attachment) error {
@@ -306,7 +308,7 @@ func TestAttachmentManager_StreamAttachments_EmptyRepository(t *testing.T) {
 
 func TestAttachmentManager_StreamAttachments_WithAttachments(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test attachments
 	testAttachments := []struct {
@@ -369,7 +371,7 @@ func TestAttachmentManager_StreamAttachments_WithAttachments(t *testing.T) {
 
 func TestAttachmentManager_ListAttachments(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create a test attachment
 	content := []byte("list test content")
@@ -415,7 +417,7 @@ func TestAttachmentManager_ListAttachments(t *testing.T) {
 
 func TestAttachmentManager_FindOrphanedAttachments(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test attachments
 	testContents := [][]byte{
@@ -467,7 +469,7 @@ func TestAttachmentManager_FindOrphanedAttachments(t *testing.T) {
 
 func TestAttachmentManager_ValidateAttachmentStructure_EmptyRepository(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	err := manager.ValidateAttachmentStructure()
 	if err != nil {
@@ -477,7 +479,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_EmptyRepository(t *testin
 
 func TestAttachmentManager_ValidateAttachmentStructure_ValidStructure(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create valid attachment structure
 	content := []byte("valid structure test")
@@ -505,7 +507,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_ValidStructure(t *testing
 
 func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectory(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create invalid directory name (3 characters)
 	invalidDir := filepath.Join(tempDir, "attachments", "abc")
@@ -522,7 +524,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectory(t *testi
 
 func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectoryFormat(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create invalid directory name (uppercase)
 	invalidDir := filepath.Join(tempDir, "attachments", "AB")
@@ -539,7 +541,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_InvalidDirectoryFormat(t 
 
 func TestAttachmentManager_ValidateAttachmentStructure_FileInRoot(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create file in attachments root (should be error)
 	attachmentsDir := filepath.Join(tempDir, "attachments")
@@ -562,7 +564,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_FileInRoot(t *testing.T) 
 
 func TestAttachmentManager_ValidateAttachmentStructure_MisplacedFile(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create file in wrong directory (hash doesn't start with directory name)
 	wrongDir := filepath.Join(tempDir, "attachments", "ab")
@@ -586,7 +588,7 @@ func TestAttachmentManager_ValidateAttachmentStructure_MisplacedFile(t *testing.
 
 func TestAttachmentManager_GetAttachmentStats(t *testing.T) {
 	tempDir := t.TempDir()
-	manager := NewAttachmentManager(tempDir)
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Create test attachments
 	testContents := [][]byte{

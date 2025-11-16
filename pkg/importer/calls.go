@@ -36,7 +36,7 @@ func NewCallsImporter(
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 
-	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
+	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"), options.Fs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
 	}
@@ -62,7 +62,7 @@ func NewCallsImporterWithDependencies(
 	// Set defaults for size limits if not specified
 	options.SetDefaults()
 
-	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"))
+	writer, err := calls.NewXMLCallsWriter(filepath.Join(options.RepoRoot, "calls"), options.Fs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create calls writer: %w", err)
 	}

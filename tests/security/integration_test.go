@@ -10,6 +10,8 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/autofix"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+
+	"github.com/spf13/afero"
 )
 
 // TestAttachmentStorage_SecurityIntegration tests that attachment storage is protected against directory traversal
@@ -19,7 +21,7 @@ func TestAttachmentStorage_SecurityIntegration(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	storage := attachments.NewDirectoryAttachmentStorage(tempDir)
+	storage := attachments.NewDirectoryAttachmentStorage(tempDir, afero.NewOsFs())
 
 	testData := []byte("test attachment data")
 	metadata := attachments.AttachmentInfo{
@@ -74,7 +76,7 @@ func TestAutofix_SecurityIntegration(t *testing.T) {
 	}
 	tempDir := t.TempDir()
 	reporter := &autofix.NullProgressReporter{}
-	fixer := autofix.NewAutofixer(tempDir, reporter)
+	fixer := autofix.NewAutofixer(tempDir, reporter, afero.NewOsFs())
 
 	// Create attack vectors via validation violations
 	attackViolations := []validation.Violation{

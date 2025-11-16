@@ -59,6 +59,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
@@ -97,10 +98,11 @@ type AutofixerImpl struct {
 	repositoryRoot string
 	reporter       ProgressReporter
 	pathValidator  *security.PathValidator
+	fs             afero.Fs
 }
 
 // NewAutofixer creates a new autofixer instance
-func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
+func NewAutofixer(repositoryRoot string, reporter ProgressReporter, fs afero.Fs) Autofixer {
 	if reporter == nil {
 		reporter = &NullProgressReporter{}
 	}
@@ -108,6 +110,7 @@ func NewAutofixer(repositoryRoot string, reporter ProgressReporter) Autofixer {
 		repositoryRoot: repositoryRoot,
 		reporter:       reporter,
 		pathValidator:  security.NewPathValidator(repositoryRoot),
+		fs:             fs,
 	}
 }
 
@@ -670,7 +673,7 @@ func (a *AutofixerImpl) createSummaryFile() error {
 
 func (a *AutofixerImpl) createFilesManifest() error {
 	// Use the shared manifest generator
-	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
+	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot, a.fs)
 
 	// Generate manifest
 	fileManifest, err := manifestGenerator.GenerateFileManifest()
@@ -688,7 +691,7 @@ func (a *AutofixerImpl) createFilesManifest() error {
 
 func (a *AutofixerImpl) createManifestChecksum() error {
 	// Use the shared manifest generator - only create if missing
-	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot)
+	manifestGenerator := manifest.NewManifestGenerator(a.repositoryRoot, a.fs)
 	return manifestGenerator.WriteChecksumOnly()
 }
 

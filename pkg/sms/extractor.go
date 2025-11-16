@@ -9,6 +9,7 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
+	"github.com/spf13/afero"
 )
 
 // Action constants for attachment extraction results
@@ -28,23 +29,26 @@ type AttachmentExtractor struct {
 	attachmentManager *attachments.AttachmentManager
 	repoRoot          string
 	logger            logging.Logger
+	fs                afero.Fs
 }
 
 // NewAttachmentExtractor creates a new attachment extractor with default (null) logger
-func NewAttachmentExtractor(repoRoot string) *AttachmentExtractor {
+func NewAttachmentExtractor(repoRoot string, fs afero.Fs) *AttachmentExtractor {
 	return &AttachmentExtractor{
-		attachmentManager: attachments.NewAttachmentManager(repoRoot),
+		attachmentManager: attachments.NewAttachmentManager(repoRoot, fs),
 		repoRoot:          repoRoot,
 		logger:            logging.NewNullLogger(),
+		fs:                fs,
 	}
 }
 
 // NewAttachmentExtractorWithLogger creates a new attachment extractor with a specific logger
-func NewAttachmentExtractorWithLogger(repoRoot string, logger logging.Logger) *AttachmentExtractor {
+func NewAttachmentExtractorWithLogger(repoRoot string, logger logging.Logger, fs afero.Fs) *AttachmentExtractor {
 	return &AttachmentExtractor{
-		attachmentManager: attachments.NewAttachmentManager(repoRoot),
+		attachmentManager: attachments.NewAttachmentManager(repoRoot, fs),
 		repoRoot:          repoRoot,
 		logger:            logger,
+		fs:                fs,
 	}
 }
 
@@ -321,7 +325,7 @@ func (ae *AttachmentExtractor) createNewAttachment(
 	part *MMSPart, decodedData []byte, hash string,
 ) (*AttachmentExtractionResult, error) {
 	// Use new directory-based storage for new attachments
-	storage := attachments.NewDirectoryAttachmentStorage(ae.repoRoot)
+	storage := attachments.NewDirectoryAttachmentStorage(ae.repoRoot, ae.fs)
 
 	// Create metadata
 	metadata := attachments.AttachmentInfo{

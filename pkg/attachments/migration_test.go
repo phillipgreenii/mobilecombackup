@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 func TestMigrationManager_GetMigrationStatus(t *testing.T) {
@@ -15,7 +17,7 @@ func TestMigrationManager_GetMigrationStatus(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 
 	// Test empty repository
 	status, err := migrationManager.GetMigrationStatus()
@@ -45,7 +47,7 @@ func TestMigrationManager_MigrateAllAttachments_EmptyRepository(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 	migrationManager.SetLogOutput(false) // Disable logging for tests
 
 	// Test migration of empty repository
@@ -87,7 +89,7 @@ func TestMigrationManager_MigrateAllAttachments_WithLegacyAttachment(t *testing.
 		t.Fatalf("Failed to create legacy file: %v", err)
 	}
 
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 	migrationManager.SetLogOutput(false) // Disable logging for tests
 
 	// Test migration
@@ -117,7 +119,7 @@ func TestMigrationManager_MigrateAllAttachments_WithLegacyAttachment(t *testing.
 	}
 
 	// Verify the new format exists
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 	if !storage.Exists(hash) {
 		t.Error("Expected new format attachment to exist")
 	}
@@ -158,7 +160,7 @@ func TestMigrationManager_DryRun(t *testing.T) {
 		t.Fatalf("Failed to create legacy file: %v", err)
 	}
 
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 	migrationManager.SetDryRun(true)
 	migrationManager.SetLogOutput(false) // Disable logging for tests
 
@@ -181,7 +183,7 @@ func TestMigrationManager_DryRun(t *testing.T) {
 	}
 
 	// Verify the new format doesn't exist (dry run shouldn't create actual new format)
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 	if storage.Exists(hash) {
 		t.Error("Expected new format attachment to not exist in dry run")
 	}
@@ -195,7 +197,7 @@ func TestMigrationManager_ValidateMigration(t *testing.T) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 	migrationManager.SetLogOutput(false) // Disable logging for tests
 
 	// Test validation of empty repository
@@ -205,7 +207,7 @@ func TestMigrationManager_ValidateMigration(t *testing.T) {
 	}
 
 	// Create a new format attachment
-	storage := NewDirectoryAttachmentStorage(tmpDir)
+	storage := NewDirectoryAttachmentStorage(tmpDir, afero.NewOsFs())
 
 	// Use a proper hash for testing
 	properHash := "2cf24dba4f21d4288674d04eb799d064e77f5d841b3d9e1e3c5d4c72a0d72c6e"
@@ -238,7 +240,7 @@ func TestMigrationManager_DefaultLogOutputDisabled(t *testing.T) {
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Test that new migration manager has logging disabled by default
-	migrationManager := NewMigrationManager(tmpDir)
+	migrationManager := NewMigrationManager(tmpDir, afero.NewOsFs())
 
 	// The logOutput field is not exported, but we can test the behavior
 	// by running a migration and checking that no panics occur

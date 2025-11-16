@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+
+	"github.com/spf13/afero"
 )
 
 // TestAutofixer_Integration_FullRepository tests autofix on a complete repository structure
@@ -21,7 +23,7 @@ func TestAutofixer_Integration_FullRepository(t *testing.T) {
 	// Create a repository with various violations
 	setupRepositoryWithViolations(t, tempDir)
 
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	// Simulate violations that would be found by validation
 	violations := []validation.Violation{
@@ -139,14 +141,14 @@ func TestAutofixer_Integration_DryRunVsRealRun(t *testing.T) {
 	}
 
 	// Run dry-run mode
-	autofixer1 := NewAutofixer(tempDir1, &NullProgressReporter{})
+	autofixer1 := NewAutofixer(tempDir1, &NullProgressReporter{}, afero.NewOsFs())
 	dryRunReport, err := autofixer1.FixViolations(violations, Options{DryRun: true})
 	if err != nil {
 		t.Fatalf("Dry-run failed: %v", err)
 	}
 
 	// Run real mode
-	autofixer2 := NewAutofixer(tempDir2, &NullProgressReporter{})
+	autofixer2 := NewAutofixer(tempDir2, &NullProgressReporter{}, afero.NewOsFs())
 	realReport, err := autofixer2.FixViolations(violations, Options{DryRun: false})
 	if err != nil {
 		t.Fatalf("Real run failed: %v", err)
@@ -184,7 +186,7 @@ func TestAutofixer_Integration_LargeRepository(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	// Create a large number of violations to test performance
 	violations := make([]validation.Violation, 0)
@@ -265,7 +267,7 @@ func TestAutofixer_Integration_PermissionErrors(t *testing.T) {
 		_ = os.Chmod(readOnlyDir, 0750) // nolint:gosec // Cleanup permissions
 	}()
 
-	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{
@@ -312,7 +314,7 @@ func TestAutofixer_Integration_ErrorRecovery(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	// Create a mix of valid and problematic violations
 	violations := []validation.Violation{
@@ -424,7 +426,7 @@ func TestAutofixer_Integration_Idempotent(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	violations := []validation.Violation{
 		{

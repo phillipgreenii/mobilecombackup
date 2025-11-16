@@ -9,6 +9,8 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+
+	"github.com/spf13/afero"
 )
 
 // mockAttachmentReader implements AttachmentReader for testing
@@ -137,7 +139,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure(t *testing.T) {
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentsStructure()
 
 	// Empty repository should have no violations
@@ -189,7 +191,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentsStructure()
 
 	// Should have warning for missing directory
@@ -272,7 +274,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have violations for missing and corrupted files
@@ -329,7 +331,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity_VerificationError(
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have violation for verification error
@@ -381,7 +383,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentReferences(t *testing.T) {
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentReferences(referencedHashes)
 
 	// Should have violations for:
@@ -450,7 +452,7 @@ func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	orphaned, err := validator.GetOrphanedAttachments(referencedHashes)
 
 	if err != nil {
@@ -478,7 +480,7 @@ func TestAttachmentsValidatorImpl_ErrorHandling(t *testing.T) {
 		messages:          make(map[int][]sms.Message),
 		allAttachmentRefs: make(map[string]bool),
 	}
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 
 	// Test integrity validation with list error
 	violations := validator.ValidateAttachmentIntegrity()
@@ -677,7 +679,7 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 		allAttachmentRefs: make(map[string]bool),
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have one format mismatch violation
@@ -732,7 +734,7 @@ func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
 		allAttachmentRefs: make(map[string]bool),
 	}
 
-	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader)
+	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	violations := validator.ValidateAttachmentIntegrity()
 
 	// Should have one unknown format violation

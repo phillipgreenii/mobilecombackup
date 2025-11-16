@@ -9,6 +9,8 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/logging"
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
+
+	"github.com/spf13/afero"
 )
 
 // setupTestRepository creates a complete test repository with all required files
@@ -57,7 +59,7 @@ created_by: "mobilecombackup v1.0.0"
 	}
 
 	// Generate and write manifest files
-	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot, afero.NewOsFs())
 	fileManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("Failed to generate file manifest: %v", err)
@@ -137,6 +139,7 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -252,7 +255,7 @@ unprocessed:
 	}
 
 	// Generate and write manifest files AFTER creating custom contacts.yaml
-	manifestGenerator := manifest.NewManifestGenerator(repoRoot)
+	manifestGenerator := manifest.NewManifestGenerator(repoRoot, afero.NewOsFs())
 	fileManifest, err := manifestGenerator.GenerateFileManifest()
 	if err != nil {
 		t.Fatalf("Failed to generate file manifest: %v", err)
@@ -281,6 +284,7 @@ unprocessed:
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -360,6 +364,7 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -437,6 +442,7 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -504,6 +510,7 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   true,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -561,6 +568,7 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -639,6 +647,7 @@ func testContactExtraction(t *testing.T, testXML, fileName, filter string, expec
 		Filter:   filter,
 		DryRun:   false,
 		Quiet:    true,
+		Fs: afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())

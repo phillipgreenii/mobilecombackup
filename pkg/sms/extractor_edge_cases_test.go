@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestEdgeCase_EmptyAttachment(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	part := &MMSPart{
@@ -33,7 +35,7 @@ func TestEdgeCase_EmptyAttachment(t *testing.T) {
 }
 
 func TestEdgeCase_NullAttachment(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	part := &MMSPart{
@@ -55,7 +57,7 @@ func TestEdgeCase_NullAttachment(t *testing.T) {
 }
 
 func TestEdgeCase_CorruptBase64(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -93,7 +95,7 @@ func TestEdgeCase_CorruptBase64(t *testing.T) {
 }
 
 func TestEdgeCase_VeryLargeAttachment(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create a large attachment (1MB of data)
@@ -149,7 +151,7 @@ func TestEdgeCase_ReadOnlyDirectory(t *testing.T) {
 	// Restore permissions after test
 	defer func() { _ = os.Chmod(attachmentsDir, 0750) }() // nolint:gosec // Cleanup permissions
 
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	part := &MMSPart{
@@ -177,7 +179,7 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// First, extract an attachment to create the directory structure
@@ -219,7 +221,7 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 }
 
 func TestEdgeCase_ExtremelySmallAttachment(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Single byte attachment
@@ -245,7 +247,7 @@ func TestEdgeCase_ExtremelySmallAttachment(t *testing.T) {
 }
 
 func TestEdgeCase_MultipleIdenticalAttachmentsInSameMessage(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	sameImageData := createTestPNGData()
@@ -292,7 +294,7 @@ func TestEdgeCase_MultipleIdenticalAttachmentsInSameMessage(t *testing.T) {
 }
 
 func TestEdgeCase_InvalidContentTypeHandling(t *testing.T) {
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	tests := []struct {
@@ -332,7 +334,7 @@ func TestEdgeCase_InvalidContentTypeHandling(t *testing.T) {
 func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 	// Test that concurrent extraction doesn't cause race conditions
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Use the same attachment data to test deduplication under concurrency
@@ -407,7 +409,7 @@ func TestEdgeCase_ConcurrentExtraction(t *testing.T) {
 func TestEdgeCase_DirectoryTraversalAttempt(t *testing.T) {
 	// Test that malicious content can't cause directory traversal
 	// This is primarily handled by the AttachmentManager's hash-based paths
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Try with malicious filename

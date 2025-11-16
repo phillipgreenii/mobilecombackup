@@ -10,6 +10,7 @@ import (
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -148,6 +149,7 @@ func createImportOptions(resolvedRepoRoot string, paths []string) (*importer.Imp
 		Filter:         importFilter,
 		MaxXMLSize:     maxXMLSize,
 		MaxMessageSize: maxMessageSize,
+		Fs:             afero.NewOsFs(),
 	}
 
 	// Create progress reporter if not quiet

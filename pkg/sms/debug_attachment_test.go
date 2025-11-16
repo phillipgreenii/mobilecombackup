@@ -3,6 +3,8 @@ package sms
 import (
 	"os"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 // TestAttachmentExtraction_Debug tests attachment extraction with actual test data
@@ -53,7 +55,7 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 				mmsWithAttachments++
 
 				// Test extraction
-				extractor := NewAttachmentExtractor(tempRepo)
+				extractor := NewAttachmentExtractor(tempRepo, afero.NewOsFs())
 				config := GetDefaultContentTypeConfig()
 
 				t.Logf("  Testing extraction...")

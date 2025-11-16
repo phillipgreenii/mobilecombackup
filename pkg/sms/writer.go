@@ -3,25 +3,28 @@ package sms
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // XMLSMSWriter writes SMS/MMS messages to XML files in the repository
 type XMLSMSWriter struct {
 	repoPath string
+	fs       afero.Fs
 }
 
 // NewXMLSMSWriter creates a new XML SMS writer
-func NewXMLSMSWriter(repoPath string) (*XMLSMSWriter, error) {
+func NewXMLSMSWriter(repoPath string, fs afero.Fs) (*XMLSMSWriter, error) {
 	// Ensure the sms directory exists
-	if err := os.MkdirAll(repoPath, 0750); err != nil {
+	if err := fs.MkdirAll(repoPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create sms directory: %w", err)
 	}
 
 	return &XMLSMSWriter{
 		repoPath: repoPath,
+		fs:       fs,
 	}, nil
 }
 
@@ -44,7 +47,7 @@ func (w *XMLSMSWriter) WriteMessages(filename string, messages []Message) error 
 
 	// Create the file
 	filepath := filepath.Join(w.repoPath, filename)
-	file, err := os.Create(filepath) // nolint:gosec // Core functionality requires file creation
+	file, err := w.fs.Create(filepath) // nolint:gosec // Core functionality requires file creation
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}

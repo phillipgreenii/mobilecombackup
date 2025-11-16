@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -44,7 +46,7 @@ func TestAutofixer_ManifestBehavior(t *testing.T) {
 	}
 
 	// Create autofixer
-	autofixer := NewAutofixer(tempDir, &NullProgressReporter{})
+	autofixer := NewAutofixer(tempDir, &NullProgressReporter{}, afero.NewOsFs())
 
 	t.Run("always_regenerate_files_yaml", func(t *testing.T) {
 		// First, create files.yaml manually with different content

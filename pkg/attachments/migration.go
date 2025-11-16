@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // MigrationManager handles migration from legacy to new attachment format
@@ -14,14 +16,16 @@ type MigrationManager struct {
 	repoPath  string
 	dryRun    bool
 	logOutput bool
+	fs        afero.Fs
 }
 
 // NewMigrationManager creates a new migration manager
-func NewMigrationManager(repoPath string) *MigrationManager {
+func NewMigrationManager(repoPath string, fs afero.Fs) *MigrationManager {
 	return &MigrationManager{
 		repoPath:  repoPath,
 		dryRun:    false,
 		logOutput: false, // Default to quiet operation - can be enabled via SetLogOutput(true)
+		fs:        fs,
 	}
 }
 
@@ -63,8 +67,8 @@ func (mm *MigrationManager) MigrateAllAttachments() (*MigrationSummary, error) {
 		Results: make([]MigrationResult, 0),
 	}
 
-	attachmentManager := NewAttachmentManager(mm.repoPath)
-	storage := NewDirectoryAttachmentStorage(mm.repoPath)
+	attachmentManager := NewAttachmentManager(mm.repoPath, mm.fs)
+	storage := NewDirectoryAttachmentStorage(mm.repoPath, mm.fs)
 
 	// Find all legacy attachments
 	err := attachmentManager.StreamAttachments(func(attachment *Attachment) error {
@@ -151,7 +155,7 @@ func (mm *MigrationManager) prepareMigrationData(
 ) ([]byte, AttachmentInfo, error) {
 	// Read the legacy attachment content
 	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
-	data, err := os.ReadFile(legacyFullPath) // #nosec G304
+	data, err := afero.ReadFile(mm.fs, legacyFullPath) // #nosec G304
 	if err != nil {
 		result.Error = fmt.Sprintf("failed to read legacy file: %v", err)
 		return nil, AttachmentInfo{}, err
@@ -199,7 +203,7 @@ func (mm *MigrationManager) executeMigration(
 ) MigrationResult {
 	// Remove the legacy file FIRST to make room for the new directory structure
 	legacyFullPath := filepath.Join(mm.repoPath, attachment.Path)
-	if err := os.Remove(legacyFullPath); err != nil {
+	if err := mm.fs.Remove(legacyFullPath); err != nil {
 		result.Error = fmt.Sprintf("failed to remove legacy file: %v", err)
 		return result
 	}
@@ -297,8 +301,8 @@ func isTextContent(data []byte) bool {
 
 // ValidateMigration validates that migration was successful
 func (mm *MigrationManager) ValidateMigration() error {
-	attachmentManager := NewAttachmentManager(mm.repoPath)
-	storage := NewDirectoryAttachmentStorage(mm.repoPath)
+	attachmentManager := NewAttachmentManager(mm.repoPath, mm.fs)
+	storage := NewDirectoryAttachmentStorage(mm.repoPath, mm.fs)
 
 	hasLegacyAttachments := false
 	hasErrors := false
@@ -363,10 +367,12 @@ func (mm *MigrationManager) validateNewFormatAttachment(storage *DirectoryAttach
 		return hasErrors
 	}
 
-	if _, err := os.Stat(attachmentPath); os.IsNotExist(err) {
-		hasErrors = true
-		if mm.logOutput {
-			log.Printf("[VALIDATION] Attachment file missing: %s", attachmentPath)
+	if _, err := mm.fs.Stat(attachmentPath); err != nil {
+		if os.IsNotExist(err) {
+			hasErrors = true
+			if mm.logOutput {
+				log.Printf("[VALIDATION] Attachment file missing: %s", attachmentPath)
+			}
 		}
 	}
 
@@ -383,7 +389,7 @@ func (mm *MigrationManager) validateNewFormatAttachment(storage *DirectoryAttach
 
 // GetMigrationStatus returns the current migration status
 func (mm *MigrationManager) GetMigrationStatus() (map[string]interface{}, error) {
-	attachmentManager := NewAttachmentManager(mm.repoPath)
+	attachmentManager := NewAttachmentManager(mm.repoPath, mm.fs)
 
 	status := map[string]interface{}{
 		"legacy_count": 0,

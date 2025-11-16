@@ -14,6 +14,8 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -119,7 +121,7 @@ func TestOrphanRemovalIntegration(t *testing.T) {
 			}
 
 			// Create attachment manager
-			attachmentManager := attachments.NewAttachmentManager(tempDir)
+			attachmentManager := attachments.NewAttachmentManager(tempDir, afero.NewOsFs())
 
 			// Create mock progress reporter
 			reporter := &NullProgressReporter{}

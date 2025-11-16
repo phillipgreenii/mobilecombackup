@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+
+	"github.com/spf13/afero"
 )
 
 func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
@@ -46,7 +48,7 @@ func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 	}
 
 	// Initialize extractor
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Extract attachments (simulating import process)
@@ -85,7 +87,7 @@ func TestAttachmentExtraction_EndToEnd_ImportFlow(t *testing.T) {
 	}
 
 	// Verify attachment manager can read the file
-	attachmentManager := attachments.NewAttachmentManager(tempDir)
+	attachmentManager := attachments.NewAttachmentManager(tempDir, afero.NewOsFs())
 
 	// Extract hash from path (format: attachments/xx/hash/filename)
 	pathParts := strings.Split(extractedPart.Path, "/")
@@ -132,7 +134,7 @@ func TestAttachmentExtraction_XMLSerialization(t *testing.T) {
 	}
 
 	// Extract attachments
-	extractor := NewAttachmentExtractor(t.TempDir())
+	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	_, err := extractor.ExtractAttachmentsFromMMS(mms, config)
@@ -168,7 +170,7 @@ func TestAttachmentExtraction_MultipleMessagesDuplicateAttachments(t *testing.T)
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Same attachment data
@@ -245,7 +247,7 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 
 	// Create MMS with multiple different attachments
@@ -327,7 +329,7 @@ func TestAttachmentExtraction_RepoStructureAfterExtraction(t *testing.T) {
 	}
 
 	// Verify attachment manager can validate the structure
-	attachmentManager := attachments.NewAttachmentManager(tempDir)
+	attachmentManager := attachments.NewAttachmentManager(tempDir, afero.NewOsFs())
 	if err := attachmentManager.ValidateAttachmentStructure(); err != nil {
 		t.Errorf("Attachment structure validation failed: %v", err)
 	}
@@ -338,7 +340,7 @@ func TestAttachmentExtraction_LargeMessageBatch(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	tempDir := t.TempDir()
-	extractor := NewAttachmentExtractor(tempDir)
+	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
 	stats := NewAttachmentExtractionStats()
 
