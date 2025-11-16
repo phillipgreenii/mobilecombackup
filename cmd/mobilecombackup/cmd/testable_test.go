@@ -2,12 +2,18 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
+	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
+	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/spf13/afero"
 )
 
 func TestDetermineExitCode(t *testing.T) {
@@ -469,6 +475,519 @@ func TestImportContextHandleExitCode(t *testing.T) {
 
 		if exitHandler.Called {
 			t.Errorf("expected no exit call when NoErrorOnRejects=true, but got exit with code %d", exitHandler.Code)
+		}
+	})
+}
+
+// Mock implementations for testing InfoContext
+
+// MockCallsReader implements calls.Reader for testing
+type MockCallsReader struct {
+	Years      []int
+	YearCounts map[int]int
+	CallsData  map[int][]calls.Call
+	Err        error
+}
+
+func (m *MockCallsReader) GetAvailableYears() ([]int, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return m.Years, nil
+}
+
+func (m *MockCallsReader) GetCallsCount(year int) (int, error) {
+	if m.Err != nil {
+		return 0, m.Err
+	}
+	return m.YearCounts[year], nil
+}
+
+func (m *MockCallsReader) StreamCallsForYear(year int, processor func(calls.Call) error) error {
+	if m.Err != nil {
+		return m.Err
+	}
+	for _, call := range m.CallsData[year] {
+		if err := processor(call); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *MockCallsReader) ReadCalls(year int) ([]calls.Call, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return m.CallsData[year], nil
+}
+
+func (m *MockCallsReader) ValidateCallsFile(year int) error {
+	return m.Err
+}
+
+// Context-aware methods
+func (m *MockCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+	return m.GetAvailableYears()
+}
+
+func (m *MockCallsReader) GetCallsCountContext(ctx context.Context, year int) (int, error) {
+	return m.GetCallsCount(year)
+}
+
+func (m *MockCallsReader) StreamCallsForYearContext(ctx context.Context, year int, processor func(calls.Call) error) error {
+	return m.StreamCallsForYear(year, processor)
+}
+
+func (m *MockCallsReader) ReadCallsContext(ctx context.Context, year int) ([]calls.Call, error) {
+	return m.ReadCalls(year)
+}
+
+func (m *MockCallsReader) ValidateCallsFileContext(ctx context.Context, year int) error {
+	return m.ValidateCallsFile(year)
+}
+
+// MockSMSReader implements sms.Reader for testing
+type MockSMSReader struct {
+	Years          []int
+	MessageCounts  map[int]int
+	MessagesData   map[int][]sms.Message
+	AttachmentRefs map[string]bool
+	Err            error
+}
+
+func (m *MockSMSReader) GetAvailableYears() ([]int, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return m.Years, nil
+}
+
+func (m *MockSMSReader) GetMessageCount(year int) (int, error) {
+	if m.Err != nil {
+		return 0, m.Err
+	}
+	return m.MessageCounts[year], nil
+}
+
+func (m *MockSMSReader) StreamMessagesForYear(year int, processor func(sms.Message) error) error {
+	if m.Err != nil {
+		return m.Err
+	}
+	for _, msg := range m.MessagesData[year] {
+		if err := processor(msg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *MockSMSReader) GetAllAttachmentRefs() (map[string]bool, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return m.AttachmentRefs, nil
+}
+
+func (m *MockSMSReader) ReadMessages(year int) ([]sms.Message, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return m.MessagesData[year], nil
+}
+
+func (m *MockSMSReader) GetAttachmentRefs(year int) ([]string, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	var refs []string
+	for ref := range m.AttachmentRefs {
+		refs = append(refs, ref)
+	}
+	return refs, nil
+}
+
+func (m *MockSMSReader) ValidateSMSFile(year int) error {
+	return m.Err
+}
+
+// Context-aware methods
+func (m *MockSMSReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
+	return m.GetAvailableYears()
+}
+
+func (m *MockSMSReader) GetMessageCountContext(ctx context.Context, year int) (int, error) {
+	return m.GetMessageCount(year)
+}
+
+func (m *MockSMSReader) StreamMessagesForYearContext(ctx context.Context, year int, processor func(sms.Message) error) error {
+	return m.StreamMessagesForYear(year, processor)
+}
+
+func (m *MockSMSReader) GetAllAttachmentRefsContext(ctx context.Context) (map[string]bool, error) {
+	return m.GetAllAttachmentRefs()
+}
+
+func (m *MockSMSReader) ReadMessagesContext(ctx context.Context, year int) ([]sms.Message, error) {
+	return m.ReadMessages(year)
+}
+
+func (m *MockSMSReader) GetAttachmentRefsContext(ctx context.Context, year int) ([]string, error) {
+	return m.GetAttachmentRefs(year)
+}
+
+func (m *MockSMSReader) ValidateSMSFileContext(ctx context.Context, year int) error {
+	return m.ValidateSMSFile(year)
+}
+
+// MockContactsReader implements contacts.Reader for testing
+type MockContactsReader struct {
+	Count int
+	Err   error
+}
+
+func (m *MockContactsReader) LoadContacts() error {
+	return m.Err
+}
+
+func (m *MockContactsReader) GetContactsCount() int {
+	return m.Count
+}
+
+func (m *MockContactsReader) GetContactByNumber(number string) (string, bool) {
+	return "", false
+}
+
+func (m *MockContactsReader) GetNumbersByContact(name string) ([]string, bool) {
+	return nil, false
+}
+
+func (m *MockContactsReader) GetAllContacts() ([]*contacts.Contact, error) {
+	return nil, nil
+}
+
+func (m *MockContactsReader) ContactExists(name string) bool {
+	return false
+}
+
+func (m *MockContactsReader) IsKnownNumber(number string) bool {
+	return false
+}
+
+func (m *MockContactsReader) AddUnprocessedContacts(addresses, contactNames string) error {
+	return nil
+}
+
+func (m *MockContactsReader) GetUnprocessedEntries() []contacts.UnprocessedEntry {
+	return nil
+}
+
+func (m *MockContactsReader) LoadContactsContext(ctx context.Context) error {
+	return m.Err
+}
+
+func (m *MockContactsReader) GetAllContactsContext(ctx context.Context) ([]*contacts.Contact, error) {
+	return nil, nil
+}
+
+func (m *MockContactsReader) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
+	return nil
+}
+
+// TestInfoContextReadRepositoryMetadata tests the readRepositoryMetadata method
+func TestInfoContextReadRepositoryMetadata(t *testing.T) {
+	t.Parallel()
+
+	t.Run("reads valid metadata", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+		_ = afero.WriteFile(fs, "/test/.mobilecombackup.yaml", []byte(`
+repository_structure_version: "1.0.0"
+created_at: "2024-01-15T10:30:00Z"
+created_by: "mobilecombackup"
+`), 0644)
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+		}
+
+		info := &RepositoryInfo{}
+		err := ctx.readRepositoryMetadata(info)
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if info.Version != "1.0.0" {
+			t.Errorf("expected version 1.0.0, got %s", info.Version)
+		}
+		if info.CreatedAt.IsZero() {
+			t.Error("expected CreatedAt to be set")
+		}
+	})
+
+	t.Run("handles missing file", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+		}
+
+		info := &RepositoryInfo{}
+		err := ctx.readRepositoryMetadata(info)
+
+		if err == nil {
+			t.Error("expected error for missing file")
+		}
+	})
+
+	t.Run("handles invalid yaml", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+		_ = afero.WriteFile(fs, "/test/.mobilecombackup.yaml", []byte(`invalid: yaml: content:`), 0644)
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+		}
+
+		info := &RepositoryInfo{}
+		err := ctx.readRepositoryMetadata(info)
+
+		if err == nil {
+			t.Error("expected error for invalid YAML")
+		}
+	})
+}
+
+// TestInfoContextCountRejections tests the countRejections method
+func TestInfoContextCountRejections(t *testing.T) {
+	t.Parallel()
+
+	t.Run("counts rejection files correctly", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+		_ = fs.MkdirAll("/test/rejected", 0755)
+		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_1.xml", []byte("data"), 0644)
+		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_2.xml", []byte("data"), 0644)
+		_ = afero.WriteFile(fs, "/test/rejected/sms_rejected_1.xml", []byte("data"), 0644)
+		_ = afero.WriteFile(fs, "/test/rejected/other.txt", []byte("data"), 0644)
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+		}
+
+		info := &RepositoryInfo{
+			Rejections: make(map[string]int),
+		}
+		ctx.countRejections(info)
+
+		if info.Rejections["calls"] != 2 {
+			t.Errorf("expected 2 call rejections, got %d", info.Rejections["calls"])
+		}
+		if info.Rejections["sms"] != 1 {
+			t.Errorf("expected 1 SMS rejection, got %d", info.Rejections["sms"])
+		}
+	})
+
+	t.Run("handles missing rejected directory", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+		}
+
+		info := &RepositoryInfo{
+			Rejections: make(map[string]int),
+		}
+		ctx.countRejections(info)
+
+		if len(info.Rejections) != 0 {
+			t.Errorf("expected no rejections for missing directory, got %v", info.Rejections)
+		}
+	})
+}
+
+// TestInfoContextGatherRepositoryInfo tests the GatherRepositoryInfo method
+func TestInfoContextGatherRepositoryInfo(t *testing.T) {
+	t.Parallel()
+
+	t.Run("gathers info successfully", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+		_ = fs.MkdirAll("/test/attachments", 0755)
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+			CallsReader: &MockCallsReader{
+				Years:      []int{},
+				YearCounts: make(map[int]int),
+				CallsData:  make(map[int][]calls.Call),
+			},
+			SMSReader: &MockSMSReader{
+				Years:          []int{},
+				MessageCounts:  make(map[int]int),
+				MessagesData:   make(map[int][]sms.Message),
+				AttachmentRefs: make(map[string]bool),
+			},
+			AttachmentReader: attachments.NewAttachmentManager("/test", fs),
+			ContactsReader: &MockContactsReader{
+				Count: 0,
+			},
+		}
+
+		info, err := ctx.GatherRepositoryInfo()
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if info == nil {
+			t.Fatal("expected info to be returned")
+		}
+		if !info.ValidationOK {
+			t.Error("expected validation to pass with no errors")
+		}
+	})
+
+	t.Run("tracks errors from readers", func(t *testing.T) {
+		t.Parallel()
+		fs := afero.NewMemMapFs()
+		_ = fs.MkdirAll("/test/attachments", 0755)
+
+		ctx := &InfoContext{
+			RepoPath: "/test",
+			Fs:       fs,
+			CallsReader: &MockCallsReader{
+				Err: errors.New("calls error"),
+			},
+			SMSReader: &MockSMSReader{
+				Err: errors.New("sms error"),
+			},
+			AttachmentReader: attachments.NewAttachmentManager("/test", fs),
+			ContactsReader: &MockContactsReader{
+				Err: errors.New("contacts error"),
+			},
+		}
+
+		info, err := ctx.GatherRepositoryInfo()
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if info.Errors["calls"] != 1 {
+			t.Error("expected calls error to be tracked")
+		}
+		if info.Errors["sms"] != 1 {
+			t.Error("expected sms error to be tracked")
+		}
+		if info.Errors["contacts"] != 1 {
+			t.Error("expected contacts error to be tracked")
+		}
+		if info.ValidationOK {
+			t.Error("expected validation to fail with errors")
+		}
+	})
+}
+
+// TestNewInfoContext tests the NewInfoContext constructor
+func TestNewInfoContext(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewInfoContext("/test/repo", true, false)
+
+	if ctx == nil {
+		t.Fatal("expected context to be created")
+	}
+	if ctx.RepoPath != "/test/repo" {
+		t.Errorf("expected RepoPath /test/repo, got %s", ctx.RepoPath)
+	}
+	if !ctx.OutputJSON {
+		t.Error("expected OutputJSON to be true")
+	}
+	if ctx.Quiet {
+		t.Error("expected Quiet to be false")
+	}
+	if ctx.CallsReader == nil {
+		t.Error("expected CallsReader to be initialized")
+	}
+	if ctx.SMSReader == nil {
+		t.Error("expected SMSReader to be initialized")
+	}
+	if ctx.ContactsReader == nil {
+		t.Error("expected ContactsReader to be initialized")
+	}
+	if ctx.ExitHandler == nil {
+		t.Error("expected ExitHandler to be initialized")
+	}
+}
+
+// TestNewImportContext tests the NewImportContext constructor
+func TestNewImportContext(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates context with default settings", func(t *testing.T) {
+		t.Parallel()
+		options := &importer.ImportOptions{
+			Quiet: false,
+		}
+
+		ctx := NewImportContext(options, false, false, false)
+
+		if ctx == nil {
+			t.Fatal("expected context to be created")
+		}
+		if ctx.Options != options {
+			t.Error("expected Options to be set")
+		}
+		if ctx.Quiet {
+			t.Error("expected Quiet to be false")
+		}
+		if ctx.OutputJSON {
+			t.Error("expected OutputJSON to be false")
+		}
+		if ctx.DryRun {
+			t.Error("expected DryRun to be false")
+		}
+		if ctx.NoErrorOnRejects {
+			t.Error("expected NoErrorOnRejects to be false")
+		}
+		if ctx.ExitHandler == nil {
+			t.Error("expected ExitHandler to be initialized")
+		}
+	})
+
+	t.Run("JSON mode forces quiet", func(t *testing.T) {
+		t.Parallel()
+		options := &importer.ImportOptions{
+			Quiet: false,
+		}
+
+		ctx := NewImportContext(options, true, false, false)
+
+		if !ctx.Quiet {
+			t.Error("expected Quiet to be true when OutputJSON is true")
+		}
+		if !ctx.OutputJSON {
+			t.Error("expected OutputJSON to be true")
+		}
+	})
+
+	t.Run("options quiet is respected", func(t *testing.T) {
+		t.Parallel()
+		options := &importer.ImportOptions{
+			Quiet: true,
+		}
+
+		ctx := NewImportContext(options, false, false, false)
+
+		if !ctx.Quiet {
+			t.Error("expected Quiet to be true when options.Quiet is true")
 		}
 	})
 }
