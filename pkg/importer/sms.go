@@ -37,7 +37,7 @@ func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yea
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager:     contactsManager,                              // Now uses interface
+		contactsManager:     contactsManager,                                          // Now uses interface
 		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot, options.Fs), // Uses null logger
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),

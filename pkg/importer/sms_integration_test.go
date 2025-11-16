@@ -52,7 +52,7 @@ func TestSMSImporter_BUG016_MessagesNotWritten(t *testing.T) {
 		Paths:    []string{smsFile},
 		Filter:   "sms",
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
