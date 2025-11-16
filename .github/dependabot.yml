@@ -1,18 +1,16 @@
 # .github/dependabot.yml
 # Dependabot configuration for mobilecombackup
-# Implements FEAT-074: Dependabot Dependency Management
-# 
+#
 # Features:
-# - Go module ecosystem monitoring
-# - Weekly updates (Tuesday 09:00 UTC)
-# - Security updates (daily schedule)
-# - 5 PR limit with reviewer assignment
+# - Go module ecosystem monitoring (weekly updates)
+# - GitHub Actions ecosystem monitoring (weekly updates)
+# - Security updates (handled automatically by Dependabot)
 # - Production vs development dependency grouping
 # - Auto-merge for patch updates when CI passes
 
 version: 2
 updates:
-  # Go modules - Regular updates (weekly schedule)
+  # Go modules - Weekly updates with automatic security updates
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
@@ -20,7 +18,7 @@ updates:
       day: "tuesday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     reviewers:
       - "phillipgreenii"
     assignees:
@@ -57,25 +55,19 @@ updates:
           - "minor"
           - "patch"
 
-  # Go modules - Security updates (daily schedule)
-  - package-ecosystem: "gomod"
+  # GitHub Actions - Weekly updates
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
-      time: "06:00"
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     reviewers:
       - "phillipgreenii"
     assignees:
       - "phillipgreenii"
     commit-message:
-      prefix: "security"
+      prefix: "ci"
       include: "scope"
-    groups:
-      # Security updates for all dependencies
-      security-updates:
-        patterns:
-          - "*"
-        update-types:
-          - "security-update"
