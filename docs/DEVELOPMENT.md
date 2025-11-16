@@ -2,6 +2,14 @@
 
 Complete guide to setting up, developing, testing, and contributing to MobileComBackup.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Git Workflow](GIT_WORKFLOW.md) | [Issue Workflow](ISSUE_WORKFLOW.md) | [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Architecture](ARCHITECTURE.md)
+**Prerequisites**: Nix with flakes, Git
+
+---
+
 ## Quick Start for Contributors
 
 ```bash

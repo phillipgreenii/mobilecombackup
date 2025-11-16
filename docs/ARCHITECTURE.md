@@ -2,6 +2,14 @@
 
 This document provides a comprehensive overview of the mobilecombackup system architecture, package relationships, and key design decisions.
 
+---
+
+**Last Updated**: 2025-01-15
+**Related Documents**: [Development Guide](DEVELOPMENT.md) | [ADR Index](adr/index.md) | [Session Learnings](SESSION_LEARNINGS.md)
+**Prerequisites**: Understanding of Go, streaming processing, XML parsing
+
+---
+
 ## System Purpose
 
 The mobilecombackup tool processes mobile phone backup files (SMS/MMS and call logs in XML format), coalescing multiple backup sources while removing duplicates, extracting attachments, and organizing data by year for efficient long-term storage.

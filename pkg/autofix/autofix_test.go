@@ -359,6 +359,11 @@ func TestFixXMLCountAttribute(t *testing.T) {
 
 // TestAutofixer_PermissionChecking tests permission checking in dry-run mode
 func TestAutofixer_PermissionChecking(t *testing.T) {
+	// Skip this test if running as root, as root can write to read-only directories
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
 	tempDir := t.TempDir()
 
 	// Create a read-only subdirectory

@@ -6,6 +6,265 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Go command-line tool for processing mobile phone backup files (Call and SMS logs in XML format). It coalesces multiple backup files, removes duplicates, extracts attachments, and organizes data by year.
 
+## Quick Commands Reference
+
+### Most Common Development Commands
+```bash
+# Environment
+devbox shell              # Enter development environment
+devbox run ci             # Run full CI pipeline (format + test + lint + build)
+
+# Testing & Quality
+devbox run test           # Run all tests
+devbox run formatter      # Format code
+devbox run linter         # Run linter
+
+# Building
+devbox run build-cli      # Build CLI with version info
+```
+
+### Issue Workflow Commands
+```bash
+# Create issues
+/create-feature "description"    # Create new feature issue
+/create-bug "description"        # Create new bug issue
+
+# Prepare issues
+/review-issue FEAT-XXX           # Review issue specification
+/ready-issue FEAT-XXX            # Move to ready/ when complete
+
+# Implement issues
+/implement-issue FEAT-XXX        # Start implementation (moves to active/)
+
+# Batch operations
+/ready-backlog-issues            # Process all backlog issues
+/plan-and-implement-ready-issues # Implement all ready issues
+```
+
+### File Locations Quick Reference
+- **Source code**: `pkg/` (Go packages) and `cmd/mobilecombackup/` (CLI)
+- **Documentation**: `docs/` (specialized docs) and `README.md` (overview)
+- **Issues**: `issues/{backlog,ready,active,completed}/`
+- **Templates**: `issues/{feature_template,bug_template}.md`
+- **Scripts**: `scripts/` and `issues/create-issue.sh`
+
+## Environment Context
+
+### Development Environment
+
+**All development and agent work assumes you are in the Devbox shell environment.**
+
+```bash
+# Enter the development environment
+devbox shell
+
+# You'll see this message when environment loads:
+📋 Setting up development environment...
+```
+
+**Key Facts:**
+- Devbox provides a reproducible development environment via Nix
+- All tools are automatically available when in `devbox shell`
+- Commands like `devbox run test` work from any directory within the repo
+- Environment is isolated - doesn't affect your global system
+- Running `devbox shell` automatically runs `go mod tidy` and installs git hooks
+
+### Tools Provided by Devbox
+
+These tools are defined in `devbox.json` and automatically available in the devbox shell:
+
+**Go Development:**
+- `go@1.24` - Go compiler and toolchain (specific version)
+- `gopls@latest` - Go language server for editor integration
+- `golangci-lint@latest` - Comprehensive Go linter
+- `gotestsum@latest` - Enhanced test output formatter
+
+**Code Analysis:**
+- `ast-grep@latest` - Structural code search and refactoring for Go
+- `fd@latest` - Fast file finder (alternative to find)
+- `ripgrep@latest` - Fast text search (alternative to grep)
+
+**Data Processing:**
+- `jq@latest` - JSON query and manipulation tool
+- `yq@latest` - YAML query and manipulation tool
+
+**Utilities:**
+- `viu@latest` - Terminal image viewer
+- `deno@2` - JavaScript/TypeScript runtime
+- `uv@latest` - Fast Python package installer
+- `claude-code@1.0.72` - Claude Code CLI
+
+**Available via MCP (Claude Code extension):**
+- Serena MCP tools - Semantic code analysis
+- All `mcp__serena__*` functions for Go code manipulation
+
+### Devbox Commands
+
+All `devbox run` commands are defined in `devbox.json` under `shell.scripts`:
+
+**Core Development:**
+```bash
+devbox run formatter        # Run go fmt ./...
+devbox run builder          # Build all packages
+devbox run tests            # Run all tests with gotestsum
+devbox run test-unit        # Run unit tests only (skip integration)
+devbox run test-integration # Run integration tests only
+devbox run linter           # Run golangci-lint
+devbox run linter-fix       # Run linter with auto-fix
+devbox run build-cli        # Build CLI with version info
+devbox run ci               # Full CI pipeline: format, test, lint, build
+```
+
+**Quality & Validation:**
+```bash
+devbox run validate-docs     # Validate documentation health
+devbox run update-doc-health # Update dashboard metrics
+devbox run coverage          # Generate HTML coverage report
+devbox run coverage-summary  # Show coverage summary
+```
+
+**Development Workflow:**
+```bash
+devbox run install-hooks     # Install pre-commit git hooks
+devbox run test-hooks        # Test hooks without committing
+devbox run validate-version  # Validate version strings
+devbox run list-issues       # List all issues
+devbox run ccusage           # Monitor Claude Code usage
+```
+
+### Tool Availability Rules
+
+**✅ Available in devbox shell:**
+- All 13 tools listed above with specified versions
+- All `devbox run` commands
+- Git operations (system git)
+- Standard shell commands (bash, etc.)
+
+**❌ NOT available outside devbox shell:**
+- `ast-grep`, `fd`, `ripgrep`, `gopls`, `golangci-lint`, `gotestsum`
+- Specific Go version (1.24)
+- `jq`, `yq`, `viu`, `deno`, `uv`, `claude-code`
+- Project-specific `devbox run` commands
+
+**⚠️ May vary if used outside devbox:**
+- `go` - System version likely different from 1.24
+- `jq`, `yq` - May be installed globally but different versions
+
+### Common Environment Issues
+
+**Issue: `command not found: devbox`**
+- **Cause**: Devbox not installed on system
+- **Solution**: Install devbox or use manual setup (see [Development Guide](docs/DEVELOPMENT.md#manual-setup))
+
+**Issue: `command not found: ast-grep` (or other devbox tool)**
+- **Cause**: Not in devbox shell environment
+- **Solution**: Run `devbox shell` first
+
+**Issue: Wrong Go version (e.g., 1.21 instead of 1.24)**
+- **Cause**: Using system Go instead of devbox Go
+- **Solution**: Ensure you're in `devbox shell`, verify with `go version`
+
+**Issue: `devbox run test` doesn't work**
+- **Cause**: Not in project directory or subdirectory
+- **Solution**: `cd` to project root where `devbox.json` exists
+
+**Issue: Changes to `devbox.json` not taking effect**
+- **Cause**: Need to reload devbox shell
+- **Solution**: Exit and re-enter: `exit` then `devbox shell`
+
+### Environment Verification Commands
+
+**Check if you're in devbox shell:**
+```bash
+# Method 1: Check environment variable
+echo $DEVBOX_SHELL_ENABLED  # Should output: 1
+
+# Method 2: Check Go version
+go version  # Should show: go version go1.24...
+
+# Method 3: Check tool availability
+which ast-grep  # Should show path in /nix/store/...
+```
+
+**Verify specific tools:**
+```bash
+# Check all devbox-provided tools are available
+ast-grep --version
+fd --version
+ripgrep --version
+gopls version
+golangci-lint --version
+gotestsum --version
+jq --version
+yq --version
+deno --version
+go version  # Should be 1.24
+```
+
+**List all available devbox commands:**
+```bash
+devbox run --help  # Shows all commands defined in devbox.json
+```
+
+### Init Hook Automation
+
+When you run `devbox shell`, these commands run automatically:
+
+1. `go mod tidy` - Ensures Go dependencies are clean
+2. `scripts/install-hooks.sh` - Installs git pre-commit hooks (if script exists)
+3. Neovim config setup - Loads project-specific Neovim config (if `.config/nvim` exists)
+
+**This means:**
+- Dependencies are always up-to-date when entering shell
+- Git hooks are automatically installed
+- No manual setup steps needed
+
+### Assumptions in Documentation
+
+**When you see `devbox run <command>`:**
+- Assumes devbox is installed
+- Assumes you're in project directory (where `devbox.json` exists)
+- Can be run from any subdirectory of the project
+
+**When you see `ast-grep`, `jq`, `yq`, etc:**
+- Assumes you're in `devbox shell`
+- These are NOT system commands, they're devbox-provided
+
+**When you see `go build`, `go test`, etc:**
+- Assumes you're in `devbox shell` (using Go 1.24)
+- Assumes `go mod tidy` has run (automatic in init hook)
+
+**When you see scripts like `bash scripts/something.sh`:**
+- Assumes script has executable permissions
+- Assumes bash is available (standard on Linux/macOS)
+- Assumes running from project root
+
+### Quick Reference Table
+
+| What | Where | Command |
+|------|-------|---------|
+| **Enter devbox** | Any directory | `devbox shell` |
+| **Exit devbox** | In devbox shell | `exit` or Ctrl+D |
+| **Check if in devbox** | In shell | `echo $DEVBOX_SHELL_ENABLED` |
+| **Verify Go version** | In devbox | `go version` (should be 1.24) |
+| **Run tests** | In devbox | `devbox run tests` |
+| **Validate docs** | In devbox | `devbox run validate-docs` |
+| **Full CI pipeline** | In devbox | `devbox run ci` |
+| **List all commands** | In devbox | `devbox run --help` |
+| **Update environment** | Outside devbox | `devbox update` |
+
+### Why Devbox?
+
+**Benefits:**
+- **Reproducible**: Exact same environment on every machine
+- **Isolated**: Doesn't pollute global system with project tools
+- **Declarative**: Environment defined in `devbox.json`
+- **Versioned**: Specific tool versions guaranteed (e.g., Go 1.24)
+- **Fast**: Nix caching makes environment activation quick
+- **Comprehensive**: All 13 tools in one `devbox shell` command
+
+**Alternative:** If devbox isn't available, see [Development Guide - Manual Setup](docs/DEVELOPMENT.md#manual-setup) for installing tools individually.
+
 ## Development Commands
 
 For verification workflow and quality commands, see [Verification Workflow](docs/VERIFICATION_WORKFLOW.md).
@@ -103,6 +362,76 @@ The project includes an automated issue creation script that reduces manual over
 4. **Preserve** completed issues as historical records
 5. **Cross-reference** when newer issues supersede older ones
 
+### Documentation Health Dashboard Maintenance
+
+The project maintains a documentation health dashboard in `docs/INDEX.md` that tracks metrics and quality indicators.
+
+**Automated Updates** (No Agent Action Required):
+- Metrics are automatically updated by `scripts/update-doc-health.sh` via pre-commit hooks
+- Automated metrics include: file counts, line counts, broken links, freshness, validation status
+- These update on every commit that touches documentation files
+
+**Agent Responsibilities** (Update When Needed):
+Agents MUST update the qualitative sections in `docs/INDEX.md` dashboard when:
+
+1. **After completing documentation tasks** that:
+   - Add new documentation files (update Coverage by Category)
+   - Close documentation gaps (remove from Known Gaps, update coverage status)
+   - Identify new gaps (add to Known Gaps)
+   - Significantly restructure existing docs (update Recent Significant Changes)
+
+2. **When health status changes**:
+   - Coverage drops below 90% in any category (update status to ⚠️ or 🟠)
+   - All gaps in a category are closed (update status to ✅)
+   - Critical issues arise (update Overall Health assessment)
+
+3. **During periodic reviews**:
+   - Weekly: Review and update Action Items based on automated metrics
+   - When running `/review-and-update-documentation` command
+   - When stale docs are identified (>45 days old)
+
+**What to Update** (Agent-Maintained Sections):
+```markdown
+### Overall Health: 🟢/🟡/🟠/🔴
+<!-- Update if assessment changes -->
+
+### Coverage by Category
+<!-- Update when new docs added or gaps closed -->
+
+### Known Gaps
+<!-- Add when gaps identified, remove when closed -->
+
+### Action Items
+<!-- Update priorities based on automated metrics -->
+
+### Recent Significant Changes
+<!-- Add entry for major documentation work -->
+```
+
+**How to Update**:
+1. Read current dashboard state from `docs/INDEX.md`
+2. Update only the agent-maintained sections (marked with comments)
+3. Do NOT modify auto-generated sections (timestamps, metrics, freshness)
+4. Include brief explanation in commit message
+5. Dashboard will auto-update metrics on commit
+
+**Example Agent Update**:
+```markdown
+# Agent completed Docker troubleshooting documentation
+
+Updates to docs/INDEX.md dashboard:
+1. Coverage by Category: Troubleshooting ✅ Complete (was ⚠️ Good)
+2. Known Gaps: Removed "Docker troubleshooting"
+3. Action Items: Marked "Add Docker troubleshooting" as complete
+4. Recent Changes: Added entry about new Docker guide
+```
+
+**When NOT to Update**:
+- Minor typo fixes that don't affect coverage
+- Formatting/style changes only
+- Updating metadata (Last Updated dates)
+- Changes to automated metrics sections
+
 ## Documentation Architecture & Guidelines
 
 **CRITICAL**: README.md MUST stay under 300 lines to prevent bloat and ensure discoverability.
@@ -176,6 +505,7 @@ When README.md approaches 280 lines:
    - Follow the decision tree above for placement
    - Create new docs/ files only when necessary
    - Update docs/INDEX.md when adding new documentation
+   - Update docs/INDEX.md dashboard after significant documentation changes
 
 4. **Maintain cross-references**
    - Update all related documentation when making changes
@@ -412,6 +742,78 @@ grep -r "Call" .
 - **Slash Commands**: `docs/SLASH_COMMANDS.md` - Available CLI commands
 - **Specification**: `issues/specification.md` - Detailed technical specs
 - **Next Steps**: `issues/next_steps.md` - Current priorities
+
+## Common Pitfalls and Anti-Patterns
+
+This section documents frequent mistakes agents make and how to avoid them.
+
+### Git and Staging Mistakes
+
+**❌ NEVER DO**: `git add .` (stages everything including unrelated files)
+**✅ DO INSTEAD**: `git add pkg/specific/file.go pkg/specific/file_test.go` (stage only modified files)
+
+**❌ NEVER DO**: `git commit --no-verify` (skips pre-commit hooks)
+**✅ DO INSTEAD**: Fix the issues causing hook failures, then commit normally
+
+**❌ NEVER DO**: Commit files you didn't modify for this task
+**✅ DO INSTEAD**: Use `git status` before and after to identify only your changes
+
+### Verification Mistakes
+
+**❌ NEVER DO**: Mark task complete before running verification workflow
+**✅ DO INSTEAD**: Run formatter → tests → linter → build-cli, THEN mark complete
+
+**❌ NEVER DO**: Skip verification because "it's just documentation"
+**✅ DO INSTEAD**: Always run full verification - markdown commits skip tests automatically
+
+**❌ NEVER DO**: Mark task complete with failing tests/linter
+**✅ DO INSTEAD**: Fix ALL issues before marking complete
+
+### TodoWrite Mistakes
+
+**❌ NEVER DO**: Have multiple tasks as `in_progress` simultaneously
+**✅ DO INSTEAD**: Only ONE task `in_progress` at a time
+
+**❌ NEVER DO**: Batch multiple task completions at once
+**✅ DO INSTEAD**: Mark each task complete immediately after finishing it
+
+**❌ NEVER DO**: Use TodoWrite for trivial single-step tasks
+**✅ DO INSTEAD**: Reserve TodoWrite for complex multi-step tasks (3+ steps)
+
+### Code Analysis Mistakes
+
+**❌ NEVER DO**: Use `grep` or `ripgrep` for finding Go functions/types
+**✅ DO INSTEAD**: Use Serena MCP tools (`mcp__serena__find_symbol`) for semantic search
+
+**❌ NEVER DO**: Modify code without understanding structure first
+**✅ DO INSTEAD**: Use `mcp__serena__get_symbols_overview` before making changes
+
+**❌ NEVER DO**: Use `xml.NewDecoder` directly for XML parsing
+**✅ DO INSTEAD**: Always use `security.NewSecureXMLDecoder` to prevent XXE vulnerabilities
+
+### Documentation Mistakes
+
+**❌ NEVER DO**: Add detailed content to README.md (line limit: 300)
+**✅ DO INSTEAD**: Add to appropriate docs/ file and link from README
+
+**❌ NEVER DO**: Update completed issues in `issues/completed/`
+**✅ DO INSTEAD**: Cross-reference from new issues if functionality changed
+
+**❌ NEVER DO**: Create documentation files without updating docs/INDEX.md
+**✅ DO INSTEAD**: Update INDEX.md when adding new documentation
+
+**❌ NEVER DO**: Complete documentation tasks without updating docs/INDEX.md dashboard
+**✅ DO INSTEAD**: Update dashboard qualitative sections after significant doc changes
+
+### Quick Fixes
+
+When stuck on common issues:
+
+1. **Tests failing**: Run `devbox run formatter` first - formatting fixes many test issues
+2. **Linter errors**: Check if it's an import issue - run `go mod tidy`
+3. **Build failing**: Verify all imports use full paths: `github.com/phillipgreenii/mobilecombackup/pkg/...`
+4. **Git hook blocking**: Check `.githooks/pre-commit` - it auto-detects markdown-only commits
+5. **Can't find package**: Verify it exists in `pkg/` directory with correct name
 
 ## Important Reminders
 

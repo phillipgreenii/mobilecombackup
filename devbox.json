@@ -3,15 +3,17 @@
   "packages": [
     "ast-grep@latest",
     "deno@2",
+    "fd@latest",
     "go@1.24",
     "gopls@latest",
     "golangci-lint@latest",
     "gotestsum@latest",
     "jq@latest",
+    "ripgrep@latest",
+    "uv@latest",
     "viu@latest",
     "yq@latest",
-    "claude-code@1.0.72",
-    "uv@latest"
+    "claude-code@1.0.72"
   ],
   "shell": {
     "init_hook": [
@@ -80,6 +82,12 @@
       "coverage-summary": [
         "echo '📈 Test Coverage Summary:'",
         "gotestsum --format testname -- -cover ./..."
+      ],
+      "validate-docs": [
+        "bash scripts/validate-docs.sh"
+      ],
+      "update-doc-health": [
+        "bash scripts/update-doc-health.sh"
       ],
       "ccusage": [
 	      "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"

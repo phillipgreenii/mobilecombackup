@@ -6,14 +6,16 @@ This document defines the complete lifecycle for developing features and fixes u
 
 The issue workflow provides structure for planning, implementing, and completing development tasks. It integrates TodoWrite task management with quality verification and documentation updates.
 
+Issues move through four states: **backlog** → **ready** → **active** → **completed**.
+
 ## Issue Lifecycle
 
 ### Quick Reference
-1. **Create issue**: Use `/create-feature` or `/create-bug` commands
+1. **Create issue**: Use `/create-feature` or `/create-bug` → `backlog/`
 2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
-3. **Ready issue**: Move to `issues/ready/` when fully planned
-4. **Implement**: Use `/implement-issue FEAT-XXX` command
-5. **Complete**: Updates move to `issues/completed/`
+3. **Ready issue**: Move to `issues/ready/` when fully planned (use `/ready-issue`)
+4. **Implement**: Use `/implement-issue FEAT-XXX` → moves to `active/`
+5. **Complete**: Auto-moves to `issues/completed/` when finished
 
 ### Issue States and Directory Structure
 
@@ -21,9 +23,14 @@ The issue workflow provides structure for planning, implementing, and completing
 issues/
 ├── backlog/     # Being planned, incomplete specifications
 ├── ready/       # Fully planned, ready for implementation
-├── active/      # Currently being implemented
-└── completed/   # Finished and documented
+├── active/      # Currently being implemented (work in progress)
+└── completed/   # Finished, tested, documented, and committed
 ```
+
+**State Transitions:**
+- `backlog/` → `ready/` : When specification is complete (manual or `/ready-issue`)
+- `ready/` → `active/` : When implementation starts (`/implement-issue`)
+- `active/` → `completed/` : When all tasks done, tested, and committed (automatic)
 
 ## Issue Creation
 
