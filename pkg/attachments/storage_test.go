@@ -335,45 +335,44 @@ func TestGetFileExtension(t *testing.T) {
 }
 
 func TestDirectoryAttachmentStorage_ErrorHandling(t *testing.T) {
-	// Test with invalid path
-	storage := NewDirectoryAttachmentStorage("/invalid/path/that/should/not/exist")
+	tempDir := t.TempDir()
+	storage := NewDirectoryAttachmentStorage(tempDir)
 
-	hash := "test-hash"
+	// Test 1: Invalid hash with null bytes should fail validation
+	invalidHash := "test\x00hash"
 	data := []byte("test")
 	metadata := AttachmentInfo{
-		Hash:      hash,
+		Hash:      invalidHash,
 		MimeType:  "text/plain",
 		Size:      int64(len(data)),
 		CreatedAt: time.Now().UTC(),
 	}
 
-	// Should fail to store
-	err := storage.Store(hash, data, metadata)
+	err := storage.Store(invalidHash, data, metadata)
 	if err == nil {
-		t.Error("Expected error when storing to invalid path")
+		t.Error("Expected error when storing with invalid hash containing null bytes")
 	}
 
-	// Should fail to read metadata
-	_, err = storage.GetMetadata(hash)
+	// Test 2: Reading non-existent attachment
+	nonExistentHash := "nonexistent123456789abcdef"
+
+	_, err = storage.GetMetadata(nonExistentHash)
 	if err == nil {
-		t.Error("Expected error when reading metadata from invalid path")
+		t.Error("Expected error when reading metadata for non-existent attachment")
 	}
 
-	// Should fail to get path
-	_, err = storage.GetPath(hash)
+	_, err = storage.GetPath(nonExistentHash)
 	if err == nil {
 		t.Error("Expected error when getting path for non-existent attachment")
 	}
 
-	// Should return false for exists
-	if storage.Exists(hash) {
-		t.Error("Expected false for exists check on invalid path")
+	if storage.Exists(nonExistentHash) {
+		t.Error("Expected false for exists check on non-existent attachment")
 	}
 
-	// Should fail to read attachment
-	_, err = storage.ReadAttachment(hash)
+	_, err = storage.ReadAttachment(nonExistentHash)
 	if err == nil {
-		t.Error("Expected error when reading from invalid path")
+		t.Error("Expected error when reading non-existent attachment")
 	}
 }
 
