@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0  # Required for version detection and git tag access
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.11.0
+        uses: jetify-com/devbox-install-action@v0.14.0
       - name: Extract version for SonarQube (if applicable)
         id: version
         run: |
