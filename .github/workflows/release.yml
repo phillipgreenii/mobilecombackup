@@ -40,7 +40,7 @@ jobs:
             echo "version=$BASE_VERSION" >> $GITHUB_OUTPUT
           fi
       - name: Go Release Binaries
-        uses: wangyoucao577/go-release-action@v1.22
+        uses: wangyoucao577/go-release-action@v1.53
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
