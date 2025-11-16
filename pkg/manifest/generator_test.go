@@ -13,7 +13,7 @@ import (
 func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
 	// Create temporary repository
 	tempDir := t.TempDir()
-	fs := afero.NewMemMapFs()
+	fs := afero.NewOsFs()
 
 	// Create test structure
 	createTestRepository(t, tempDir)
@@ -67,7 +67,7 @@ func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
 
 func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 	tempDir := t.TempDir()
-	fs := afero.NewMemMapFs()
+	fs := afero.NewOsFs()
 
 	// Create nested directory structure
 	nestedDir := filepath.Join(tempDir, "calls", "2023")
@@ -114,7 +114,7 @@ func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 
 func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 	tempDir := t.TempDir()
-	fs := afero.NewMemMapFs()
+	fs := afero.NewOsFs()
 	createTestRepository(t, tempDir)
 
 	generator := NewManifestGenerator(tempDir, fs)
@@ -175,7 +175,7 @@ func TestManifestGenerator_WriteManifestFiles(t *testing.T) {
 
 func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 	tempDir := t.TempDir()
-	fs := afero.NewMemMapFs()
+	fs := afero.NewOsFs()
 	createTestRepository(t, tempDir)
 
 	generator := NewManifestGenerator(tempDir, fs)
@@ -233,6 +233,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 }
 
 func TestManifestGenerator_ShouldSkipFile(t *testing.T) {
+	fs := afero.NewOsFs()
 	generator := NewManifestGenerator("/test", fs)
 
 	testCases := []struct {
@@ -263,8 +264,7 @@ func TestManifestGenerator_ShouldSkipFile(t *testing.T) {
 
 func TestCalculateFileHash(t *testing.T) {
 	tempDir := t.TempDir()
-	fs := afero.NewMemMapFs()
-	fs := afero.NewMemMapFs()
+	fs := afero.NewOsFs()
 	testFile := filepath.Join(tempDir, "test.txt")
 	testContent := "Hello, World!"
 
