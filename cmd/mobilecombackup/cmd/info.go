@@ -13,6 +13,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository/stats"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -47,41 +48,30 @@ func init() {
 	infoCmd.Flags().BoolVar(&outputInfoJSON, "json", false, "Output information in JSON format")
 }
 
-// RepositoryInfo contains all repository information
+// RepositoryInfo contains all repository information (wrapper for stats.RepositoryStats)
 type RepositoryInfo struct {
-	Version      string                 `json:"version"`
-	CreatedAt    time.Time              `json:"created_at,omitempty"`
-	Calls        map[string]YearInfo    `json:"calls"` // year -> info
-	SMS          map[string]MessageInfo `json:"sms"`   // year -> info
-	Attachments  AttachmentInfo         `json:"attachments"`
-	Contacts     int                    `json:"contacts"`
-	Rejections   map[string]int         `json:"rejections,omitempty"` // component -> count
-	Errors       map[string]int         `json:"errors,omitempty"`     // component -> count
-	ValidationOK bool                   `json:"validation_ok"`
+	Version      string                       `json:"version"`
+	CreatedAt    time.Time                    `json:"created_at,omitempty"`
+	Calls        map[string]stats.YearInfo    `json:"calls"` // year -> info
+	SMS          map[string]stats.MessageInfo `json:"sms"`   // year -> info
+	Attachments  AttachmentInfo               `json:"attachments"`
+	Contacts     ContactInfo                  `json:"contacts"`
+	Rejections   map[string]int               `json:"rejections,omitempty"` // component -> count
+	Errors       map[string]int               `json:"errors,omitempty"`     // component -> count
+	ValidationOK bool                         `json:"validation_ok"`
 }
 
-// YearInfo contains year-specific statistics
-type YearInfo struct {
-	Count    int       `json:"count"`
-	Earliest time.Time `json:"earliest,omitempty"`
-	Latest   time.Time `json:"latest,omitempty"`
-}
-
-// MessageInfo contains message statistics
-type MessageInfo struct {
-	TotalCount int       `json:"total_count"`
-	SMSCount   int       `json:"sms_count"`
-	MMSCount   int       `json:"mms_count"`
-	Earliest   time.Time `json:"earliest,omitempty"`
-	Latest     time.Time `json:"latest,omitempty"`
-}
-
-// AttachmentInfo contains attachment statistics
+// AttachmentInfo contains attachment statistics (wrapper for stats.AttachmentInfo)
 type AttachmentInfo struct {
 	Count         int            `json:"count"`
 	TotalSize     int64          `json:"total_size"`
 	OrphanedCount int            `json:"orphaned_count"`
 	ByType        map[string]int `json:"by_type"` // mime type -> count
+}
+
+// ContactInfo contains contact statistics (wrapper for stats.ContactInfo)
+type ContactInfo struct {
+	Count int `json:"count"`
 }
 
 // InfoMarkerFileContent represents the .mobilecombackup.yaml file structure
@@ -131,8 +121,8 @@ func runInfo(_ *cobra.Command, _ []string) error {
 
 func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 	info := &RepositoryInfo{
-		Calls:      make(map[string]YearInfo),
-		SMS:        make(map[string]MessageInfo),
+		Calls:      make(map[string]stats.YearInfo),
+		SMS:        make(map[string]stats.MessageInfo),
 		Rejections: make(map[string]int),
 		Errors:     make(map[string]int),
 	}
@@ -151,31 +141,43 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 	attachmentReader := attachments.NewAttachmentManager(repoPath, afero.NewOsFs())
 	contactsReader := contacts.NewContactsManager(repoPath)
 
-	// Gather calls statistics
-	if err := gatherCallsStats(callsReader, info); err != nil {
-		info.Errors["calls"] = 1
+	// Create stats gatherer
+	gatherer := stats.NewStatsGatherer(
+		repoPath,
+		callsReader,
+		smsReader,
+		attachmentReader,
+		contactsReader,
+	)
+
+	// Gather all statistics
+	ctx := context.Background()
+	repoStats, err := gatherer.GatherStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to gather statistics: %w", err)
 	}
 
-	// Gather SMS statistics
-	if err := gatherSMSStats(smsReader, info); err != nil {
-		info.Errors["sms"] = 1
+	// Convert stats to info format
+	info.Calls = repoStats.Calls
+	info.SMS = repoStats.SMS
+	info.Errors = repoStats.Errors
+	info.ValidationOK = repoStats.ValidationOK
+
+	// Convert attachment stats
+	info.Attachments = AttachmentInfo{
+		Count:         repoStats.Attachments.Count,
+		TotalSize:     repoStats.Attachments.TotalSize,
+		OrphanedCount: repoStats.Attachments.Orphaned,
+		ByType:        repoStats.Attachments.ByType,
 	}
 
-	// Gather attachment statistics
-	if err := gatherAttachmentStats(attachmentReader, smsReader, info); err != nil {
-		info.Errors["attachments"] = 1
-	}
-
-	// Gather contacts statistics
-	if err := gatherContactsStats(contactsReader, info); err != nil {
-		info.Errors["contacts"] = 1
+	// Convert contact stats
+	info.Contacts = ContactInfo{
+		Count: repoStats.Contacts.Count,
 	}
 
 	// Count rejections
 	countRejections(repoPath, info)
-
-	// Basic validation check
-	info.ValidationOK = len(info.Errors) == 0
 
 	return info, nil
 }
@@ -203,185 +205,6 @@ func readRepositoryMetadata(repoPath string, info *RepositoryInfo) error {
 	return nil
 }
 
-func gatherCallsStats(reader calls.Reader, info *RepositoryInfo) error {
-	ctx := context.Background()
-	years, err := reader.GetAvailableYears(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, year := range years {
-		yearStats := YearInfo{}
-
-		// Get count
-		count, err := reader.GetCallsCount(ctx, year)
-		if err != nil {
-			return err
-		}
-		yearStats.Count = count
-
-		// Get date range by streaming calls
-		var earliest, latest time.Time
-		err = reader.StreamCallsForYear(ctx, year, func(call calls.Call) error {
-			timestamp := call.Timestamp()
-			if earliest.IsZero() || timestamp.Before(earliest) {
-				earliest = timestamp
-			}
-			if latest.IsZero() || timestamp.After(latest) {
-				latest = timestamp
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-
-		if !earliest.IsZero() {
-			yearStats.Earliest = earliest
-			yearStats.Latest = latest
-		}
-
-		info.Calls[fmt.Sprintf("%d", year)] = yearStats
-	}
-
-	return nil
-}
-
-func gatherSMSStats(reader sms.Reader, info *RepositoryInfo) error {
-	ctx := context.Background()
-	years, err := reader.GetAvailableYears(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, year := range years {
-		messageStats, err := gatherSMSStatsForYear(reader, year)
-		if err != nil {
-			return err
-		}
-		info.SMS[fmt.Sprintf("%d", year)] = messageStats
-	}
-
-	return nil
-}
-
-// gatherSMSStatsForYear gathers SMS statistics for a specific year
-func gatherSMSStatsForYear(reader sms.Reader, year int) (MessageInfo, error) {
-	ctx := context.Background()
-	messageStats := MessageInfo{}
-
-	// Get total count
-	totalCount, err := reader.GetMessageCount(ctx, year)
-	if err != nil {
-		return messageStats, err
-	}
-	messageStats.TotalCount = totalCount
-
-	// Count SMS vs MMS and get date range by streaming messages
-	var earliest, latest time.Time
-	err = reader.StreamMessagesForYear(ctx, year, func(msg sms.Message) error {
-		timestamp := time.Unix(msg.GetDate()/1000, (msg.GetDate()%1000)*int64(time.Millisecond))
-
-		updateDateRange(&earliest, &latest, timestamp)
-		countMessageType(msg, &messageStats)
-		return nil
-	})
-	if err != nil {
-		return messageStats, err
-	}
-
-	setDateRange(&messageStats, earliest, latest)
-	return messageStats, nil
-}
-
-// updateDateRange updates the earliest and latest timestamps
-func updateDateRange(earliest, latest *time.Time, timestamp time.Time) {
-	if earliest.IsZero() || timestamp.Before(*earliest) {
-		*earliest = timestamp
-	}
-	if latest.IsZero() || timestamp.After(*latest) {
-		*latest = timestamp
-	}
-}
-
-// countMessageType counts SMS vs MMS messages
-func countMessageType(msg sms.Message, messageStats *MessageInfo) {
-	switch msg.(type) {
-	case sms.SMS:
-		messageStats.SMSCount++
-	case sms.MMS:
-		messageStats.MMSCount++
-	}
-}
-
-// setDateRange sets the earliest and latest dates in message stats
-func setDateRange(messageStats *MessageInfo, earliest, latest time.Time) {
-	if !earliest.IsZero() {
-		messageStats.Earliest = earliest
-		messageStats.Latest = latest
-	}
-}
-
-func gatherAttachmentStats(
-	attachmentReader attachments.AttachmentReader,
-	smsReader sms.Reader,
-	info *RepositoryInfo,
-) error {
-	ctx := context.Background()
-	attachmentInfo := AttachmentInfo{
-		ByType: make(map[string]int),
-	}
-
-	// Get all attachments
-	attachmentList, err := attachmentReader.ListAttachments()
-	if err != nil {
-		return err
-	}
-
-	attachmentInfo.Count = len(attachmentList)
-
-	// Calculate total size and type distribution
-	for _, attachment := range attachmentList {
-		attachmentInfo.TotalSize += attachment.Size
-
-		// Determine type from file extension or content inspection
-		mimeType := determineMimeType(attachment.Path)
-		attachmentInfo.ByType[mimeType]++
-	}
-
-	// Find orphaned attachments
-	referencedHashes, err := smsReader.GetAllAttachmentRefs(ctx)
-	if err != nil {
-		return err
-	}
-
-	orphanedAttachments, err := attachmentReader.FindOrphanedAttachments(referencedHashes)
-	if err != nil {
-		return err
-	}
-	attachmentInfo.OrphanedCount = len(orphanedAttachments)
-
-	info.Attachments = attachmentInfo
-	return nil
-}
-
-func gatherContactsStats(reader contacts.Reader, info *RepositoryInfo) error {
-	ctx := context.Background()
-	// Load contacts
-	err := reader.LoadContacts(ctx)
-	if err != nil {
-		// Continue if contacts file doesn't exist
-		if os.IsNotExist(err) {
-			info.Contacts = 0
-			return nil
-		}
-		return err
-	}
-
-	info.Contacts = reader.GetContactsCount()
-	return nil
-}
-
 func countRejections(repoPath string, info *RepositoryInfo) {
 	rejectedDir := filepath.Join(repoPath, "rejected")
 
@@ -404,28 +227,6 @@ func countRejections(repoPath string, info *RepositoryInfo) {
 				info.Rejections["sms"]++
 			}
 		}
-	}
-}
-
-func determineMimeType(path string) string {
-	ext := strings.ToLower(filepath.Ext(path))
-	switch ext {
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	case ".png":
-		return "image/png"
-	case ".gif":
-		return "image/gif"
-	case ".mp4":
-		return "video/mp4"
-	case ".3gp":
-		return "video/3gpp"
-	case ".mp3":
-		return "audio/mp3"
-	case ".amr":
-		return "audio/amr"
-	default:
-		return "application/octet-stream"
 	}
 }
 
@@ -466,7 +267,7 @@ func printCallsStatistics(info *RepositoryInfo) {
 	fmt.Println("Calls:")
 	if len(info.Calls) > 0 {
 		var totalCalls int
-		years := getSortedYears(info.Calls)
+		years := getSortedCallsYears(info.Calls)
 
 		for _, year := range years {
 			yearInfo := info.Calls[year]
@@ -525,8 +326,8 @@ func printAttachmentsStatistics(info *RepositoryInfo) {
 	fmt.Println()
 }
 
-// getSortedYears returns sorted years from calls data
-func getSortedYears(calls map[string]YearInfo) []string {
+// getSortedCallsYears returns sorted years from calls data
+func getSortedCallsYears(calls map[string]stats.YearInfo) []string {
 	years := make([]string, 0, len(calls))
 	for year := range calls {
 		years = append(years, year)
@@ -536,7 +337,7 @@ func getSortedYears(calls map[string]YearInfo) []string {
 }
 
 // getSortedMessageYears returns sorted years from SMS data
-func getSortedMessageYears(sms map[string]MessageInfo) []string {
+func getSortedMessageYears(sms map[string]stats.MessageInfo) []string {
 	years := make([]string, 0, len(sms))
 	for year := range sms {
 		years = append(years, year)
@@ -597,7 +398,7 @@ func printOrphanedAttachments(info *RepositoryInfo) {
 
 // printContacts prints contact count
 func printContacts(info *RepositoryInfo) {
-	fmt.Printf("Contacts: %s\n\n", formatNumber(info.Contacts))
+	fmt.Printf("Contacts: %s\n\n", formatNumber(info.Contacts.Count))
 }
 
 // printIssues prints rejection and error statistics

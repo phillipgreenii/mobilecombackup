@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository/stats"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
@@ -144,8 +146,8 @@ func NewInfoContext(repoPath string, outputJSON, quiet bool) *InfoContext {
 // This method is fully testable with mocked readers and filesystem.
 func (ctx *InfoContext) GatherRepositoryInfo() (*RepositoryInfo, error) {
 	info := &RepositoryInfo{
-		Calls:      make(map[string]YearInfo),
-		SMS:        make(map[string]MessageInfo),
+		Calls:      make(map[string]stats.YearInfo),
+		SMS:        make(map[string]stats.MessageInfo),
 		Rejections: make(map[string]int),
 		Errors:     make(map[string]int),
 	}
@@ -158,30 +160,42 @@ func (ctx *InfoContext) GatherRepositoryInfo() (*RepositoryInfo, error) {
 		}
 	}
 
-	// Use injected readers (can be mocked in tests!)
-	// Note: these helper functions are still using the old package-level functions
-	// but they accept Reader interfaces, so they're testable
-	if err := gatherCallsStats(ctx.CallsReader, info); err != nil {
-		info.Errors["calls"] = 1
+	// Create stats gatherer with injected readers
+	gatherer := stats.NewStatsGatherer(
+		ctx.RepoPath,
+		ctx.CallsReader,
+		ctx.SMSReader,
+		ctx.AttachmentReader,
+		ctx.ContactsReader,
+	)
+
+	// Gather all statistics
+	repoStats, err := gatherer.GatherStats(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to gather statistics: %w", err)
 	}
 
-	if err := gatherSMSStats(ctx.SMSReader, info); err != nil {
-		info.Errors["sms"] = 1
+	// Convert stats to info format
+	info.Calls = repoStats.Calls
+	info.SMS = repoStats.SMS
+	info.Errors = repoStats.Errors
+	info.ValidationOK = repoStats.ValidationOK
+
+	// Convert attachment stats
+	info.Attachments = AttachmentInfo{
+		Count:         repoStats.Attachments.Count,
+		TotalSize:     repoStats.Attachments.TotalSize,
+		OrphanedCount: repoStats.Attachments.Orphaned,
+		ByType:        repoStats.Attachments.ByType,
 	}
 
-	if err := gatherAttachmentStats(ctx.AttachmentReader, ctx.SMSReader, info); err != nil {
-		info.Errors["attachments"] = 1
-	}
-
-	if err := gatherContactsStats(ctx.ContactsReader, info); err != nil {
-		info.Errors["contacts"] = 1
+	// Convert contact stats
+	info.Contacts = ContactInfo{
+		Count: repoStats.Contacts.Count,
 	}
 
 	// Count rejections using filesystem
 	ctx.countRejections(info)
-
-	// Basic validation check
-	info.ValidationOK = len(info.Errors) == 0
 
 	return info, nil
 }

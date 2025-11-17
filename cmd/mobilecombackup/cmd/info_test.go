@@ -5,37 +5,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository/stats"
 )
-
-func TestDetermineMimeType(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		path     string
-		expected string
-	}{
-		{"/path/to/file.jpg", "image/jpeg"},
-		{"/path/to/file.jpeg", "image/jpeg"},
-		{"/path/to/file.JPG", "image/jpeg"},
-		{"/path/to/file.png", "image/png"},
-		{"/path/to/file.gif", "image/gif"},
-		{"/path/to/file.mp4", "video/mp4"},
-		{"/path/to/file.3gp", "video/3gpp"},
-		{"/path/to/file.mp3", "audio/mp3"},
-		{"/path/to/file.amr", "audio/amr"},
-		{"/path/to/file.txt", "application/octet-stream"},
-		{"/path/to/file", "application/octet-stream"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.path, func(t *testing.T) {
-			result := determineMimeType(test.path)
-			if result != test.expected {
-				t.Errorf("determineMimeType(%s) = %s; want %s", test.path, result, test.expected)
-			}
-		})
-	}
-}
 
 func TestFormatNumber(t *testing.T) {
 	t.Parallel()
@@ -121,14 +93,14 @@ func TestRepositoryInfoJSONMarshaling(t *testing.T) {
 	info := &RepositoryInfo{
 		Version:   "1",
 		CreatedAt: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
-		Calls: map[string]YearInfo{
+		Calls: map[string]stats.YearInfo{
 			"2023": {
 				Count:    1234,
 				Earliest: time.Date(2023, 1, 5, 10, 0, 0, 0, time.UTC),
 				Latest:   time.Date(2023, 12, 28, 15, 30, 0, 0, time.UTC),
 			},
 		},
-		SMS: map[string]MessageInfo{
+		SMS: map[string]stats.MessageInfo{
 			"2023": {
 				TotalCount: 5432,
 				SMSCount:   4321,
@@ -147,7 +119,7 @@ func TestRepositoryInfoJSONMarshaling(t *testing.T) {
 				"video/mp4":  56,
 			},
 		},
-		Contacts:     123,
+		Contacts:     ContactInfo{Count: 123},
 		Rejections:   map[string]int{"calls": 2, "sms": 3},
 		Errors:       map[string]int{},
 		ValidationOK: true,
@@ -168,8 +140,8 @@ func TestRepositoryInfoJSONMarshaling(t *testing.T) {
 		t.Errorf("Version mismatch: got %s, want %s", unmarshaled.Version, info.Version)
 	}
 
-	if unmarshaled.Contacts != info.Contacts {
-		t.Errorf("Contacts mismatch: got %d, want %d", unmarshaled.Contacts, info.Contacts)
+	if unmarshaled.Contacts.Count != info.Contacts.Count {
+		t.Errorf("Contacts mismatch: got %d, want %d", unmarshaled.Contacts.Count, info.Contacts.Count)
 	}
 
 	if unmarshaled.ValidationOK != info.ValidationOK {
@@ -219,7 +191,7 @@ func TestOutputTextInfoFormatting(t *testing.T) {
 	info := &RepositoryInfo{
 		Version:   "1",
 		CreatedAt: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
-		Calls: map[string]YearInfo{
+		Calls: map[string]stats.YearInfo{
 			"2023": {
 				Count:    1234,
 				Earliest: time.Date(2023, 1, 5, 10, 0, 0, 0, time.UTC),
@@ -231,7 +203,7 @@ func TestOutputTextInfoFormatting(t *testing.T) {
 				Latest:   time.Date(2024, 6, 15, 15, 30, 0, 0, time.UTC),
 			},
 		},
-		SMS: map[string]MessageInfo{
+		SMS: map[string]stats.MessageInfo{
 			"2023": {
 				TotalCount: 5432,
 				SMSCount:   4321,
@@ -250,7 +222,7 @@ func TestOutputTextInfoFormatting(t *testing.T) {
 				"video/mp4":  56,
 			},
 		},
-		Contacts:     123,
+		Contacts:     ContactInfo{Count: 123},
 		ValidationOK: true,
 	}
 
@@ -299,8 +271,8 @@ func TestEmptyRepositoryInfo(t *testing.T) {
 	t.Parallel()
 
 	info := &RepositoryInfo{
-		Calls:        make(map[string]YearInfo),
-		SMS:          make(map[string]MessageInfo),
+		Calls:        make(map[string]stats.YearInfo),
+		SMS:          make(map[string]stats.MessageInfo),
 		Rejections:   make(map[string]int),
 		Errors:       make(map[string]int),
 		ValidationOK: true,
