@@ -12,6 +12,7 @@ mobilecombackup
 #########
 # DEVENV
 #
+.devbox/
 .devenv/
 .direnv/
 .pre-commit-config.yaml
