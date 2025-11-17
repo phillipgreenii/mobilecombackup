@@ -22,32 +22,18 @@ type Data struct {
 
 // Reader reads contact information from repository
 type Reader interface {
-	// Legacy methods (deprecated but maintained for backward compatibility)
-	// These delegate to context versions with context.Background()
-	LoadContacts() error
+	LoadContacts(ctx context.Context) error
 	GetContactByNumber(number string) (string, bool)
 	GetNumbersByContact(name string) ([]string, bool)
-	GetAllContacts() ([]*Contact, error)
+	GetAllContacts(ctx context.Context) ([]*Contact, error)
 	ContactExists(name string) bool
 	IsKnownNumber(number string) bool
 	GetContactsCount() int
-	AddUnprocessedContacts(addresses, contactNames string) error
+	AddUnprocessedContacts(ctx context.Context, addresses, contactNames string) error
 	GetUnprocessedEntries() []UnprocessedEntry
-
-	// Context-aware methods
-	// These are the preferred methods for new code
-	LoadContactsContext(ctx context.Context) error
-	GetAllContactsContext(ctx context.Context) ([]*Contact, error)
-	AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error
 }
 
 // Writer handles writing contact information to repository
 type Writer interface {
-	// Legacy methods (deprecated but maintained for backward compatibility)
-	// These delegate to context versions with context.Background()
-	SaveContacts(path string) error
-
-	// Context-aware methods
-	// These are the preferred methods for new code
-	SaveContactsContext(ctx context.Context, path string) error
+	SaveContacts(ctx context.Context, path string) error
 }

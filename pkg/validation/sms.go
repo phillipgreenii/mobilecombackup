@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -53,7 +54,7 @@ func (v *SMSValidatorImpl) ValidateSMSContent() []Violation {
 	var violations []Violation
 
 	// Get available years
-	years, err := v.smsReader.GetAvailableYears()
+	years, err := v.smsReader.GetAvailableYears(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     StructureViolation,
@@ -70,7 +71,7 @@ func (v *SMSValidatorImpl) ValidateSMSContent() []Violation {
 		filePath := filepath.Join("sms", fileName)
 
 		// Validate file structure and year consistency
-		if err := v.smsReader.ValidateSMSFile(year); err != nil {
+		if err := v.smsReader.ValidateSMSFile(context.Background(), year); err != nil {
 			violations = append(violations, Violation{
 				Type:     InvalidFormat,
 				Severity: SeverityError,
@@ -97,7 +98,7 @@ func (v *SMSValidatorImpl) validateSMSYearConsistency(year int) []Violation {
 	filePath := filepath.Join("sms", fileName)
 
 	// Stream messages to check year consistency without loading all into memory
-	err := v.smsReader.StreamMessagesForYear(year, func(message sms.Message) error {
+	err := v.smsReader.StreamMessagesForYear(context.Background(), year, func(message sms.Message) error {
 		// Convert epoch milliseconds to time for year extraction
 		messageTime := time.Unix(message.GetDate()/1000, 0).UTC()
 		messageYear := messageTime.Year()
@@ -134,7 +135,7 @@ func (v *SMSValidatorImpl) validateAttachmentReferences(year int) []Violation {
 	filePath := filepath.Join("sms", fileName)
 
 	// Get attachment references for this year
-	attachmentRefs, err := v.smsReader.GetAttachmentRefs(year)
+	attachmentRefs, err := v.smsReader.GetAttachmentRefs(context.Background(), year)
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     InvalidFormat,
@@ -186,5 +187,5 @@ func (v *SMSValidatorImpl) ValidateSMSCounts(expectedCounts map[int]int) []Viola
 
 // GetAllAttachmentReferences returns all attachment references for cross-validation
 func (v *SMSValidatorImpl) GetAllAttachmentReferences() (map[string]bool, error) {
-	return v.smsReader.GetAllAttachmentRefs()
+	return v.smsReader.GetAllAttachmentRefs(context.Background())
 }

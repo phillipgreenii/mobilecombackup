@@ -1,6 +1,7 @@
 package calls_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -13,7 +14,7 @@ func ExampleXMLCallsReader() {
 	reader := calls.NewXMLCallsReader("/path/to/repository")
 
 	// Get available years
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,7 +22,7 @@ func ExampleXMLCallsReader() {
 
 	// Read all calls from a specific year
 	if len(years) > 0 {
-		callsFromYear, err := reader.ReadCalls(years[0])
+		callsFromYear, err := reader.ReadCalls(context.Background(), years[0])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,7 +36,7 @@ func ExampleXMLCallsReader_StreamCalls() {
 
 	// Stream calls for memory-efficient processing
 	callCount := 0
-	err := reader.StreamCallsForYear(2014, func(call calls.Call) error {
+	err := reader.StreamCallsForYear(context.Background(), 2014, func(call calls.Call) error {
 		callCount++
 		fmt.Printf("Call %d: %s -> %s (%d)\n",
 			callCount, call.Number, call.ContactName, call.Type)
@@ -52,7 +53,7 @@ func ExampleXMLCallsReader_ValidateCallsFile() {
 	reader := calls.NewXMLCallsReader("/path/to/repository")
 
 	// Validate a specific year's call file
-	err := reader.ValidateCallsFile(2014)
+	err := reader.ValidateCallsFile(context.Background(), 2014)
 	if err != nil {
 		fmt.Printf("Validation failed: %v\n", err)
 		return
@@ -88,16 +89,16 @@ func ExampleXMLCallsReader_GetCallsCount() {
 	reader := calls.NewXMLCallsReader("/path/to/repository")
 
 	// Get count without loading all calls into memory
-	count, err := reader.GetCallsCount(2014)
+	count, err := reader.GetCallsCount(context.Background(), 2014)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("2014 has %d calls\n", count)
 
 	// Check multiple years efficiently
-	years, _ := reader.GetAvailableYears()
+	years, _ := reader.GetAvailableYears(context.Background())
 	for _, year := range years {
-		count, err := reader.GetCallsCount(year)
+		count, err := reader.GetCallsCount(context.Background(), year)
 		if err != nil {
 			continue
 		}

@@ -3,11 +3,11 @@ package attachments
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/spf13/afero"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
-	"github.com/spf13/afero"
 )
 
 const (

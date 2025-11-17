@@ -88,19 +88,22 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	imp, err := createImporter(options)
+	// Create context with injected dependencies
+	ctx := NewImportContext(options, importJSON, importDryRun, noErrorOnRejects)
+
+	imp, err := createImporterWithContext(options, ctx)
 	if err != nil {
 		return err
 	}
 
 	summary, err := imp.Import()
 	if err != nil {
-		handleImportError(err)
+		ctx.HandleImportError(err)
 		return err
 	}
 
 	displayResults(summary)
-	handleExitCode(summary)
+	ctx.HandleExitCode(summary)
 	return nil
 }
 
@@ -160,29 +163,20 @@ func createImportOptions(resolvedRepoRoot string, paths []string) (*importer.Imp
 	return options, nil
 }
 
-// createImporter creates and validates the importer instance
-func createImporter(options *importer.ImportOptions) (*importer.Importer, error) {
+// createImporterWithContext creates and validates the importer instance using context
+func createImporterWithContext(options *importer.ImportOptions, ctx *ImportContext) (*importer.Importer, error) {
 	imp, err := importer.NewImporter(options, GetLogger())
 	if err != nil {
-		effectiveQuiet := options.Quiet
-		if !effectiveQuiet {
+		if !ctx.Quiet {
 			PrintError("Failed to initialize importer: %v", err)
 		}
 		// Exit with code 2 for initialization failures, unless in test mode
 		if !testing.Testing() {
-			os.Exit(2)
+			ctx.ExitHandler.Exit(2)
 		}
 		return nil, err
 	}
 	return imp, nil
-}
-
-// handleImportError handles errors from the import process
-func handleImportError(err error) {
-	if !quiet {
-		PrintError("Import failed: %v", err)
-	}
-	os.Exit(2)
 }
 
 // displayResults displays the import results based on the output format
@@ -192,14 +186,6 @@ func displayResults(summary *importer.ImportSummary) {
 		displayJSONSummary(summary)
 	} else if !effectiveQuiet {
 		displaySummary(summary, importDryRun)
-	}
-}
-
-// handleExitCode determines and sets the appropriate exit code
-func handleExitCode(summary *importer.ImportSummary) {
-	totalRejected := summary.Calls.Total.Rejected + summary.SMS.Total.Rejected
-	if totalRejected > 0 && !noErrorOnRejects {
-		os.Exit(1)
 	}
 }
 
@@ -261,7 +247,7 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 
 // displayCallsStatistics displays call statistics in the summary
 func displayCallsStatistics(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != "calls" {
+	if importFilter != "" && importFilter != callsDir {
 		return
 	}
 
@@ -305,7 +291,7 @@ func displayYearStats(yearStats map[int]*importer.YearStat) {
 
 // displayAttachmentStatistics displays attachment statistics in the summary
 func displayAttachmentStatistics(summary *importer.ImportSummary) {
-	if (importFilter == "" || importFilter == "sms") && summary.Attachments.Total.Total > 0 {
+	if (importFilter == "" || importFilter == smsDir) && summary.Attachments.Total.Total > 0 {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
 			summary.Attachments.Total.Total, summary.Attachments.Total.New,
@@ -315,7 +301,7 @@ func displayAttachmentStatistics(summary *importer.ImportSummary) {
 
 // displayRejectionStatistics displays rejection statistics in the summary
 func displayRejectionStatistics(summary *importer.ImportSummary) {
-	totalRejections := calculateTotalRejections(summary)
+	totalRejections := CalculateTotalRejections(summary)
 	if totalRejections == 0 {
 		return
 	}
@@ -326,18 +312,9 @@ func displayRejectionStatistics(summary *importer.ImportSummary) {
 	fmt.Printf("  Total: %d\n", totalRejections)
 }
 
-// calculateTotalRejections calculates the total number of rejections
-func calculateTotalRejections(summary *importer.ImportSummary) int {
-	totalRejections := 0
-	for _, stats := range summary.Rejections {
-		totalRejections += stats.Count
-	}
-	return totalRejections
-}
-
 // displayCallsRejections displays call-specific rejection statistics
 func displayCallsRejections(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != "calls" {
+	if importFilter != "" && importFilter != callsDir {
 		return
 	}
 
@@ -376,7 +353,7 @@ func displayRejectionBreakdown(rejections map[string]*importer.RejectionStats) {
 
 // displaySMSRejections displays SMS-specific rejection statistics
 func displaySMSRejections() {
-	if importFilter == "" || importFilter == "sms" {
+	if importFilter == "" || importFilter == smsDir {
 		// TODO: Track SMS-specific rejections separately
 		fmt.Printf("  SMS: 0\n")
 	}

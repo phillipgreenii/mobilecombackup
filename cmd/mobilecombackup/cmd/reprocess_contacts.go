@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -10,9 +11,9 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
-	"github.com/spf13/afero"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -90,7 +91,7 @@ func setupReprocessContacts() (string, *contacts.Manager, reprocessInitialStats,
 	contactsManager := contacts.NewContactsManager(resolvedRepoRoot)
 
 	// Load existing contacts
-	if err := contactsManager.LoadContacts(); err != nil {
+	if err := contactsManager.LoadContacts(context.Background()); err != nil {
 		return "", nil, reprocessInitialStats{}, fmt.Errorf("failed to load existing contacts: %w", err)
 	}
 
@@ -172,7 +173,7 @@ func mergeAndSaveContacts(resolvedRepoRoot string, contactsManager *contacts.Man
 
 	// Save updated contacts
 	contactsPath := filepath.Join(resolvedRepoRoot, "contacts.yaml")
-	if err := contactsManager.SaveContacts(contactsPath); err != nil {
+	if err := contactsManager.SaveContacts(context.Background(), contactsPath); err != nil {
 		return fmt.Errorf("failed to save updated contacts: %w", err)
 	}
 

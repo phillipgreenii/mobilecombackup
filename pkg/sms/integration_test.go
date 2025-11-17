@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 	reader := NewXMLSMSReader(tempDir)
 
 	// Test ReadMessages with real data
-	messages, err := reader.ReadMessages(2013)
+	messages, err := reader.ReadMessages(context.Background(), 2013)
 	if err != nil {
 		t.Fatalf("ReadMessages failed with real data: %v", err)
 	}
@@ -104,7 +105,7 @@ func TestXMLSMSReader_Integration_WithTestData(t *testing.T) {
 
 	// Test streaming with real data
 	var streamedCount int
-	err = reader.StreamMessagesForYear(2013, func(_ Message) error {
+	err = reader.StreamMessagesForYear(context.Background(), 2013, func(_ Message) error {
 		streamedCount++
 		return nil
 	})
@@ -131,7 +132,7 @@ func TestXMLSMSReader_Integration_GetMessageCount(t *testing.T) {
 	reader := NewXMLSMSReader(tempDir)
 
 	// Test GetMessageCount with real data
-	count, err := reader.GetMessageCount(2013)
+	count, err := reader.GetMessageCount(context.Background(), 2013)
 	if err != nil {
 		t.Fatalf("GetMessageCount failed: %v", err)
 	}
@@ -162,7 +163,7 @@ func TestXMLSMSReader_Integration_GetAvailableYears(t *testing.T) {
 
 	reader := NewXMLSMSReader(tempDir)
 
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		t.Fatalf("GetAvailableYears failed: %v", err)
 	}
@@ -191,7 +192,7 @@ func TestXMLSMSReader_Integration_MMSParts(t *testing.T) {
 
 	// Find MMS messages and verify parts are parsed correctly
 	var mmsMessages []MMS
-	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(context.Background(), 2013, func(msg Message) error {
 		if mms, ok := msg.(MMS); ok {
 			mmsMessages = append(mmsMessages, mms)
 		}
@@ -254,7 +255,7 @@ func TestXMLSMSReader_Integration_ValidateWithActualData(t *testing.T) {
 
 	// The test data has mixed years (similar to calls test data)
 	// So validation should fail due to year inconsistency
-	err = reader.ValidateSMSFile(2013)
+	err = reader.ValidateSMSFile(context.Background(), 2013)
 	if err == nil {
 		t.Errorf("ValidateSMSFile should have failed due to year inconsistency in test data")
 	}
@@ -275,7 +276,7 @@ func TestXMLSMSReader_Integration_YearConsistency(t *testing.T) {
 
 	// Check year distribution in the test data
 	var year2013Count, year2014Count, year2015Count int
-	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(context.Background(), 2013, func(msg Message) error {
 		// Convert epoch milliseconds to time for year check
 		timestamp := msg.GetDate()
 		msgTime := time.Unix(timestamp/1000, (timestamp%1000)*int64(time.Millisecond))
@@ -322,7 +323,7 @@ func TestXMLSMSReader_Integration_GetAttachmentRefs(t *testing.T) {
 	reader := NewXMLSMSReader(tempDir)
 
 	// Get attachment references
-	refs, err := reader.GetAttachmentRefs(2013)
+	refs, err := reader.GetAttachmentRefs(context.Background(), 2013)
 	if err != nil {
 		t.Fatalf("GetAttachmentRefs failed: %v", err)
 	}
@@ -332,7 +333,7 @@ func TestXMLSMSReader_Integration_GetAttachmentRefs(t *testing.T) {
 	t.Logf("Found %d attachment references", len(refs))
 
 	// Test GetAllAttachmentRefs
-	allRefs, err := reader.GetAllAttachmentRefs()
+	allRefs, err := reader.GetAllAttachmentRefs(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllAttachmentRefs failed: %v", err)
 	}
@@ -356,7 +357,7 @@ func TestXMLSMSReader_Integration_MessageTypes(t *testing.T) {
 	// Verify message type detection works correctly
 	var smsReceived, smsSent, mmsReceived, mmsSent int
 
-	err = reader.StreamMessagesForYear(2013, func(msg Message) error {
+	err = reader.StreamMessagesForYear(context.Background(), 2013, func(msg Message) error {
 		switch m := msg.(type) {
 		case SMS:
 			switch m.Type {

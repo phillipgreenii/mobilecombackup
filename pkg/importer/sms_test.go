@@ -33,7 +33,7 @@ func TestSMSImporter_ImportFile(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: repoRoot,
 		Paths:    []string{testFile},
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(tempDir)
@@ -103,7 +103,7 @@ func TestSMSImporter_MessageValidation(t *testing.T) {
 	options := &ImportOptions{
 		RepoRoot: tempDir,
 		Paths:    []string{},
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 	// Create contacts manager for test
 	contactsManager := contacts.NewContactsManager(tempDir)

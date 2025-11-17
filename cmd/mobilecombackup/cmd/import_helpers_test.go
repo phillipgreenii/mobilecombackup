@@ -7,19 +7,19 @@ import (
 // TestCreateImportOptions tests the createImportOptions function
 func TestCreateImportOptions(t *testing.T) {
 	tests := []struct {
-		name              string
-		repoRoot          string
-		paths             []string
-		dryRun            bool
-		verbose           bool
-		quiet             bool
-		json              bool
-		filter            string
-		maxXMLSize        string
-		maxMessageSize    string
-		expectError       bool
-		expectedQuiet     bool
-		description       string
+		name           string
+		repoRoot       string
+		paths          []string
+		dryRun         bool
+		verbose        bool
+		quiet          bool
+		json           bool
+		filter         string
+		maxXMLSize     string
+		maxMessageSize string
+		expectError    bool
+		expectedQuiet  bool
+		description    string
 	}{
 		{
 			name:           "basic options",

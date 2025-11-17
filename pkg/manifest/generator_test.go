@@ -3,11 +3,11 @@ package manifest
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"github.com/spf13/afero"
 )
 
 func TestManifestGenerator_GenerateFileManifest(t *testing.T) {

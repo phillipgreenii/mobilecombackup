@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -379,14 +380,14 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
 	}
 
 	// Get all available years with SMS data
-	years, err := v.smsReader.GetAvailableYears()
+	years, err := v.smsReader.GetAvailableYears(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get available SMS years: %w", err)
 	}
 
 	// Process each year to extract attachment MIME types
 	for _, year := range years {
-		err := v.smsReader.StreamMessagesForYear(year, func(message sms.Message) error {
+		err := v.smsReader.StreamMessagesForYear(context.Background(), year, func(message sms.Message) error {
 			// Only process MMS messages which can have attachments
 			if mms, ok := message.(*sms.MMS); ok {
 				// Process each part of the MMS

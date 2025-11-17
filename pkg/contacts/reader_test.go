@@ -2,6 +2,7 @@ package contacts
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,7 +49,7 @@ func TestContactsManager_LoadContacts_ValidFile(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -66,7 +67,7 @@ func TestContactsManager_LoadContacts_MissingFile(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewContactsManager(tempDir)
 
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts should not fail for missing file: %v", err)
 	}
@@ -96,7 +97,7 @@ func TestContactsManager_LoadContacts_InvalidYAML(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err == nil {
 		t.Error("LoadContacts should fail for invalid YAML")
 	}
@@ -117,7 +118,7 @@ func TestContactsManager_LoadContacts_EmptyContactName(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err == nil {
 		t.Error("LoadContacts should fail for empty contact name")
 	}
@@ -141,7 +142,7 @@ func TestContactsManager_LoadContacts_DuplicateNumbers(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err == nil {
 		t.Error("LoadContacts should fail for duplicate phone numbers")
 	}
@@ -163,7 +164,7 @@ func TestContactsManager_GetContactByNumber(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -211,7 +212,7 @@ func TestContactsManager_GetNumbersByContact(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -243,7 +244,7 @@ func TestContactsManager_ContactExists(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -267,7 +268,7 @@ func TestContactsManager_IsKnownNumber(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -298,7 +299,7 @@ func TestContactsManager_GetAllContacts(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	contacts, err := manager.GetAllContacts()
+	contacts, err := manager.GetAllContacts(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContacts failed: %v", err)
 	}
@@ -382,7 +383,7 @@ func TestContactsManager_EmptyContacts(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -391,7 +392,7 @@ func TestContactsManager_EmptyContacts(t *testing.T) {
 		t.Errorf("Expected 0 contacts, got %d", manager.GetContactsCount())
 	}
 
-	contacts, err := manager.GetAllContacts()
+	contacts, err := manager.GetAllContacts(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContacts failed: %v", err)
 	}
@@ -417,7 +418,7 @@ func TestContactsManager_ContactsWithEmptyNumbers(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -581,7 +582,7 @@ unprocessed:
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -627,7 +628,7 @@ func TestContactsManager_SaveContacts_NewFile(t *testing.T) {
 	manager.AddUnprocessedContact("5551234567", "Johnny")             // Same number, different name
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -721,7 +722,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	}
 
 	manager := NewContactsManager(tempDir)
-	err = manager.LoadContacts()
+	err = manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -731,7 +732,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
 	manager.AddUnprocessedContact("5559876543", "New Contact")
 
 	// Save
-	err = manager.SaveContacts(contactsPath)
+	err = manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -766,7 +767,7 @@ func TestContactsManager_AddUnprocessedContacts_SingleAddress(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Test single address and name
-	err := manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -792,7 +793,7 @@ func TestContactsManager_AddUnprocessedContacts_MultipleAddresses(t *testing.T) 
 	manager := NewContactsManager("")
 
 	// Test multiple addresses and names
-	err := manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567~5559876543", "John Doe,Jane Smith")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -825,7 +826,7 @@ func TestContactsManager_AddUnprocessedContacts_CountMismatch(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Test count mismatch - should return error
-	err := manager.AddUnprocessedContacts("5551234567~5559876543", testContactJohnDoe)
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567~5559876543", testContactJohnDoe)
 	if err == nil {
 		t.Fatal("Expected error for count mismatch, got nil")
 	}
@@ -846,7 +847,7 @@ func TestContactsManager_AddUnprocessedContacts_EmptyValues(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Test empty address or name - should skip
-	err := manager.AddUnprocessedContacts("5551234567~", "John Doe,")
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567~", "John Doe,")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -880,13 +881,13 @@ contacts:
 	}
 
 	manager := NewContactsManager(tempDir)
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
 
 	// Try to add known and unknown contacts
-	err = manager.AddUnprocessedContacts("5551234567~5559876543", "John Doe,Jane Smith")
+	err = manager.AddUnprocessedContacts(context.Background(), "5551234567~5559876543", "John Doe,Jane Smith")
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -920,7 +921,7 @@ contacts:
 	}
 
 	manager := NewContactsManager(tempDir)
-	err := manager.LoadContacts()
+	err := manager.LoadContacts(context.Background())
 	if err != nil {
 		t.Fatalf("LoadContacts failed: %v", err)
 	}
@@ -949,7 +950,7 @@ contacts:
 			manager.unprocessed = make(map[string][]string)
 
 			// Try to add contact with various number formats
-			err = manager.AddUnprocessedContacts(tc.address, "Oscar Wilde")
+			err = manager.AddUnprocessedContacts(context.Background(), tc.address, "Oscar Wilde")
 			if err != nil {
 				t.Fatalf("AddUnprocessedContacts failed: %v", err)
 			}
@@ -989,7 +990,7 @@ contacts:
 
 		// This mimics the scenario where "5555550004" is already in contacts (Jim Henson)
 		// but the import encounters "Oscar Wilde" with the same number
-		err = manager.AddUnprocessedContacts("5555550004", "Oscar Wilde")
+		err = manager.AddUnprocessedContacts(context.Background(), "5555550004", "Oscar Wilde")
 		if err != nil {
 			t.Fatalf("AddUnprocessedContacts failed: %v", err)
 		}
@@ -1008,12 +1009,12 @@ func TestContactsManager_AddUnprocessedContacts_CombineDuplicates(t *testing.T) 
 	manager := NewContactsManager("")
 
 	// Add same phone number with different names
-	err := manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
+	err := manager.AddUnprocessedContacts(context.Background(), "5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("First AddUnprocessedContacts failed: %v", err)
 	}
 
-	err = manager.AddUnprocessedContacts("5551234567", "Johnny")
+	err = manager.AddUnprocessedContacts(context.Background(), "5551234567", "Johnny")
 	if err != nil {
 		t.Fatalf("Second AddUnprocessedContacts failed: %v", err)
 	}
@@ -1045,12 +1046,12 @@ func TestContactsManager_GetUnprocessedEntries_Sorting(t *testing.T) {
 	manager := NewContactsManager("")
 
 	// Add entries in reverse order
-	err := manager.AddUnprocessedContacts("5559876543", testContactJaneSmith)
+	err := manager.AddUnprocessedContacts(context.Background(), "5559876543", testContactJaneSmith)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
 
-	err = manager.AddUnprocessedContacts("5551234567", testContactJohnDoe)
+	err = manager.AddUnprocessedContacts(context.Background(), "5551234567", testContactJohnDoe)
 	if err != nil {
 		t.Fatalf("AddUnprocessedContacts failed: %v", err)
 	}
@@ -1087,7 +1088,7 @@ func TestContactsManager_SaveContacts_AtomicOperation(t *testing.T) {
 	manager.AddUnprocessedContact("5551234567", testContactJohnDoe)
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}
@@ -1127,12 +1128,12 @@ func TestContactsManager_SaveContacts_ConsistentOrdering(t *testing.T) {
 	manager2.AddUnprocessedContact("5551111111", "Alice")
 
 	// Save both files
-	err1 := manager1.SaveContacts(contactsPath1)
+	err1 := manager1.SaveContacts(context.Background(), contactsPath1)
 	if err1 != nil {
 		t.Fatalf("SaveContacts failed for manager1: %v", err1)
 	}
 
-	err2 := manager2.SaveContacts(contactsPath2)
+	err2 := manager2.SaveContacts(context.Background(), contactsPath2)
 	if err2 != nil {
 		t.Fatalf("SaveContacts failed for manager2: %v", err2)
 	}
@@ -1196,7 +1197,7 @@ func TestContactsManager_SaveContacts_OrderingMatchesGetter(t *testing.T) {
 	expectedEntries := manager.GetUnprocessedEntries()
 
 	// Save contacts
-	err := manager.SaveContacts(contactsPath)
+	err := manager.SaveContacts(context.Background(), contactsPath)
 	if err != nil {
 		t.Fatalf("SaveContacts failed: %v", err)
 	}

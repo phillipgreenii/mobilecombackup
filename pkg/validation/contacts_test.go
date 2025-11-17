@@ -23,7 +23,7 @@ type mockContactsReader struct {
 	contactExists    map[string]bool
 }
 
-func (m *mockContactsReader) LoadContacts() error {
+func (m *mockContactsReader) LoadContacts(_ context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (m *mockContactsReader) GetNumbersByContact(name string) ([]string, bool) {
 	return numbers, exists
 }
 
-func (m *mockContactsReader) GetAllContacts() ([]*contacts.Contact, error) {
+func (m *mockContactsReader) GetAllContacts(_ context.Context) ([]*contacts.Contact, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -114,7 +114,7 @@ func (m *mockContactsReader) GetContactsCount() int {
 	return len(m.contacts)
 }
 
-func (m *mockContactsReader) AddUnprocessedContacts(_, _ string) error {
+func (m *mockContactsReader) AddUnprocessedContacts(_ context.Context, _, _ string) error {
 	// Mock implementation - do nothing for tests
 	return nil
 }
@@ -122,20 +122,6 @@ func (m *mockContactsReader) AddUnprocessedContacts(_, _ string) error {
 func (m *mockContactsReader) GetUnprocessedEntries() []contacts.UnprocessedEntry {
 	// Mock implementation - return empty slice for tests
 	return []contacts.UnprocessedEntry{}
-}
-
-// Context-aware method implementations for mock
-
-func (m *mockContactsReader) LoadContactsContext(ctx context.Context) error {
-	return m.LoadContacts()
-}
-
-func (m *mockContactsReader) GetAllContactsContext(ctx context.Context) ([]*contacts.Contact, error) {
-	return m.GetAllContacts()
-}
-
-func (m *mockContactsReader) AddUnprocessedContactsContext(ctx context.Context, addresses, contactNames string) error {
-	return m.AddUnprocessedContacts(addresses, contactNames)
 }
 
 func TestContactsValidatorImpl_ValidateContactsStructure(t *testing.T) {

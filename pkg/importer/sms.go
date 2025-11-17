@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -37,7 +38,7 @@ func NewSMSImporter(options *ImportOptions, contactsManager ContactsManager, yea
 	return &SMSImporter{
 		options:             options,
 		coalescer:           coalescer.NewCoalescer[sms.MessageEntry](),
-		contactsManager:     contactsManager,                              // Now uses interface
+		contactsManager:     contactsManager,                                          // Now uses interface
 		attachmentExtractor: sms.NewAttachmentExtractor(options.RepoRoot, options.Fs), // Uses null logger
 		attachmentStats:     sms.NewAttachmentExtractionStats(),
 		contentTypeConfig:   sms.GetDefaultContentTypeConfig(),
@@ -124,7 +125,7 @@ func (si *SMSImporter) LoadRepository() error {
 	reader := sms.NewXMLSMSReader(si.options.RepoRoot)
 
 	// Get all available years
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get available years: %w", err)
 	}
@@ -133,7 +134,7 @@ func (si *SMSImporter) LoadRepository() error {
 	totalLoaded := 0
 	for _, year := range years {
 		yearCount := 0
-		err := reader.StreamMessagesForYear(year, func(msg sms.Message) error {
+		err := reader.StreamMessagesForYear(context.Background(), year, func(msg sms.Message) error {
 			entry := sms.NewMessageEntry(msg)
 			si.coalescer.Add(entry)
 			yearCount++
@@ -573,7 +574,7 @@ func (si *SMSImporter) processContactInfo(address, contactName string) {
 	// Check if this is a multi-address message (contains ~ separator)
 	if strings.Contains(address, "~") {
 		// Use the multi-address parsing method that handles ~ and , separators
-		err := si.contactsManager.AddUnprocessedContacts(address, contactName)
+		err := si.contactsManager.AddUnprocessedContacts(context.Background(), address, contactName)
 		if err != nil {
 			// If multi-address parsing fails, don't use fallback - this prevents double processing
 			// Just skip this contact extraction

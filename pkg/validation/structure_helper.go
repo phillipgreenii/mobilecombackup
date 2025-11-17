@@ -1,13 +1,14 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 )
 
 // YearBasedReader is a common interface for readers that have year-based data
 type YearBasedReader interface {
-	GetAvailableYears() ([]int, error)
+	GetAvailableYears(ctx context.Context) ([]int, error)
 }
 
 // CountBasedReader extends YearBasedReader with count functionality
@@ -32,7 +33,7 @@ func ValidateDirectoryStructure(
 	var violations []Violation
 
 	// Get available years from reader first
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     StructureViolation,
@@ -87,7 +88,7 @@ func ValidateDataCounts(
 	var violations []Violation
 
 	// Get available years
-	years, err := reader.GetAvailableYears()
+	years, err := reader.GetAvailableYears(context.Background())
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     StructureViolation,

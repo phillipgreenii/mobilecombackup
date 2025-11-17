@@ -19,14 +19,14 @@ type mockCallsReader struct {
 	validateError  map[int]error
 }
 
-func (m *mockCallsReader) ReadCalls(year int) ([]calls.Call, error) {
+func (m *mockCallsReader) ReadCalls(_ context.Context, year int) ([]calls.Call, error) {
 	if callList, exists := m.calls[year]; exists {
 		return callList, nil
 	}
 	return nil, fmt.Errorf("no calls for year %d", year)
 }
 
-func (m *mockCallsReader) StreamCallsForYear(year int, callback func(calls.Call) error) error {
+func (m *mockCallsReader) StreamCallsForYear(_ context.Context, year int, callback func(calls.Call) error) error {
 	if callList, exists := m.calls[year]; exists {
 		for _, call := range callList {
 			if err := callback(call); err != nil {
@@ -38,18 +38,18 @@ func (m *mockCallsReader) StreamCallsForYear(year int, callback func(calls.Call)
 	return fmt.Errorf("no calls for year %d", year)
 }
 
-func (m *mockCallsReader) GetAvailableYears() ([]int, error) {
+func (m *mockCallsReader) GetAvailableYears(_ context.Context) ([]int, error) {
 	return m.availableYears, nil
 }
 
-func (m *mockCallsReader) GetCallsCount(year int) (int, error) {
+func (m *mockCallsReader) GetCallsCount(_ context.Context, year int) (int, error) {
 	if count, exists := m.counts[year]; exists {
 		return count, nil
 	}
 	return 0, fmt.Errorf("no count for year %d", year)
 }
 
-func (m *mockCallsReader) ValidateCallsFile(year int) error {
+func (m *mockCallsReader) ValidateCallsFile(_ context.Context, year int) error {
 	if err, exists := m.validateError[year]; exists {
 		return err
 	}
@@ -59,23 +59,23 @@ func (m *mockCallsReader) ValidateCallsFile(year int) error {
 // Context-aware method implementations for mock
 
 func (m *mockCallsReader) ReadCallsContext(ctx context.Context, year int) ([]calls.Call, error) {
-	return m.ReadCalls(year)
+	return m.ReadCalls(context.Background(), year)
 }
 
 func (m *mockCallsReader) StreamCallsForYearContext(ctx context.Context, year int, callback func(calls.Call) error) error {
-	return m.StreamCallsForYear(year, callback)
+	return m.StreamCallsForYear(context.Background(), year, callback)
 }
 
 func (m *mockCallsReader) GetAvailableYearsContext(ctx context.Context) ([]int, error) {
-	return m.GetAvailableYears()
+	return m.GetAvailableYears(context.Background())
 }
 
 func (m *mockCallsReader) GetCallsCountContext(ctx context.Context, year int) (int, error) {
-	return m.GetCallsCount(year)
+	return m.GetCallsCount(context.Background(), year)
 }
 
 func (m *mockCallsReader) ValidateCallsFileContext(ctx context.Context, year int) error {
-	return m.ValidateCallsFile(year)
+	return m.ValidateCallsFile(context.Background(), year)
 }
 
 func TestCallsValidatorImpl_ValidateCallsStructure(t *testing.T) {

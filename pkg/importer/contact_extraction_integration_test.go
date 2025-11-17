@@ -139,7 +139,7 @@ func TestImporter_ContactExtraction_MMS(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -284,7 +284,7 @@ unprocessed:
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -364,7 +364,7 @@ func TestImporter_ContactExtraction_DuplicateNames(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -442,7 +442,7 @@ func TestImporter_ContactExtraction_EmptyContactNames(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -510,7 +510,7 @@ func TestImporter_ContactExtraction_DryRun(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   true,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -568,7 +568,7 @@ func TestImporter_ContactExtraction_PhoneNumberNormalization(t *testing.T) {
 		Filter:   "sms",
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
@@ -647,7 +647,7 @@ func testContactExtraction(t *testing.T, testXML, fileName, filter string, expec
 		Filter:   filter,
 		DryRun:   false,
 		Quiet:    true,
-		Fs: afero.NewOsFs(),
+		Fs:       afero.NewOsFs(),
 	}
 
 	importer, err := NewImporter(options, logging.NewNullLogger())
