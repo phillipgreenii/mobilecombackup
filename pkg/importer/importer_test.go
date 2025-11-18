@@ -664,3 +664,41 @@ func TestShouldProcessFile(t *testing.T) {
 		})
 	}
 }
+
+func TestConsoleProgressReporter(t *testing.T) {
+	t.Run("creates quiet reporter", func(t *testing.T) {
+		reporter := NewConsoleProgressReporter(true, false)
+		if reporter == nil {
+			t.Error("NewConsoleProgressReporter returned nil")
+		}
+	})
+
+	t.Run("quiet mode suppresses output", func(t *testing.T) {
+		reporter := NewConsoleProgressReporter(true, false) // quiet mode
+		// Should not panic and not print
+		reporter.StartFile("test.xml", 10, 1)
+		reporter.UpdateProgress(50, 100)
+		reporter.EndFile("test.xml", nil)
+	})
+
+	t.Run("normal mode shows progress", func(t *testing.T) {
+		reporter := NewConsoleProgressReporter(false, false) // normal mode
+		// Should not panic
+		reporter.StartFile("test.xml", 10, 1)
+		reporter.UpdateProgress(100, 200) // Will print at 100
+		reporter.EndFile("test.xml", nil)
+	})
+
+	t.Run("verbose mode shows details", func(t *testing.T) {
+		reporter := NewConsoleProgressReporter(false, true) // verbose mode
+		summary := &YearStat{
+			Added:      10,
+			Duplicates: 5,
+			Rejected:   2,
+		}
+		reporter.StartFile("test.xml", 10, 5)
+		reporter.UpdateProgress(100, 200)
+		reporter.EndFile("test.xml", summary)
+		// Should not panic
+	})
+}

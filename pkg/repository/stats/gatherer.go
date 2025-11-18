@@ -1,3 +1,4 @@
+// Package stats provides statistics gathering for repository contents.
 package stats
 
 import (
