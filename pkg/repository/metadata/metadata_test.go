@@ -17,7 +17,7 @@ func TestReader_ReadMetadata(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Write test metadata file
 	markerContent := `repository_structure_version: "1"
@@ -59,7 +59,7 @@ func TestReader_ReadMetadata_InvalidYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Write invalid YAML
 	markerPath := filepath.Join(tmpDir, ".mobilecombackup.yaml")
@@ -83,7 +83,7 @@ func TestReader_ReadMetadata_MissingFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Don't write marker file
 	reader := NewReader(tmpDir)
@@ -104,7 +104,7 @@ func TestReader_ReadMetadata_InvalidDate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Write metadata with invalid date
 	markerContent := `repository_structure_version: "1"
@@ -159,7 +159,7 @@ func TestReader_Exists(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
-			defer os.RemoveAll(tmpDir)
+			defer func() { _ = os.RemoveAll(tmpDir) }()
 
 			// Setup test environment
 			if err := tt.setupFunc(tmpDir); err != nil {
@@ -211,7 +211,7 @@ func TestReader_ReadMetadata_EmptyCreatedAt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Write metadata without created_at
 	markerContent := `repository_structure_version: "1"

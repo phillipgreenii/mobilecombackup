@@ -1,3 +1,4 @@
+// Package metadata provides repository metadata operations for reading and parsing repository marker files.
 package metadata
 
 import (

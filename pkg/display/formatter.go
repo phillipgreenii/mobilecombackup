@@ -1,3 +1,4 @@
+// Package display provides formatting and output functionality for repository information.
 package display
 
 import (
@@ -67,19 +68,19 @@ func (f *Formatter) FormatRepositoryInfo(info *RepositoryInfo, repoPath string) 
 
 // printRepositoryHeader prints the repository header information
 func (f *Formatter) printRepositoryHeader(info *RepositoryInfo, repoPath string) {
-	fmt.Fprintf(f.writer, "Repository: %s\n", repoPath)
+	_, _ = fmt.Fprintf(f.writer, "Repository: %s\n", repoPath)
 	if info.Version != "" {
-		fmt.Fprintf(f.writer, "Version: %s\n", info.Version)
+		_, _ = fmt.Fprintf(f.writer, "Version: %s\n", info.Version)
 	}
 	if !info.CreatedAt.IsZero() {
-		fmt.Fprintf(f.writer, "Created: %s\n", info.CreatedAt.Format(time.RFC3339))
+		_, _ = fmt.Fprintf(f.writer, "Created: %s\n", info.CreatedAt.Format(time.RFC3339))
 	}
-	fmt.Fprintln(f.writer)
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // printCallsStatistics prints call statistics
 func (f *Formatter) printCallsStatistics(info *RepositoryInfo) {
-	fmt.Fprintln(f.writer, "Calls:")
+	_, _ = fmt.Fprintln(f.writer, "Calls:")
 	if len(info.Calls) > 0 {
 		var totalCalls int
 		years := getSortedCallsYears(info.Calls)
@@ -87,68 +88,68 @@ func (f *Formatter) printCallsStatistics(info *RepositoryInfo) {
 		for _, year := range years {
 			yearInfo := info.Calls[year]
 			totalCalls += yearInfo.Count
-			fmt.Fprintf(f.writer, "  %s: %s calls", year, FormatNumber(yearInfo.Count))
+			_, _ = fmt.Fprintf(f.writer, "  %s: %s calls", year, FormatNumber(yearInfo.Count))
 			f.printDateRange(yearInfo.Earliest, yearInfo.Latest)
-			fmt.Fprintln(f.writer)
+			_, _ = fmt.Fprintln(f.writer)
 		}
-		fmt.Fprintf(f.writer, "  Total: %s calls\n", FormatNumber(totalCalls))
+		_, _ = fmt.Fprintf(f.writer, "  Total: %s calls\n", FormatNumber(totalCalls))
 	} else {
-		fmt.Fprintln(f.writer, "  Total: 0 calls")
+		_, _ = fmt.Fprintln(f.writer, "  Total: 0 calls")
 	}
-	fmt.Fprintln(f.writer)
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // printMessagesStatistics prints SMS/MMS statistics
 func (f *Formatter) printMessagesStatistics(info *RepositoryInfo) {
-	fmt.Fprintln(f.writer, "Messages:")
+	_, _ = fmt.Fprintln(f.writer, "Messages:")
 	if len(info.SMS) > 0 {
 		totalMessages, totalSMS, totalMMS := calculateMessageTotals(info)
 		years := getSortedMessageYears(info.SMS)
 
 		for _, year := range years {
 			msgInfo := info.SMS[year]
-			fmt.Fprintf(f.writer, "  %s: %s messages (%s SMS, %s MMS)",
+			_, _ = fmt.Fprintf(f.writer, "  %s: %s messages (%s SMS, %s MMS)",
 				year,
 				FormatNumber(msgInfo.TotalCount),
 				FormatNumber(msgInfo.SMSCount),
 				FormatNumber(msgInfo.MMSCount))
 			f.printDateRange(msgInfo.Earliest, msgInfo.Latest)
-			fmt.Fprintln(f.writer)
+			_, _ = fmt.Fprintln(f.writer)
 		}
-		fmt.Fprintf(f.writer, "  Total: %s messages (%s SMS, %s MMS)\n",
+		_, _ = fmt.Fprintf(f.writer, "  Total: %s messages (%s SMS, %s MMS)\n",
 			FormatNumber(totalMessages),
 			FormatNumber(totalSMS),
 			FormatNumber(totalMMS))
 	} else {
-		fmt.Fprintln(f.writer, "  Total: 0 messages (0 SMS, 0 MMS)")
+		_, _ = fmt.Fprintln(f.writer, "  Total: 0 messages (0 SMS, 0 MMS)")
 	}
-	fmt.Fprintln(f.writer)
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // printAttachmentsStatistics prints attachment statistics
 func (f *Formatter) printAttachmentsStatistics(info *RepositoryInfo) {
-	fmt.Fprintln(f.writer, "Attachments:")
+	_, _ = fmt.Fprintln(f.writer, "Attachments:")
 	if info.Attachments.Count > 0 {
-		fmt.Fprintf(f.writer, "  Count: %s\n", FormatNumber(info.Attachments.Count))
-		fmt.Fprintf(f.writer, "  Total Size: %s\n", FormatBytes(info.Attachments.TotalSize))
+		_, _ = fmt.Fprintf(f.writer, "  Count: %s\n", FormatNumber(info.Attachments.Count))
+		_, _ = fmt.Fprintf(f.writer, "  Total Size: %s\n", FormatBytes(info.Attachments.TotalSize))
 
 		f.printAttachmentTypes(info)
 		f.printOrphanedAttachments(info)
 	} else {
-		fmt.Fprintln(f.writer, "  Count: 0")
-		fmt.Fprintln(f.writer, "  Total Size: 0 B")
+		_, _ = fmt.Fprintln(f.writer, "  Count: 0")
+		_, _ = fmt.Fprintln(f.writer, "  Total Size: 0 B")
 	}
-	fmt.Fprintln(f.writer)
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // printAttachmentTypes prints attachment types breakdown
 func (f *Formatter) printAttachmentTypes(info *RepositoryInfo) {
 	if len(info.Attachments.ByType) > 0 {
-		fmt.Fprintln(f.writer, "  Types:")
+		_, _ = fmt.Fprintln(f.writer, "  Types:")
 		types := getSortedAttachmentTypes(info.Attachments.ByType)
 		for _, mimeType := range types {
 			count := info.Attachments.ByType[mimeType]
-			fmt.Fprintf(f.writer, "    %s: %s\n", mimeType, FormatNumber(count))
+			_, _ = fmt.Fprintf(f.writer, "    %s: %s\n", mimeType, FormatNumber(count))
 		}
 	}
 }
@@ -156,42 +157,42 @@ func (f *Formatter) printAttachmentTypes(info *RepositoryInfo) {
 // printOrphanedAttachments prints orphaned attachment count
 func (f *Formatter) printOrphanedAttachments(info *RepositoryInfo) {
 	if info.Attachments.OrphanedCount > 0 {
-		fmt.Fprintf(f.writer, "  Orphaned: %s\n", FormatNumber(info.Attachments.OrphanedCount))
+		_, _ = fmt.Fprintf(f.writer, "  Orphaned: %s\n", FormatNumber(info.Attachments.OrphanedCount))
 	}
 }
 
 // printContacts prints contact count
 func (f *Formatter) printContacts(info *RepositoryInfo) {
-	fmt.Fprintf(f.writer, "Contacts: %s\n\n", FormatNumber(info.Contacts.Count))
+	_, _ = fmt.Fprintf(f.writer, "Contacts: %s\n\n", FormatNumber(info.Contacts.Count))
 }
 
 // printIssues prints rejection and error statistics
 func (f *Formatter) printIssues(info *RepositoryInfo) {
 	if len(info.Rejections) > 0 || len(info.Errors) > 0 {
-		fmt.Fprintln(f.writer, "Issues:")
+		_, _ = fmt.Fprintln(f.writer, "Issues:")
 		for component, count := range info.Rejections {
-			fmt.Fprintf(f.writer, "  Rejections (%s): %s\n", component, FormatNumber(count))
+			_, _ = fmt.Fprintf(f.writer, "  Rejections (%s): %s\n", component, FormatNumber(count))
 		}
 		for component, count := range info.Errors {
-			fmt.Fprintf(f.writer, "  Errors (%s): %s\n", component, FormatNumber(count))
+			_, _ = fmt.Fprintf(f.writer, "  Errors (%s): %s\n", component, FormatNumber(count))
 		}
-		fmt.Fprintln(f.writer)
+		_, _ = fmt.Fprintln(f.writer)
 	}
 }
 
 // printValidationStatus prints validation status
 func (f *Formatter) printValidationStatus(info *RepositoryInfo) {
 	if info.ValidationOK {
-		fmt.Fprintln(f.writer, "Validation: OK")
+		_, _ = fmt.Fprintln(f.writer, "Validation: OK")
 	} else {
-		fmt.Fprintln(f.writer, "Validation: Issues detected")
+		_, _ = fmt.Fprintln(f.writer, "Validation: Issues detected")
 	}
 }
 
 // printDateRange prints date range if available
 func (f *Formatter) printDateRange(earliest, latest time.Time) {
 	if !earliest.IsZero() && !latest.IsZero() {
-		fmt.Fprintf(f.writer, " (%s - %s)",
+		_, _ = fmt.Fprintf(f.writer, " (%s - %s)",
 			earliest.Format("Jan 2"),
 			latest.Format("Jan 2"))
 	}

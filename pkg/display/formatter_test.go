@@ -384,7 +384,7 @@ func TestFormatter_MultipleYears(t *testing.T) {
 	if year2021 == -1 || year2022 == -1 || year2023 == -1 {
 		t.Error("Expected all years to be present")
 	}
-	if !(year2021 < year2022 && year2022 < year2023) {
+	if year2021 >= year2022 || year2022 >= year2023 {
 		t.Error("Expected years to be in ascending order")
 	}
 }
