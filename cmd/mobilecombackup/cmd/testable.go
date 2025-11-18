@@ -11,10 +11,10 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository/metadata"
 	"github.com/phillipgreenii/mobilecombackup/pkg/repository/stats"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/afero"
-	"gopkg.in/yaml.v3"
 )
 
 // DetermineExitCode returns the appropriate exit code based on import summary and options.
@@ -210,8 +210,8 @@ func (ctx *InfoContext) readRepositoryMetadata(info *RepositoryInfo) error {
 		return err
 	}
 
-	var marker InfoMarkerFileContent
-	if err := yaml.Unmarshal(data, &marker); err != nil {
+	var marker metadata.MarkerFileContent
+	if err := metadata.UnmarshalYAML(data, &marker); err != nil {
 		return fmt.Errorf("failed to parse marker file: %w", err)
 	}
 
