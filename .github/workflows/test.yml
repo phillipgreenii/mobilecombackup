@@ -45,7 +45,7 @@ jobs:
       - name: SonarQube Scan
         # Skip for dependabot PRs (they don't have access to secrets)
         if: github.actor != 'dependabot[bot]'
-        uses: SonarSource/sonarqube-scan-action@v2
+        uses: SonarSource/sonarqube-scan-action@v6
         with:
           args: >
             -Dsonar.projectVersion=${{ steps.version.outputs.sonar_version }}
