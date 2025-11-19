@@ -513,10 +513,8 @@ func createOrphanRemovalResult(totalCount int, orphanedAttachments []*attachment
 func handleDryRunOrphanRemoval(
 	result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment,
 ) *OrphanRemovalResult {
-	// Calculate potential bytes freed
-	for _, attachment := range orphanedAttachments {
-		result.BytesFreed += attachment.Size
-	}
+	// Calculate potential bytes freed using helper
+	result.BytesFreed = CalculateTotalBytesForOrphans(orphanedAttachments)
 	result.OrphansRemoved = len(orphanedAttachments) // Would be removed
 	return result
 }
@@ -627,12 +625,12 @@ func removeOrphanedAttachment(
 
 // cleanupEmptyDirectory removes a directory if it's empty
 func cleanupEmptyDirectory(dirPath string) {
-	entries, err := os.ReadDir(dirPath)
+	isEmpty, err := IsEmptyDirectory(dirPath)
 	if err != nil {
 		return // Can't read directory, skip cleanup
 	}
 
-	if len(entries) == 0 {
+	if isEmpty {
 		// Directory is empty, try to remove it
 		_ = os.Remove(dirPath)
 		// Note: We ignore errors here as cleanup is best-effort
@@ -729,11 +727,8 @@ func displayOrphanRemovalActual(orphanRemoval *OrphanRemovalResult, quiet bool) 
 
 // displayViolationsByType groups and displays violations by type
 func displayViolationsByType(violations []validation.Violation) {
-	// Group violations by type
-	violationsByType := make(map[string][]validation.Violation)
-	for _, v := range violations {
-		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
-	}
+	// Group violations by type using helper
+	violationsByType := GroupViolationsByType(violations)
 
 	// Display violations by type
 	for vType, violations := range violationsByType {

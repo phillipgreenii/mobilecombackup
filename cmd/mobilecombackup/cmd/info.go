@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
@@ -214,25 +213,15 @@ func convertToDisplayInfo(info *RepositoryInfo) *display.RepositoryInfo {
 func countRejections(repoPath string, info *RepositoryInfo) {
 	rejectedDir := filepath.Join(repoPath, "rejected")
 
-	// Check if rejected directory exists
-	if _, err := os.Stat(rejectedDir); os.IsNotExist(err) {
-		return
-	}
-
-	// Count rejection files by type
-	entries, err := os.ReadDir(rejectedDir)
+	counts, err := CountRejectionsByType(rejectedDir)
 	if err != nil {
+		// Silently ignore errors in rejection counting
 		return
 	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xml") {
-			if strings.Contains(entry.Name(), "calls") {
-				info.Rejections["calls"]++
-			} else if strings.Contains(entry.Name(), "sms") {
-				info.Rejections["sms"]++
-			}
-		}
+	// Copy counts to info
+	for rejectType, count := range counts {
+		info.Rejections[rejectType] = count
 	}
 }
 
