@@ -31,8 +31,8 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create an attachment and reference it
-		hash := "abc123"
+		// Create an attachment and reference it (must be 64-char SHA-256 hash)
+		hash := "abc123def456abc123def456abc123def456abc123def456abc123def456abc1"
 		createTestAttachment(t, tmpDir, hash, []byte("test data"))
 
 		// Mock SMS reader that references the attachment
@@ -62,9 +62,9 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create two attachments, only reference one
-		hash1 := "abc123"
-		hash2 := "def456"
+		// Create two attachments, only reference one (must be 64-char SHA-256 hashes)
+		hash1 := "abc123def456abc123def456abc123def456abc123def456abc123def456abc1"
+		hash2 := "def456abc123def456abc123def456abc123def456abc123def456abc123def4"
 		createTestAttachment(t, tmpDir, hash1, []byte("test data 1"))
 		createTestAttachment(t, tmpDir, hash2, []byte("test data 2 longer"))
 
@@ -78,6 +78,10 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
+		}
+
+		if result.AttachmentsScanned != 2 {
+			t.Errorf("Expected 2 attachments scanned, got: %d", result.AttachmentsScanned)
 		}
 
 		if result.OrphansFound != 1 {
@@ -111,8 +115,8 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create orphaned attachment
-		hash := "orphan123"
+		// Create orphaned attachment (must be 64-char SHA-256 hash)
+		hash := "or0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
 		createTestAttachment(t, tmpDir, hash, []byte("orphan data"))
 
 		// Mock SMS reader with no references
@@ -152,10 +156,10 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create multiple orphans
-		createTestAttachment(t, tmpDir, "orphan1", []byte("data1"))
-		createTestAttachment(t, tmpDir, "orphan2", []byte("data2"))
-		createTestAttachment(t, tmpDir, "orphan3", []byte("data3"))
+		// Create multiple orphans (must be 64-char SHA-256 hashes)
+		createTestAttachment(t, tmpDir, "or0001456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data1"))
+		createTestAttachment(t, tmpDir, "or0002456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data2"))
+		createTestAttachment(t, tmpDir, "or0003456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data3"))
 
 		// Mock SMS reader with no references
 		smsReader := &MockSMSReader{
@@ -188,8 +192,8 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create orphaned attachment
-		hash := "orphan123"
+		// Create orphaned attachment (must be 64-char SHA-256 hash)
+		hash := "or0004456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
 		createTestAttachment(t, tmpDir, hash, []byte("orphan data"))
 
 		// Make the file read-only to trigger removal failure

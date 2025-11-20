@@ -33,10 +33,10 @@ type FailedRemoval struct {
 
 // OrphanRemover handles finding and removing orphaned attachments
 type OrphanRemover struct {
-	refProvider      AttachmentReferencesProvider
-	attachmentMgr    *AttachmentManager
-	pathValidator    *security.PathValidator
-	dryRun           bool
+	refProvider   AttachmentReferencesProvider
+	attachmentMgr *AttachmentManager
+	pathValidator *security.PathValidator
+	dryRun        bool
 }
 
 // NewOrphanRemover creates a new orphan remover

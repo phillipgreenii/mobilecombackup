@@ -26,8 +26,8 @@ func TestContactExtractor_ExtractFromCall(t *testing.T) {
 			t.Fatalf("Expected 1 unprocessed contact, got: %d", len(unprocessed))
 		}
 
-		if unprocessed[0].PhoneNumber != "+1234567890" {
-			t.Errorf("Expected phone +1234567890, got: %s", unprocessed[0].PhoneNumber)
+		if unprocessed[0].PhoneNumber != "1234567890" {
+			t.Errorf("Expected phone 1234567890 (normalized), got: %s", unprocessed[0].PhoneNumber)
 		}
 
 		if len(unprocessed[0].ContactNames) != 1 || unprocessed[0].ContactNames[0] != "John Doe" {
@@ -47,8 +47,12 @@ func TestContactExtractor_ExtractFromCall(t *testing.T) {
 		extractor.ExtractFromCall(call)
 
 		unprocessed := manager.GetUnprocessedEntries()
-		if len(unprocessed) != 2 {
-			t.Fatalf("Expected 2 unprocessed contacts, got: %d", len(unprocessed))
+		if len(unprocessed) != 1 {
+			t.Fatalf("Expected 1 unprocessed entry (same number), got: %d", len(unprocessed))
+		}
+
+		if len(unprocessed[0].ContactNames) != 2 {
+			t.Errorf("Expected 2 contact names, got: %d (%v)", len(unprocessed[0].ContactNames), unprocessed[0].ContactNames)
 		}
 	})
 
@@ -119,8 +123,12 @@ func TestContactExtractor_ExtractFromSMS(t *testing.T) {
 		extractor.ExtractFromSMS(smsMsg)
 
 		unprocessed := manager.GetUnprocessedEntries()
-		if len(unprocessed) != 3 {
-			t.Fatalf("Expected 3 unprocessed contacts, got: %d", len(unprocessed))
+		if len(unprocessed) != 1 {
+			t.Fatalf("Expected 1 unprocessed entry (same number), got: %d", len(unprocessed))
+		}
+
+		if len(unprocessed[0].ContactNames) != 3 {
+			t.Errorf("Expected 3 contact names, got: %d (%v)", len(unprocessed[0].ContactNames), unprocessed[0].ContactNames)
 		}
 	})
 }
