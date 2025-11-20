@@ -97,13 +97,13 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		}
 
 		// Verify the orphan was actually removed
-		orphanPath := filepath.Join(tmpDir, "attachments", hash2[:2], hash2, "data")
+		orphanPath := filepath.Join(tmpDir, "attachments", hash2[:2], hash2, "attachment.bin")
 		if _, err := os.Stat(orphanPath); !os.IsNotExist(err) {
 			t.Error("Orphan attachment should have been removed")
 		}
 
 		// Verify referenced attachment still exists
-		refPath := filepath.Join(tmpDir, "attachments", hash1[:2], hash1, "data")
+		refPath := filepath.Join(tmpDir, "attachments", hash1[:2], hash1, "attachment.bin")
 		if _, err := os.Stat(refPath); err != nil {
 			t.Error("Referenced attachment should still exist")
 		}
@@ -115,8 +115,8 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create orphaned attachment (must be 64-char SHA-256 hash)
-		hash := "or0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
+		// Create orphaned attachment (must be 64-char SHA-256 hash with valid hex prefix)
+		hash := "0a0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
 		createTestAttachment(t, tmpDir, hash, []byte("orphan data"))
 
 		// Mock SMS reader with no references
@@ -144,7 +144,7 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		}
 
 		// Verify the file was NOT actually removed in dry run
-		orphanPath := filepath.Join(tmpDir, "attachments", hash[:2], hash, "data")
+		orphanPath := filepath.Join(tmpDir, "attachments", hash[:2], hash, "attachment.bin")
 		if _, err := os.Stat(orphanPath); err != nil {
 			t.Error("In dry run mode, orphan should NOT be removed")
 		}
@@ -156,10 +156,10 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create multiple orphans (must be 64-char SHA-256 hashes)
-		createTestAttachment(t, tmpDir, "or0001456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data1"))
-		createTestAttachment(t, tmpDir, "or0002456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data2"))
-		createTestAttachment(t, tmpDir, "or0003456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data3"))
+		// Create multiple orphans (must be 64-char SHA-256 hashes with valid hex prefixes)
+		createTestAttachment(t, tmpDir, "0a0001456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data1"))
+		createTestAttachment(t, tmpDir, "0b0002456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data2"))
+		createTestAttachment(t, tmpDir, "0c0003456789abcdef0123456789abcdef0123456789abcdef0123456789abcd", []byte("data3"))
 
 		// Mock SMS reader with no references
 		smsReader := &MockSMSReader{
@@ -192,12 +192,12 @@ func TestOrphanRemover_RemoveOrphans(t *testing.T) {
 		fs := afero.NewOsFs()
 		mgr := NewAttachmentManager(tmpDir, fs)
 
-		// Create orphaned attachment (must be 64-char SHA-256 hash)
-		hash := "or0004456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
+		// Create orphaned attachment (must be 64-char SHA-256 hash with valid hex prefix)
+		hash := "0d0004456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
 		createTestAttachment(t, tmpDir, hash, []byte("orphan data"))
 
 		// Make the file read-only to trigger removal failure
-		orphanPath := filepath.Join(tmpDir, "attachments", hash[:2], hash, "data")
+		orphanPath := filepath.Join(tmpDir, "attachments", hash[:2], hash, "attachment.bin")
 		if err := os.Chmod(filepath.Dir(orphanPath), 0400); err != nil {
 			t.Skip("Cannot set read-only permissions on this system")
 		}
@@ -298,15 +298,22 @@ func createTestAttachment(t *testing.T, repoPath, hash string, data []byte) {
 		t.Fatal(err)
 	}
 
-	dataPath := filepath.Join(dirPath, "data")
+	// Create the attachment file with proper filename (use .bin extension)
+	filename := "attachment.bin"
+	dataPath := filepath.Join(dirPath, filename)
 	if err := os.WriteFile(dataPath, data, 0600); err != nil {
 		t.Fatal(err)
 	}
 
-	// Create metadata file
+	// Create metadata file with all required fields
 	metadataPath := filepath.Join(dirPath, "metadata.yaml")
-	metadata := []byte("hash: " + hash + "\nsize: " + fmt.Sprintf("%d", len(data)) + "\n")
-	if err := os.WriteFile(metadataPath, metadata, 0600); err != nil {
+	metadata := fmt.Sprintf(`hash: %s
+size: %d
+mime_type: application/octet-stream
+original_name: %s
+created_at: 2024-01-01T00:00:00Z
+`, hash, len(data), filename)
+	if err := os.WriteFile(metadataPath, []byte(metadata), 0600); err != nil {
 		t.Fatal(err)
 	}
 }
