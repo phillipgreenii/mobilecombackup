@@ -2,179 +2,17 @@ package cmd
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/attachments"
-	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/phillipgreenii/mobilecombackup/pkg/validation"
-
-	"github.com/spf13/afero"
 )
 
-const (
-	// Test hash constants
-	testHash1 = "a123456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-	testHash2 = "b223456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-)
-
-func TestOrphanRemovalIntegration(t *testing.T) {
-	tests := []struct {
-		name           string
-		setupRepo      func(t *testing.T, repoPath string) (map[string]bool, []string) // returns (referencedHashes, orphanPaths)
-		dryRun         bool
-		expectOrphans  int
-		expectRemoved  int
-		expectFailures int
-	}{
-		{
-			name: "no orphans found",
-			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
-				// Create some attachments
-				hash1 := testHash1
-				hash2 := testHash2
-
-				createTestAttachment(t, repoPath, hash1, "test data 1")
-				createTestAttachment(t, repoPath, hash2, "test data 2")
-
-				// All attachments are referenced
-				referenced := map[string]bool{
-					hash1: true,
-					hash2: true,
-				}
-
-				return referenced, []string{}
-			},
-			expectOrphans:  0,
-			expectRemoved:  0,
-			expectFailures: 0,
-		},
-		{
-			name: "some orphans found and removed",
-			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
-				// Create some attachments
-				hash1 := testHash1
-				hash2 := testHash2
-				hash3 := "c323456789abcdef123456789abcdef123456789abcdef123456789abcdef123"
-
-				createTestAttachment(t, repoPath, hash1, "test data 1")
-				createTestAttachment(t, repoPath, hash2, "test data 2")
-				createTestAttachment(t, repoPath, hash3, "test data 3")
-
-				// Only hash1 is referenced, hash2 and hash3 are orphans
-				referenced := map[string]bool{
-					hash1: true,
-				}
-
-				return referenced, []string{
-					fmt.Sprintf("attachments/b2/%s", hash2),
-					fmt.Sprintf("attachments/c3/%s", hash3),
-				}
-			},
-			expectOrphans:  2,
-			expectRemoved:  2,
-			expectFailures: 0,
-		},
-		{
-			name:   "dry run mode",
-			dryRun: true,
-			setupRepo: func(t *testing.T, repoPath string) (map[string]bool, []string) {
-				// Create some attachments
-				hash1 := testHash1
-				hash2 := testHash2
-
-				createTestAttachment(t, repoPath, hash1, "test data 1")
-				createTestAttachment(t, repoPath, hash2, "test data 2")
-
-				// Only hash1 is referenced, hash2 is orphan
-				referenced := map[string]bool{
-					hash1: true,
-				}
-
-				return referenced, []string{
-					fmt.Sprintf("attachments/b2/%s", hash2),
-				}
-			},
-			expectOrphans:  1,
-			expectRemoved:  1, // Would be removed in dry run
-			expectFailures: 0,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create temporary repository
-			tempDir := t.TempDir()
-
-			// Setup repository with attachments
-			referencedHashes, expectedOrphanPaths := tt.setupRepo(t, tempDir)
-
-			// Create mock SMS reader
-			mockSMSReader := &mockSMSReader{
-				referencedHashes: referencedHashes,
-			}
-
-			// Create attachment manager
-			attachmentManager := attachments.NewAttachmentManager(tempDir, afero.NewOsFs())
-
-			// Create mock progress reporter
-			reporter := &NullProgressReporter{}
-
-			// Set validateDryRun global variable
-			originalDryRun := validateDryRun
-			validateDryRun = tt.dryRun
-			defer func() { validateDryRun = originalDryRun }()
-
-			// Call orphan removal function
-			result, err := removeOrphanAttachmentsWithProgress(mockSMSReader, attachmentManager, reporter)
-
-			// Check no error occurred
-			if err != nil {
-				t.Fatalf("removeOrphanAttachmentsWithProgress returned error: %v", err)
-			}
-
-			// Verify results
-			if result.OrphansFound != tt.expectOrphans {
-				t.Errorf("Expected %d orphans found, got %d", tt.expectOrphans, result.OrphansFound)
-			}
-
-			if result.OrphansRemoved != tt.expectRemoved {
-				t.Errorf("Expected %d orphans removed, got %d", tt.expectRemoved, result.OrphansRemoved)
-			}
-
-			if result.RemovalFailures != tt.expectFailures {
-				t.Errorf("Expected %d removal failures, got %d", tt.expectFailures, result.RemovalFailures)
-			}
-
-			// In non-dry-run mode, verify files were actually removed
-			if !tt.dryRun && tt.expectRemoved > 0 {
-				for _, orphanPath := range expectedOrphanPaths {
-					fullPath := filepath.Join(tempDir, orphanPath)
-					if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
-						t.Errorf("Expected orphan file %s to be removed, but it still exists", orphanPath)
-					}
-				}
-			}
-
-			// In dry-run mode, verify files were NOT removed
-			if tt.dryRun && tt.expectOrphans > 0 {
-				for _, orphanPath := range expectedOrphanPaths {
-					fullPath := filepath.Join(tempDir, orphanPath)
-					if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-						t.Errorf("Expected orphan file %s to remain in dry-run mode, but it was removed", orphanPath)
-					}
-				}
-			}
-		})
-	}
-}
-
+// TestOrphanRemovalOutputFormats tests the various output formats for orphan removal results
 func TestOrphanRemovalOutputFormats(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -236,13 +74,13 @@ func TestOrphanRemovalOutputFormats(t *testing.T) {
 			result := ValidationResult{
 				Valid:      true,
 				Violations: []validation.Violation{},
-				OrphanRemoval: &OrphanRemovalResult{
+				OrphanRemoval: &attachments.OrphanRemovalResult{
 					AttachmentsScanned: 10,
 					OrphansFound:       3,
 					OrphansRemoved:     3,
 					BytesFreed:         1024 * 1024, // 1 MB
 					RemovalFailures:    0,
-					FailedRemovals:     []FailedRemoval{},
+					FailedRemovals:     []attachments.FailedRemoval{},
 				},
 			}
 
@@ -300,138 +138,5 @@ func TestOrphanRemovalOutputFormats(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestCleanupEmptyDirectory(t *testing.T) {
-	tests := []struct {
-		name          string
-		setupDir      func(t *testing.T, dirPath string)
-		expectRemoved bool
-	}{
-		{
-			name: "empty directory is removed",
-			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0750)
-				if err != nil {
-					t.Fatalf("Failed to create directory: %v", err)
-				}
-			},
-			expectRemoved: true,
-		},
-		{
-			name: "non-empty directory is not removed",
-			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0750)
-				if err != nil {
-					t.Fatalf("Failed to create directory: %v", err)
-				}
-
-				// Add a file to make it non-empty
-				filePath := filepath.Join(dirPath, "test.txt")
-				err = os.WriteFile(filePath, []byte("test"), 0600)
-				if err != nil {
-					t.Fatalf("Failed to create test file: %v", err)
-				}
-			},
-			expectRemoved: false,
-		},
-		{
-			name: "non-existent directory",
-			setupDir: func(_ *testing.T, _ string) {
-				// Don't create the directory
-			},
-			expectRemoved: false, // Can't remove what doesn't exist
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tempDir := t.TempDir()
-			testDir := filepath.Join(tempDir, "test-cleanup")
-
-			// Setup test directory
-			tt.setupDir(t, testDir)
-
-			// Check if directory exists before cleanup
-			_, existsBefore := os.Stat(testDir)
-
-			// Call cleanup function
-			cleanupEmptyDirectory(testDir)
-
-			// Check if directory exists after cleanup
-			_, existsAfter := os.Stat(testDir)
-
-			if tt.expectRemoved {
-				// Directory should have been removed
-				if existsBefore == nil && existsAfter == nil {
-					t.Error("Expected directory to be removed, but it still exists")
-				}
-			} else {
-				// Directory should still exist (or never existed)
-				if existsBefore == nil && existsAfter != nil {
-					t.Error("Expected directory to remain, but it was removed")
-				}
-			}
-		})
-	}
-}
-
-// Helper functions and mocks
-
-type mockSMSReader struct {
-	referencedHashes map[string]bool
-	shouldError      bool
-}
-
-func (m *mockSMSReader) ReadMessages(_ context.Context, _ int) ([]sms.Message, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (m *mockSMSReader) StreamMessagesForYear(_ context.Context, _ int, _ func(sms.Message) error) error {
-	return fmt.Errorf("not implemented")
-}
-
-func (m *mockSMSReader) GetAttachmentRefs(_ context.Context, _ int) ([]string, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (m *mockSMSReader) GetAllAttachmentRefs(_ context.Context) (map[string]bool, error) {
-	if m.shouldError {
-		return nil, fmt.Errorf("mock error")
-	}
-	return m.referencedHashes, nil
-}
-
-func (m *mockSMSReader) GetAvailableYears(_ context.Context) ([]int, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-func (m *mockSMSReader) GetMessageCount(_ context.Context, _ int) (int, error) {
-	return 0, fmt.Errorf("not implemented")
-}
-
-func (m *mockSMSReader) ValidateSMSFile(_ context.Context, _ int) error {
-	return fmt.Errorf("not implemented")
-}
-
-func createTestAttachment(t *testing.T, repoPath, hash, content string) {
-	if len(hash) != 64 {
-		t.Fatalf("Invalid hash length: %d", len(hash))
-	}
-
-	// Create directory structure
-	prefix := hash[:2]
-	attachmentDir := filepath.Join(repoPath, "attachments", prefix)
-	err := os.MkdirAll(attachmentDir, 0750)
-	if err != nil {
-		t.Fatalf("Failed to create attachment directory: %v", err)
-	}
-
-	// Create attachment file
-	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, []byte(content), 0600)
-	if err != nil {
-		t.Fatalf("Failed to create attachment file: %v", err)
 	}
 }

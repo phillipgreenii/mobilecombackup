@@ -106,7 +106,7 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
 
-	// Create test XML content
+	// Create test XML content for 2014
 	testXML := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="2">
   <call number="1234567890" duration="30" date="1410881505425" type="1" readable_date="Sep 16, 2014 11:31:45 AM" contact_name="Test User" />
@@ -119,32 +119,63 @@ func TestXMLCallsReader_StreamCalls(t *testing.T) {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
+	// Create test XML content for 2015
+	testXML2015 := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<calls count="1">
+  <call number="5555550000" duration="90" date="1441140251000" type="3" readable_date="Sep 1, 2015 11:24:11 AM" contact_name="Bob" />
+</calls>`
+
+	testFile2015 := filepath.Join(callsDir, "calls-2015.xml")
+	err = os.WriteFile(testFile2015, []byte(testXML2015), 0600)
+	if err != nil {
+		t.Fatalf("Failed to create 2015 test file: %v", err)
+	}
+
 	reader := NewXMLCallsReader(repoRoot)
 
-	var streamedCalls []Call
-	err = reader.StreamCallsForYear(context.Background(), 2014, func(call Call) error {
-		streamedCalls = append(streamedCalls, call)
-		return nil
+	t.Run("StreamCallsForYear", func(t *testing.T) {
+		var streamedCalls []Call
+		err = reader.StreamCallsForYear(context.Background(), 2014, func(call Call) error {
+			streamedCalls = append(streamedCalls, call)
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("StreamCallsForYear failed: %v", err)
+		}
+
+		if len(streamedCalls) != 2 {
+			t.Fatalf("Expected 2 calls, got %d", len(streamedCalls))
+		}
+
+		// Verify first call
+		call := streamedCalls[0]
+		if call.Number != "1234567890" {
+			t.Errorf("Expected number '1234567890', got '%s'", call.Number)
+		}
+		if call.Duration != 30 {
+			t.Errorf("Expected duration 30, got %d", call.Duration)
+		}
+		if call.Type != Incoming {
+			t.Errorf("Expected type %d, got %d", Incoming, call.Type)
+		}
 	})
-	if err != nil {
-		t.Fatalf("StreamCalls failed: %v", err)
-	}
 
-	if len(streamedCalls) != 2 {
-		t.Fatalf("Expected 2 calls, got %d", len(streamedCalls))
-	}
+	t.Run("StreamCalls_AllYears", func(t *testing.T) {
+		var streamedCalls []*Call
+		err = reader.StreamCalls(func(call *Call) error {
+			streamedCalls = append(streamedCalls, call)
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("StreamCalls failed: %v", err)
+		}
 
-	// Verify first call
-	call := streamedCalls[0]
-	if call.Number != "1234567890" {
-		t.Errorf("Expected number '1234567890', got '%s'", call.Number)
-	}
-	if call.Duration != 30 {
-		t.Errorf("Expected duration 30, got %d", call.Duration)
-	}
-	if call.Type != Incoming {
-		t.Errorf("Expected type %d, got %d", Incoming, call.Type)
-	}
+		// Should get calls from both 2014 and 2015
+		expectedCount := 3 // 2 from 2014 + 1 from 2015
+		if len(streamedCalls) != expectedCount {
+			t.Fatalf("Expected %d calls, got %d", expectedCount, len(streamedCalls))
+		}
+	})
 }
 
 func TestXMLCallsReader_GetAvailableYears(t *testing.T) {

@@ -2,16 +2,12 @@ package cmd
 
 import (
 	"context"
-	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/manifest"
-	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -326,54 +322,15 @@ func reprocessSMSFiles(repoRoot string, contactsManager *contacts.Manager) (*Rep
 
 // extractContactsFromCallsFile extracts contacts from a single calls file
 func extractContactsFromCallsFile(filePath string, contactsManager *contacts.Manager) (int, error) {
-	file, err := os.Open(filePath) // #nosec G304
-	if err != nil {
-		return 0, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer func() { _ = file.Close() }()
-
-	// Parse the XML file using the same structure as the importer
-	decoder := security.NewSecureXMLDecoder(file)
-
-	// Find the root element
-	var root struct {
-		XMLName xml.Name
-		Count   string `xml:"count,attr"`
-		Calls   []struct {
-			XMLName      xml.Name
-			Number       string `xml:"number,attr"`
-			Duration     int    `xml:"duration,attr"`
-			Date         int64  `xml:"date,attr"`
-			Type         int    `xml:"type,attr"`
-			ReadableDate string `xml:"readable_date,attr"`
-			ContactName  string `xml:"contact_name,attr"`
-		} `xml:"call"`
-	}
-
-	if err := decoder.Decode(&root); err != nil {
-		return 0, fmt.Errorf("failed to parse XML: %w", err)
-	}
-
-	// Extract contacts from each call
-	for _, xmlCall := range root.Calls {
-		call := calls.Call{
-			Number:       xmlCall.Number,
-			Duration:     xmlCall.Duration,
-			Date:         xmlCall.Date,
-			Type:         calls.CallType(xmlCall.Type),
-			ReadableDate: xmlCall.ReadableDate,
-			ContactName:  xmlCall.ContactName,
-		}
-		extractContactFromCall(&call, contactsManager)
-	}
-
-	return len(root.Calls), nil
+	extractor := contacts.NewContactExtractor(contactsManager)
+	return extractor.ExtractFromCallsFile(filePath)
 }
 
 // extractContactsFromSMSFile extracts contacts from a single SMS file
 func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Manager) (int, error) {
 	// Create an SMS reader to parse the XML file
 	reader := sms.NewXMLSMSReader("")
+	extractor := contacts.NewContactExtractor(contactsManager)
 
 	// Read all messages from the file
 	file, err := os.Open(filePath) // #nosec G304
@@ -390,9 +347,9 @@ func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Manag
 		messageCount++
 		switch message := msg.(type) {
 		case sms.SMS:
-			extractContactFromSMS(message, contactsManager)
+			extractor.ExtractFromSMS(message)
 		case sms.MMS:
-			extractContactFromMMS(message, contactsManager)
+			extractor.ExtractFromMMS(message)
 		}
 		return nil
 	})
@@ -402,55 +359,4 @@ func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Manag
 	}
 
 	return messageCount, nil
-}
-
-// extractContactFromCall extracts contact information from a call record
-func extractContactFromCall(call *calls.Call, contactsManager *contacts.Manager) {
-	// Extract contact names if both number and contact name are present
-	if call.Number != "" && call.ContactName != "" {
-		// Split contact names by comma and process each separately
-		contactNames := strings.Split(call.ContactName, ",")
-		for _, name := range contactNames {
-			name = strings.TrimSpace(name)
-			if name != "" && !isUnknownContact(name) {
-				contactsManager.AddUnprocessedContact(call.Number, name)
-			}
-		}
-	}
-}
-
-// extractContactFromSMS extracts contact information from an SMS message
-func extractContactFromSMS(smsMsg sms.SMS, contactsManager *contacts.Manager) {
-	// Extract primary address contact, splitting multiple contact names
-	if smsMsg.Address != "" && smsMsg.ContactName != "" {
-		// Split contact names by comma and process each separately
-		contactNames := strings.Split(smsMsg.ContactName, ",")
-		for _, name := range contactNames {
-			name = strings.TrimSpace(name)
-			if name != "" && !isUnknownContact(name) {
-				contactsManager.AddUnprocessedContact(smsMsg.Address, name)
-			}
-		}
-	}
-}
-
-// extractContactFromMMS extracts contact information from an MMS message
-func extractContactFromMMS(mmsMsg sms.MMS, contactsManager *contacts.Manager) {
-	// Extract primary address contact, splitting multiple contact names
-	if mmsMsg.Address != "" && mmsMsg.ContactName != "" {
-		// Split contact names by comma and process each separately
-		contactNames := strings.Split(mmsMsg.ContactName, ",")
-		for _, name := range contactNames {
-			name = strings.TrimSpace(name)
-			if name != "" && !isUnknownContact(name) {
-				contactsManager.AddUnprocessedContact(mmsMsg.Address, name)
-			}
-		}
-	}
-}
-
-// isUnknownContact checks if a contact name represents an unknown contact
-// and should be ignored during contact extraction
-func isUnknownContact(contactName string) bool {
-	return contactName == "" || contactName == "(Unknown)" || contactName == "null"
 }
