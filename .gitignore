@@ -77,3 +77,11 @@ tmp/
 #
 .pipeline-state/
 *.lock
+
+#########
+# FEAT-085: Quality Dashboard runtime artifacts
+#
+.dashboard-metrics/
+.quality-config.env
+quality-monitor.log
+demos/dashboard/dashboard-metrics/
