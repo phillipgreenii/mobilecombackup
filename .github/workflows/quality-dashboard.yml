@@ -1,0 +1,283 @@
+# Quality Dashboard CI/CD Integration - Phase 5 of FEAT-085
+# Automated quality monitoring and reporting for every build
+
+name: Quality Dashboard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run quality dashboard daily at 6 AM UTC to track trends
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      run_full_analysis:
+        description: 'Run full analysis including performance benchmarks'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write  # For commenting on PRs with quality reports
+  checks: write         # For creating check runs
+
+jobs:
+  quality-dashboard:
+    name: Quality Dashboard Analysis
+    runs-on: ubuntu-latest
+    
+    env:
+      COVERAGE_THRESHOLD: 80
+      QUALITY_SCORE_THRESHOLD: 60
+      DASHBOARD_METRICS_DIR: dashboard-metrics
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for trend analysis
+      
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Create dashboard metrics directory
+        run: mkdir -p ${{ env.DASHBOARD_METRICS_DIR }}
+      
+      - name: Run comprehensive tests with coverage
+        run: |
+          echo "🧪 Running comprehensive test suite..."
+          devbox run go test -v -cover -coverprofile=coverage.out ./pkg/analyzer/core
+          
+          # Extract coverage percentage
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "COVERAGE_PERCENT=$coverage" >> $GITHUB_ENV
+          echo "📊 Current coverage: $coverage%"
+      
+      - name: Run performance benchmarks
+        id: benchmarks
+        run: |
+          echo "⚡ Running performance benchmarks..."
+          
+          # Run benchmarks with timeout
+          timeout 300 devbox run go test -bench=BenchmarkAdvanced -benchmem -run=^$ ./pkg/analyzer/core > benchmark_results.txt || true
+          
+          # Extract key performance metrics
+          if [ -f benchmark_results.txt ]; then
+            echo "benchmark_results_available=true" >> $GITHUB_OUTPUT
+            
+            # Parse benchmark results for key metrics
+            files_per_sec=$(grep "files/sec" benchmark_results.txt | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "0")
+            echo "FILES_PER_SEC=$files_per_sec" >> $GITHUB_ENV
+            
+            echo "📈 Performance metrics extracted"
+          else
+            echo "benchmark_results_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Benchmark results not available"
+          fi
+      
+      - name: Generate quality dashboard report
+        id: dashboard
+        run: |
+          echo "📊 Generating quality dashboard report..."
+          
+          # Set working directory for dashboard
+          cd ${{ env.DASHBOARD_METRICS_DIR }}
+          
+          # Run dashboard generator with timeout
+          if timeout 120 go run ../demos/dashboard/main.go > dashboard_report.txt 2>&1; then
+            echo "dashboard_generated=true" >> $GITHUB_OUTPUT
+            
+            # Extract key metrics from dashboard output
+            overall_score=$(grep "Overall Score:" dashboard_report.txt | grep -oE '[0-9]+\.[0-9]+' || echo "0")
+            critical_issues=$(grep -c "Critical:" dashboard_report.txt || echo "0")
+            status=$(grep "Status:" dashboard_report.txt | cut -d' ' -f2 || echo "unknown")
+            
+            echo "OVERALL_SCORE=$overall_score" >> $GITHUB_ENV
+            echo "CRITICAL_ISSUES=$critical_issues" >> $GITHUB_ENV
+            echo "QUALITY_STATUS=$status" >> $GITHUB_ENV
+            
+            echo "✅ Dashboard generated successfully"
+            echo "🎯 Overall Score: $overall_score/100"
+            echo "🚨 Critical Issues: $critical_issues"
+            echo "📊 Status: $status"
+          else
+            echo "dashboard_generated=false" >> $GITHUB_OUTPUT
+            echo "❌ Dashboard generation failed or timed out"
+          fi
+      
+      - name: Evaluate quality gates
+        id: quality_gates
+        run: |
+          echo "🎯 Evaluating quality gates..."
+          
+          gates_passed=true
+          failed_gates=""
+          
+          # Coverage gate
+          if (( $(echo "${{ env.COVERAGE_PERCENT }} < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            gates_passed=false
+            failed_gates="$failed_gates\n❌ Coverage: ${{ env.COVERAGE_PERCENT }}% < ${{ env.COVERAGE_THRESHOLD }}%"
+            echo "::error::Coverage gate failed: ${{ env.COVERAGE_PERCENT }}% < ${{ env.COVERAGE_THRESHOLD }}%"
+          else
+            echo "✅ Coverage gate passed: ${{ env.COVERAGE_PERCENT }}% ≥ ${{ env.COVERAGE_THRESHOLD }}%"
+          fi
+          
+          # Quality score gate
+          if (( $(echo "${{ env.OVERALL_SCORE }} < ${{ env.QUALITY_SCORE_THRESHOLD }}" | bc -l) )); then
+            gates_passed=false
+            failed_gates="$failed_gates\n❌ Quality Score: ${{ env.OVERALL_SCORE }} < ${{ env.QUALITY_SCORE_THRESHOLD }}"
+            echo "::error::Quality score gate failed: ${{ env.OVERALL_SCORE }} < ${{ env.QUALITY_SCORE_THRESHOLD }}"
+          else
+            echo "✅ Quality score gate passed: ${{ env.OVERALL_SCORE }} ≥ ${{ env.QUALITY_SCORE_THRESHOLD }}"
+          fi
+          
+          # Critical issues gate
+          if [ "${{ env.CRITICAL_ISSUES }}" -gt "0" ]; then
+            gates_passed=false
+            failed_gates="$failed_gates\n❌ Critical Issues: ${{ env.CRITICAL_ISSUES }} found"
+            echo "::error::Critical issues gate failed: ${{ env.CRITICAL_ISSUES }} critical issues found"
+          else
+            echo "✅ Critical issues gate passed: No critical issues"
+          fi
+          
+          echo "gates_passed=$gates_passed" >> $GITHUB_OUTPUT
+          echo "failed_gates<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$failed_gates" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create quality check run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const gatesPassed = '${{ steps.quality_gates.outputs.gates_passed }}' === 'true';
+            const status = gatesPassed ? 'completed' : 'completed';
+            const conclusion = gatesPassed ? 'success' : 'failure';
+            
+            const summary = `
+            ## 📊 Quality Dashboard Report
+            
+            **Overall Status**: ${{ env.QUALITY_STATUS }} 
+            **Overall Score**: ${{ env.OVERALL_SCORE }}/100
+            
+            ### 🎯 Quality Gates
+            - **Coverage**: ${{ env.COVERAGE_PERCENT }}% (threshold: ${{ env.COVERAGE_THRESHOLD }}%)
+            - **Quality Score**: ${{ env.OVERALL_SCORE }} (threshold: ${{ env.QUALITY_SCORE_THRESHOLD }})
+            - **Critical Issues**: ${{ env.CRITICAL_ISSUES }}
+            
+            ### 📈 Performance Metrics  
+            - **Processing Speed**: ${{ env.FILES_PER_SEC }} files/sec
+            - **Benchmark Status**: ${{ steps.benchmarks.outputs.benchmark_results_available == 'true' && '✅ Available' || '⚠️ Limited' }}
+            
+            ${gatesPassed ? '✅ All quality gates passed!' : '❌ Quality gates failed:\n${{ steps.quality_gates.outputs.failed_gates }}'}
+            `;
+            
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Quality Dashboard',
+              head_sha: context.sha,
+              status: status,
+              conclusion: conclusion,
+              output: {
+                title: gatesPassed ? '✅ Quality Gates Passed' : '❌ Quality Gates Failed',
+                summary: summary
+              }
+            });
+      
+      - name: Comment on PR with quality report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const qualityStatus = '${{ env.QUALITY_STATUS }}';
+            const statusIcon = {
+              'excellent': '🟢',
+              'good': '🟡', 
+              'needs_attention': '🟠',
+              'critical': '🔴'
+            }[qualityStatus] || '⚪';
+            
+            const body = `
+            ## ${statusIcon} Quality Dashboard Report
+            
+            **Overall Score**: ${{ env.OVERALL_SCORE }}/100 (${qualityStatus})
+            
+            ### 📊 Key Metrics
+            | Metric | Value | Status |
+            |--------|--------|--------|
+            | Test Coverage | ${{ env.COVERAGE_PERCENT }}% | ${{ env.COVERAGE_PERCENT }} >= ${{ env.COVERAGE_THRESHOLD }} && '✅' || '❌' }} |
+            | Quality Score | ${{ env.OVERALL_SCORE }}/100 | ${{ env.OVERALL_SCORE }} >= ${{ env.QUALITY_SCORE_THRESHOLD }} && '✅' || '❌' }} |
+            | Critical Issues | ${{ env.CRITICAL_ISSUES }} | ${{ env.CRITICAL_ISSUES }} == 0 && '✅' || '❌' }} |
+            | Performance | ${{ env.FILES_PER_SEC }} files/sec | ${{ steps.benchmarks.outputs.benchmark_results_available == 'true' && '✅' || '⚠️' }} |
+            
+            ### 🎯 Quality Gates
+            ${{ steps.quality_gates.outputs.gates_passed == 'true' && '✅ **All quality gates passed!**' || '❌ **Quality gates failed:**' }}
+            
+            ${{ steps.quality_gates.outputs.failed_gates }}
+            
+            ---
+            *Generated by FEAT-085 Quality Dashboard • [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+            `;
+            
+            // Find existing comment and update it, or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Quality Dashboard Report')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+      
+      - name: Upload quality dashboard artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-dashboard-report-${{ github.run_id }}
+          path: |
+            ${{ env.DASHBOARD_METRICS_DIR }}/
+            coverage.out
+            benchmark_results.txt
+          retention-days: 30
+      
+      - name: Fail workflow if quality gates failed
+        if: steps.quality_gates.outputs.gates_passed != 'true'
+        run: |
+          echo "❌ Quality gates failed! See details above."
+          echo "🔧 Please address the failing quality gates before merging."
+          exit 1
