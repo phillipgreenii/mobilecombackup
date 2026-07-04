@@ -92,13 +92,15 @@ type CodeSymbol struct {
 
 // DocSection represents a section in documentation
 type DocSection struct {
-	File    string `json:"file"`
-	Line    int    `json:"line"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Level   int    `json:"level"`
-	Anchor  string `json:"anchor"`
-	Type    string `json:"type"`
+	File        string `json:"file"`
+	Line        int    `json:"line"`
+	Title       string `json:"title"`
+	Content     string `json:"content"`
+	Level       int    `json:"level"`
+	Anchor      string `json:"anchor"`
+	Type        string `json:"type"`
+	Fingerprint string `json:"fingerprint"`
+	LastUpdated int64  `json:"last_updated"`
 }
 
 // DocumentationCoverage represents coverage metrics for documentation
@@ -247,6 +249,238 @@ type ReportGenerator interface {
 
 	// GenerateSummary generates a concise summary of the analysis
 	GenerateSummary(result *AnalysisResult) types.Result[string]
+}
+
+// DocumentationScanState represents the persistent state of documentation scanning
+type DocumentationScanState struct {
+	Version      string                       `json:"version"`
+	LastScanTime int64                        `json:"last_scan_time"`
+	FileStates   map[string]DocumentFileState `json:"file_states"`
+	Metadata     DocumentationStateMetadata   `json:"metadata"`
+}
+
+// DocumentFileState represents the state of a single documentation file
+type DocumentFileState struct {
+	Path         string       `json:"path"`
+	LastModified int64        `json:"last_modified"`
+	Checksum     string       `json:"checksum"`
+	Sections     []DocSection `json:"sections"`
+	LastScanned  int64        `json:"last_scanned"`
+	ScanCount    int          `json:"scan_count"`
+}
+
+// DocumentationStateMetadata contains metadata about the documentation scan state
+type DocumentationStateMetadata struct {
+	Status        string `json:"status"`
+	TotalFiles    int    `json:"total_files"`
+	TotalSections int    `json:"total_sections"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+	Checksum      string `json:"checksum"`
+}
+
+// Event represents a system event in the documentation synchronization system
+type Event struct {
+	ID        string                 `json:"id"`
+	Type      string                 `json:"type"`
+	Source    string                 `json:"source"`
+	Target    string                 `json:"target,omitempty"`
+	Data      map[string]interface{} `json:"data"`
+	Timestamp int64                  `json:"timestamp"`
+	Priority  EventPriority          `json:"priority"`
+}
+
+// EventPriority defines the priority level of events
+type EventPriority string
+
+const (
+	EventPriorityLow    EventPriority = "low"
+	EventPriorityNormal EventPriority = "normal"
+	EventPriorityHigh   EventPriority = "high"
+)
+
+// EventHandler defines a function that handles events
+type EventHandler func(event Event) error
+
+// EventBus defines the interface for event publishing and subscription
+type EventBus interface {
+	Subscribe(eventType string, handler EventHandler) types.Result[interface{}]
+	Publish(event Event) types.Result[interface{}]
+	Unsubscribe(eventType string, handler EventHandler) types.Result[interface{}]
+	GetEventHistory(limit int) types.Result[[]Event]
+}
+
+// SyncConfig contains configuration for documentation synchronization
+type SyncConfig struct {
+	ProjectRoot     string                 `json:"project_root"`
+	SyncMode        SyncMode               `json:"sync_mode"`
+	EnabledAgents   []string               `json:"enabled_agents"`
+	WatchEnabled    bool                   `json:"watch_enabled"`
+	MaxWorkers      int                    `json:"max_workers"`
+	MaxConcurrency  int                    `json:"max_concurrency"`
+	BatchSize       int                    `json:"batch_size"`
+	TimeoutMinutes  int                    `json:"timeout_minutes"`
+	RetryAttempts   int                    `json:"retry_attempts"`
+	IncludePatterns []string               `json:"include_patterns"`
+	ExcludePatterns []string               `json:"exclude_patterns"`
+	OutputFormat    string                 `json:"output_format"`
+	DryRun          bool                   `json:"dry_run"`
+	AutoFix         bool                   `json:"auto_fix"`
+	Verbose         bool                   `json:"verbose"`
+	LogLevel        string                 `json:"log_level"`
+	AgentConfig     map[string]interface{} `json:"agent_config"`
+	Options         map[string]interface{} `json:"options"`
+}
+
+// SyncMode defines the synchronization mode
+type SyncMode string
+
+const (
+	SyncModeFull        SyncMode = "full"
+	SyncModeIncremental SyncMode = "incremental"
+	SyncModeWatch       SyncMode = "watch"
+)
+
+// WatchSession represents an active file watching session
+type WatchSession struct {
+	ID           string   `json:"id"`
+	ProjectRoot  string   `json:"project_root"`
+	StartTime    int64    `json:"start_time"`
+	Active       bool     `json:"active"`
+	IsActive     bool     `json:"is_active"`
+	WatchedPaths []string `json:"watched_paths"`
+	LastActivity int64    `json:"last_activity"`
+}
+
+// AgentStatus represents the status of a synchronization agent
+type AgentStatus struct {
+	Name         string                 `json:"name"`
+	Status       string                 `json:"status"`
+	State        AgentState             `json:"state"`
+	Progress     float64                `json:"progress"`
+	LastRun      int64                  `json:"last_run"`
+	LastDuration int64                  `json:"last_duration"`
+	CurrentTask  string                 `json:"current_task"`
+	SuccessRate  float64                `json:"success_rate"`
+	ErrorCount   int                    `json:"error_count"`
+	Active       bool                   `json:"active"`
+	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+// SyncResult contains the results of a synchronization operation
+type SyncResult struct {
+	Success            bool                    `json:"success"`
+	StartTime          int64                   `json:"start_time"`
+	EndTime            int64                   `json:"end_time"`
+	Duration           int64                   `json:"duration"`
+	SyncMode           SyncMode                `json:"sync_mode"`
+	FilesScanned       int                     `json:"files_scanned"`
+	Inconsistencies    []Inconsistency         `json:"inconsistencies"`
+	ExecutedAgents     []string                `json:"executed_agents"`
+	SkippedAgents      []string                `json:"skipped_agents"`
+	FailedAgents       []string                `json:"failed_agents"`
+	AgentResults       map[string]interface{}  `json:"agent_results"`
+	DocumentationState *DocumentationScanState `json:"documentation_state,omitempty"`
+	CodeSymbols        []CodeSymbol            `json:"code_symbols"`
+	QualityMetrics     *QualityMetrics         `json:"quality_metrics,omitempty"`
+	PerformanceMetrics *PerformanceMetrics     `json:"performance_metrics,omitempty"`
+	Errors             []SyncError             `json:"errors"`
+	Summary            string                  `json:"summary"`
+	Metadata           map[string]interface{}  `json:"metadata"`
+}
+
+// SyncError represents an error that occurred during synchronization
+type SyncError struct {
+	Type        string                 `json:"type"`
+	Message     string                 `json:"message"`
+	Agent       string                 `json:"agent"`
+	File        string                 `json:"file,omitempty"`
+	Line        int                    `json:"line,omitempty"`
+	Timestamp   int64                  `json:"timestamp"`
+	Severity    SeverityLevel          `json:"severity"`
+	Recoverable bool                   `json:"recoverable"`
+	Context     map[string]interface{} `json:"context"`
+	Metadata    map[string]interface{} `json:"metadata"`
+}
+
+// SyncState represents the state of a sync operation
+type SyncState string
+
+const (
+	SyncStatePending    SyncState = "pending"
+	SyncStateInProgress SyncState = "in_progress"
+	SyncStateCompleted  SyncState = "completed"
+	SyncStateFailed     SyncState = "failed"
+)
+
+// SyncStatus contains current synchronization status and progress
+type SyncStatus struct {
+	IsActive            bool               `json:"is_active"`
+	CurrentMode         SyncMode           `json:"current_mode"`
+	OverallProgress     float64            `json:"overall_progress"`
+	RunningAgents       []string           `json:"running_agents"`
+	CompletedAgents     []string           `json:"completed_agents"`
+	FailedAgents        []string           `json:"failed_agents"`
+	AgentProgress       map[string]float64 `json:"agent_progress"`
+	LastSync            int64              `json:"last_sync"`
+	EstimatedCompletion int64              `json:"estimated_completion"`
+	WatchSession        *WatchSession      `json:"watch_session,omitempty"`
+}
+
+// QualityMetrics contains quality assessment metrics
+type QualityMetrics struct {
+	CoveragePercent      float64            `json:"coverage_percent"`
+	InconsistencyCount   int                `json:"inconsistency_count"`
+	TotalInconsistencies int                `json:"total_inconsistencies"`
+	CriticalIssues       int                `json:"critical_issues"`
+	HighPriorityIssues   int                `json:"high_priority_issues"`
+	MediumPriorityIssues int                `json:"medium_priority_issues"`
+	LowPriorityIssues    int                `json:"low_priority_issues"`
+	QualityScore         float64            `json:"quality_score"`
+	CoverageScore        float64            `json:"coverage_score"`
+	ConsistencyScore     float64            `json:"consistency_score"`
+	DocumentationScore   float64            `json:"documentation_score"`
+	CodeQualityScore     float64            `json:"code_quality_score"`
+	OverallScore         float64            `json:"overall_score"`
+	ScoreBreakdown       map[string]float64 `json:"score_breakdown"`
+	Grade                string             `json:"grade"`
+}
+
+// PerformanceMetrics contains performance measurement data
+type PerformanceMetrics struct {
+	ProcessingTime    time.Duration    `json:"processing_time"`
+	TotalDuration     int64            `json:"total_duration"`
+	FilesPerSecond    float64          `json:"files_per_second"`
+	FilesProcessed    int              `json:"files_processed"`
+	MemoryUsage       int64            `json:"memory_usage"`
+	MemoryPeakMB      float64          `json:"memory_peak_mb"`
+	MemoryAverageMB   float64          `json:"memory_average_mb"`
+	ConcurrentWorkers int              `json:"concurrent_workers"`
+	CPUAveragePercent float64          `json:"cpu_average_percent"`
+	CacheHitRatio     float64          `json:"cache_hit_ratio"`
+	AgentDurations    map[string]int64 `json:"agent_durations"`
+}
+
+// AgentState represents the state of an analysis agent
+type AgentState string
+
+const (
+	AgentStateIdle      AgentState = "idle"
+	AgentStateRunning   AgentState = "running"
+	AgentStatePaused    AgentState = "paused"
+	AgentStateComplete  AgentState = "complete"
+	AgentStateCompleted AgentState = "completed"
+	AgentStateFailed    AgentState = "failed"
+)
+
+// AgentExecutionState represents detailed execution state of an analysis agent
+type AgentExecutionState struct {
+	Name       string `json:"name"`
+	Status     string `json:"status"`
+	LastRun    int64  `json:"last_run"`
+	RunCount   int    `json:"run_count"`
+	ErrorCount int    `json:"error_count"`
+	Active     bool   `json:"active"`
 }
 
 // DefaultAnalysisConfig returns the default configuration for analysis

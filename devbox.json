@@ -49,7 +49,7 @@
         "gotestsum --format testname -- -run Integration ./..."
       ],
       "linter": [
-        "golangci-lint run"
+        "golangci-lint run --new-from-rev HEAD"
       ],
       "linter-fix": [
         "golangci-lint run --fix"

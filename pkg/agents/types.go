@@ -2019,7 +2019,7 @@ func (d *DocAnalyzerImpl) ScanCodebase(rootPath string) (*CodebaseSnapshot, erro
 	if d.auditLogger != nil {
 		d.auditLogger.LogEvent(types.AuditEvent{
 			UserID:   "doc_analyzer",
-			Action:   "scan_codebase", 
+			Action:   "scan_codebase",
 			Resource: rootPath,
 			Result:   "initiated",
 			Details: map[string]interface{}{
@@ -2151,7 +2151,7 @@ func (d *DocAnalyzerImpl) CompareCodeAndDocs(code *CodebaseSnapshot, docs *Docum
 			UserID:   "doc_analyzer",
 			Action:   "compare_code_and_docs",
 			Resource: "analysis",
-			Result:   "initiated", 
+			Result:   "initiated",
 			Details: map[string]interface{}{
 				"code_checksum": code.Checksum,
 				"docs_checksum": docs.Checksum,

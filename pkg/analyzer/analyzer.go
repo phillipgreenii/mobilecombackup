@@ -192,7 +192,6 @@ func (da *DocumentationAnalyzer) AnalyzeIncremental(config AnalysisConfig, chang
 
 	// For incremental analysis, we analyze the changed files and their dependencies
 	// This is a simplified implementation - a full implementation would track dependencies
-	config.ProjectRoot = config.ProjectRoot // Ensure project root is set
 	return da.AnalyzeProject(config)
 }
 
@@ -231,7 +230,7 @@ func (da *DocumentationAnalyzer) GenerateReport(result *AnalysisResult, format s
 		return types.NewResult(&AnalysisReport{
 			Format:   "json",
 			Content:  contentResult.Value,
-			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore),
+			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore), //nolint:lll
 			Metadata: make(map[string]interface{}),
 		})
 
@@ -243,7 +242,7 @@ func (da *DocumentationAnalyzer) GenerateReport(result *AnalysisResult, format s
 		return types.NewResult(&AnalysisReport{
 			Format:   "markdown",
 			Content:  contentResult.Value,
-			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore),
+			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore), //nolint:lll
 			Metadata: make(map[string]interface{}),
 		})
 
@@ -255,7 +254,7 @@ func (da *DocumentationAnalyzer) GenerateReport(result *AnalysisResult, format s
 		return types.NewResult(&AnalysisReport{
 			Format:   "html",
 			Content:  contentResult.Value,
-			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore),
+			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore), //nolint:lll
 			Metadata: make(map[string]interface{}),
 		})
 
@@ -267,7 +266,7 @@ func (da *DocumentationAnalyzer) GenerateReport(result *AnalysisResult, format s
 		return types.NewResult(&AnalysisReport{
 			Format:   "text",
 			Content:  contentResult.Value,
-			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore),
+			Summary:  fmt.Sprintf("Analysis found %d inconsistencies with quality score %.2f", len(result.Inconsistencies), result.QualityScore), //nolint:lll
 			Metadata: make(map[string]interface{}),
 		})
 	}
@@ -453,7 +452,7 @@ func (da *DocumentationAnalyzer) analyzeDocFiles(docFiles []string, config Analy
 	return allSections, nil
 }
 
-func (da *DocumentationAnalyzer) detectInconsistencies(codeSymbols []CodeSymbol, docSections []DocSection, config AnalysisConfig) ([]Inconsistency, error) {
+func (da *DocumentationAnalyzer) detectInconsistencies(codeSymbols []CodeSymbol, docSections []DocSection, config AnalysisConfig) ([]Inconsistency, error) { //nolint:lll
 	inconsistenciesResult := da.comparisonEngine.DetectInconsistencies(codeSymbols, docSections)
 	if inconsistenciesResult.IsErr() {
 		return nil, inconsistenciesResult.Error

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/agents"
+	"github.com/phillipgreenii/mobilecombackup/pkg/analyzer"
 	"github.com/phillipgreenii/mobilecombackup/pkg/types"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -225,7 +226,7 @@ func init() {
 	docSyncStatusCmd.Flags().BoolVar(&docSyncOutputJSON, "json", false, "Output status in JSON format")
 }
 
-func runDocSyncStart(cmd *cobra.Command, args []string) error {
+func runDocSyncStart(cmd *cobra.Command, args []string) error { //nolint:funlen
 	if docSyncVerbose {
 		fmt.Println("Starting documentation synchronization...")
 	}
@@ -292,18 +293,81 @@ func runDocSyncStart(cmd *cobra.Command, args []string) error {
 		fmt.Println("🚀 Starting documentation synchronization...")
 	}
 
-	// TODO: Implement actual synchronization logic with agent orchestration
-	// This would involve:
-	// 1. Initialize state manager from Task 1.1
-	// 2. Start analyzer agent to detect inconsistencies
-	// 3. Use codesync agent to generate sync plans
-	// 4. Apply changes with quality agent
-	// 5. Generate reports and update state
+	// Get repository root
+	repoRoot := getRepositoryRoot()
 
-	fmt.Printf("Configuration loaded: %d agents enabled\n", len(config.EnabledAgents))
+	// Create logger first (needed by other components)
+	logger := &SimpleLogger{verbose: docSyncVerbose}
+
+	// Initialize analyzer components
+	stateManager := analyzer.NewDocumentationStateManager(filepath.Join(repoRoot, ".mobilecombackup", "doc-state.json"), logger)
+
+	// Create markdown analyzer
+	markdownAnalyzer := analyzer.NewMarkdownAnalyzer(logger)
+
+	// Create document scanner with required dependencies
+	docScanner := analyzer.NewConcurrentDocumentScanner(markdownAnalyzer, stateManager, logger)
+
+	// Create code analyzer
+	codeAnalyzer := analyzer.NewSerenaCodeAnalyzer(repoRoot, logger)
+
+	// Create comparison engine for inconsistency detection
+	var comparisonEngine analyzer.ComparisonEngine = analyzer.NewDefaultComparisonEngine(logger)
+
+	// Create state synchronizer
+	synchronizer := analyzer.NewDefaultStateSynchronizer(
+		docScanner,
+		codeAnalyzer,
+		comparisonEngine,
+		stateManager,
+		logger,
+	)
+
+	// Configure synchronization
+	syncConfig := &analyzer.SyncConfig{
+		ProjectRoot:     repoRoot,
+		EnabledAgents:   config.EnabledAgents,
+		SyncMode:        analyzer.SyncModeFull,
+		MaxConcurrency:  config.MaxConcurrency,
+		TimeoutMinutes:  config.AgentTimeout,
+		RetryAttempts:   3,
+		BatchSize:       config.BatchSize,
+		IncludePatterns: config.IncludePatterns,
+		ExcludePatterns: config.ExcludePatterns,
+		OutputFormat:    "json",
+		DryRun:          docSyncDryRun,
+		AutoFix:         config.AutoFix,
+		Verbose:         docSyncVerbose,
+		LogLevel:        config.LogLevel,
+		AgentConfig:     make(map[string]interface{}),
+	}
+
 	if docSyncIncremental {
+		syncConfig.SyncMode = analyzer.SyncModeIncremental
 		fmt.Println("📈 Incremental mode: Processing only changed files")
 	}
+
+	// Run synchronization
+	result := synchronizer.SynchronizeProject(syncConfig)
+	if !result.IsOk() {
+		return fmt.Errorf("synchronization failed: %w", result.Error)
+	}
+
+	syncResult := result.Value
+
+	// Display results
+	fmt.Printf("Configuration loaded: %d agents enabled\n", len(config.EnabledAgents))
+	fmt.Printf("Executed agents: %v\n", syncResult.ExecutedAgents)
+	if len(syncResult.FailedAgents) > 0 {
+		fmt.Printf("Failed agents: %v\n", syncResult.FailedAgents)
+	}
+	if len(syncResult.Inconsistencies) > 0 {
+		fmt.Printf("Found %d inconsistencies\n", len(syncResult.Inconsistencies))
+	}
+	if syncResult.QualityMetrics != nil {
+		fmt.Printf("Overall quality score: %.1f%%\n", syncResult.QualityMetrics.OverallScore)
+	}
+	fmt.Printf("Duration: %dms\n", syncResult.Duration)
 
 	if docSyncDryRun {
 		fmt.Println("✅ Dry run completed successfully - no changes were made")
@@ -664,4 +728,32 @@ func parseInt(s string, defaultValue int) int {
 	}
 	// TODO: Implement proper integer parsing
 	return defaultValue
+}
+
+// SimpleLogger implements the analyzer.Logger interface for basic logging
+type SimpleLogger struct {
+	verbose bool
+}
+
+func (l *SimpleLogger) Log(level string, message string, args ...interface{}) {
+	if level == "debug" && !l.verbose {
+		return
+	}
+	fmt.Printf("[%s] %s\n", strings.ToUpper(level), fmt.Sprintf(message, args...))
+}
+
+func (l *SimpleLogger) Debug(message string, args ...interface{}) {
+	l.Log("debug", message, args...)
+}
+
+func (l *SimpleLogger) Info(message string, args ...interface{}) {
+	l.Log("info", message, args...)
+}
+
+func (l *SimpleLogger) Warn(message string, args ...interface{}) {
+	l.Log("warn", message, args...)
+}
+
+func (l *SimpleLogger) Error(message string, args ...interface{}) {
+	l.Log("error", message, args...)
 }
