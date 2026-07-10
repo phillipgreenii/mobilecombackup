@@ -12,6 +12,7 @@ import (
 	"github.com/phillipgreenii/mobilecombackup/pkg/calls"
 	"github.com/phillipgreenii/mobilecombackup/pkg/contacts"
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository/stats"
 	"github.com/phillipgreenii/mobilecombackup/pkg/sms"
 	"github.com/spf13/afero"
 )
@@ -185,10 +186,10 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "healthy repository with calls",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{
+				Calls: map[string]stats.YearInfo{
 					"2023": {Count: 100},
 				},
-				SMS:    map[string]MessageInfo{},
+				SMS:    map[string]stats.MessageInfo{},
 				Errors: map[string]int{},
 			},
 			expected:    HealthOK,
@@ -197,8 +198,8 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "healthy repository with SMS",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{},
-				SMS: map[string]MessageInfo{
+				Calls: map[string]stats.YearInfo{},
+				SMS: map[string]stats.MessageInfo{
 					"2023": {TotalCount: 50},
 				},
 				Errors: map[string]int{},
@@ -209,10 +210,10 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "healthy repository with both",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{
+				Calls: map[string]stats.YearInfo{
 					"2023": {Count: 100},
 				},
-				SMS: map[string]MessageInfo{
+				SMS: map[string]stats.MessageInfo{
 					"2023": {TotalCount: 50},
 				},
 				Errors: map[string]int{},
@@ -223,8 +224,8 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "empty repository",
 			info: &RepositoryInfo{
-				Calls:  map[string]YearInfo{},
-				SMS:    map[string]MessageInfo{},
+				Calls:  map[string]stats.YearInfo{},
+				SMS:    map[string]stats.MessageInfo{},
 				Errors: map[string]int{},
 			},
 			expected:    HealthEmpty,
@@ -233,10 +234,10 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "unhealthy repository with errors",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{
+				Calls: map[string]stats.YearInfo{
 					"2023": {Count: 100},
 				},
-				SMS: map[string]MessageInfo{},
+				SMS: map[string]stats.MessageInfo{},
 				Errors: map[string]int{
 					"calls": 1,
 				},
@@ -247,8 +248,8 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "unhealthy empty repository with errors",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{},
-				SMS:   map[string]MessageInfo{},
+				Calls: map[string]stats.YearInfo{},
+				SMS:   map[string]stats.MessageInfo{},
 				Errors: map[string]int{
 					"calls": 1,
 				},
@@ -259,10 +260,10 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "repository with zero count years",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{
+				Calls: map[string]stats.YearInfo{
 					"2023": {Count: 0},
 				},
-				SMS: map[string]MessageInfo{
+				SMS: map[string]stats.MessageInfo{
 					"2023": {TotalCount: 0},
 				},
 				Errors: map[string]int{},
@@ -273,7 +274,7 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 		{
 			name: "repository with multiple years",
 			info: &RepositoryInfo{
-				Calls: map[string]YearInfo{
+				Calls: map[string]stats.YearInfo{
 					"2022": {
 						Count:    50,
 						Earliest: time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -285,7 +286,7 @@ func TestCalculateRepositoryHealth(t *testing.T) {
 						Latest:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 					},
 				},
-				SMS:    map[string]MessageInfo{},
+				SMS:    map[string]stats.MessageInfo{},
 				Errors: map[string]int{},
 			},
 			expected:    HealthOK,

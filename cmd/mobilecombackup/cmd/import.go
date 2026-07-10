@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/phillipgreenii/mobilecombackup/pkg/importer"
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository"
 	"github.com/phillipgreenii/mobilecombackup/pkg/security"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -121,8 +122,8 @@ func validateAndPreparePaths(cmd *cobra.Command, args []string, resolvedRepoRoot
 	}
 
 	// Validate filter
-	if importFilter != "" && importFilter != callsDir && importFilter != smsDir {
-		return nil, fmt.Errorf("invalid filter value: %s (must be '%s' or '%s')", importFilter, callsDir, smsDir)
+	if importFilter != "" && importFilter != repository.CallsDir && importFilter != repository.SMSDir {
+		return nil, fmt.Errorf("invalid filter value: %s (must be '%s' or '%s')", importFilter, repository.CallsDir, repository.SMSDir)
 	}
 
 	return paths, nil
@@ -247,7 +248,7 @@ func displaySummary(summary *importer.ImportSummary, dryRun bool) {
 
 // displayCallsStatistics displays call statistics in the summary
 func displayCallsStatistics(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != callsDir {
+	if importFilter != "" && importFilter != repository.CallsDir {
 		return
 	}
 
@@ -261,7 +262,7 @@ func displayCallsStatistics(summary *importer.ImportSummary) {
 
 // displaySMSStatistics displays SMS statistics in the summary
 func displaySMSStatistics(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != smsDir {
+	if importFilter != "" && importFilter != repository.SMSDir {
 		return
 	}
 
@@ -291,7 +292,7 @@ func displayYearStats(yearStats map[int]*importer.YearStat) {
 
 // displayAttachmentStatistics displays attachment statistics in the summary
 func displayAttachmentStatistics(summary *importer.ImportSummary) {
-	if (importFilter == "" || importFilter == smsDir) && summary.Attachments.Total.Total > 0 {
+	if (importFilter == "" || importFilter == repository.SMSDir) && summary.Attachments.Total.Total > 0 {
 		fmt.Println("Attachments:")
 		fmt.Printf("  Total: %d files (%d new, %d duplicates)\n",
 			summary.Attachments.Total.Total, summary.Attachments.Total.New,
@@ -314,7 +315,7 @@ func displayRejectionStatistics(summary *importer.ImportSummary) {
 
 // displayCallsRejections displays call-specific rejection statistics
 func displayCallsRejections(summary *importer.ImportSummary) {
-	if importFilter != "" && importFilter != callsDir {
+	if importFilter != "" && importFilter != repository.CallsDir {
 		return
 	}
 
@@ -353,7 +354,7 @@ func displayRejectionBreakdown(rejections map[string]*importer.RejectionStats) {
 
 // displaySMSRejections displays SMS-specific rejection statistics
 func displaySMSRejections() {
-	if importFilter == "" || importFilter == smsDir {
+	if importFilter == "" || importFilter == repository.SMSDir {
 		// TODO: Track SMS-specific rejections separately
 		fmt.Printf("  SMS: 0\n")
 	}

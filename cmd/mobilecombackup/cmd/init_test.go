@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/phillipgreenii/mobilecombackup/pkg/repository"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
@@ -92,7 +94,8 @@ func TestValidateTargetDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			path := tt.setup(t)
-			err := validateTargetDirectory(path)
+			validator := repository.NewValidator(afero.NewOsFs())
+			err := validator.ValidateTargetDirectory(path)
 
 			if tt.wantError == "" {
 				if err != nil {
@@ -113,26 +116,17 @@ func TestInitializeRepository(t *testing.T) {
 	tests := []struct {
 		name         string
 		dryRun       bool
-		quiet        bool
 		checkCreated bool
 	}{
 		{
 			name:         "normal initialization",
 			dryRun:       false,
-			quiet:        false,
 			checkCreated: true,
 		},
 		{
 			name:         "dry run",
 			dryRun:       true,
-			quiet:        false,
 			checkCreated: false,
-		},
-		{
-			name:         "quiet mode",
-			dryRun:       false,
-			quiet:        true,
-			checkCreated: true,
 		},
 	}
 
@@ -140,7 +134,8 @@ func TestInitializeRepository(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repoRoot := filepath.Join(t.TempDir(), "test-repo")
 
-			result, err := initializeRepository(repoRoot, tt.dryRun, tt.quiet)
+			creator := repository.NewCreator(afero.NewOsFs(), version)
+			result, err := creator.Initialize(repoRoot, tt.dryRun)
 			if err != nil {
 				t.Fatalf("initializeRepository failed: %v", err)
 			}
@@ -190,7 +185,7 @@ func TestInitializeRepository(t *testing.T) {
 				if err != nil {
 					t.Errorf("marker file not created: %v", err)
 				} else {
-					var marker MarkerFileContent
+					var marker repository.MarkerFileContent
 					if err := yaml.Unmarshal(data, &marker); err != nil {
 						t.Errorf("invalid marker file: %v", err)
 					} else {
@@ -221,7 +216,7 @@ func TestInitializeRepository(t *testing.T) {
 				if err != nil {
 					t.Errorf("summary file not created: %v", err)
 				} else {
-					var summary SummaryContent
+					var summary repository.SummaryContent
 					if err := yaml.Unmarshal(data, &summary); err != nil {
 						t.Errorf("invalid summary file: %v", err)
 					} else {
@@ -253,7 +248,8 @@ func TestInitializeRepositoryPermissions(t *testing.T) {
 	repoRoot := filepath.Join(tempDir, "no-write")
 	_ = os.Mkdir(repoRoot, 0555) // nolint:gosec // Intentionally restrictive for testing
 
-	_, err := initializeRepository(repoRoot, false, true)
+	creator := repository.NewCreator(afero.NewOsFs(), version)
+	_, err := creator.Initialize(repoRoot, false)
 	if err == nil {
 		t.Error("expected error for directory without write permission")
 	}
