@@ -85,3 +85,10 @@ tmp/
 .quality-config.env
 quality-monitor.log
 demos/dashboard/dashboard-metrics/
+
+#########
+# AGENT WORKTREES
+#
+# Isolated git worktrees created by agent sessions (runtime state, never tracked)
+.worktrees/
+.claude/worktrees/
