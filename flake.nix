@@ -46,7 +46,7 @@
             
             # Bootstrap with lib.fakeHash, then replace with real hash from build error
             #vendorHash = pkgs.lib.fakeHash;
-            vendorHash = "sha256-R/1lfhkQN1Dr7qcusLVEmqv6s0dcNkHDyzHrQCEaSY8=";
+            vendorHash = "sha256-3+aJpFeRDFjC8a1f5JIgEFQE11H5pSjWyNqld6ObWPc=";
             
             # Match current build flags from build-version.sh
             ldflags = [
