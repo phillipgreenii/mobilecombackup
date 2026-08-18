@@ -11,9 +11,10 @@
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
 
     # Shared Nix infrastructure (pre-commit / treefmt / devshell / checks
-    # flakeModules). Declared with follows so this flake's nixpkgs and
-    # flake-parts are the single locked view (README "Cross-flake input
-    # alignment"); without them flake.lock grows `_2`-suffixed duplicates.
+    # flakeModules, the Go builder factory `lib.mkGoBuilders`, and the
+    # re-exported gomod2nix overlay). Declared with follows so this flake's
+    # nixpkgs and flake-parts are the single locked view (README "Cross-flake
+    # input alignment"); without them flake.lock grows `_2`-suffixed duplicates.
     phillipgreenii-nix-base = {
       url = "github:phillipgreenii/nix-repo-base";
       inputs = {
@@ -24,7 +25,7 @@
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{ flake-parts, phillipgreenii-nix-base, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       # Mirror flake-utils.lib.defaultSystems verbatim, as the sibling workspace
       # flakes do. This is the same system set the previous
@@ -37,31 +38,33 @@
       ];
 
       perSystem =
-        { pkgs, config, ... }:
+        { pkgs, system, config, ... }:
         let
-          # Smart version detection using flake input detection (Option 1)
-          # Provides near-perfect compatibility with existing build-version.sh
-          detectVersion =
-            let
-              versionFile = builtins.readFile ./VERSION;
-              baseVersion = pkgs.lib.removeSuffix "-dev" (pkgs.lib.removeSuffix "\n" versionFile);
+          # ADR 0006 / bead tc-5lxy.1 (Option A): the human-facing base version is
+          # read from the committed VERSION file and NOTHING else. mkGoApp appends
+          # an 8-hex digest of this package's own source tree, so the built
+          # `--version` reads `2.0.0-<8hex>`.
+          #
+          # Deriving this from `self.rev` / `self.ref` / `self.dirtyRev` (as the
+          # pre-mkGoBinary `detectVersion` block did) is FORBIDDEN: it puts the
+          # repo git rev back into the derivation's `version`, so the drvPath
+          # changes on every commit and the package rebuilds for edits it does not
+          # contain — exactly the per-commit churn ADR 0006 exists to remove. See
+          # the CONSUMER CONSTRAINT note on `baseVersion` in nix-repo-base's
+          # lib/go-builders.nix.
+          #
+          # The `-dev` suffix is stripped so the value is a bare semver: the digest
+          # is what marks a build as non-release, and `checks.integration` asserts
+          # the `<semver>-<8hex>` shape.
+          baseVersion = pkgs.lib.removeSuffix "-dev" (
+            pkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION)
+          );
 
-              # Flake provides these attributes based on how it was fetched
-              isTag = (inputs.self ? ref) && (pkgs.lib.hasPrefix "v" inputs.self.ref);
-              tagVersion = if isTag then pkgs.lib.removePrefix "v" inputs.self.ref else null;
-            in
-            if isTag && tagVersion != null then
-              # Clean version from tag (e.g., "2.0.0")
-              tagVersion
-            else if inputs.self ? rev then
-              # Development version with git hash (e.g., "2.1.0-dev-g1234567")
-              "${baseVersion}-dev-g${builtins.substring 0 7 inputs.self.rev}"
-            else if inputs.self ? dirtyRev then
-              # Local development with uncommitted changes
-              "${baseVersion}-dev-dirty"
-            else
-              # Fallback when no git info available
-              "${baseVersion}-dev";
+          goBuilders = phillipgreenii-nix-base.lib.mkGoBuilders {
+            inherit pkgs;
+            inherit (pkgs) lib;
+            self = inputs.self;
+          };
 
           # flake-utils.lib.mkApp has no flake-parts equivalent; it expanded to
           # `{ type = "app"; program = "${drv}/bin/${drv.pname}"; }`, which is
@@ -69,32 +72,57 @@
           mainProgram = "${config.packages.default}/bin/mobilecombackup";
         in
         {
+          # gomod2nix's overlay supplies pkgs.buildGoApplication, which mkGoBinary
+          # (via mkGoApp) requires. Sourced from nix-base (overlays.gomod2nix) so
+          # this flake needs no direct gomod2nix input. Mirrors bb / nix-repo-base.
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [ phillipgreenii-nix-base.overlays.gomod2nix ];
+          };
+
           packages = {
-            default = pkgs.buildGoModule rec {
-              pname = "mobilecombackup";
-              version = detectVersion;
+            # Built via mkGoBinary (ADR 0008): dependencies come from the committed
+            # gomod2nix.toml as per-module content-addressed FODs, so there is no
+            # `vendorHash` to hand-maintain. On top of the build it generates a man
+            # page (help2man) and bash/zsh/fish completions from cobra's
+            # `mobilecombackup completion <shell>`, plus (via extraPostInstall) the
+            # hand-authored tldr page.
+            #
+            # mkGoBinary's arg set is CLOSED: `name` (not `pname`) and a top-level
+            # `description` (help2man's `--name` tagline and meta.description).
+            default = goBuilders.mkGoBinary {
+              name = "mobilecombackup";
+              src = pkgs.lib.cleanSource ./.;
+              description = "Tool for processing mobile phone backup files";
 
-              src = ./.;
+              inherit baseVersion;
 
-              # Bootstrap with lib.fakeHash, then replace with real hash from build error
-              #vendorHash = pkgs.lib.fakeHash;
-              vendorHash = "sha256-3+aJpFeRDFjC8a1f5JIgEFQE11H5pSjWyNqld6ObWPc=";
-
-              # Match current build flags from build-version.sh
-              ldflags = [
-                "-X main.Version=${version}"
-                "-s -w" # Strip debug info for smaller binary
-              ];
-
-              # Static binary matching current build
-              env.CGO_ENABLED = 0;
-
-              # Build from CLI entry point
+              # cmd/mobilecombackup is not the only `package main` in this module
+              # (demos/dashboard/main.go is another) and mkGoBinary defaults
+              # subPackages to null = build every main. Pin the entrypoint so
+              # $out/bin holds exactly one file.
               subPackages = [ "cmd/mobilecombackup" ];
 
-              # Metadata for Nix package management
+              gomod2nixToml = ./gomod2nix.toml;
+
+              # Match the historical build flags. mkGoApp appends its own
+              # `-X main.Version=<version>` after these, so version injection is
+              # never lost. cmd/mobilecombackup/main.go declares `var Version` in
+              # package main, which is mkGoBinary's default versionPath.
+              ldflags = [ "-s -w" ]; # Strip debug info for smaller binary
+              env.CGO_ENABLED = 0; # Static binary matching the historical build
+
+              # tldr page: not generated by mkGoBinary, so install the
+              # hand-authored source into the workspace tldr convention path
+              # ($out/share/tldr/pages.common/<name>.md).
+              extraPostInstall = ''
+                mkdir -p $out/share/tldr/pages.common
+                cp ${./docs/tldr/mobilecombackup.md} $out/share/tldr/pages.common/mobilecombackup.md
+              '';
+
+              # Merged OVER mkGoBinary's own { description, mainProgram }, so the
+              # metadata the pre-mkGoBinary buildGoModule call carried is retained.
               meta = with pkgs.lib; {
-                description = "Tool for processing mobile phone backup files";
                 longDescription = ''
                   A command-line tool for processing mobile phone backup files including
                   call logs and SMS/MMS data in XML format. Provides deduplication,
@@ -104,7 +132,6 @@
                 license = licenses.mit;
                 maintainers = [ ];
                 platforms = platforms.unix;
-                mainProgram = "mobilecombackup";
               };
             };
 
@@ -138,8 +165,13 @@
               VERSION_OUTPUT=$(${config.packages.default}/bin/mobilecombackup --version)
               echo "Version output: $VERSION_OUTPUT"
 
-              # Check for proper version format (either clean version or dev version)
-              if [[ "$VERSION_OUTPUT" =~ ^mobilecombackup\ version\ [0-9]+\.[0-9]+\.[0-9]+(-dev(-g[0-9a-f]{7}|-dirty)?)?$ ]]; then
+              # ADR 0006 digest versioning (bead tc-5lxy.1, Option A): mkGoApp
+              # derives the version as the baseVersion followed by an 8-hex digest
+              # of this package's own source, so the string is always
+              # `<semver>-<8hex>`. The semver half is deliberately NOT pinned to
+              # 0.0.0 — it comes from the VERSION file via baseVersion, so a later
+              # VERSION bump does not re-break this check.
+              if [[ "$VERSION_OUTPUT" =~ ^mobilecombackup\ version\ [0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{8}$ ]]; then
                 echo "✓ Version format correct"
                 touch $out
               else
@@ -162,6 +194,54 @@
                 cat help_output.txt
                 exit 1
               fi
+            '';
+
+            # Durable regression guard for everything mkGoBinary layers on top of
+            # the plain Go build. help2man and each `completion <shell>` call are
+            # wrapped in mkGoBinary's `_try` helper, which `rm -f`s the artifact and
+            # only WARNS when generation fails — so ABSENCE is the silent failure
+            # mode and only an explicit check catches it.
+            packaging = pkgs.runCommand "check-mobilecombackup-packaging" { } ''
+              pkg=${config.packages.default}
+              fail=0
+              check_file() {
+                if [ -s "$1" ]; then
+                  echo "✓ $2: $1"
+                else
+                  echo "✗ $2 missing or empty: $1"
+                  fail=1
+                fi
+              }
+
+              # stdenv's compressManPages fixup hook gzips the page, so the
+              # installed name is mobilecombackup.1.gz; accept either spelling so
+              # this guard does not depend on that hook staying enabled.
+              if [ -s "$pkg/share/man/man1/mobilecombackup.1" ] || [ -s "$pkg/share/man/man1/mobilecombackup.1.gz" ]; then
+                echo "✓ man page: $(ls "$pkg"/share/man/man1/mobilecombackup.1*)"
+              else
+                echo "✗ man page missing or empty: $pkg/share/man/man1/mobilecombackup.1[.gz]"
+                fail=1
+              fi
+
+              check_file "$pkg/share/bash-completion/completions/mobilecombackup" "bash completion"
+              check_file "$pkg/share/zsh/site-functions/_mobilecombackup" "zsh completion"
+              check_file "$pkg/share/fish/vendor_completions.d/mobilecombackup.fish" "fish completion"
+              check_file "$pkg/share/tldr/pages.common/mobilecombackup.md" "tldr page"
+
+              # subPackages pins the entrypoint; demos/dashboard must NOT be built.
+              bins=$(ls "$pkg/bin")
+              echo "Contents of \$out/bin: $bins"
+              if [ "$bins" = "mobilecombackup" ]; then
+                echo "✓ \$out/bin holds exactly the mobilecombackup binary"
+              else
+                echo "✗ \$out/bin should hold exactly 'mobilecombackup'"
+                fail=1
+              fi
+
+              if [ "$fail" -ne 0 ]; then
+                exit 1
+              fi
+              touch $out
             '';
           };
         };

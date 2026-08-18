@@ -86,6 +86,49 @@ devbox run build-cli
 devbox run ci
 ```
 
+### Nix packaging (gomod2nix)
+
+Day-to-day development uses devbox; the Nix flake exists for packaged
+distribution (`nix build`, `nix run`). The flake builds the CLI with
+`mkGoBinary` from `nix-repo-base`, which resolves Go dependencies from the
+committed `gomod2nix.toml` instead of a hand-maintained `vendorHash`.
+
+`gomod2nix.toml` MUST be regenerated and committed whenever `go.mod` or `go.sum`
+changes (adding, removing, or bumping a dependency):
+
+```bash
+# Regenerate the Nix dependency lockfile after any go.mod/go.sum change
+nix run github:nix-community/gomod2nix -- generate
+
+# Then commit the result
+git add gomod2nix.toml
+```
+
+Regeneration needs network access, so it cannot run inside a `nix flake check`
+derivation. The `gomod2nix-drift` job in `.github/workflows/test.yml` regenerates
+the file in CI and fails if it differs from the committed copy.
+
+Package-level checks run through the flake:
+
+```bash
+# Build the package and run the packaging/version/help checks
+nix flake check
+
+# Build just the CLI
+nix build .#mobilecombackup
+```
+
+`nix build` produces the binary plus a man page, bash/zsh/fish completions, and
+the tldr page from `docs/tldr/mobilecombackup.md`; `checks.packaging` asserts all
+of them are present, because the generators only warn on failure.
+
+The nix-built `--version` string is `<semver>-<8hex>`, e.g.
+`mobilecombackup version 2.0.0-7719e3bf`. The semver half comes from the
+`VERSION` file and the 8-hex suffix is a digest of the package's own source tree
+(ADR 0006 digest versioning in `nix-repo-base`), so the version changes when the
+source changes rather than on every commit. This is distinct from the
+`devbox run build-cli` version string, which still embeds the git description.
+
 ### Git Hooks and Quality Enforcement
 
 The project uses pre-commit hooks to enforce code quality:

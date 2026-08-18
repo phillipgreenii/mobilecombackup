@@ -52,3 +52,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # gomod2nix.toml is the Nix build's dependency lockfile (it replaced the
+  # hand-maintained vendorHash). It MUST be regenerated whenever go.mod/go.sum
+  # change, and a stale one breaks `nix build`. Regeneration needs network, so it
+  # cannot be a `nix flake check` derivation — this job is the drift gate instead.
+  # Local equivalent: see docs/DEVELOPMENT.md "Nix packaging (gomod2nix)".
+  gomod2nix-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Regenerate gomod2nix.toml
+        run: nix run github:nix-community/gomod2nix -- generate
+      - name: Fail if gomod2nix.toml is out of date
+        run: |
+          if ! git diff --exit-code -- gomod2nix.toml; then
+            echo "::error file=gomod2nix.toml::gomod2nix.toml is out of date with go.mod/go.sum."
+            echo "Regenerate it locally and commit the result:"
+            echo "  nix run github:nix-community/gomod2nix -- generate"
+            exit 1
+          fi
