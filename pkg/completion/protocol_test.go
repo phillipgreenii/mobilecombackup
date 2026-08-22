@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -335,11 +336,33 @@ func TestCompletionResult_Fields(t *testing.T) {
 	}
 }
 
+// gitEnvWithoutHookVars returns a copy of the current process environment
+// with all GIT_* variables removed. Git test helpers that shell out with
+// cmd.Dir set MUST use this as cmd.Env: cmd.Dir only changes the child
+// process's cwd, it does NOT override an inherited GIT_DIR / GIT_WORK_TREE /
+// GIT_INDEX_FILE, and git gives those env vars priority over cwd-based repo
+// discovery. Without this, running these tests as a descendant of a git
+// hook (e.g. a pre-commit hook, which is a child process of `git commit`)
+// causes every "isolated" git command here to silently operate on the real
+// repo that triggered the hook instead of the intended t.TempDir() fixture.
+func gitEnvWithoutHookVars() []string {
+	env := os.Environ()
+	filtered := make([]string, 0, len(env))
+	for _, e := range env {
+		if strings.HasPrefix(e, "GIT_") {
+			continue
+		}
+		filtered = append(filtered, e)
+	}
+	return filtered
+}
+
 // Helper function to set up a clean git repository
 func setupCleanGitRepo(t *testing.T, dir string) {
 	// Initialize git repo
 	cmd := exec.Command("git", "init")
 	cmd.Dir = dir
+	cmd.Env = gitEnvWithoutHookVars()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to init git repo: %v", err)
 	}
@@ -347,12 +370,14 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 	// Configure git
 	cmd = exec.Command("git", "config", "user.email", "test@example.com")
 	cmd.Dir = dir
+	cmd.Env = gitEnvWithoutHookVars()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to config git email: %v", err)
 	}
 
 	cmd = exec.Command("git", "config", "user.name", "Test User")
 	cmd.Dir = dir
+	cmd.Env = gitEnvWithoutHookVars()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to config git name: %v", err)
 	}
@@ -365,12 +390,14 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 
 	cmd = exec.Command("git", "add", "test.txt")
 	cmd.Dir = dir
+	cmd.Env = gitEnvWithoutHookVars()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to add test file: %v", err)
 	}
 
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
 	cmd.Dir = dir
+	cmd.Env = gitEnvWithoutHookVars()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to commit: %v", err)
 	}
