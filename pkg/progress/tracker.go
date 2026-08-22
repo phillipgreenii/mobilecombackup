@@ -227,23 +227,23 @@ func (t *TaskTracker) ValidateDependencies() *ValidationResult {
 	return result
 }
 
-// topologicalSort returns tasks in dependency-safe execution order
+// topologicalSort returns tasks in dependency-safe execution order (each task's
+// dependencies appear before the task itself), breaking ties by priority (highest first).
 func (t *TaskTracker) topologicalSort() []string {
 	inDegree := make(map[string]int)
+	// dependents[X] lists tasks that depend on X, i.e. the edges X -> task that must be
+	// "released" (in-degree decremented) once X has been placed in the order.
+	dependents := make(map[string][]string)
 
-	// Initialize in-degree count
-	for taskID := range t.tasks {
-		inDegree[taskID] = 0
-	}
-
-	// Calculate in-degrees
-	for _, task := range t.tasks {
+	// Initialize in-degree count: a task's in-degree is the number of dependencies it has.
+	for taskID, task := range t.tasks {
+		inDegree[taskID] = len(task.Dependencies)
 		for _, depID := range task.Dependencies {
-			inDegree[depID]++
+			dependents[depID] = append(dependents[depID], taskID)
 		}
 	}
 
-	// Find tasks with no dependencies
+	// Find tasks with no dependencies - these can run first
 	var queue []string
 	for taskID, degree := range inDegree {
 		if degree == 0 {
@@ -251,11 +251,12 @@ func (t *TaskTracker) topologicalSort() []string {
 		}
 	}
 
-	// Sort initial queue by priority
+	// Sort initial queue by priority, breaking ties by task ID so the result is
+	// reproducible for a given task set (the queue was populated from a map, whose
+	// iteration order Go deliberately randomizes; without a deterministic tie-break,
+	// equal-priority tasks would come out in a different, unstable order every run).
 	sort.Slice(queue, func(i, j int) bool {
-		taskA := t.tasks[queue[i]]
-		taskB := t.tasks[queue[j]]
-		return taskA.Priority.GetWeight() > taskB.Priority.GetWeight()
+		return higherPriority(t.tasks[queue[i]], t.tasks[queue[j]], queue[i], queue[j])
 	})
 
 	var result []string
@@ -265,28 +266,37 @@ func (t *TaskTracker) topologicalSort() []string {
 		queue = queue[1:]
 		result = append(result, taskID)
 
-		// Remove this task from dependency graph
-		task := t.tasks[taskID]
-		for _, depID := range task.Dependencies {
-			inDegree[depID]--
-			if inDegree[depID] == 0 {
-				// Insert in priority order
+		// Release tasks that depended on this one now that it is placed
+		for _, dependentID := range dependents[taskID] {
+			inDegree[dependentID]--
+			if inDegree[dependentID] == 0 {
+				// Insert in priority order (ties broken by task ID, see above)
 				inserted := false
 				for i, queuedID := range queue {
-					if t.tasks[depID].Priority.GetWeight() > t.tasks[queuedID].Priority.GetWeight() {
-						queue = append(queue[:i], append([]string{depID}, queue[i:]...)...)
+					if higherPriority(t.tasks[dependentID], t.tasks[queuedID], dependentID, queuedID) {
+						queue = append(queue[:i], append([]string{dependentID}, queue[i:]...)...)
 						inserted = true
 						break
 					}
 				}
 				if !inserted {
-					queue = append(queue, depID)
+					queue = append(queue, dependentID)
 				}
 			}
 		}
 	}
 
 	return result
+}
+
+// higherPriority reports whether task a should be ordered before task b: higher
+// priority weight first, then lower task ID as a deterministic tie-break.
+func higherPriority(a, b *EnhancedTodo, idA, idB string) bool {
+	weightA, weightB := a.Priority.GetWeight(), b.Priority.GetWeight()
+	if weightA != weightB {
+		return weightA > weightB
+	}
+	return idA < idB
 }
 
 // calculateCriticalPath calculates the critical path through the task dependency graph
@@ -340,13 +350,16 @@ func (t *TaskTracker) calculateCriticalPath() []string {
 		}
 	}
 
-	// Find end task with latest completion time
+	// Find end task with latest completion time. Ties (e.g. several independent tasks
+	// with the same estimated duration) are broken by task ID so the result does not
+	// depend on endTasks' scan order, which comes from a map and is otherwise randomized
+	// by Go on every run.
 	latestEnd := time.Duration(0)
 	var criticalEndTask string
 	for _, taskID := range endTasks {
 		task := t.tasks[taskID]
 		completion := earliestStart[taskID] + task.GetEstimatedDuration()
-		if completion > latestEnd {
+		if criticalEndTask == "" || completion > latestEnd || (completion == latestEnd && taskID < criticalEndTask) {
 			latestEnd = completion
 			criticalEndTask = taskID
 		}
@@ -416,7 +429,8 @@ func (t *TaskTracker) GetProgressReport() *ProgressReport {
 			}
 		case StatusInProgress:
 			inProgressCount++
-			if currentTask == nil || task.Priority.GetWeight() > currentTask.Priority.GetWeight() {
+			if currentTask == nil || task.Priority.GetWeight() > currentTask.Priority.GetWeight() ||
+				(task.Priority.GetWeight() == currentTask.Priority.GetWeight() && task.ID < currentTask.ID) {
 				currentTask = task
 			}
 		case StatusBlocked:
@@ -427,6 +441,21 @@ func (t *TaskTracker) GetProgressReport() *ProgressReport {
 		totalEstimated += task.GetEstimatedDuration()
 		retrySum += task.RetryCount
 	}
+
+	// t.tasks is a map, so the loop above visits tasks in a randomized order; sort the
+	// derived lists (by priority, then task ID as a deterministic tie-break) so the report
+	// is reproducible instead of listing available/blocked tasks in a different order
+	// every run.
+	sortTasksByPriority := func(tasks []EnhancedTodo) {
+		sort.Slice(tasks, func(i, j int) bool {
+			if tasks[i].Priority.GetWeight() != tasks[j].Priority.GetWeight() {
+				return tasks[i].Priority.GetWeight() > tasks[j].Priority.GetWeight()
+			}
+			return tasks[i].ID < tasks[j].ID
+		})
+	}
+	sortTasksByPriority(availableTasks)
+	sortTasksByPriority(blockedTasks)
 
 	// Basic metrics
 	report.CompletedTasks = completedCount

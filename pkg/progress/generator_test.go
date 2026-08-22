@@ -312,11 +312,22 @@ func TestTaskGenerator_EstimateIssueEffort(t *testing.T) {
 		t.Fatalf("EstimateIssueEffort failed: %v", err)
 	}
 
-	// Should be sum of estimates for all generated tasks
-	// Simple (15min) + Medium (45min) + Complex (120min) = 180min = 3 hours
-	// Plus any acceptance criteria tasks
-	if totalEffort < 2*time.Hour || totalEffort > 5*time.Hour {
-		t.Errorf("Total effort = %v, expected between 2-5 hours", totalEffort)
+	// The default config documents (README.md "Time Estimation") that the final estimate
+	// is base-duration-for-complexity * ComplexityMultiplier * CategoryMultiplier, i.e. the
+	// two multipliers are intentionally compounded, not alternatives. The heuristic keyword
+	// analysis (not the parenthetical hints in the markdown, which it does not parse)
+	// classifies each generated task as:
+	//   - "Add new field (simple task)": Simple/general
+	//     -> 15min * 0.5 (simple) = 7m (no category multiplier for "general")
+	//   - "Update validation logic (medium complexity)": Simple/documentation
+	//     ("update" is a Simple keyword; the "(medium complexity)" annotation isn't parsed)
+	//     -> 15min * 0.5 (simple) * 0.8 (documentation) = 5m
+	//   - "Implement complex algorithm (high complexity)": Complex/implementation
+	//     -> 120min * 2.5 (complex) * 1.5 (implementation) = 450m = 7h30m
+	// Total = 7m + 5m + 450m = 462m = 7h42m.
+	wantEffort := 7*time.Minute + 5*time.Minute + 450*time.Minute
+	if totalEffort != wantEffort {
+		t.Errorf("Total effort = %v, want %v", totalEffort, wantEffort)
 	}
 }
 

@@ -120,7 +120,7 @@ func (g *TaskGenerator) generateTasksFromParsedIssue(issueContent string) ([]*En
 				Content:    fmt.Sprintf("Verify: %s", criteria),
 				Status:     StatusPending,
 				Complexity: ComplexitySimple, // Criteria are typically verification tasks
-				Priority:   PriorityMedium,
+				Priority:   g.config.DefaultPriority,
 				Category:   "verification",
 				Tags:       []string{"acceptance-criteria", "verification"},
 				CreatedAt:  now,
@@ -257,12 +257,20 @@ func (g *TaskGenerator) processSection(issue *ParsedIssue, sectionName, content 
 
 	case "priority":
 		priorityText := strings.ToLower(strings.TrimSpace(content))
+		// The priority level is the leading designation (e.g. "HIGH - explanation why"),
+		// not any word that happens to appear later in the explanatory text. Scanning the
+		// whole text for "critical" would misclassify e.g. "HIGH - this is critical for the
+		// release" as Critical even though the declared level is High.
+		firstToken := priorityText
+		if fields := strings.Fields(priorityText); len(fields) > 0 {
+			firstToken = fields[0]
+		}
 		switch {
-		case strings.Contains(priorityText, "critical"):
+		case strings.Contains(firstToken, "critical"):
 			issue.Priority = PriorityCritical
-		case strings.Contains(priorityText, "high"):
+		case strings.Contains(firstToken, "high"):
 			issue.Priority = PriorityHigh
-		case strings.Contains(priorityText, "low"):
+		case strings.Contains(firstToken, "low"):
 			issue.Priority = PriorityLow
 		default:
 			issue.Priority = PriorityMedium
@@ -337,8 +345,12 @@ func (g *TaskGenerator) analyzeTaskComplexity(content string) ComplexityLevel {
 		}
 	}
 
-	// Determine complexity based on keyword analysis
-	if complexCount > simpleCount && complexCount > 0 {
+	// Determine complexity based on keyword analysis.
+	// A single generic complex-indicator word (e.g. "create") is too weak a signal on
+	// its own to call a task "complex" - require at least two matches so that only
+	// content with multiple reinforcing indicators (e.g. "comprehensive" + "system")
+	// is classified as complex.
+	if complexCount >= 2 && complexCount > simpleCount {
 		return ComplexityComplex
 	} else if simpleCount > 0 {
 		return ComplexitySimple
@@ -361,8 +373,20 @@ func (g *TaskGenerator) analyzeTaskCategory(content string) string {
 		"maintenance":    {"refactor", "optimize", "clean", "organize", "restructure", "improve"},
 	}
 
-	for category, keywords := range categoryKeywords {
-		for _, keyword := range keywords {
+	// Check categories in a fixed, deterministic priority order rather than ranging over
+	// the map directly (Go map iteration order is randomized, which made this function
+	// non-deterministic whenever content matched more than one category's keywords - e.g.
+	// "Review code quality" matches both "review" and "implementation" via its generic
+	// "code" keyword, and "Refactor legacy code" matches both "maintenance" and
+	// "implementation" the same way). "implementation" is the most generic/catch-all
+	// category (it owns the very common word "code"), so it is checked last, after the
+	// more specific categories.
+	categoryOrder := []string{
+		"testing", "documentation", "planning", "review", "deployment", "maintenance", "implementation",
+	}
+
+	for _, category := range categoryOrder {
+		for _, keyword := range categoryKeywords[category] {
 			if strings.Contains(contentLower, keyword) {
 				return category
 			}
