@@ -9,10 +9,10 @@ Complete navigation guide to all MobileComBackup documentation.
 <!-- ============================================ -->
 <!-- AUTO-GENERATED SECTION - DO NOT EDIT MANUALLY -->
 <!-- Updated by scripts/update-doc-health.sh -->
-<!-- Last Updated: 2026-08-22 02:45:24 UTC -->
+<!-- Last Updated: 2026-08-22 05:06:29 UTC -->
 <!-- ============================================ -->
 
-**Last Updated**: 2026-08-22 02:45:24 UTC
+**Last Updated**: 2026-08-22 05:06:29 UTC
 **Last Validation**: ✅ Passed
 **Auto-Updated**: Yes (via pre-commit hook)
 
@@ -23,12 +23,12 @@ Complete navigation guide to all MobileComBackup documentation.
 - **CLAUDE.md**: 827 lines
 - **Broken Links**: 0
 - **Package Coverage**: 9/19 (47%)
-- **Fresh Docs (<30 days)**: 6%
+- **Fresh Docs (<30 days)**: 9%
 
 ### Freshness (Auto-Generated)
-- **Updated Last 7 Days**: 2 files
-- **Updated Last 30 Days**: 2 files
-- **Oldest Document**: SLASH_COMMANDS.md (373 days)
+- **Updated Last 7 Days**: 3 files
+- **Updated Last 30 Days**: 3 files
+- **Oldest Document**: SLASH_COMMANDS.md (374 days)
 - **Most Active**: tldr/mobilecombackup.md
 
 <!-- END AUTO-GENERATED SECTION -->

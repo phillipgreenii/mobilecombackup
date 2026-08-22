@@ -26,7 +26,7 @@ Enhanced pre-commit hook that:
 **Usage**:
 ```bash
 # Use enhanced hook for analyzer changes
-ln -sf scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
+ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
 
 # Or replace existing hook (backup first!)
 cp .githooks/pre-commit .githooks/pre-commit.backup

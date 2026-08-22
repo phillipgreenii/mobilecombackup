@@ -43,10 +43,10 @@ chmod +x "$SCRIPT_DIR/enhanced-pre-commit-hook.sh"
 chmod +x "$SCRIPT_DIR/quality-monitor.sh"
 
 # Create symlink for enhanced hook (optional - user can choose to use it)
-if [ -f "$PROJECT_ROOT/.githooks/pre-commit.enhanced" ]; then
+if [ -L "$PROJECT_ROOT/.githooks/pre-commit.enhanced" ] && [ -e "$PROJECT_ROOT/.githooks/pre-commit.enhanced" ]; then
     log_warning "Enhanced pre-commit hook already exists"
 else
-    ln -s "$SCRIPT_DIR/enhanced-pre-commit-hook.sh" "$PROJECT_ROOT/.githooks/pre-commit.enhanced"
+    ln -sfn ../scripts/enhanced-pre-commit-hook.sh "$PROJECT_ROOT/.githooks/pre-commit.enhanced"
     log_success "Enhanced pre-commit hook linked to .githooks/pre-commit.enhanced"
 fi
 
@@ -247,7 +247,7 @@ Enhanced pre-commit hook that:
 **Usage**:
 ```bash
 # Use enhanced hook for analyzer changes
-ln -sf scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
+ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
 
 # Or replace existing hook (backup first!)
 cp .githooks/pre-commit .githooks/pre-commit.backup
