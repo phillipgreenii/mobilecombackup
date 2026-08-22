@@ -1,8 +1,0 @@
-run = ["go", "test", "-race", "./..."]
-entrypoint = "cmd/mobilecombackup/main.go"
-
-[languages.go]
-pattern = "**/*.go"
-
-[languages.go.languageServer]
-start = "gopls"

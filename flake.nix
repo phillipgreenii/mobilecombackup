@@ -4,7 +4,7 @@
   description = "Tool for processing mobile phone backup files";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
     flake-parts.url = "github:hercules-ci/flake-parts";
     # Without this follows, flake-parts pulls its own nixpkgs-lib snapshot and the
     # lock grows a second, unaligned view of the same library.
