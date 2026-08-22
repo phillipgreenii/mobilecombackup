@@ -62,7 +62,7 @@ if [[ $(ls -1 "$repodir/attachments" | wc -l) -eq 0 ]]; then
 fi
 
 echo ">> Should have unprocessed contacts"
-if [[ $(yq --exit-status '.unprocessed[] | length > 0 ' "$repodir/contacts.yaml"  > /dev/null) -ne 0 ]]; then
+if ! yq --exit-status '.unprocessed[] | length > 0' "$repodir/contacts.yaml" >/dev/null; then
 	echo "ERROR: No unprocessed contacts found" >&2
 	exit 2
 fi
