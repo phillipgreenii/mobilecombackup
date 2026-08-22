@@ -5,6 +5,14 @@ mobilecombackup
 !mobilecombackup/
 
 #########
+# GO BUILD ARTIFACTS
+#
+# Compiled test binaries from `go test -c` (e.g. agents.test). Never tracked.
+# Safe as a broad glob: no tracked file in this repo ends in `.test`
+# (`git ls-files | grep -E '\.test$'` matched only the build artifact itself).
+*.test
+
+#########
 # VI
 #
 *.swp
