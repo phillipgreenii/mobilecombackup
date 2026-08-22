@@ -94,6 +94,70 @@ func TestCompletionProtocol_AnalyzeWorkspace_CleanRepo(t *testing.T) {
 	}
 }
 
+// TestCompletionProtocol_AnalyzeWorkspace_IgnoresAmbientGitEnv proves that
+// AnalyzeWorkspace's git subprocess targets the repository implied by cwd
+// even when GIT_DIR/GIT_INDEX_FILE are set in the ambient environment --
+// exactly what a real git hook invocation (e.g. the `git commit` that runs
+// this repo's own .githooks/pre-commit) exports into every child process.
+// Without gitCommandEnv() stripping those vars, git prioritizes them over
+// cwd-based repo discovery, so this test's "clean tempDir" assertion would
+// instead report on the OUTER repo (this checkout) and fail non-deterministically
+// depending on whether that outer repo happened to be dirty at the time.
+func TestCompletionProtocol_AnalyzeWorkspace_IgnoresAmbientGitEnv(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	oldDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(oldDir); err != nil {
+			t.Errorf("Failed to restore directory: %v", err)
+		}
+	}()
+
+	// Capture the OUTER repository's git dir (the real checkout this test
+	// runs from) before switching into the isolated temp repo below.
+	outerGitDirOut, err := exec.Command("git", "rev-parse", "--absolute-git-dir").Output()
+	if err != nil {
+		t.Fatalf("failed to resolve outer git dir: %v", err)
+	}
+	outerGitDir := strings.TrimSpace(string(outerGitDirOut))
+
+	tempDir := t.TempDir()
+	setupCleanGitRepo(t, tempDir)
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate the ambient environment a real git hook invocation exports,
+	// pointing at the OUTER repo (which -- unlike tempDir -- is very likely
+	// to be dirty, since committing is exactly what triggers a hook).
+	t.Setenv("GIT_DIR", outerGitDir)
+	t.Setenv("GIT_INDEX_FILE", filepath.Join(outerGitDir, "index"))
+	t.Setenv("GIT_WORK_TREE", oldDir)
+
+	cp := NewCompletionProtocol()
+	cp.LogActions = false
+
+	ws, err := cp.AnalyzeWorkspace()
+	if err != nil {
+		t.Fatalf("AnalyzeWorkspace failed: %v", err)
+	}
+
+	if !ws.IsClean {
+		t.Errorf("Expected clean workspace (tempDir) despite ambient GIT_DIR pointing at the outer repo; "+
+			"got dirty -- modified: %v, untracked: %v", ws.ModifiedFiles, ws.UntrackedFiles)
+	}
+
+	if ws.HasUncommittedChanges {
+		t.Error("Expected no uncommitted changes in the isolated tempDir repo")
+	}
+}
+
 func TestCompletionProtocol_AnalyzeWorkspace_WithChanges(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -336,33 +400,12 @@ func TestCompletionResult_Fields(t *testing.T) {
 	}
 }
 
-// gitEnvWithoutHookVars returns a copy of the current process environment
-// with all GIT_* variables removed. Git test helpers that shell out with
-// cmd.Dir set MUST use this as cmd.Env: cmd.Dir only changes the child
-// process's cwd, it does NOT override an inherited GIT_DIR / GIT_WORK_TREE /
-// GIT_INDEX_FILE, and git gives those env vars priority over cwd-based repo
-// discovery. Without this, running these tests as a descendant of a git
-// hook (e.g. a pre-commit hook, which is a child process of `git commit`)
-// causes every "isolated" git command here to silently operate on the real
-// repo that triggered the hook instead of the intended t.TempDir() fixture.
-func gitEnvWithoutHookVars() []string {
-	env := os.Environ()
-	filtered := make([]string, 0, len(env))
-	for _, e := range env {
-		if strings.HasPrefix(e, "GIT_") {
-			continue
-		}
-		filtered = append(filtered, e)
-	}
-	return filtered
-}
-
 // Helper function to set up a clean git repository
 func setupCleanGitRepo(t *testing.T, dir string) {
 	// Initialize git repo
 	cmd := exec.Command("git", "init")
 	cmd.Dir = dir
-	cmd.Env = gitEnvWithoutHookVars()
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to init git repo: %v", err)
 	}
@@ -370,14 +413,14 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 	// Configure git
 	cmd = exec.Command("git", "config", "user.email", "test@example.com")
 	cmd.Dir = dir
-	cmd.Env = gitEnvWithoutHookVars()
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to config git email: %v", err)
 	}
 
 	cmd = exec.Command("git", "config", "user.name", "Test User")
 	cmd.Dir = dir
-	cmd.Env = gitEnvWithoutHookVars()
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to config git name: %v", err)
 	}
@@ -390,14 +433,14 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 
 	cmd = exec.Command("git", "add", "test.txt")
 	cmd.Dir = dir
-	cmd.Env = gitEnvWithoutHookVars()
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to add test file: %v", err)
 	}
 
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
 	cmd.Dir = dir
-	cmd.Env = gitEnvWithoutHookVars()
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to commit: %v", err)
 	}

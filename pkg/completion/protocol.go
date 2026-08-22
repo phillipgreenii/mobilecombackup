@@ -120,12 +120,38 @@ func NewCompletionProtocol() *CompletionProtocol {
 	}
 }
 
+// gitCommandEnv returns a copy of the current process environment with any
+// ambient GIT_* variables (GIT_DIR, GIT_INDEX_FILE, GIT_WORK_TREE,
+// GIT_COMMON_DIR, GIT_OBJECT_DIRECTORY, etc.) removed.
+//
+// A git-invoking hook (including this repo's own .githooks/pre-commit) has
+// several of these exported into its environment by git itself. Without
+// stripping them, a git subprocess spawned by this package -- even one
+// explicitly chdir'd into an unrelated repository, as tests do via
+// t.TempDir() -- silently operates on the OUTER repository instead, because
+// git prioritizes GIT_DIR/GIT_INDEX_FILE over cwd-based discovery. Every git
+// subprocess this package spawns MUST use this helper so it always targets
+// the repository implied by the process's current working directory,
+// regardless of the caller's ambient environment.
+func gitCommandEnv() []string {
+	env := os.Environ()
+	filtered := make([]string, 0, len(env))
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "GIT_") {
+			continue
+		}
+		filtered = append(filtered, kv)
+	}
+	return filtered
+}
+
 // AnalyzeWorkspace examines the current workspace state
 func (cp *CompletionProtocol) AnalyzeWorkspace() (*WorkspaceState, error) {
 	ws := &WorkspaceState{}
 
 	// Check git status
 	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Env = gitCommandEnv()
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to check git status: %w", err)
@@ -313,6 +339,7 @@ func (cp *CompletionProtocol) CommitChanges(issueID, taskDescription string) err
 	for _, file := range filesToStage {
 		// #nosec G204 - Git commands with validated filenames from git status
 		cmd := exec.Command("git", "add", file)
+		cmd.Env = gitCommandEnv()
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to stage file %s: %w", file, err)
 		}
@@ -325,6 +352,7 @@ func (cp *CompletionProtocol) CommitChanges(issueID, taskDescription string) err
 	// Commit changes
 	// #nosec G204 - Git commit with sanitized message
 	cmd := exec.Command("git", "commit", "-m", commitMsg)
+	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
@@ -488,6 +516,7 @@ func (wc *WorkspaceCleanup) analyzeGitState() (*GitState, error) {
 
 	// Get current branch
 	cmd := exec.Command("git", "branch", "--show-current")
+	cmd.Env = gitCommandEnv()
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current branch: %w", err)
@@ -527,6 +556,7 @@ func (wc *WorkspaceCleanup) analyzeGitState() (*GitState, error) {
 // getConflictFiles returns list of files with merge conflicts
 func (wc *WorkspaceCleanup) getConflictFiles() []string {
 	cmd := exec.Command("git", "diff", "--name-only", "--diff-filter=U")
+	cmd.Env = gitCommandEnv()
 	output, err := cmd.Output()
 	if err != nil {
 		return nil
@@ -543,6 +573,7 @@ func (wc *WorkspaceCleanup) getConflictFiles() []string {
 // getAheadBehind returns how many commits ahead/behind the current branch is
 func (wc *WorkspaceCleanup) getAheadBehind() (int, int) {
 	cmd := exec.Command("git", "rev-list", "--count", "--left-right", "HEAD...@{upstream}")
+	cmd.Env = gitCommandEnv()
 	output, err := cmd.Output()
 	if err != nil {
 		return 0, 0
@@ -977,6 +1008,7 @@ func (wc *WorkspaceCleanup) buildChangesSummary(changes []CategorizedChange) []s
 // stageAllChanges stages all uncommitted changes
 func (wc *WorkspaceCleanup) stageAllChanges() error {
 	cmd := exec.Command("git", "add", "-A")
+	cmd.Env = gitCommandEnv()
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("git add failed: %w (output: %s)", err, string(output))
 	}
@@ -986,6 +1018,7 @@ func (wc *WorkspaceCleanup) stageAllChanges() error {
 // commitWithMessage commits staged changes with the given message
 func (wc *WorkspaceCleanup) commitWithMessage(message string) error {
 	cmd := exec.Command("git", "commit", "-m", message)
+	cmd.Env = gitCommandEnv()
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("git commit failed: %w (output: %s)", err, string(output))
 	}
