@@ -74,7 +74,7 @@ devbox shell
 These tools are defined in `devbox.json` and automatically available in the devbox shell:
 
 **Go Development:**
-- `go@1.24` - Go compiler and toolchain (specific version)
+- `go` - Go compiler and toolchain (version pinned by the `go@<version>` entry in `devbox.json`)
 - `gopls@latest` - Go language server for editor integration
 - `golangci-lint@latest` - Comprehensive Go linter
 - `gotestsum@latest` - Enhanced test output formatter
@@ -142,12 +142,12 @@ devbox run ccusage           # Monitor Claude Code usage
 
 **❌ NOT available outside devbox shell:**
 - `ast-grep`, `fd`, `ripgrep`, `gopls`, `golangci-lint`, `gotestsum`
-- Specific Go version (1.24)
+- The pinned Go version (see the `go@<version>` entry in `devbox.json`)
 - `jq`, `yq`, `viu`, `deno`, `uv`, `claude-code`
 - Project-specific `devbox run` commands
 
 **⚠️ May vary if used outside devbox:**
-- `go` - System version likely different from 1.24
+- `go` - System version likely different from the version pinned in `devbox.json`
 - `jq`, `yq` - May be installed globally but different versions
 
 ### Common Environment Issues
@@ -160,7 +160,7 @@ devbox run ccusage           # Monitor Claude Code usage
 - **Cause**: Not in devbox shell environment
 - **Solution**: Run `devbox shell` first
 
-**Issue: Wrong Go version (e.g., 1.21 instead of 1.24)**
+**Issue: Wrong Go version (system Go instead of the version pinned in `devbox.json`)**
 - **Cause**: Using system Go instead of devbox Go
 - **Solution**: Ensure you're in `devbox shell`, verify with `go version`
 
@@ -180,7 +180,7 @@ devbox run ccusage           # Monitor Claude Code usage
 echo $DEVBOX_SHELL_ENABLED  # Should output: 1
 
 # Method 2: Check Go version
-go version  # Should show: go version go1.24...
+go version  # Should match the `go@<version>` pin in devbox.json
 
 # Method 3: Check tool availability
 which ast-grep  # Should show path in /nix/store/...
@@ -198,7 +198,7 @@ gotestsum --version
 jq --version
 yq --version
 deno --version
-go version  # Should be 1.24
+go version  # Should match the `go@<version>` pin in devbox.json
 ```
 
 **List all available devbox commands:**
@@ -231,7 +231,7 @@ When you run `devbox shell`, these commands run automatically:
 - These are NOT system commands, they're devbox-provided
 
 **When you see `go build`, `go test`, etc:**
-- Assumes you're in `devbox shell` (using Go 1.24)
+- Assumes you're in `devbox shell` (using the Go version pinned in `devbox.json`)
 - Assumes `go mod tidy` has run (automatic in init hook)
 
 **When you see scripts like `bash scripts/something.sh`:**
@@ -246,7 +246,7 @@ When you run `devbox shell`, these commands run automatically:
 | **Enter devbox** | Any directory | `devbox shell` |
 | **Exit devbox** | In devbox shell | `exit` or Ctrl+D |
 | **Check if in devbox** | In shell | `echo $DEVBOX_SHELL_ENABLED` |
-| **Verify Go version** | In devbox | `go version` (should be 1.24) |
+| **Verify Go version** | In devbox | `go version` (should match the `go@` pin in `devbox.json`) |
 | **Run tests** | In devbox | `devbox run tests` |
 | **Validate docs** | In devbox | `devbox run validate-docs` |
 | **Full CI pipeline** | In devbox | `devbox run ci` |
@@ -259,7 +259,7 @@ When you run `devbox shell`, these commands run automatically:
 - **Reproducible**: Exact same environment on every machine
 - **Isolated**: Doesn't pollute global system with project tools
 - **Declarative**: Environment defined in `devbox.json`
-- **Versioned**: Specific tool versions guaranteed (e.g., Go 1.24)
+- **Versioned**: Specific tool versions guaranteed (pins declared in `devbox.json`)
 - **Fast**: Nix caching makes environment activation quick
 - **Comprehensive**: All 13 tools in one `devbox shell` command
 
