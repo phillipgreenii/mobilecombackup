@@ -316,6 +316,13 @@ func TestCompletionProtocol_CleanupTemporaryFiles(t *testing.T) {
 
 	cp := NewCompletionProtocol()
 	cp.LogActions = false
+	// Scope the scan to this test's own sandbox. The default TempDirs includes the
+	// absolute "/tmp/", and CleanupTemporaryFiles() calls os.Remove on every file it
+	// finds there, so with the default this test deletes unrelated files belonging to
+	// other processes -- including the go-build test binaries of packages running
+	// concurrently in the same `go test ./...` invocation, which then fail with
+	// "fork/exec /tmp/go-build.../<pkg>.test: no such file or directory".
+	cp.TempDirs = []string{"tmp/"}
 
 	// Verify temp file exists
 	if _, err := os.Stat(tempFile); os.IsNotExist(err) {
