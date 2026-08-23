@@ -13,25 +13,11 @@ Phase 5 provides comprehensive automation for quality monitoring, including:
 
 ## Components
 
-### 1. Enhanced Pre-commit Hooks
+### 1. Enhanced Pre-commit Hooks (removed)
 
-**File**: `scripts/enhanced-pre-commit-hook.sh`
+**File**: `scripts/enhanced-pre-commit-hook.sh` (removed — dead code, never wired into `core.hooksPath` execution, and hardcoded absolute paths to a single contributor's home directory made it non-functional for anyone else)
 
-Enhanced pre-commit hook that:
-- Detects analyzer package changes and runs comprehensive quality checks
-- Integrates with quality dashboard for real-time quality gate evaluation  
-- Provides performance tracking and detailed reporting
-- Falls back to standard hooks for non-analyzer changes
-
-**Usage**:
-```bash
-# Use enhanced hook for analyzer changes
-ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
-
-# Or replace existing hook (backup first!)
-cp .githooks/pre-commit .githooks/pre-commit.backup
-ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit
-```
+This was an opt-in alternative pre-commit hook with analyzer-specific quality dashboard checks. It was never installed automatically (git only executes the file literally named `pre-commit` in the hooks directory) and required a manual symlink swap that nothing in this repo performed by default. The active pre-commit hook remains `.githooks/pre-commit`.
 
 ### 2. GitHub Actions Quality Dashboard
 
@@ -197,11 +183,7 @@ Phase 5 builds on Phase 4 dashboard functionality:
 
 ### Upgrading Existing Hooks
 
-To upgrade existing pre-commit hooks:
-
-1. Backup current hooks: `cp .githooks/pre-commit .githooks/pre-commit.backup`
-2. Test enhanced hooks: `./scripts/enhanced-pre-commit-hook.sh`
-3. Replace when confident: `ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit`
+The enhanced pre-commit hook described above has been removed as dead code (see "Enhanced Pre-commit Hooks (removed)"). `.githooks/pre-commit` is the only supported pre-commit hook; there is no upgrade path to follow here anymore.
 
 ## Future Enhancements
 
