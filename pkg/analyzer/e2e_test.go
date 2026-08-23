@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -18,13 +19,15 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 		t.Skip("Skipping E2E tests in short mode")
 	}
 
+	// Create test project structure
+	testDir := t.TempDir()
+	binPath := filepath.Join(testDir, "mobilecombackup")
+
 	// Build the CLI first
-	if err := buildCLI(t); err != nil {
+	if err := buildCLI(t, binPath); err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
 	}
 
-	// Create test project structure
-	testDir := t.TempDir()
 	projectDir := filepath.Join(testDir, "test-project")
 	err := os.MkdirAll(projectDir, 0755)
 	if err != nil {
@@ -52,7 +55,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 
 	t.Run("DocSyncStatus_InitialState", func(t *testing.T) {
 		// Test doc-sync status before any initialization
-		output, err := runCLICommand(t, "doc-sync", "status")
+		output, err := runCLICommand(t, binPath, "doc-sync", "status")
 		if err != nil {
 			// Status might fail if not initialized, which is expected
 			t.Logf("Initial status command result: %v", err)
@@ -64,7 +67,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 
 	t.Run("DocSyncConfigShow_DefaultConfig", func(t *testing.T) {
 		// Test showing default configuration
-		output, err := runCLICommand(t, "doc-sync", "config", "show")
+		output, err := runCLICommand(t, binPath, "doc-sync", "config", "show")
 		if err != nil {
 			t.Logf("Config show command result: %v", err)
 			t.Logf("Output: %s", output)
@@ -83,7 +86,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 
 	t.Run("DocSyncConfigValidate", func(t *testing.T) {
 		// Test configuration validation
-		output, err := runCLICommand(t, "doc-sync", "config", "validate")
+		output, err := runCLICommand(t, binPath, "doc-sync", "config", "validate")
 		if err != nil {
 			t.Logf("Config validate command result: %v", err)
 			t.Logf("Output: %s", output)
@@ -95,7 +98,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 	t.Run("DocSyncStart_BasicExecution", func(t *testing.T) {
 		// Test doc-sync start with basic options
 		args := []string{"doc-sync", "start", "--dry-run", "--verbose"}
-		output, err := runCLICommand(t, args...)
+		output, err := runCLICommand(t, binPath, args...)
 
 		if err != nil {
 			t.Logf("Doc-sync start command result: %v", err)
@@ -128,7 +131,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 	t.Run("DocSyncJSON_OutputFormat", func(t *testing.T) {
 		// Test JSON output format
 		args := []string{"doc-sync", "start", "--dry-run", "--json"}
-		output, err := runCLICommand(t, args...)
+		output, err := runCLICommand(t, binPath, args...)
 
 		if err != nil {
 			t.Logf("JSON format command result: %v", err)
@@ -154,11 +157,13 @@ func TestDocSyncCommand_E2E_ConfigManagement(t *testing.T) {
 		t.Skip("Skipping E2E config tests in short mode")
 	}
 
-	if err := buildCLI(t); err != nil {
+	testDir := t.TempDir()
+	binPath := filepath.Join(testDir, "mobilecombackup")
+
+	if err := buildCLI(t, binPath); err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
 	}
 
-	testDir := t.TempDir()
 	projectDir := filepath.Join(testDir, "config-test-project")
 	err := os.MkdirAll(projectDir, 0755)
 	if err != nil {
@@ -192,7 +197,7 @@ func TestDocSyncCommand_E2E_ConfigManagement(t *testing.T) {
 
 		for key, value := range testConfigs {
 			// Set configuration
-			output, err := runCLICommand(t, "doc-sync", "config", "set", key, value)
+			output, err := runCLICommand(t, binPath, "doc-sync", "config", "set", key, value)
 			if err != nil {
 				t.Logf("Config set %s=%s failed: %v", key, value, err)
 				t.Logf("Output: %s", output)
@@ -202,7 +207,7 @@ func TestDocSyncCommand_E2E_ConfigManagement(t *testing.T) {
 		}
 
 		// Show all configuration
-		output, err := runCLICommand(t, "doc-sync", "config", "show")
+		output, err := runCLICommand(t, binPath, "doc-sync", "config", "show")
 		if err != nil {
 			t.Logf("Config show after set failed: %v", err)
 		} else {
@@ -220,17 +225,46 @@ func TestDocSyncCommand_E2E_ConfigManagement(t *testing.T) {
 
 // Helper functions
 
-func buildCLI(t *testing.T) error {
+// repoModuleRoot returns the absolute path to the module root (the
+// directory containing go.mod), located from this source file's own
+// location via runtime.Caller. Go sets a test binary's working directory to
+// the package directory, not the module root, so a package path relative to
+// that directory (e.g. "./cmd/mobilecombackup") never reaches the CLI's
+// actual location at the repository root - and these tests additionally
+// os.Chdir away from even that, so the module root must not be derived from
+// the process's current working directory at all.
+func repoModuleRoot(t *testing.T) string {
+	t.Helper()
+
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine current source file via runtime.Caller")
+	}
+
+	dir := filepath.Dir(thisFile)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatalf("failed to locate go.mod walking up from %s", filepath.Dir(thisFile))
+		}
+		dir = parent
+	}
+}
+
+func buildCLI(t *testing.T, binPath string) error {
 	t.Helper()
 
 	// Check if CLI is already built
-	if _, err := os.Stat("./mobilecombackup"); err == nil {
+	if _, err := os.Stat(binPath); err == nil {
 		return nil // Already exists
 	}
 
 	// Build the CLI
 	t.Logf("Building mobilecombackup CLI...")
-	cmd := exec.Command("go", "build", "-o", "mobilecombackup", "./cmd/mobilecombackup")
+	cmd := exec.Command("go", "build", "-o", binPath, filepath.Join(repoModuleRoot(t), "cmd", "mobilecombackup"))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Logf("Build output: %s", output)
@@ -241,10 +275,10 @@ func buildCLI(t *testing.T) error {
 	return nil
 }
 
-func runCLICommand(t *testing.T, args ...string) (string, error) {
+func runCLICommand(t *testing.T, binPath string, args ...string) (string, error) {
 	t.Helper()
 
-	cmd := exec.Command("./mobilecombackup", args...)
+	cmd := exec.Command(binPath, args...)
 	cmd.Env = append(os.Environ(), "NO_COLOR=1") // Disable color output for easier parsing
 
 	output, err := cmd.CombinedOutput()

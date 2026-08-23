@@ -4,9 +4,39 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// repoModuleRoot returns the absolute path to the module root (the
+// directory containing go.mod), located from this source file's own
+// location via runtime.Caller. Go sets a test binary's working directory to
+// the package directory, not the module root, so a package path relative to
+// that directory (e.g. "./cmd/mobilecombackup") never reaches the CLI's
+// actual location at the repository root - and these tests additionally
+// os.Chdir away from even that, so the module root must not be derived from
+// the process's current working directory at all.
+func repoModuleRoot(t *testing.T) string {
+	t.Helper()
+
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine current source file via runtime.Caller")
+	}
+
+	dir := filepath.Dir(thisFile)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatalf("failed to locate go.mod walking up from %s", filepath.Dir(thisFile))
+		}
+		dir = parent
+	}
+}
 
 // End-to-end integration tests for doc-sync command
 // These tests run the actual mobilecombackup CLI commands
@@ -53,14 +83,16 @@ func TestDocSyncCommand_E2E_Basic(t *testing.T) {
 			t.Fatalf("Failed to create build directory: %v", err)
 		}
 
-		// Go back to repo root for building
+		// Restore the original working directory. The build itself no longer
+		// depends on it (both path arguments below are absolute), but later
+		// steps in this test expect to be back in the project directory.
 		err = os.Chdir(oldDir)
 		if err != nil {
-			t.Fatalf("Failed to return to repo root: %v", err)
+			t.Fatalf("Failed to restore working directory: %v", err)
 		}
 
 		// Try building the CLI
-		buildCmd := exec.Command("go", "build", "-o", filepath.Join(buildDir, "mobilecombackup"), "./cmd/mobilecombackup")
+		buildCmd := exec.Command("go", "build", "-o", filepath.Join(buildDir, "mobilecombackup"), filepath.Join(repoModuleRoot(t), "cmd", "mobilecombackup"))
 		buildOutput, buildErr := buildCmd.CombinedOutput()
 
 		if buildErr != nil {
@@ -134,7 +166,8 @@ func TestDocSyncCommand_E2E_BuildAvailability(t *testing.T) {
 
 	t.Run("CheckBuildCapability", func(t *testing.T) {
 		// Try to build without running
-		cmd := exec.Command("go", "build", "-o", "/tmp/mobilecombackup-test", "./cmd/mobilecombackup")
+		binPath := filepath.Join(t.TempDir(), "mobilecombackup-test")
+		cmd := exec.Command("go", "build", "-o", binPath, filepath.Join(repoModuleRoot(t), "cmd", "mobilecombackup"))
 		output, err := cmd.CombinedOutput()
 
 		if err != nil {
@@ -166,10 +199,8 @@ func TestDocSyncCommand_E2E_BuildAvailability(t *testing.T) {
 
 		t.Logf("Build check successful - CLI can be built")
 
-		// Clean up test binary
-		if err := os.Remove("/tmp/mobilecombackup-test"); err != nil {
-			t.Logf("Warning: Failed to clean up test binary: %v", err)
-		}
+		// binPath lives under t.TempDir(), which the testing package removes
+		// automatically when the test ends - no explicit cleanup needed.
 	})
 }
 

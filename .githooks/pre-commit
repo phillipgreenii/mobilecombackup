@@ -147,20 +147,16 @@ else
         # commit, so a new regression can never be absorbed silently the way the old
         # message-matching carve-out absorbed every tests/security failure.
         #
-        # Tolerated today:
-        #   pkg/analyzer TestDocSyncCommand_E2E
-        #   pkg/analyzer TestDocSyncCommand_E2E_ConfigManagement
-        #     Their e2e helper builds the CLI from a path relative to the package
-        #     rather than the repository root, so the build always fails with
-        #     "stat <repo>/pkg/analyzer/cmd/mobilecombackup: directory not found".
-        #     Deterministic, and unrelated to whatever is being committed.
+        # Currently empty: no test is a known, tolerated failure. The two entries
+        # that used to live here (pkg/analyzer TestDocSyncCommand_E2E and
+        # TestDocSyncCommand_E2E_ConfigManagement, tolerated because their e2e
+        # helper built the CLI from a path relative to the package instead of the
+        # repository root) were fixed to build against the module root instead.
         #
-        # Remove an entry as soon as its test is fixed. Do NOT add flaky tests here:
-        # a load-sensitive failure should fail the gate and simply be re-run.
-        printf '%s\n' \
-            "pkg/analyzer TestDocSyncCommand_E2E" \
-            "pkg/analyzer TestDocSyncCommand_E2E_ConfigManagement" \
-            > "$known_failures_file"
+        # Add an entry here only for a deterministic, understood failure. Do NOT
+        # add flaky tests: a load-sensitive failure should fail the gate and
+        # simply be re-run.
+        : > "$known_failures_file"
 
         reported_failures=$(grep '^=== FAIL:' "$test_log" || true)
         unexpected_failures=$(printf '%s\n' "$reported_failures" \
