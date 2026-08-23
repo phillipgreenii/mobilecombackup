@@ -267,15 +267,20 @@ func TestCompletionProtocol_AnalyzeWorkspace_WithTempFiles(t *testing.T) {
 		t.Error("Expected temporary files")
 	}
 
+	// The default TempDirs entry is the repo-relative "tmp/" (never the
+	// absolute host "/tmp/" -- see NewCompletionProtocol), so
+	// scanTempDirectory walks it with that relative root and the resulting
+	// path is relative to cwd, not the absolute tempFile path on disk.
+	wantRelPath := filepath.Join("tmp", "temp.txt")
 	found := false
 	for _, f := range ws.TemporaryFiles {
-		if f == tempFile {
+		if f == wantRelPath {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("Expected to find temp file %s in list %v", tempFile, ws.TemporaryFiles)
+		t.Errorf("Expected to find temp file %s in list %v", wantRelPath, ws.TemporaryFiles)
 	}
 }
 
@@ -337,6 +342,74 @@ func TestCompletionProtocol_CleanupTemporaryFiles(t *testing.T) {
 	// Verify temp file is gone
 	if _, err := os.Stat(tempFile); !os.IsNotExist(err) {
 		t.Error("Temp file should be removed after cleanup")
+	}
+}
+
+// TestCompletionProtocol_CleanupTemporaryFiles_DoesNotTouchHostTmp pins the
+// fix for the bug where a default-constructed CompletionProtocol's TempDirs
+// included the literal absolute "/tmp/", so CleanupTemporaryFiles() -- which
+// unconditionally os.Remove()s every file AnalyzeWorkspace() finds under a
+// configured TempDirs entry -- would delete files belonging to unrelated
+// processes sharing the host's /tmp (observed: concurrent go test binaries,
+// and unrelated agent session tool-output files). A default-constructed
+// CompletionProtocol MUST NOT be able to remove a file outside the
+// repository working tree it was pointed at.
+func TestCompletionProtocol_CleanupTemporaryFiles_DoesNotTouchHostTmp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	// Create temporary git repository
+	tempDir := t.TempDir()
+	setupCleanGitRepo(t, tempDir)
+
+	// Change to temp directory
+	oldDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(oldDir); err != nil {
+			t.Errorf("Failed to restore directory: %v", err)
+		}
+	}()
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Seed a file directly under the HOST /tmp that this protocol instance
+	// did not create -- standing in for another process's file (e.g. a
+	// concurrently running `go test` binary, or another agent session's
+	// tool output). Use a unique name so a stray leftover from a previous
+	// failed run of this test can't be mistaken for a passing result.
+	hostFile, err := os.CreateTemp("", "tc-ip25-unrelated-*.txt")
+	if err != nil {
+		t.Fatalf("failed to seed host /tmp file: %v", err)
+	}
+	hostFilePath := hostFile.Name()
+	if _, err := hostFile.WriteString("belongs to an unrelated process"); err != nil {
+		_ = hostFile.Close()
+		t.Fatalf("failed to write host /tmp file: %v", err)
+	}
+	if err := hostFile.Close(); err != nil {
+		t.Fatalf("failed to close host /tmp file: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Remove(hostFilePath)
+	})
+
+	// A default-constructed protocol -- exactly what production call sites
+	// use -- must not scan/remove anything under the host /tmp.
+	cp := NewCompletionProtocol()
+	cp.LogActions = false
+
+	if err := cp.CleanupTemporaryFiles(); err != nil {
+		t.Fatalf("CleanupTemporaryFiles failed: %v", err)
+	}
+
+	if _, err := os.Stat(hostFilePath); err != nil {
+		t.Errorf("expected unrelated host /tmp file %s to survive cleanup, but it is gone: %v", hostFilePath, err)
 	}
 }
 

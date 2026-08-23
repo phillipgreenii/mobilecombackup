@@ -112,9 +112,21 @@ func NewCompletionProtocol() *CompletionProtocol {
 			"devbox run linter",
 			"devbox run build-cli",
 		},
+		// TempDirs MUST NOT default to "/tmp/" (or any other absolute,
+		// host-shared directory). CleanupTemporaryFiles() unconditionally
+		// os.Remove()s every file AnalyzeWorkspace() classifies as
+		// "temporary" here, and "/tmp" is shared by every process on the
+		// host -- a default-constructed CompletionProtocol previously
+		// deleted concurrent Go test binaries and unrelated tool-output
+		// files out of the host /tmp. The default MUST stay scoped to
+		// paths relative to the repository working tree (see CLAUDE.md:
+		// "Create temp files in `tmp/` directory (not `/tmp`)"). Callers
+		// that genuinely need an absolute/shared temp dir scanned may opt
+		// in explicitly via NewWorkspaceCleanup's tempDirs parameter or by
+		// setting TempDirs directly -- that is a deliberate caller choice,
+		// not a shipped default.
 		TempDirs: []string{
 			"tmp/",
-			"/tmp/",
 		},
 		LogActions: true,
 	}
