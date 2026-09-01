@@ -101,7 +101,8 @@ func TestInfoCommandEmptyRepositoryJSON(t *testing.T) {
 	expectedJSONContent := []string{
 		`"calls": {}`,
 		`"sms": {}`,
-		`"contacts": 0`,
+		`"contacts": {`,
+		`"count": 0`,
 		`"validation_ok": true`,
 	}
 

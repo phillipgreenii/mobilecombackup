@@ -54,30 +54,14 @@ func init() {
 
 // ValidationResult represents the result of validation
 type ValidationResult struct {
-	Valid         bool                   `json:"valid"`
-	Violations    []validation.Violation `json:"violations"`
-	OrphanRemoval *OrphanRemovalResult   `json:"orphan_removal,omitempty"`
-	AutofixReport *autofix.Report        `json:"autofix_report,omitempty"`
+	Valid         bool                             `json:"valid"`
+	Violations    []validation.Violation           `json:"violations"`
+	OrphanRemoval *attachments.OrphanRemovalResult `json:"orphan_removal,omitempty"`
+	AutofixReport *autofix.Report                  `json:"autofix_report,omitempty"`
 }
 
 // PathValidator for secure path operations
 var pathValidator *security.PathValidator
-
-// OrphanRemovalResult represents the result of orphan attachment removal
-type OrphanRemovalResult struct {
-	AttachmentsScanned int             `json:"attachments_scanned"`
-	OrphansFound       int             `json:"orphans_found"`
-	OrphansRemoved     int             `json:"orphans_removed"`
-	BytesFreed         int64           `json:"bytes_freed"`
-	RemovalFailures    int             `json:"removal_failures"`
-	FailedRemovals     []FailedRemoval `json:"failed_removals,omitempty"`
-}
-
-// FailedRemoval represents a single failed removal
-type FailedRemoval struct {
-	Path  string `json:"path"`
-	Error string `json:"error"`
-}
 
 // ProgressReporter provides progress updates during validation
 type ProgressReporter interface {
@@ -286,10 +270,14 @@ func processAutofix(
 
 // processOrphanRemoval handles orphan attachment removal
 func processOrphanRemoval(result *ValidationResult, absPath string, reporter ProgressReporter) error {
-	smsReader := sms.NewXMLSMSReader(absPath)
-	attachmentReader := attachments.NewAttachmentManager(absPath, afero.NewOsFs())
+	reporter.StartPhase("orphan attachment removal")
+	defer reporter.CompletePhase()
 
-	orphanResult, err := removeOrphanAttachmentsWithProgress(smsReader, attachmentReader, reporter)
+	smsReader := sms.NewXMLSMSReader(absPath)
+	attachmentMgr := attachments.NewAttachmentManager(absPath, afero.NewOsFs())
+
+	remover := attachments.NewOrphanRemover(smsReader, attachmentMgr, validateDryRun)
+	orphanResult, err := remover.RemoveOrphans(context.Background())
 	if err != nil {
 		PrintError("Orphan removal failed: %v", err)
 		os.Exit(2)
@@ -446,199 +434,6 @@ func (r *AutofixProgressReporter) ReportProgress(current, total int) {
 	}
 }
 
-func removeOrphanAttachmentsWithProgress(
-	smsReader sms.Reader,
-	attachmentReader *attachments.AttachmentManager,
-	reporter ProgressReporter,
-) (*OrphanRemovalResult, error) {
-	reporter.StartPhase("orphan attachment removal")
-	defer reporter.CompletePhase()
-
-	orphanedAttachments, totalCount, err := findOrphanedAttachments(smsReader, attachmentReader)
-	if err != nil {
-		return nil, err
-	}
-
-	result := createOrphanRemovalResult(totalCount, orphanedAttachments)
-
-	if validateDryRun {
-		return handleDryRunOrphanRemoval(result, orphanedAttachments), nil
-	}
-
-	return executeOrphanRemoval(result, orphanedAttachments, attachmentReader), nil
-}
-
-// findOrphanedAttachments finds and returns orphaned attachments
-func findOrphanedAttachments(
-	smsReader sms.Reader, attachmentReader *attachments.AttachmentManager,
-) ([]*attachments.Attachment, int, error) {
-	// Get all attachment references from SMS messages
-	referencedHashes, err := smsReader.GetAllAttachmentRefs(context.Background())
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get attachment references: %w", err)
-	}
-
-	// Find orphaned attachments
-	orphanedAttachments, err := attachmentReader.FindOrphanedAttachments(referencedHashes)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to find orphaned attachments: %w", err)
-	}
-
-	// Count total attachments scanned
-	totalCount := 0
-	err = attachmentReader.StreamAttachments(func(*attachments.Attachment) error {
-		totalCount++
-		return nil
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count attachments: %w", err)
-	}
-
-	return orphanedAttachments, totalCount, nil
-}
-
-// createOrphanRemovalResult creates an initial orphan removal result
-func createOrphanRemovalResult(totalCount int, orphanedAttachments []*attachments.Attachment) *OrphanRemovalResult {
-	return &OrphanRemovalResult{
-		AttachmentsScanned: totalCount,
-		OrphansFound:       len(orphanedAttachments),
-		OrphansRemoved:     0,
-		BytesFreed:         0,
-		RemovalFailures:    0,
-		FailedRemovals:     []FailedRemoval{},
-	}
-}
-
-// handleDryRunOrphanRemoval handles dry run mode for orphan removal
-func handleDryRunOrphanRemoval(
-	result *OrphanRemovalResult, orphanedAttachments []*attachments.Attachment,
-) *OrphanRemovalResult {
-	// Calculate potential bytes freed
-	for _, attachment := range orphanedAttachments {
-		result.BytesFreed += attachment.Size
-	}
-	result.OrphansRemoved = len(orphanedAttachments) // Would be removed
-	return result
-}
-
-// executeOrphanRemoval executes the actual removal of orphaned attachments
-func executeOrphanRemoval(
-	result *OrphanRemovalResult,
-	orphanedAttachments []*attachments.Attachment,
-	attachmentReader *attachments.AttachmentManager,
-) *OrphanRemovalResult {
-	repoPath := attachmentReader.GetRepoPath()
-	emptyDirs := make(map[string]bool) // Track directories that might become empty
-
-	// SECURITY FIX: Initialize path validator for secure directory operations
-	if pathValidator == nil {
-		pathValidator = security.NewPathValidator(repoPath)
-	}
-
-	for _, attachment := range orphanedAttachments {
-		removeOrphanedAttachment(attachment, repoPath, result, emptyDirs)
-	}
-
-	// Clean up empty directories - with path validation
-	for dir := range emptyDirs {
-		// SECURITY FIX: Validate directory path before cleanup
-		safeDirPath, err := pathValidator.JoinAndValidate(dir)
-		if err != nil {
-			// Skip cleanup for invalid directory paths
-			continue
-		}
-		cleanupEmptyDirectory(safeDirPath)
-	}
-
-	return result
-}
-
-// removeOrphanedAttachment removes a single orphaned attachment
-func removeOrphanedAttachment(
-	attachment *attachments.Attachment,
-	repoPath string,
-	result *OrphanRemovalResult,
-	emptyDirs map[string]bool,
-) {
-	// SECURITY FIX: Use PathValidator to prevent path traversal attacks
-	// Initialize path validator if not already done
-	if pathValidator == nil {
-		pathValidator = security.NewPathValidator(repoPath)
-	}
-
-	// Securely construct the full path for attachment removal
-	// Since attachment paths come from AttachmentManager (trusted source),
-	// we can safely join them with the repo path
-	var fullPath string
-
-	if filepath.IsAbs(attachment.Path) {
-		fullPath = attachment.Path
-	} else {
-		fullPath = filepath.Join(repoPath, attachment.Path)
-	}
-
-	// Validate that the final path is within the repository bounds
-	absRepoPath, err := filepath.Abs(repoPath)
-	if err != nil {
-		result.RemovalFailures++
-		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
-			Path:  attachment.Path,
-			Error: fmt.Sprintf("failed to resolve repo path: %v", err),
-		})
-		return
-	}
-
-	absFullPath, err := filepath.Abs(fullPath)
-	if err != nil {
-		result.RemovalFailures++
-		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
-			Path:  attachment.Path,
-			Error: fmt.Sprintf("failed to resolve attachment path: %v", err),
-		})
-		return
-	}
-
-	// Ensure the path is within repository boundaries
-	if !strings.HasPrefix(absFullPath+string(filepath.Separator), absRepoPath+string(filepath.Separator)) {
-		result.RemovalFailures++
-		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
-			Path:  attachment.Path,
-			Error: fmt.Sprintf("path %s is outside repository %s", absFullPath, absRepoPath),
-		})
-		return
-	}
-
-	// Track the directory for potential cleanup
-	dir := filepath.Dir(attachment.Path)
-	emptyDirs[dir] = true
-
-	// Attempt to remove the file
-	if err := os.Remove(absFullPath); err != nil {
-		result.RemovalFailures++
-		result.FailedRemovals = append(result.FailedRemovals, FailedRemoval{
-			Path:  attachment.Path,
-			Error: err.Error(),
-		})
-	} else {
-		result.OrphansRemoved++
-		result.BytesFreed += attachment.Size
-	}
-}
-
-// cleanupEmptyDirectory removes a directory if it's empty
-func cleanupEmptyDirectory(dirPath string) {
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		return // Can't read directory, skip cleanup
-	}
-
-	if len(entries) == 0 {
-		// Directory is empty, try to remove it
-		_ = os.Remove(dirPath)
-		// Note: We ignore errors here as cleanup is best-effort
-	}
-}
-
 func outputJSONResult(result ValidationResult) error {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
@@ -681,7 +476,7 @@ func outputTextResult(result ValidationResult, repoPath string) {
 }
 
 // displayOrphanRemovalResults displays the results of orphan attachment removal
-func displayOrphanRemovalResults(orphanRemoval *OrphanRemovalResult, isDryRun bool, quiet bool) {
+func displayOrphanRemovalResults(orphanRemoval *attachments.OrphanRemovalResult, isDryRun bool, quiet bool) {
 	if orphanRemoval == nil {
 		return
 	}
@@ -699,7 +494,7 @@ func displayOrphanRemovalResults(orphanRemoval *OrphanRemovalResult, isDryRun bo
 }
 
 // displayOrphanRemovalDryRun displays dry-run results for orphan removal
-func displayOrphanRemovalDryRun(orphanRemoval *OrphanRemovalResult, quiet bool) {
+func displayOrphanRemovalDryRun(orphanRemoval *attachments.OrphanRemovalResult, quiet bool) {
 	if !quiet {
 		fmt.Printf("  Attachments scanned: %d\n", orphanRemoval.AttachmentsScanned)
 		fmt.Printf("  Orphans found: %d\n", orphanRemoval.OrphansFound)
@@ -710,7 +505,7 @@ func displayOrphanRemovalDryRun(orphanRemoval *OrphanRemovalResult, quiet bool) 
 }
 
 // displayOrphanRemovalActual displays actual results for orphan removal
-func displayOrphanRemovalActual(orphanRemoval *OrphanRemovalResult, quiet bool) {
+func displayOrphanRemovalActual(orphanRemoval *attachments.OrphanRemovalResult, quiet bool) {
 	if !quiet {
 		fmt.Printf("  Attachments scanned: %d\n", orphanRemoval.AttachmentsScanned)
 		fmt.Printf("  Orphans found: %d\n", orphanRemoval.OrphansFound)
@@ -729,11 +524,8 @@ func displayOrphanRemovalActual(orphanRemoval *OrphanRemovalResult, quiet bool) 
 
 // displayViolationsByType groups and displays violations by type
 func displayViolationsByType(violations []validation.Violation) {
-	// Group violations by type
-	violationsByType := make(map[string][]validation.Violation)
-	for _, v := range violations {
-		violationsByType[string(v.Type)] = append(violationsByType[string(v.Type)], v)
-	}
+	// Group violations by type using helper
+	violationsByType := GroupViolationsByType(violations)
 
 	// Display violations by type
 	for vType, violations := range violationsByType {

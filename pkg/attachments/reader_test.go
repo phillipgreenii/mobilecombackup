@@ -1,7 +1,9 @@
 package attachments
 
 import (
+	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -645,4 +647,413 @@ func TestAttachmentManager_GetAttachmentStats(t *testing.T) {
 	if stats.TotalSize != expectedTotalSize {
 		t.Errorf("Expected total size %d, got %d", expectedTotalSize, stats.TotalSize)
 	}
+}
+
+// Test Context functions for proper cancellation handling
+
+func TestAttachmentManager_GetAttachmentContext(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	// Create test attachment
+	content := []byte("test content for context")
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	attachmentPath := filepath.Join(attachmentDir, hash)
+	err = os.WriteFile(attachmentPath, content, 0600)
+	if err != nil {
+		t.Fatalf("Failed to write attachment file: %v", err)
+	}
+
+	metadataPath := attachmentPath + ".meta"
+	metadataContent := fmt.Sprintf(`hash: %s
+size: %d
+mime_type: text/plain
+filename: test.txt
+`, hash, len(content))
+	err = os.WriteFile(metadataPath, []byte(metadataContent), 0600)
+	if err != nil {
+		t.Fatalf("Failed to write metadata file: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		attachment, err := manager.GetAttachmentContext(ctx, hash)
+		if err != nil {
+			t.Fatalf("GetAttachmentContext failed: %v", err)
+		}
+		if attachment.Hash != hash {
+			t.Errorf("Expected hash %s, got %s", hash, attachment.Hash)
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+		_, err := manager.GetAttachmentContext(ctx, hash)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_ReadAttachmentContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	content := []byte("test content for read context")
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	attachmentPath := filepath.Join(attachmentDir, hash)
+	err = os.WriteFile(attachmentPath, content, 0600)
+	if err != nil {
+		t.Fatalf("Failed to write attachment file: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		data, err := manager.ReadAttachmentContext(ctx, hash)
+		if err != nil {
+			t.Fatalf("ReadAttachmentContext failed: %v", err)
+		}
+		if string(data) != string(content) {
+			t.Errorf("Expected content %s, got %s", content, data)
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := manager.ReadAttachmentContext(ctx, hash)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_AttachmentExistsContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	content := []byte("test content for exists context")
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	attachmentPath := filepath.Join(attachmentDir, hash)
+	err = os.WriteFile(attachmentPath, content, 0600)
+	if err != nil {
+		t.Fatalf("Failed to write attachment file: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		exists, err := manager.AttachmentExistsContext(ctx, hash)
+		if err != nil {
+			t.Fatalf("AttachmentExistsContext failed: %v", err)
+		}
+		if !exists {
+			t.Errorf("Expected attachment to exist")
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := manager.AttachmentExistsContext(ctx, hash)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_ListAttachmentsContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	// Create test attachments
+	testContents := [][]byte{
+		[]byte("content1"),
+		[]byte("content2"),
+	}
+
+	for _, content := range testContents {
+		hasher := sha256.New()
+		hasher.Write(content)
+		hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+		attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+		err := os.MkdirAll(attachmentDir, 0750)
+		if err != nil {
+			t.Fatalf("Failed to create attachment directory: %v", err)
+		}
+
+		attachmentPath := filepath.Join(attachmentDir, hash)
+		err = os.WriteFile(attachmentPath, content, 0600)
+		if err != nil {
+			t.Fatalf("Failed to write attachment file: %v", err)
+		}
+
+		metadataPath := attachmentPath + ".meta"
+		metadataContent := fmt.Sprintf(`hash: %s
+size: %d
+`, hash, len(content))
+		err = os.WriteFile(metadataPath, []byte(metadataContent), 0600)
+		if err != nil {
+			t.Fatalf("Failed to write metadata file: %v", err)
+		}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		attachments, err := manager.ListAttachmentsContext(ctx)
+		if err != nil {
+			t.Fatalf("ListAttachmentsContext failed: %v", err)
+		}
+		if len(attachments) != 2 {
+			t.Errorf("Expected 2 attachments, got %d", len(attachments))
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := manager.ListAttachmentsContext(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_StreamAttachmentsContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	// Create test attachment
+	content := []byte("stream test content")
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	attachmentPath := filepath.Join(attachmentDir, hash)
+	err = os.WriteFile(attachmentPath, content, 0600)
+	if err != nil {
+		t.Fatalf("Failed to write attachment file: %v", err)
+	}
+
+	metadataPath := attachmentPath + ".meta"
+	metadataContent := fmt.Sprintf(`hash: %s
+size: %d
+`, hash, len(content))
+	err = os.WriteFile(metadataPath, []byte(metadataContent), 0600)
+	if err != nil {
+		t.Fatalf("Failed to write metadata file: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		count := 0
+		err := manager.StreamAttachmentsContext(ctx, func(a *Attachment) error {
+			count++
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("StreamAttachmentsContext failed: %v", err)
+		}
+		if count != 1 {
+			t.Errorf("Expected 1 attachment, got %d", count)
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		err := manager.StreamAttachmentsContext(ctx, func(a *Attachment) error {
+			return nil
+		})
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_VerifyAttachmentContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	content := []byte("verify test content")
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	attachmentPath := filepath.Join(attachmentDir, hash)
+	err = os.WriteFile(attachmentPath, content, 0600)
+	if err != nil {
+		t.Fatalf("Failed to write attachment file: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		valid, err := manager.VerifyAttachmentContext(ctx, hash)
+		if err != nil {
+			t.Fatalf("VerifyAttachmentContext failed: %v", err)
+		}
+		if !valid {
+			t.Errorf("Expected attachment to be valid")
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := manager.VerifyAttachmentContext(ctx, hash)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_FindOrphanedAttachmentsContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	// Create test attachments
+	testContents := [][]byte{
+		[]byte("orphan1"),
+		[]byte("orphan2"),
+		[]byte("referenced"),
+	}
+
+	hashes := make([]string, 0, len(testContents))
+	for _, content := range testContents {
+		hasher := sha256.New()
+		hasher.Write(content)
+		hash := fmt.Sprintf("%x", hasher.Sum(nil))
+		hashes = append(hashes, hash)
+
+		attachmentDir := filepath.Join(tempDir, "attachments", hash[:2])
+		err := os.MkdirAll(attachmentDir, 0750)
+		if err != nil {
+			t.Fatalf("Failed to create attachment directory: %v", err)
+		}
+
+		attachmentPath := filepath.Join(attachmentDir, hash)
+		err = os.WriteFile(attachmentPath, content, 0600)
+		if err != nil {
+			t.Fatalf("Failed to write attachment file: %v", err)
+		}
+
+		metadataPath := attachmentPath + ".meta"
+		metadataContent := fmt.Sprintf(`hash: %s
+size: %d
+`, hash, len(content))
+		err = os.WriteFile(metadataPath, []byte(metadataContent), 0600)
+		if err != nil {
+			t.Fatalf("Failed to write metadata file: %v", err)
+		}
+	}
+
+	referencedHashes := map[string]bool{
+		hashes[2]: true, // Only last one is referenced
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		orphaned, err := manager.FindOrphanedAttachmentsContext(ctx, referencedHashes)
+		if err != nil {
+			t.Fatalf("FindOrphanedAttachmentsContext failed: %v", err)
+		}
+		if len(orphaned) != 2 {
+			t.Errorf("Expected 2 orphaned attachments, got %d", len(orphaned))
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := manager.FindOrphanedAttachmentsContext(ctx, referencedHashes)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
+}
+
+func TestAttachmentManager_ValidateAttachmentStructureContext(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	manager := NewAttachmentManager(tempDir, afero.NewOsFs())
+
+	// Create valid attachment structure
+	attachmentDir := filepath.Join(tempDir, "attachments")
+	err := os.MkdirAll(attachmentDir, 0750)
+	if err != nil {
+		t.Fatalf("Failed to create attachment directory: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		err := manager.ValidateAttachmentStructureContext(ctx)
+		if err != nil {
+			t.Fatalf("ValidateAttachmentStructureContext failed: %v", err)
+		}
+	})
+
+	t.Run("context_cancelled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		err := manager.ValidateAttachmentStructureContext(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected context.Canceled error, got %v", err)
+		}
+	})
 }
