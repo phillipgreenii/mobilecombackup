@@ -133,23 +133,29 @@ func init() {
 	agentsCmd.AddCommand(showHierarchyCmd)
 
 	// Global flags for agents command
-	agentsCmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", ".claude/agents/templates", "Directory containing agent templates")
+	agentsCmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", ".claude/agents/templates",
+		"Directory containing agent templates")
 	agentsCmd.PersistentFlags().StringVar(&agentsDir, "agents-dir", ".claude/agents", "Directory containing agent definitions")
 	agentsCmd.PersistentFlags().BoolVar(&agentsOutputJSON, "json", false, "Output results as JSON")
 
 	// Flags for validate command
-	validateTemplatesCmd.Flags().StringVar(&templatesDir, "templates-dir", ".claude/agents/templates", "Directory containing templates to validate")
+	validateTemplatesCmd.Flags().StringVar(&templatesDir, "templates-dir", ".claude/agents/templates",
+		"Directory containing templates to validate")
 	validateTemplatesCmd.Flags().StringVar(&agentsDir, "agents-dir", ".claude/agents", "Directory containing agents to validate")
 
 	// Flags for generate command
-	generateAgentCmd.Flags().StringVar(&templateName, "template", "", "Template name to use for generation (required unless --interactive)")
+	generateAgentCmd.Flags().StringVar(&templateName, "template", "",
+		"Template name to use for generation (required unless --interactive)")
 	generateAgentCmd.Flags().StringVar(&agentName, "name", "", "Name for the generated agent (required unless --interactive)")
-	generateAgentCmd.Flags().StringVar(&agentDescription, "description", "", "Description for the generated agent (required unless --interactive)")
-	generateAgentCmd.Flags().StringVar(&outputPath, "output-path", "", "Output file path for generated agent (required unless --interactive)")
+	generateAgentCmd.Flags().StringVar(&agentDescription, "description", "",
+		"Description for the generated agent (required unless --interactive)")
+	generateAgentCmd.Flags().StringVar(&outputPath, "output-path", "",
+		"Output file path for generated agent (required unless --interactive)")
 	generateAgentCmd.Flags().StringVar(&overrideModel, "override-model", "", "Override the model setting")
 	generateAgentCmd.Flags().StringVar(&overrideColor, "override-color", "", "Override the color setting")
 	generateAgentCmd.Flags().StringSliceVar(&additionalTools, "additional-tools", []string{}, "Additional tools to add to the agent")
-	generateAgentCmd.Flags().StringSliceVar(&toolsOverride, "tools-override", []string{}, "Override all tools (replaces template tools)")
+	generateAgentCmd.Flags().StringSliceVar(&toolsOverride, "tools-override", []string{},
+		"Override all tools (replaces template tools)")
 	generateAgentCmd.Flags().StringVar(&customContent, "custom-content", "", "Custom markdown content for the agent")
 	generateAgentCmd.Flags().BoolVar(&interactive, "interactive", false, "Use interactive mode for agent generation")
 
@@ -288,7 +294,7 @@ func outputTemplatesJSON(templates map[string]string) error {
 		Description string `json:"description"`
 	}
 
-	var templateList []templateInfo
+	templateList := make([]templateInfo, 0, len(templates))
 	for name, desc := range templates {
 		templateList = append(templateList, templateInfo{
 			Name:        name,

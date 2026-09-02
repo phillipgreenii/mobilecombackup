@@ -233,44 +233,44 @@ func (mm *MigrationManager) executeMigration(
 // detectMimeTypeFromContent performs basic MIME type detection
 func detectMimeTypeFromContent(data []byte, _ string) string {
 	if len(data) == 0 {
-		return "application/octet-stream"
+		return MimeTypeOctetStream
 	}
 
 	// Check for JPEG signature (3 bytes minimum)
 	if len(data) >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
-		return "image/jpeg"
+		return MimeTypeJPEG
 	}
 
 	// Check for PNG signature (4 bytes minimum)
 	if len(data) >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 {
-		return "image/png"
+		return MimeTypePNG
 	}
 
 	// Check for GIF signature (6 bytes minimum)
 	if len(data) >= 6 {
 		if strings.HasPrefix(string(data[:6]), "GIF87a") || strings.HasPrefix(string(data[:6]), "GIF89a") {
-			return "image/gif"
+			return MimeTypeGIF
 		}
 	}
 
 	if len(data) >= 4 {
 		// PDF signature
 		if strings.HasPrefix(string(data[:4]), "%PDF") {
-			return "application/pdf"
+			return MimeTypePDF
 		}
 		// ZIP signature (also used by other formats)
 		if data[0] == 0x50 && data[1] == 0x4B && data[2] == 0x03 && data[3] == 0x04 {
-			return "application/zip"
+			return MimeTypeZIP
 		}
 	}
 
 	// Check for text content
 	if isTextContent(data) {
-		return "text/plain"
+		return MimeTypeTextPlain
 	}
 
 	// Default to binary
-	return "application/octet-stream"
+	return MimeTypeOctetStream
 }
 
 // isTextContent checks if data appears to be text

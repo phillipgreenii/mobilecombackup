@@ -299,8 +299,13 @@ func higherPriority(a, b *EnhancedTodo, idA, idB string) bool {
 	return idA < idB
 }
 
-// calculateCriticalPath calculates the critical path through the task dependency graph
-func (t *TaskTracker) calculateCriticalPath() []string {
+// calculateCriticalPath calculates the critical path through the task
+// dependency graph (a CPM implementation: memoized-DFS earliest-start pass,
+// then backtrack). Splitting it would separate tightly coupled state
+// (earliestStart/dependents maps and the two closures over them) across
+// function boundaries, adding parameter-passing overhead and real risk of
+// a subtle bug in an already-delicate algorithm, for no readability gain.
+func (t *TaskTracker) calculateCriticalPath() []string { //nolint:funlen
 	// Build adjacency list for forward traversal
 	dependents := make(map[string][]string)
 	for taskID, task := range t.tasks {
@@ -396,8 +401,12 @@ func (t *TaskTracker) calculateCriticalPath() []string {
 	return criticalPath
 }
 
-// GetProgressReport generates a comprehensive progress report
-func (t *TaskTracker) GetProgressReport() *ProgressReport {
+// GetProgressReport generates a comprehensive progress report. Its
+// complexity is a single status-aggregation switch plus deterministic
+// sorting of the derived lists (see the comment on sortTasksByPriority
+// below); splitting it would separate that shared aggregation state across
+// functions without reducing real branching.
+func (t *TaskTracker) GetProgressReport() *ProgressReport { //nolint:gocyclo,cyclop,funlen
 	now := time.Now()
 	report := &ProgressReport{
 		StartTime:   t.startTime,

@@ -41,7 +41,9 @@ func NewMarkdownAnalyzer(logger Logger) *MarkdownAnalyzer {
 func (ma *MarkdownAnalyzer) ParseMarkdown(filePath string) types.Result[[]DocSection] { //nolint:funlen
 	ma.logger.Debug("Parsing markdown file", "file", filePath)
 
-	file, err := os.Open(filePath)
+	// filePath is discovered by walking the documentation tree being
+	// analyzed, not external input.
+	file, err := os.Open(filePath) //nolint:gosec
 	if err != nil {
 		return types.NewResultError[[]DocSection](fmt.Errorf("failed to open file %s: %w", filePath, err))
 	}
@@ -197,7 +199,9 @@ func (ma *MarkdownAnalyzer) ValidateLinks(docFiles []string) types.Result[[]Inco
 	linkRegex := regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 
 	for _, docFile := range docFiles {
-		file, err := os.Open(docFile)
+		// docFile is discovered by walking the documentation tree being
+		// analyzed, not external input.
+		file, err := os.Open(docFile) //nolint:gosec
 		if err != nil {
 			ma.logger.Warn("Failed to open file for link validation", "file", docFile, "error", err)
 			continue
@@ -1963,7 +1967,7 @@ func (ss *DefaultStateSynchronizer) runDocumentScanner(config *SyncConfig) types
 	// Publish agent start event
 	agentEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.started",
+		Type:      EventTypeAgentStarted,
 		Source:    "doc-scanner",
 		Data:      map[string]interface{}{"config": scanConfig},
 		Timestamp: time.Now().UnixMilli(),
@@ -1991,7 +1995,7 @@ func (ss *DefaultStateSynchronizer) runDocumentScanner(config *SyncConfig) types
 	// Publish agent completion event
 	completionEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.completed",
+		Type:      EventTypeAgentCompleted,
 		Source:    "doc-scanner",
 		Data:      map[string]interface{}{"duration": duration, "files_processed": len(currentState.FileStates)},
 		Timestamp: time.Now().UnixMilli(),
@@ -2010,7 +2014,7 @@ func (ss *DefaultStateSynchronizer) runCodeAnalyzer(config *SyncConfig) types.Re
 	// Publish agent start event
 	agentEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.started",
+		Type:      EventTypeAgentStarted,
 		Source:    "code-analyzer",
 		Data:      map[string]interface{}{"project_root": config.ProjectRoot},
 		Timestamp: time.Now().UnixMilli(),
@@ -2034,7 +2038,7 @@ func (ss *DefaultStateSynchronizer) runCodeAnalyzer(config *SyncConfig) types.Re
 	// Publish agent completion event
 	completionEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.completed",
+		Type:      EventTypeAgentCompleted,
 		Source:    "code-analyzer",
 		Data:      map[string]interface{}{"duration": duration, "symbols_found": len(symbols)},
 		Timestamp: time.Now().UnixMilli(),
@@ -2053,7 +2057,7 @@ func (ss *DefaultStateSynchronizer) runInconsistencyDetector(config *SyncConfig,
 	// Publish agent start event
 	agentEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.started",
+		Type:      EventTypeAgentStarted,
 		Source:    "inconsistency-detector",
 		Data:      map[string]interface{}{"code_symbols": len(codeSymbols), "doc_files": len(docState.FileStates)},
 		Timestamp: time.Now().UnixMilli(),
@@ -2079,7 +2083,7 @@ func (ss *DefaultStateSynchronizer) runInconsistencyDetector(config *SyncConfig,
 	// Publish agent completion event
 	completionEvent := Event{
 		ID:        generateEventID(),
-		Type:      "agent.completed",
+		Type:      EventTypeAgentCompleted,
 		Source:    "inconsistency-detector",
 		Data:      map[string]interface{}{"duration": duration, "inconsistencies_found": len(inconsistencies)},
 		Timestamp: time.Now().UnixMilli(),

@@ -43,7 +43,7 @@ func (w *XMLRejectionWriter) ensureRejectedDirectory() error {
 		}
 
 		// Create subdirectories for calls and sms
-		for _, subdir := range []string{"calls", "sms"} {
+		for _, subdir := range []string{callsDir, smsDir} {
 			path := filepath.Join(rejectedDir, subdir)
 			if err := os.MkdirAll(path, 0750); err != nil {
 				w.dirErr = fmt.Errorf("failed to create rejected/%s directory: %w", subdir, err)

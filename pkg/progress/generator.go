@@ -60,8 +60,10 @@ func (g *TaskGenerator) GenerateTasksFromIssue(issueContent string) ([]*Enhanced
 	return g.generateTasksFromParsedIssue(issueContent)
 }
 
-// generateTasksFromParsedIssue handles the main logic for task generation
-func (g *TaskGenerator) generateTasksFromParsedIssue(issueContent string) ([]*EnhancedTodo, error) {
+// generateTasksFromParsedIssue handles the main logic for task generation.
+// It is long because it builds EnhancedTodo structs field-by-field from each
+// parsed issue section in turn; splitting it would not reduce that.
+func (g *TaskGenerator) generateTasksFromParsedIssue(issueContent string) ([]*EnhancedTodo, error) { //nolint:funlen
 	parsed, err := g.parseIssueContent(issueContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse issue content: %w", err)

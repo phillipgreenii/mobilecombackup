@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-const (
-	// XML null value constant
-	xmlNullValue = "null"
-)
-
 func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 	reader := NewXMLSMSReader("/test/repo")
 

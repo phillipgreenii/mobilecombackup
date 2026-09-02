@@ -22,6 +22,14 @@ const (
 // Content type category constants
 const (
 	CategoryUnknown = "unknown"
+	categoryBinary  = "binary"
+)
+
+// AttachmentExtractionResult.Reason / ContentDecision.Reason values.
+const (
+	reasonContentTypeFiltered = "content-type-filtered"
+	reasonMissingContentType  = "missing content type header"
+	reasonEmptyAfterNormalize = "empty content type after normalization"
 )
 
 // AttachmentExtractor handles extraction of attachments from SMS/MMS messages
@@ -182,12 +190,12 @@ func (ae *AttachmentExtractor) determineExtractableContent(part *MMSPart) (strin
 	var isBase64 bool
 
 	switch {
-	case part.Data != "" && part.Data != "null":
+	case part.Data != "" && part.Data != xmlNullValue:
 		// Binary data (base64 encoded)
 		contentToExtract = part.Data
 		isBase64 = true
 		ae.logger.Debug().Int("size_bytes", len(contentToExtract)).Msg("Found base64 data")
-	case part.Text != "" && part.Text != "null" && isExplicitAttachment:
+	case part.Text != "" && part.Text != xmlNullValue && isExplicitAttachment:
 		// Text content marked as attachment
 		contentToExtract = part.Text
 		isBase64 = false
@@ -226,7 +234,7 @@ func (ae *AttachmentExtractor) validateExtractionRequirements(
 			Msg("Content type filtered out")
 		return &AttachmentExtractionResult{
 			Action:     ActionSkipped,
-			Reason:     "content-type-filtered",
+			Reason:     reasonContentTypeFiltered,
 			UpdatePart: false,
 		}
 	}
@@ -374,7 +382,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 	// Handle edge cases first
 	if contentType == "" {
 		decision.ShouldExtract = false
-		decision.Reason = "missing content type header"
+		decision.Reason = reasonMissingContentType
 		decision.Category = CategoryUnknown
 		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: missing content type header")
 		return decision
@@ -385,7 +393,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 
 	if normalizedType == "" {
 		decision.ShouldExtract = false
-		decision.Reason = "empty content type after normalization"
+		decision.Reason = reasonEmptyAfterNormalize
 		decision.Category = CategoryUnknown
 		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: empty after normalization")
 		return decision
@@ -395,7 +403,7 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 	if BinaryContentTypes[normalizedType] {
 		decision.ShouldExtract = true
 		decision.Reason = "whitelisted binary type"
-		decision.Category = "binary"
+		decision.Category = categoryBinary
 		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: whitelisted binary type")
 		return decision
 	}
@@ -404,7 +412,9 @@ func (ae *AttachmentExtractor) shouldExtractContentType(
 	if TextContentTypes[normalizedType] {
 		decision.ShouldExtract = false
 		decision.Reason = "text content - keeping inline"
-		decision.Category = "text"
+		// Reuses attrText's "text" value: coincidentally the same literal,
+		// but here it names a content Category, not an XML element.
+		decision.Category = attrText
 		ae.logger.Debug().Interface("decision", decision).Msg("Content type decision: text content kept inline")
 		return decision
 	}

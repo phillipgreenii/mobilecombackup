@@ -16,13 +16,20 @@ type EscalationManager struct {
 // EscalationEvent represents an escalation event
 type EscalationEvent struct {
 	TaskID     string        `json:"taskId"`
-	EventType  string        `json:"eventType"` // "escalated", "resolved", "timeout"
+	EventType  string        `json:"eventType"` // "escalated", "resolved", "timeout" (EscalationEvent* constants below)
 	Timestamp  time.Time     `json:"timestamp"`
 	Duration   time.Duration `json:"duration"` // How long task was blocked
 	Reason     string        `json:"reason"`
 	Resolution string        `json:"resolution,omitempty"`
 	Severity   string        `json:"severity"` // "low", "medium", "high", "critical"
 }
+
+// EscalationEvent.EventType values.
+const (
+	EscalationEventEscalated = "escalated"
+	EscalationEventResolved  = "resolved"
+	EscalationEventTimeout   = "timeout"
+)
 
 // StatusConfig configures status reporting behavior
 type StatusConfig struct {
@@ -79,7 +86,7 @@ func (em *EscalationManager) CheckForEscalations() []EscalationEvent {
 
 		escalation := EscalationEvent{
 			TaskID:    task.ID,
-			EventType: "escalated",
+			EventType: EscalationEventEscalated,
 			Timestamp: time.Now(),
 			Duration:  task.GetBlockedDuration(),
 			Reason:    em.getBlockedReason(task),
@@ -98,7 +105,7 @@ func (em *EscalationManager) isAlreadyEscalated(taskID string) bool {
 	recentThreshold := time.Now().Add(-30 * time.Minute) // Don't re-escalate within 30 minutes
 
 	for _, event := range em.escalationLog {
-		if event.TaskID == taskID && event.EventType == "escalated" && event.Timestamp.After(recentThreshold) {
+		if event.TaskID == taskID && event.EventType == EscalationEventEscalated && event.Timestamp.After(recentThreshold) {
 			return true
 		}
 	}
@@ -121,28 +128,28 @@ func (em *EscalationManager) calculateSeverity(task EnhancedTodo) string {
 	switch task.Priority {
 	case PriorityCritical:
 		if duration > 10*time.Minute {
-			return "critical"
+			return string(PriorityCritical)
 		}
-		return "high"
+		return string(PriorityHigh)
 	case PriorityHigh:
 		if duration > 30*time.Minute {
-			return "critical"
+			return string(PriorityCritical)
 		} else if duration > 15*time.Minute {
-			return "high"
+			return string(PriorityHigh)
 		}
 		return string(ComplexityMedium)
 	case PriorityMedium:
 		if duration > 1*time.Hour {
-			return "high"
+			return string(PriorityHigh)
 		} else if duration > 30*time.Minute {
 			return string(ComplexityMedium)
 		}
-		return "low"
+		return string(PriorityLow)
 	default: // Low priority
 		if duration > 2*time.Hour {
 			return string(ComplexityMedium)
 		}
-		return "low"
+		return string(PriorityLow)
 	}
 }
 
@@ -155,11 +162,11 @@ func (em *EscalationManager) GenerateEscalationAlert(escalation EscalationEvent)
 
 	var severityIcon string
 	switch escalation.Severity {
-	case "critical":
+	case string(PriorityCritical):
 		severityIcon = "🚨"
-	case "high":
+	case string(PriorityHigh):
 		severityIcon = "⚠️"
-	case "medium":
+	case string(ComplexityMedium):
 		severityIcon = "⏰"
 	default:
 		severityIcon = "ℹ️"
@@ -232,7 +239,7 @@ func (em *EscalationManager) generateResolutionSuggestions(task *EnhancedTodo, e
 func (em *EscalationManager) ResolveEscalation(taskID, resolution string) {
 	resolveEvent := EscalationEvent{
 		TaskID:     taskID,
-		EventType:  "resolved",
+		EventType:  EscalationEventResolved,
 		Timestamp:  time.Now(),
 		Resolution: resolution,
 	}
@@ -248,8 +255,12 @@ func (em *EscalationManager) GetEscalationHistory() []EscalationEvent {
 	return history
 }
 
-// GenerateStatusReport generates a comprehensive status report
-func (em *EscalationManager) GenerateStatusReport() string {
+// GenerateStatusReport generates a comprehensive status report. Like the
+// analyzer package's report generators, its complexity is one flat sequence
+// of "if this section is enabled/has data, render it" blocks mirroring the
+// report's own layout; splitting it would scatter that layout without
+// reducing real branching.
+func (em *EscalationManager) GenerateStatusReport() string { //nolint:gocyclo,cyclop,funlen
 	report := em.tracker.GetProgressReport()
 	var output string
 
@@ -435,7 +446,7 @@ func (em *EscalationManager) getRecentEscalations(window time.Duration) []Escala
 	cutoff := time.Now().Add(-window)
 
 	for _, escalation := range em.escalationLog {
-		if escalation.Timestamp.After(cutoff) && escalation.EventType == "escalated" {
+		if escalation.Timestamp.After(cutoff) && escalation.EventType == EscalationEventEscalated {
 			recent = append(recent, escalation)
 		}
 	}
@@ -468,10 +479,10 @@ func (em *EscalationManager) GetEscalationSummary() map[string]interface{} {
 
 	for _, event := range em.escalationLog {
 		switch event.EventType {
-		case "escalated":
+		case EscalationEventEscalated:
 			totalEscalations++
 			severityCounts[event.Severity]++
-		case "resolved":
+		case EscalationEventResolved:
 			resolvedCount++
 		}
 	}

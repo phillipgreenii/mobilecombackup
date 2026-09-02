@@ -406,7 +406,7 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 			"rejected":   summary.Calls.Total.Rejected + summary.SMS.Total.Rejected,
 			"errors":     summary.Calls.Total.Errors + summary.SMS.Total.Errors,
 		},
-		"calls": map[string]interface{}{
+		callsDir: map[string]interface{}{
 			"total": map[string]interface{}{
 				"initial":    summary.Calls.Total.Initial,
 				"final":      summary.Calls.Total.Final,
@@ -417,7 +417,7 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 			},
 			"years": sortYearStatsForJSON(summary.Calls.YearStats),
 		},
-		"sms": map[string]interface{}{
+		smsDir: map[string]interface{}{
 			"total": map[string]interface{}{
 				"initial":    summary.SMS.Total.Initial,
 				"final":      summary.SMS.Total.Final,
@@ -428,7 +428,7 @@ func displayJSONSummary(summary *importer.ImportSummary) {
 			},
 			"years": sortYearStatsForJSON(summary.SMS.YearStats),
 		},
-		"attachments": map[string]interface{}{
+		attachmentsDir: map[string]interface{}{
 			"total":      summary.Attachments.Total.Total,
 			"new":        summary.Attachments.Total.New,
 			"duplicates": summary.Attachments.Total.Duplicates,

@@ -271,7 +271,7 @@ func (sca *SerenaCodeAnalyzer) findFunctionsInFileWithMCP(relPath string) types.
 	if relPath != "" {
 		symbols = append(symbols, CodeSymbol{
 			Name:      "ExampleFunction",
-			Type:      "function",
+			Type:      symbolTypeFunction,
 			Package:   filepath.Dir(relPath),
 			File:      relPath,
 			Line:      10,
@@ -412,14 +412,19 @@ func (gca *GoCodeAnalyzer) FindReferences(symbol CodeSymbol) types.Result[[]Code
 
 // Helper methods
 
-func (gca *GoCodeAnalyzer) extractPackageSymbols(pkgName string, docPkg *doc.Package, packagePath string) []CodeSymbol {
+// extractPackageSymbols builds CodeSymbols from docPkg. packagePath is
+// unused: each symbol's File is derived per-declaration from
+// gca.getFileName(decl.Pos()), which is more precise than the package-level
+// path, so packagePath adds nothing here. Kept in the signature to match
+// this analyzer's other extract* methods.
+func (gca *GoCodeAnalyzer) extractPackageSymbols(pkgName string, docPkg *doc.Package, _ string) []CodeSymbol {
 	var symbols []CodeSymbol
 
 	// Extract functions
 	for _, fn := range docPkg.Funcs {
 		symbol := CodeSymbol{
 			Name:      fn.Name,
-			Type:      "function",
+			Type:      symbolTypeFunction,
 			Package:   pkgName,
 			File:      gca.getFileName(fn.Decl.Pos()),
 			Line:      gca.getLineNumber(fn.Decl.Pos()),
@@ -508,7 +513,7 @@ func (gca *GoCodeAnalyzer) extractFunctionSymbol(fn *ast.FuncDecl, packageName, 
 
 	symbol := CodeSymbol{
 		Name:      fn.Name.Name,
-		Type:      "function",
+		Type:      symbolTypeFunction,
 		Package:   packageName,
 		File:      filePath,
 		Line:      gca.getLineNumber(fn.Pos()),
@@ -597,7 +602,7 @@ func (gca *GoCodeAnalyzer) getFunctionSignature(fn *ast.FuncDecl) string {
 	// Add receiver if method
 	if fn.Recv != nil && len(fn.Recv.List) > 0 {
 		recv := fn.Recv.List[0]
-		if recv.Names != nil && len(recv.Names) > 0 {
+		if len(recv.Names) > 0 {
 			parts = append(parts, fmt.Sprintf("(%s", recv.Names[0].Name))
 		} else {
 			parts = append(parts, "(")
@@ -646,7 +651,7 @@ func (gca *GoCodeAnalyzer) getValueSignature(valueSpec *ast.ValueSpec) string {
 	var parts []string
 
 	// Add names
-	var names []string
+	names := make([]string, 0, len(valueSpec.Names))
 	for _, name := range valueSpec.Names {
 		names = append(names, name.Name)
 	}
@@ -887,7 +892,7 @@ func (id *InconsistencyDetector) findDocumentationFiles(projectPath string) ([]s
 	var files []string
 
 	// Use the patterns from config if available, otherwise use defaults
-	patterns := []string{"**/*.md", "**/README*", "**/doc.go"}
+	patterns := []string{MarkdownFilePattern, "**/README*", "**/doc.go"}
 
 	for _, pattern := range patterns {
 		matches, err := filepath.Glob(filepath.Join(projectPath, pattern))

@@ -577,11 +577,11 @@ func formatValidationError(violations []validation.Violation) error {
 	msg.WriteString("repository validation failed:")
 
 	for vType, typeViolations := range violationsByType {
-		msg.WriteString(fmt.Sprintf("\n  %s:", vType))
+		_, _ = fmt.Fprintf(&msg, "\n  %s:", vType)
 		for _, v := range typeViolations {
-			msg.WriteString(fmt.Sprintf("\n    %s", v.Message))
+			_, _ = fmt.Fprintf(&msg, "\n    %s", v.Message)
 			if v.File != "" {
-				msg.WriteString(fmt.Sprintf(" (%s)", v.File))
+				_, _ = fmt.Fprintf(&msg, " (%s)", v.File)
 			}
 		}
 	}
@@ -653,10 +653,10 @@ func (imp *Importer) shouldProcessFile(path string) bool {
 
 	// Check filter
 	switch imp.options.Filter {
-	case "calls":
-		return strings.HasPrefix(name, "calls") && strings.HasSuffix(name, ".xml")
-	case "sms":
-		return strings.HasPrefix(name, "sms") && strings.HasSuffix(name, ".xml")
+	case callsDir:
+		return strings.HasPrefix(name, callsDir) && strings.HasSuffix(name, ".xml")
+	case smsDir:
+		return strings.HasPrefix(name, smsDir) && strings.HasSuffix(name, ".xml")
 	default:
 		// Process both
 		return (strings.HasPrefix(name, "calls") || strings.HasPrefix(name, "sms")) &&

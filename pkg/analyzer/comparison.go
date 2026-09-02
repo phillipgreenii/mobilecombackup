@@ -27,44 +27,50 @@ func NewDefaultComparisonEngine(logger Logger) *DefaultComparisonEngine {
 func (dce *DefaultComparisonEngine) DetectInconsistencies(codeSymbols []CodeSymbol, docSections []DocSection) types.Result[[]Inconsistency] { //nolint:lll
 	dce.logger.Debug("Detecting inconsistencies", "code_symbols", len(codeSymbols), "doc_sections", len(docSections))
 
-	var inconsistencies []Inconsistency
-
 	// Phase 1: Basic inconsistencies (already implemented)
 	// Check for missing documentation
 	missingDocs := dce.findMissingDocumentation(codeSymbols)
-	inconsistencies = append(inconsistencies, missingDocs...)
 
 	// Check for outdated documentation
 	outdatedDocs := dce.findOutdatedDocumentation(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, outdatedDocs...)
 
 	// Check for documentation without corresponding code
 	orphanedDocs := dce.findOrphanedDocumentation(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, orphanedDocs...)
 
 	// Phase 2: Advanced inconsistencies (newly implemented)
 	// Check for missing code examples
 	missingExamples := dce.detectMissingExamples(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, missingExamples...)
 
 	// Check for broken documentation links
 	brokenLinks := dce.detectBrokenLinks(docSections, codeSymbols)
-	inconsistencies = append(inconsistencies, brokenLinks...)
 
 	// Check for parameter documentation mismatches
 	paramMismatches := dce.detectParameterMismatches(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, paramMismatches...)
 
 	// Check for return value documentation mismatches
 	returnMismatches := dce.detectReturnValueMismatches(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, returnMismatches...)
 
 	// Check for deprecated code with active documentation
 	deprecatedActive := dce.detectDeprecatedCodeWithActiveDocumentation(codeSymbols, docSections)
-	inconsistencies = append(inconsistencies, deprecatedActive...)
 
 	// Check for new features without documentation
 	newFeaturesUndocumented := dce.detectNewFeaturesWithoutDocumentation(codeSymbols)
+
+	// Every detector above ran exactly once and its result is held above, so
+	// the combined slice is preallocated from the real lengths instead of
+	// growing via repeated append reallocation.
+	inconsistencies := make([]Inconsistency, 0,
+		len(missingDocs)+len(outdatedDocs)+len(orphanedDocs)+len(missingExamples)+
+			len(brokenLinks)+len(paramMismatches)+len(returnMismatches)+
+			len(deprecatedActive)+len(newFeaturesUndocumented))
+	inconsistencies = append(inconsistencies, missingDocs...)
+	inconsistencies = append(inconsistencies, outdatedDocs...)
+	inconsistencies = append(inconsistencies, orphanedDocs...)
+	inconsistencies = append(inconsistencies, missingExamples...)
+	inconsistencies = append(inconsistencies, brokenLinks...)
+	inconsistencies = append(inconsistencies, paramMismatches...)
+	inconsistencies = append(inconsistencies, returnMismatches...)
+	inconsistencies = append(inconsistencies, deprecatedActive...)
 	inconsistencies = append(inconsistencies, newFeaturesUndocumented...)
 
 	dce.logger.Info("Inconsistency detection completed",
@@ -300,7 +306,7 @@ func (dce *DefaultComparisonEngine) determineSeverity(symbol CodeSymbol) Severit
 			return SeverityLow
 		}
 		return SeverityMedium
-	case symbolTypeType, "interface", "struct":
+	case symbolTypeType, symbolTypeInterface, "struct":
 		return SeverityHigh
 	case "constant":
 		return SeverityLow
@@ -393,7 +399,11 @@ func (dce *DefaultComparisonEngine) isDocumentationOutdated(symbol CodeSymbol, d
 	return false
 }
 
-func (dce *DefaultComparisonEngine) extractCodeReferences(content string) ([]string, error) {
+// extractCodeReferences's error return is always nil: it only regexp-scans
+// content with MustCompile'd (fixed, valid) patterns, which never errors.
+// Kept for signature symmetry with this engine's other extract*/detect*
+// methods, several of which do return real errors.
+func (dce *DefaultComparisonEngine) extractCodeReferences(content string) ([]string, error) { //nolint:unparam
 	var references []string
 
 	patterns := []string{
@@ -907,7 +917,7 @@ func (dce *DefaultComparisonEngine) assessSymbolComplexity(symbol CodeSymbol) st
 	sig := symbol.Signature
 
 	if strings.Count(sig, "(") > 2 || strings.Count(sig, ",") > 3 {
-		return "high"
+		return string(SeverityHigh)
 	} else if strings.Contains(sig, "error") || strings.Count(sig, ",") > 1 {
 		return "medium"
 	}

@@ -446,7 +446,7 @@ func TestCompletionProtocol_EnsureCleanCompletion_AlreadyClean(t *testing.T) {
 		t.Errorf("Expected COMPLETE status, got %s", result.Status)
 	}
 
-	if result.Message != "Workspace is already clean" {
+	if result.Message != msgWorkspaceAlreadyClean {
 		t.Errorf("Unexpected message: %s", result.Message)
 	}
 
@@ -490,15 +490,22 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 		t.Fatalf("Failed to init git repo: %v", err)
 	}
 
-	// Configure git
-	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	// Configure git. A real-looking (non-*.example.*) address is used
+	// because some environments run a global identity-check git hook that
+	// rejects obvious placeholder addresses even for throwaway repos like
+	// this one; this fixture's realism doesn't otherwise matter since it
+	// never leaves the test's temp directory.
+	cmd = exec.Command("git", "config", "user.email", "mobilecombackup-test@localhost")
 	cmd.Dir = dir
 	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to config git email: %v", err)
 	}
 
-	cmd = exec.Command("git", "config", "user.name", "Test User")
+	// "Test User" is also rejected by the same identity-check hook
+	// (matches its placeholder-name pattern); see the user.email comment
+	// above for why a more realistic-looking fixture value is used here.
+	cmd = exec.Command("git", "config", "user.name", "Mobilecombackup Test Fixture")
 	cmd.Dir = dir
 	cmd.Env = gitCommandEnv()
 	if err := cmd.Run(); err != nil {
@@ -573,7 +580,7 @@ func TestWorkspaceCleanup_categorizeFile(t *testing.T) {
 		{"docs/development/setup.md", CategoryDoc},
 
 		// Configuration files
-		{"devbox.json", CategoryConfig},
+		{devboxConfigFile, CategoryConfig},
 		{"devbox.lock", CategoryConfig},
 		{".gitignore", CategoryConfig},
 		{".golangci.yml", CategoryConfig},
@@ -633,7 +640,7 @@ func TestWorkspaceCleanup_determineVerificationNeeds(t *testing.T) {
 		{
 			name: "config changes need verification",
 			changes: []CategorizedChange{
-				{Filename: "devbox.json", Category: CategoryConfig, Status: "M"},
+				{Filename: devboxConfigFile, Category: CategoryConfig, Status: "M"},
 			},
 			expected: []ChangeCategory{CategoryConfig},
 		},

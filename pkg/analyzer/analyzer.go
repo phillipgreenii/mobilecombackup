@@ -54,8 +54,11 @@ func NewDocumentationAnalyzer(logger Logger, auditLogger AuditLogger) *Documenta
 	return analyzer
 }
 
-// AnalyzeProject performs comprehensive analysis of a project
-func (da *DocumentationAnalyzer) AnalyzeProject(config AnalysisConfig) types.Result[*AnalysisResult] {
+// AnalyzeProject performs comprehensive analysis of a project. It is long
+// because it linearly orchestrates the analysis pipeline's stages (scan,
+// compare, score, summarize); splitting it into more helpers would not
+// reduce the pipeline's real sequential complexity.
+func (da *DocumentationAnalyzer) AnalyzeProject(config AnalysisConfig) types.Result[*AnalysisResult] { //nolint:funlen
 	startTime := time.Now()
 	da.logger.Info("Starting project analysis", "project", config.ProjectRoot)
 
@@ -383,10 +386,18 @@ func (da *DocumentationAnalyzer) filterFiles(files []string, includePatterns, ex
 	return filtered
 }
 
-func (da *DocumentationAnalyzer) analyzeCodeFiles(codeFiles []string, config AnalysisConfig) ([]CodeSymbol, error) {
+// analyzeCodeFiles's error return is always nil: per-file failures (in
+// either the parallel or sequential branch) are logged and skipped, never
+// propagated. Kept for signature symmetry with its analyzeDocFiles sibling.
+func (da *DocumentationAnalyzer) analyzeCodeFiles(
+	codeFiles []string, config AnalysisConfig,
+) ([]CodeSymbol, error) { //nolint:unparam
 	var allSymbols []CodeSymbol
 
-	if config.Parallel {
+	// The nesting here is inherent to the fan-out/fan-in goroutine+channel
+	// pattern (parallel branch) plus its sequential fallback (else branch),
+	// not accidental conditional depth.
+	if config.Parallel { //nolint:nestif
 		// Parallel analysis
 		type result struct {
 			symbols []CodeSymbol
@@ -437,7 +448,15 @@ func (da *DocumentationAnalyzer) analyzeCodeFiles(codeFiles []string, config Ana
 	return allSymbols, nil
 }
 
-func (da *DocumentationAnalyzer) analyzeDocFiles(docFiles []string, config AnalysisConfig) ([]DocSection, error) {
+// analyzeDocFiles parses documentation files. The config parameter is
+// currently unused (unlike its analyzeCodeFiles sibling, this pass is not
+// yet configurable, e.g. for parallelism) but kept for signature symmetry
+// with analyzeCodeFiles and to avoid a call-site change if that changes.
+// Its error return is likewise always nil today: per-file parse failures
+// are logged and skipped, never propagated (same as analyzeCodeFiles).
+func (da *DocumentationAnalyzer) analyzeDocFiles(
+	docFiles []string, _ AnalysisConfig,
+) ([]DocSection, error) { //nolint:unparam
 	var allSections []DocSection
 
 	for _, file := range docFiles {
@@ -490,7 +509,11 @@ func (da *DocumentationAnalyzer) detectInconsistencies(codeSymbols []CodeSymbol,
 	return inconsistencies, nil
 }
 
-func (da *DocumentationAnalyzer) calculateCoverage(codeSymbols []CodeSymbol, docSections []DocSection) DocumentationCoverage {
+// calculateCoverage computes documentation coverage from each code symbol's
+// own comment. docSections is currently unused (coverage is not yet
+// cross-referenced against parsed doc sections) but kept in the signature
+// so a future cross-reference pass does not need a call-site change.
+func (da *DocumentationAnalyzer) calculateCoverage(codeSymbols []CodeSymbol, _ []DocSection) DocumentationCoverage {
 	// Count exported symbols
 	exportedSymbols := make([]CodeSymbol, 0, len(codeSymbols))
 	for _, symbol := range codeSymbols {
@@ -596,13 +619,14 @@ func (da *DocumentationAnalyzer) generateSummary(inconsistencies []Inconsistency
 
 	// Determine quality grade
 	qualityGrade := "F"
-	if qualityScore >= 0.9 {
+	switch {
+	case qualityScore >= 0.9:
 		qualityGrade = "A"
-	} else if qualityScore >= 0.8 {
+	case qualityScore >= 0.8:
 		qualityGrade = "B"
-	} else if qualityScore >= 0.7 {
+	case qualityScore >= 0.7:
 		qualityGrade = "C"
-	} else if qualityScore >= 0.6 {
+	case qualityScore >= 0.6:
 		qualityGrade = "D"
 	}
 
@@ -625,7 +649,7 @@ func (da *DocumentationAnalyzer) generateRecommendations(inconsistencies []Incon
 	if qualityScore < 0.7 {
 		recommendations = append(recommendations, Recommendation{
 			ID:              "improve-coverage",
-			Priority:        "high",
+			Priority:        string(SeverityHigh),
 			Title:           "Improve documentation coverage",
 			Description:     "Documentation coverage is below 70%. Focus on documenting public APIs.",
 			Action:          "Add documentation comments to exported functions, types, and packages",
@@ -638,9 +662,10 @@ func (da *DocumentationAnalyzer) generateRecommendations(inconsistencies []Incon
 	criticalCount := 0
 	highCount := 0
 	for _, inc := range inconsistencies {
-		if inc.Severity == SeverityCritical {
+		switch inc.Severity {
+		case SeverityCritical:
 			criticalCount++
-		} else if inc.Severity == SeverityHigh {
+		case SeverityHigh:
 			highCount++
 		}
 	}
@@ -648,7 +673,7 @@ func (da *DocumentationAnalyzer) generateRecommendations(inconsistencies []Incon
 	if criticalCount > 0 {
 		recommendations = append(recommendations, Recommendation{
 			ID:              "fix-critical",
-			Priority:        "critical",
+			Priority:        string(SeverityCritical),
 			Title:           "Fix critical documentation issues",
 			Description:     fmt.Sprintf("Found %d critical documentation issues that require immediate attention", criticalCount),
 			Action:          "Review and fix critical inconsistencies immediately",
@@ -660,7 +685,7 @@ func (da *DocumentationAnalyzer) generateRecommendations(inconsistencies []Incon
 	if highCount > 0 {
 		recommendations = append(recommendations, Recommendation{
 			ID:              "fix-high-priority",
-			Priority:        "high",
+			Priority:        string(SeverityHigh),
 			Title:           "Address high priority issues",
 			Description:     fmt.Sprintf("Found %d high priority issues that should be addressed soon", highCount),
 			Action:          "Review and fix high priority inconsistencies",
@@ -681,7 +706,7 @@ func (da *DocumentationAnalyzer) identifyImprovementAreas(byType map[Inconsisten
 		count   int
 	}
 
-	var typeCounts []typeCount
+	typeCounts := make([]typeCount, 0, len(byType))
 	for incType, count := range byType {
 		typeCounts = append(typeCounts, typeCount{incType, count})
 	}

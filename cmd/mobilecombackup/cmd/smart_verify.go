@@ -43,7 +43,8 @@ Change Categories:
 func init() {
 	// Add flags
 	smartVerifyCmd.Flags().BoolVar(&forceFullVerification, "full", false, "Force full verification regardless of changes")
-	smartVerifyCmd.Flags().BoolVar(&forceQuickVerification, "quick", false, "Force minimal verification (dangerous - use with caution)")
+	smartVerifyCmd.Flags().BoolVar(&forceQuickVerification, "quick", false,
+		"Force minimal verification (dangerous - use with caution)")
 	smartVerifyCmd.Flags().BoolVar(&skipTests, "skip-tests", false, "Skip all test execution (dangerous - use for docs-only work)")
 	smartVerifyCmd.Flags().BoolVar(&preCommitMode, "pre-commit", false, "Pre-commit mode (always runs full verification)")
 	smartVerifyCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Verbose output showing analysis and decisions")
@@ -52,7 +53,7 @@ func init() {
 	rootCmd.AddCommand(smartVerifyCmd)
 }
 
-// Change analysis types
+// ChangeCategory classifies a staged change for verification-strategy selection.
 type ChangeCategory string
 
 const (
@@ -153,14 +154,15 @@ func analyzeGitChanges() (*ChangeContext, error) {
 
 	// Analyze each file
 	for _, file := range files {
-		if isDocumentationFile(file) {
+		switch {
+		case isDocumentationFile(file):
 			context.HasDocChanges = true
-		} else if isTestFile(file) {
+		case isTestFile(file):
 			context.HasTestChanges = true
 			if pkg := getPackageFromFile(file); pkg != "" {
 				packages[pkg] = true
 			}
-		} else if isGoFile(file) {
+		case isGoFile(file):
 			context.HasCodeChanges = true
 			if pkg := getPackageFromFile(file); pkg != "" {
 				packages[pkg] = true
@@ -218,7 +220,11 @@ func determineCategory(context *ChangeContext) ChangeCategory {
 	return Mixed
 }
 
-func determineVerificationStrategy(context *ChangeContext) *VerificationStrategy {
+// determineVerificationStrategy enumerates the verification-strategy decision
+// table (change-category x mode). It is long because it is a flat decision
+// table, not nested logic; splitting it would scatter one policy across
+// several helpers without reducing its real complexity.
+func determineVerificationStrategy(context *ChangeContext) *VerificationStrategy { //nolint:funlen
 	// Pre-commit always uses full verification
 	if preCommitMode {
 		return &VerificationStrategy{
@@ -331,7 +337,13 @@ func fullVerificationStrategy(reason string) *VerificationStrategy {
 	}
 }
 
-func executeStrategy(strategy *VerificationStrategy) (bool, error) {
+// executeStrategy's error return is currently always nil: each step's
+// failure is folded into the success bool (and printed) rather than
+// propagated, so the caller's single !result check covers every step. The
+// error slot is kept for a future failure mode that is not one of these
+// steps (e.g. a panic recovery), matching the call site's existing
+// `result, err := executeStrategy(...)` handling.
+func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:unparam
 	success := true
 
 	if strategy.RunFormatter {
@@ -344,7 +356,10 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) {
 		}
 	}
 
-	if strategy.RunTests {
+	// The nesting here is a flat "if enabled { log; branch on packages; run }"
+	// sequence, not compounding conditional logic, so splitting it would not
+	// reduce real complexity.
+	if strategy.RunTests { //nolint:nestif
 		if verboseOutput {
 			if len(strategy.TestPackages) > 0 {
 				fmt.Printf("🧪 Running tests for packages: %s\n", strings.Join(strategy.TestPackages, ", "))
@@ -392,19 +407,25 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) {
 }
 
 func runDevBoxCommand(command string) error {
-	cmd := exec.Command("devbox", "run", command)
+	// command is always one of this file's own hardcoded literals ("linter",
+	// "build-cli", ...), never external input.
+	cmd := exec.Command("devbox", "run", command) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func runTargetedTests(packages []string) error {
-	args := []string{"run", "--", "gotestsum", "--format", "testname", "--"}
+	args := make([]string, 0, 6+len(packages))
+	args = append(args, "run", "--", "gotestsum", "--format", "testname", "--")
 	for _, pkg := range packages {
 		args = append(args, fmt.Sprintf("./%s/...", pkg))
 	}
 
-	cmd := exec.Command("devbox", args...)
+	// args is built from a fixed literal prefix plus package names formatted
+	// into a fixed "./%s/..." pattern -- never externally supplied shell
+	// input, and exec.Command never invokes a shell.
+	cmd := exec.Command("devbox", args...) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

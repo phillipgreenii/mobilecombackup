@@ -370,11 +370,11 @@ func createSizedFiles(t testing.TB, testDir string, fileCount, sizeBytes int) []
 func generateFileContent(sections, sizePerSection int) string {
 	var content strings.Builder
 
-	content.WriteString(fmt.Sprintf("# Test Document %d\n\n", rand.Intn(1000)))
+	_, _ = fmt.Fprintf(&content, "# Test Document %d\n\n", rand.Intn(1000))
 	content.WriteString("This is a generated test document for performance testing.\n\n")
 
 	for i := 0; i < sections; i++ {
-		content.WriteString(fmt.Sprintf("## Section %d\n\n", i+1))
+		_, _ = fmt.Fprintf(&content, "## Section %d\n\n", i+1)
 
 		// Generate content of specified size
 		words := []string{"performance", "testing", "analysis", "documentation", "processing", "validation", "integration", "system"}
@@ -390,13 +390,13 @@ func generateFileContent(sections, sizePerSection int) string {
 		}
 
 		// Add some code references
-		content.WriteString(fmt.Sprintf("\n\nUse `ProcessSection%d` for processing.\n", i+1))
-		content.WriteString(fmt.Sprintf("Call `types.Result[Section%d]` for results.\n\n", i+1))
+		_, _ = fmt.Fprintf(&content, "\n\nUse `ProcessSection%d` for processing.\n", i+1)
+		_, _ = fmt.Fprintf(&content, "Call `types.Result[Section%d]` for results.\n\n", i+1)
 
 		// Occasionally add code blocks
 		if i%3 == 0 {
 			content.WriteString("```go\n")
-			content.WriteString(fmt.Sprintf("func ProcessSection%d() {\n", i+1))
+			_, _ = fmt.Fprintf(&content, "func ProcessSection%d() {\n", i+1)
 			content.WriteString("    // Processing logic here\n")
 			content.WriteString("}\n```\n\n")
 		}

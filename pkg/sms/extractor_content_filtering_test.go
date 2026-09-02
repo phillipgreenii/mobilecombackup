@@ -8,11 +8,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	// Test reason constants
-	reasonContentTypeFiltered = "content-type-filtered"
-)
-
 func TestContentTypeFiltering_SMILNotExtracted(t *testing.T) {
 	extractor := NewAttachmentExtractor(t.TempDir(), afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()

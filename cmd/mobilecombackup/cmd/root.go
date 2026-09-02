@@ -99,25 +99,29 @@ func UpdateLogger() {
 	initLogger()
 }
 
-// PrintError prints an error message to the logger
+// PrintError prints an error message to the logger.
+//
 // Deprecated: Use GetLogger().Error() instead
 func PrintError(format string, args ...interface{}) {
 	logger.Error().Msgf(format, args...)
 }
 
-// PrintInfo prints informational messages
+// PrintInfo prints informational messages.
+//
 // Deprecated: Use GetLogger().Info() instead
 func PrintInfo(format string, args ...interface{}) {
 	logger.Info().Msgf(format, args...)
 }
 
-// PrintVerbose prints verbose messages
+// PrintVerbose prints verbose messages.
+//
 // Deprecated: Use GetLogger().Debug() instead
 func PrintVerbose(format string, args ...interface{}) {
 	logger.Debug().Msgf(format, args...)
 }
 
-// PrintDebug prints debug messages
+// PrintDebug prints debug messages.
+//
 // Deprecated: Use GetLogger().Debug() instead
 func PrintDebug(format string, args ...interface{}) {
 	logger.Debug().Msgf(format, args...)

@@ -81,31 +81,36 @@ func NewRepositoryValidator(
 	}
 }
 
-// ValidateRepository performs complete repository validation
+// ValidateRepository performs complete repository validation.
+//
 // Deprecated: Use ValidateRepositoryContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateRepository() (*Report, error) {
 	return v.ValidateRepositoryContext(context.Background())
 }
 
-// ValidateStructure validates overall repository structure
+// ValidateStructure validates overall repository structure.
+//
 // Deprecated: Use ValidateStructureContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateStructure() []Violation {
 	return v.ValidateStructureContext(context.Background())
 }
 
-// ValidateManifest validates files.yaml and checksums
+// ValidateManifest validates files.yaml and checksums.
+//
 // Deprecated: Use ValidateManifestContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateManifest() []Violation {
 	return v.ValidateManifestContext(context.Background())
 }
 
-// ValidateContent validates all content files
+// ValidateContent validates all content files.
+//
 // Deprecated: Use ValidateContentContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateContent() []Violation {
 	return v.ValidateContentContext(context.Background())
 }
 
-// ValidateConsistency performs cross-file consistency validation
+// ValidateConsistency performs cross-file consistency validation.
+//
 // Deprecated: Use ValidateConsistencyContext instead. This method will be removed in v2.0.0.
 func (v *RepositoryValidatorImpl) ValidateConsistency() []Violation {
 	return v.ValidateConsistencyContext(context.Background())
@@ -209,6 +214,24 @@ func (v *RepositoryValidatorImpl) ValidateRepositoryContext(ctx context.Context)
 	return report, nil
 }
 
+// combineViolations concatenates violation slices into one preallocated
+// slice (capacity sized from their real combined length up front). Shared
+// by every ValidateXContext method below so each just calls its own four
+// validators once and hands the results here, rather than each repeating
+// the same "sum lengths, make, append four times" shape (bead tc-5lxy.19 --
+// that repetition was originally flagged by the dupl linter).
+func combineViolations(violationSets ...[]Violation) []Violation {
+	total := 0
+	for _, set := range violationSets {
+		total += len(set)
+	}
+	combined := make([]Violation, 0, total)
+	for _, set := range violationSets {
+		combined = append(combined, set...)
+	}
+	return combined
+}
+
 // ValidateStructureContext validates overall repository structure with context support
 func (v *RepositoryValidatorImpl) ValidateStructureContext(ctx context.Context) []Violation {
 	// Check context before starting
@@ -218,18 +241,14 @@ func (v *RepositoryValidatorImpl) ValidateStructureContext(ctx context.Context) 
 	default:
 	}
 
-	var violations []Violation
-
 	// Note: Individual validators handle directory and file structure checks
-	// This method coordinates structure validation across all components
-
-	// Validate each component's structure
-	violations = append(violations, v.callsValidator.ValidateCallsStructure()...)
-	violations = append(violations, v.smsValidator.ValidateSMSStructure()...)
-	violations = append(violations, v.attachmentsValidator.ValidateAttachmentsStructure()...)
-	violations = append(violations, v.contactsValidator.ValidateContactsStructure()...)
-
-	return violations
+	// This method coordinates structure validation across all components.
+	return combineViolations(
+		v.callsValidator.ValidateCallsStructure(),
+		v.smsValidator.ValidateSMSStructure(),
+		v.attachmentsValidator.ValidateAttachmentsStructure(),
+		v.contactsValidator.ValidateContactsStructure(),
+	)
 }
 
 // ValidateManifestContext validates files.yaml and checksums with context support
@@ -249,7 +268,7 @@ func (v *RepositoryValidatorImpl) ValidateManifestContext(ctx context.Context) [
 		violations = append(violations, Violation{
 			Type:     MissingFile,
 			Severity: SeverityError,
-			File:     "files.yaml",
+			File:     manifestFileName,
 			Message:  fmt.Sprintf("Failed to load manifest: %v", err),
 		})
 		return violations
@@ -286,21 +305,12 @@ func (v *RepositoryValidatorImpl) ValidateContentContext(ctx context.Context) []
 	default:
 	}
 
-	var violations []Violation
-
-	// Validate calls content
-	violations = append(violations, v.callsValidator.ValidateCallsContent()...)
-
-	// Validate SMS content
-	violations = append(violations, v.smsValidator.ValidateSMSContent()...)
-
-	// Validate attachment integrity
-	violations = append(violations, v.attachmentsValidator.ValidateAttachmentIntegrity()...)
-
-	// Validate contacts data
-	violations = append(violations, v.contactsValidator.ValidateContactsData()...)
-
-	return violations
+	return combineViolations(
+		v.callsValidator.ValidateCallsContent(),              // Validate calls content
+		v.smsValidator.ValidateSMSContent(),                  // Validate SMS content
+		v.attachmentsValidator.ValidateAttachmentIntegrity(), // Validate attachment integrity
+		v.contactsValidator.ValidateContactsData(),           // Validate contacts data
+	)
 }
 
 // ValidateConsistencyContext performs cross-file consistency validation with context support

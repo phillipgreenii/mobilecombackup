@@ -243,6 +243,20 @@
               fi
               touch $out
             '';
+
+            # golangci-lint (offline, gomod2nix vendor env) via mkGoLint --
+            # the Tier-1 lint gate (tc-5lxy.19). `config` lives outside
+            # `src`, so it must be passed explicitly, or golangci-lint falls
+            # back to its defaults and loses this repo's .golangci.yml
+            # settings (in particular the goconst disable and the
+            # max-issues-per-linter/max-same-issues=0 overrides — see that
+            # file's own comments for why both matter here).
+            lint = goBuilders.mkGoLint {
+              pname = "mobilecombackup-golangci";
+              src = pkgs.lib.cleanSource ./.;
+              gomod2nixToml = ./gomod2nix.toml;
+              config = ./.golangci.yml;
+            };
           };
         };
     };

@@ -234,11 +234,11 @@ func (ctx *InfoContext) countRejections(info *RepositoryInfo) {
 			hasCall := false
 			hasSMS := false
 			for i := 0; i < len(name)-4; i++ {
-				if i+5 <= len(name) && name[i:i+5] == "calls" {
+				if i+5 <= len(name) && name[i:i+5] == callsDir {
 					hasCall = true
 					break
 				}
-				if i+3 <= len(name) && name[i:i+3] == "sms" {
+				if i+3 <= len(name) && name[i:i+3] == smsDir {
 					hasSMS = true
 					break
 				}

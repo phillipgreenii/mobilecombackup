@@ -82,13 +82,15 @@ func (g *AgentGenerator) generateAgentContent(
 		return overrides.CustomContent
 	}
 
-	// Generate default content based on template
-	content.WriteString(fmt.Sprintf("# %s\n\n", agentName))
-	content.WriteString(fmt.Sprintf("%s\n\n", description))
+	// Generate default content based on template. content is a strings.Builder,
+	// whose Write methods never return a non-nil error, so the Fprintf error is
+	// deliberately discarded rather than propagated.
+	_, _ = fmt.Fprintf(&content, "# %s\n\n", agentName)
+	_, _ = fmt.Fprintf(&content, "%s\n\n", description)
 
 	content.WriteString("## Specialized Behavior\n\n")
 	content.WriteString("*This agent extends the ")
-	content.WriteString(fmt.Sprintf("[%s](templates/%s.md) template", template.Metadata.Name, template.Metadata.Name))
+	_, _ = fmt.Fprintf(&content, "[%s](templates/%s.md) template", template.Metadata.Name, template.Metadata.Name)
 	content.WriteString(" and inherits all its core behaviors.*\n\n")
 
 	content.WriteString("### Unique Responsibilities\n\n")

@@ -158,13 +158,27 @@ type AttachmentStats struct {
 	CorruptedCount int   // Number of attachments with hash mismatches
 }
 
+// MIME type constants for the types this package's content-sniffing
+// (migration.go's detectMimeTypeFromContent) can identify by signature and
+// that also appear as MimeExtensions keys below -- named so both stay in
+// sync rather than duplicating the literal in two places.
+const (
+	MimeTypeJPEG        = "image/jpeg"
+	MimeTypePNG         = "image/png"
+	MimeTypeGIF         = "image/gif"
+	MimeTypePDF         = "application/pdf"
+	MimeTypeZIP         = "application/zip"
+	MimeTypeTextPlain   = "text/plain"
+	MimeTypeOctetStream = "application/octet-stream"
+)
+
 // MimeExtensions maps MIME types to file extensions
 var MimeExtensions = map[string]string{
 	// Images
-	"image/png":  "png",
-	"image/jpeg": "jpg",
+	MimeTypePNG:  "png",
+	MimeTypeJPEG: "jpg",
 	"image/jpg":  "jpg", // Non-standard variant
-	"image/gif":  "gif",
+	MimeTypeGIF:  "gif",
 	"image/bmp":  "bmp",
 	"image/webp": "webp",
 	"image/tiff": "tiff",
@@ -190,8 +204,8 @@ var MimeExtensions = map[string]string{
 	"audio/m4a":  "m4a",
 
 	// Documents
-	"application/pdf": "pdf",
-	"application/zip": "zip",
+	MimeTypePDF:       "pdf",
+	MimeTypeZIP:       "zip",
 	"application/rar": "rar",
 	"application/7z":  "7z",
 
@@ -206,7 +220,7 @@ var MimeExtensions = map[string]string{
 	"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
 
 	// Generic binary
-	"application/octet-stream": "bin",
+	MimeTypeOctetStream: "bin",
 }
 
 // GetFileExtension returns the appropriate file extension for a MIME type

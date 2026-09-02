@@ -218,9 +218,9 @@ func createRepositoryDirectories(
 ) error {
 	// Directories to create
 	directories := []string{
-		"calls",
-		"sms",
-		"attachments",
+		callsDir,
+		smsDir,
+		attachmentsDir,
 	}
 
 	// Create root directory if it doesn't exist

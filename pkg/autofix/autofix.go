@@ -63,6 +63,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Well-known repository filenames this package creates/repairs.
+const (
+	repoMarkerFile = ".mobilecombackup.yaml"
+	contactsFile   = "contacts.yaml"
+	summaryFile    = "summary.yaml"
+)
+
 // MarkerFileContent represents the .mobilecombackup.yaml file structure
 type MarkerFileContent struct {
 	RepositoryStructureVersion string `yaml:"repository_structure_version"`
@@ -476,11 +483,11 @@ func (a *AutofixerImpl) fixMissingFile(violation validation.Violation) error {
 	var err error
 
 	switch violation.File {
-	case ".mobilecombackup.yaml":
+	case repoMarkerFile:
 		err = a.createMarkerFile()
-	case "contacts.yaml":
+	case contactsFile:
 		err = a.createEmptyContactsFile()
-	case "summary.yaml":
+	case summaryFile:
 		err = a.createSummaryFile()
 	case "files.yaml":
 		err = a.createFilesManifest()
@@ -523,9 +530,11 @@ func (a *AutofixerImpl) fixCountMismatch(violation validation.Violation) error {
 		return fmt.Errorf("failed to fix count attribute: %w", err)
 	}
 
-	// Write the fixed content atomically
+	// Write the fixed content atomically. tempPath derives from filePath,
+	// which was already run through pathValidator.ValidatePath/GetSafePath
+	// above; gosec's taint analysis does not see through that validation.
 	tempPath := filePath + ".tmp"
-	if err := os.WriteFile(tempPath, fixedContent, 0600); err != nil {
+	if err := os.WriteFile(tempPath, fixedContent, 0600); err != nil { //nolint:gosec
 		a.reporter.CompleteOperation(false, violation.File)
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}
@@ -556,7 +565,7 @@ func (a *AutofixerImpl) fixSizeMismatch(violation validation.Violation) error {
 
 func (a *AutofixerImpl) createMarkerFile() error {
 	// Validate marker file path
-	validatedPath, err := a.pathValidator.ValidatePath(".mobilecombackup.yaml")
+	validatedPath, err := a.pathValidator.ValidatePath(repoMarkerFile)
 	if err != nil {
 		return fmt.Errorf("invalid marker file path: %w", err)
 	}
@@ -596,7 +605,7 @@ func (a *AutofixerImpl) createMarkerFile() error {
 
 func (a *AutofixerImpl) createEmptyContactsFile() error {
 	// Validate contacts file path
-	validatedPath, err := a.pathValidator.ValidatePath("contacts.yaml")
+	validatedPath, err := a.pathValidator.ValidatePath(contactsFile)
 	if err != nil {
 		return fmt.Errorf("invalid contacts file path: %w", err)
 	}
@@ -635,7 +644,7 @@ func (a *AutofixerImpl) createEmptyContactsFile() error {
 
 func (a *AutofixerImpl) createSummaryFile() error {
 	// Validate summary file path
-	validatedPath, err := a.pathValidator.ValidatePath("summary.yaml")
+	validatedPath, err := a.pathValidator.ValidatePath(summaryFile)
 	if err != nil {
 		return fmt.Errorf("invalid summary file path: %w", err)
 	}

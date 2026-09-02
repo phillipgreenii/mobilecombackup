@@ -11,13 +11,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	// Repository configuration files
-	repoMarkerFile = ".mobilecombackup.yaml"
-	contactsFile   = "contacts.yaml"
-	summaryFile    = "summary.yaml"
-)
-
 func TestAutofixer_ManifestBehavior(t *testing.T) {
 	// Create temporary repository
 	tempDir := t.TempDir()

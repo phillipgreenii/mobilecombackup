@@ -299,6 +299,19 @@ const (
 	EventPriorityHigh   EventPriority = "high"
 )
 
+// Event.Type values used for agent lifecycle events. Event.Type is a plain
+// string (not an EventPriority-style typed enum) because it names an open
+// set of event kinds; these two are the recurring agent-lifecycle pair.
+const (
+	EventTypeAgentStarted   = "agent.started"
+	EventTypeAgentCompleted = "agent.completed"
+)
+
+// MarkdownFilePattern is the glob pattern for Markdown files, shared by the
+// default doc/include pattern lists below and code_analyzer.go's doc-file
+// detection so both agree on what counts as a Markdown file.
+const MarkdownFilePattern = "**/*.md"
+
 // EventHandler defines a function that handles events
 type EventHandler func(event Event) error
 
@@ -486,9 +499,9 @@ type AgentExecutionState struct {
 // DefaultAnalysisConfig returns the default configuration for analysis
 func DefaultAnalysisConfig() AnalysisConfig {
 	return AnalysisConfig{
-		IncludePatterns: []string{"**/*.go", "**/*.md"},
+		IncludePatterns: []string{"**/*.go", MarkdownFilePattern},
 		ExcludePatterns: []string{"vendor/**", "node_modules/**", ".git/**", "**/testdata/**"},
-		DocPatterns:     []string{"**/*.md", "**/doc.go"},
+		DocPatterns:     []string{MarkdownFilePattern, "**/doc.go"},
 		CodePatterns:    []string{"**/*.go"},
 		MinSeverity:     SeverityLow,
 		EnableTypes: []InconsistencyType{

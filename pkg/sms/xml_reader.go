@@ -20,6 +20,10 @@ const (
 	// XML attribute and element names
 	attrAddress = "address"
 	attrText    = "text"
+
+	// xmlNullValue is the literal string XML backup exports use for a
+	// missing/absent attribute value (this project treats it as empty).
+	xmlNullValue = "null"
 )
 
 // XMLSMSReader implements SMSReader interface for XML files

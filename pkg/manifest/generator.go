@@ -74,6 +74,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Repository filenames this generator excludes from / checks against its
+// own manifest. These mirror pkg/validation's manifestFileName and marker
+// filename conventions, but are kept local (not exported/shared) rather
+// than introducing a cross-package dependency for a lint-only cleanup.
+const (
+	filesManifestName    = "files.yaml"
+	repositoryMarkerFile = ".mobilecombackup.yaml"
+)
+
 // Generator handles generation and management of file manifests
 type Generator struct {
 	repositoryRoot string
@@ -181,7 +190,7 @@ func (g *Generator) WriteChecksumOnly() error {
 // shouldSkipFile determines if a file should be excluded from the manifest
 func (g *Generator) shouldSkipFile(relPath string) bool {
 	// Skip files.yaml itself and its checksum
-	if relPath == "files.yaml" || relPath == "files.yaml.sha256" {
+	if relPath == filesManifestName || relPath == filesManifestName+".sha256" {
 		return true
 	}
 
@@ -197,7 +206,7 @@ func (g *Generator) shouldSkipFile(relPath string) bool {
 
 	// Skip hidden files (starting with .)
 	baseName := filepath.Base(relPath)
-	if strings.HasPrefix(baseName, ".") && baseName != ".mobilecombackup.yaml" {
+	if strings.HasPrefix(baseName, ".") && baseName != repositoryMarkerFile {
 		return true
 	}
 
@@ -206,7 +215,7 @@ func (g *Generator) shouldSkipFile(relPath string) bool {
 
 // writeManifest writes the manifest to files.yaml
 func (g *Generator) writeManifest(manifest *FileManifest) error {
-	manifestPath := filepath.Join(g.repositoryRoot, "files.yaml")
+	manifestPath := filepath.Join(g.repositoryRoot, filesManifestName)
 
 	// Marshal to YAML
 	data, err := yaml.Marshal(manifest)
@@ -231,7 +240,7 @@ func (g *Generator) writeManifest(manifest *FileManifest) error {
 
 // writeManifestChecksum writes the checksum file for files.yaml
 func (g *Generator) writeManifestChecksum() error {
-	manifestPath := filepath.Join(g.repositoryRoot, "files.yaml")
+	manifestPath := filepath.Join(g.repositoryRoot, filesManifestName)
 	checksumPath := filepath.Join(g.repositoryRoot, "files.yaml.sha256")
 
 	// Calculate hash of files.yaml
