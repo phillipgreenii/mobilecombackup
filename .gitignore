@@ -25,9 +25,10 @@ mobilecombackup
 .pre-commit-config.yaml
 
 #########
-# agents 
+# agents
 #
 .serena/
+.beads/
 
 #########
 # PYTHON
