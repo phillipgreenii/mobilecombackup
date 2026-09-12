@@ -23,17 +23,13 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          # Extract base version and build dev version string for CI builds
-          BASE_VERSION=$(cat VERSION | sed 's/-dev$//')
-          GIT_HASH=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "unknown")
-          if [ "$GIT_HASH" != "unknown" ]; then
-            DEV_VERSION="${BASE_VERSION}-dev-g${GIT_HASH}"
-          else
-            DEV_VERSION="${BASE_VERSION}-dev"
-          fi
-          # For SonarQube, use base version only (clean semantic version)
+          # scripts/build-version.sh is the single source of truth for the
+          # version-string algorithm (devbox/CI path; no nix coupling).
+          DEV_VERSION=$(bash scripts/build-version.sh)
+          # For SonarQube, use base version only (clean semantic version).
+          SONAR_VERSION=$(bash scripts/build-version.sh --base)
           echo "dev_version=$DEV_VERSION" >> $GITHUB_OUTPUT
-          echo "sonar_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "sonar_version=$SONAR_VERSION" >> $GITHUB_OUTPUT
       - name: Run formatter
         run: devbox run formatter
       - name: Run tests with coverage

@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+# --base: print only the base version (VERSION file with any -dev suffix
+# stripped) and exit, skipping the git-derived dev/release suffixing below.
+# Used by CI to feed -Dsonar.projectVersion a clean major.minor.patch string.
+if [ "${1:-}" = "--base" ]; then
+    cat VERSION 2>/dev/null | sed 's/-dev$//' || echo ""
+    exit 0
+fi
+
 # Extract base version from VERSION file (remove -dev suffix)
 BASE_VERSION=$(cat VERSION 2>/dev/null | sed 's/-dev$//' || echo "")
 
