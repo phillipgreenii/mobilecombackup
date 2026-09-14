@@ -6,7 +6,6 @@ This document describes the automated quality monitoring and CI/CD integration i
 
 Phase 5 provides comprehensive automation for quality monitoring, including:
 
-- Enhanced pre-commit hooks with quality dashboard integration
 - GitHub Actions CI/CD integration with quality gates
 - Continuous quality monitoring with alerting
 - Historical quality reporting and trend analysis
@@ -132,7 +131,7 @@ Quality metrics are tracked over time:
 Phase 5 integrates with existing project infrastructure:
 
 - **devbox**: Quality commands available via devbox scripts
-- **Git Hooks**: Enhanced hooks complement existing pre-commit infrastructure
+- **Git Hooks**: `.githooks/pre-commit` remains the only supported pre-commit hook
 - **GitHub Actions**: Quality dashboard workflow runs alongside existing test workflow
 - **SonarQube**: Quality metrics complement SonarQube analysis
 

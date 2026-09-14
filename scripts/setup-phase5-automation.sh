@@ -35,23 +35,11 @@ echo -e "${PURPLE}🚀 FEAT-085 Phase 5 Automation Integration Setup${NC}"
 echo -e "${PURPLE}===============================================${NC}"
 echo ""
 
-# 1. Setup enhanced pre-commit hooks
-log_info "Setting up enhanced pre-commit hooks..."
-
-# Make enhanced pre-commit hook executable
-chmod +x "$SCRIPT_DIR/enhanced-pre-commit-hook.sh"
-chmod +x "$SCRIPT_DIR/quality-monitor.sh"
-
-# Create symlink for enhanced hook (optional - user can choose to use it)
-if [ -L "$PROJECT_ROOT/.githooks/pre-commit.enhanced" ] && [ -e "$PROJECT_ROOT/.githooks/pre-commit.enhanced" ]; then
-    log_warning "Enhanced pre-commit hook already exists"
-else
-    ln -sfn ../scripts/enhanced-pre-commit-hook.sh "$PROJECT_ROOT/.githooks/pre-commit.enhanced"
-    log_success "Enhanced pre-commit hook linked to .githooks/pre-commit.enhanced"
-fi
-
-# 2. Setup quality monitoring infrastructure
+# 1. Setup quality monitoring infrastructure
 log_info "Setting up quality monitoring infrastructure..."
+
+# Make quality monitor script executable
+chmod +x "$SCRIPT_DIR/quality-monitor.sh"
 
 # Create directories
 mkdir -p "$PROJECT_ROOT/.dashboard-metrics"
@@ -84,7 +72,7 @@ EOF
 
 log_success "Quality monitoring configuration created: .quality-config.env"
 
-# 3. Setup devbox integration
+# 2. Setup devbox integration
 log_info "Setting up devbox integration..."
 
 # Add quality monitoring commands to devbox.json if it exists
@@ -108,7 +96,7 @@ if [ -f "$PROJECT_ROOT/devbox.json" ]; then
     fi
 fi
 
-# 4. Setup GitHub Actions integration
+# 3. Setup GitHub Actions integration
 log_info "Verifying GitHub Actions integration..."
 
 if [ -f "$PROJECT_ROOT/.github/workflows/quality-dashboard.yml" ]; then
@@ -117,7 +105,7 @@ else
     log_error "Quality Dashboard GitHub Actions workflow not found"
 fi
 
-# 5. Create quality monitoring cron job template
+# 4. Create quality monitoring cron job template
 log_info "Creating quality monitoring automation templates..."
 
 cat > "$PROJECT_ROOT/scripts/setup-cron-quality-monitoring.sh" << 'EOF'
@@ -141,7 +129,7 @@ EOF
 chmod +x "$PROJECT_ROOT/scripts/setup-cron-quality-monitoring.sh"
 log_success "Cron job setup template created"
 
-# 6. Create integration test
+# 5. Create integration test
 log_info "Creating integration test for Phase 5 automation..."
 
 cat > "$PROJECT_ROOT/scripts/test-phase5-integration.sh" << 'EOF'
@@ -207,15 +195,14 @@ echo "🎉 Phase 5 integration tests completed successfully!"
 echo ""
 echo "Next steps:"
 echo "1. Configure .quality-config.env for your environment"
-echo "2. Setup notifications (Slack, email) if desired"  
-echo "3. Consider using enhanced-pre-commit-hook.sh for analyzer changes"
-echo "4. Enable GitHub Actions quality-dashboard.yml workflow"
+echo "2. Setup notifications (Slack, email) if desired"
+echo "3. Enable GitHub Actions quality-dashboard.yml workflow"
 EOF
 
 chmod +x "$PROJECT_ROOT/scripts/test-phase5-integration.sh"
 log_success "Integration test script created"
 
-# 7. Create documentation
+# 6. Create documentation
 log_info "Creating Phase 5 automation documentation..."
 
 cat > "$PROJECT_ROOT/docs/PHASE5_AUTOMATION.md" << 'EOF'
@@ -227,32 +214,17 @@ This document describes the automated quality monitoring and CI/CD integration i
 
 Phase 5 provides comprehensive automation for quality monitoring, including:
 
-- Enhanced pre-commit hooks with quality dashboard integration
 - GitHub Actions CI/CD integration with quality gates
 - Continuous quality monitoring with alerting
 - Historical quality reporting and trend analysis
 
 ## Components
 
-### 1. Enhanced Pre-commit Hooks
+### 1. Enhanced Pre-commit Hooks (removed)
 
-**File**: `scripts/enhanced-pre-commit-hook.sh`
+**File**: `scripts/enhanced-pre-commit-hook.sh` (removed — dead code, never wired into `core.hooksPath` execution, and hardcoded absolute paths to a single contributor's home directory made it non-functional for anyone else)
 
-Enhanced pre-commit hook that:
-- Detects analyzer package changes and runs comprehensive quality checks
-- Integrates with quality dashboard for real-time quality gate evaluation  
-- Provides performance tracking and detailed reporting
-- Falls back to standard hooks for non-analyzer changes
-
-**Usage**:
-```bash
-# Use enhanced hook for analyzer changes
-ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit.enhanced
-
-# Or replace existing hook (backup first!)
-cp .githooks/pre-commit .githooks/pre-commit.backup
-ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit
-```
+This was an opt-in alternative pre-commit hook with analyzer-specific quality dashboard checks. It was never installed automatically (git only executes the file literally named `pre-commit` in the hooks directory) and required a manual symlink swap that nothing in this repo performed by default. The active pre-commit hook remains `.githooks/pre-commit`.
 
 ### 2. GitHub Actions Quality Dashboard
 
@@ -367,7 +339,7 @@ Quality metrics are tracked over time:
 Phase 5 integrates with existing project infrastructure:
 
 - **devbox**: Quality commands available via devbox scripts
-- **Git Hooks**: Enhanced hooks complement existing pre-commit infrastructure
+- **Git Hooks**: `.githooks/pre-commit` remains the only supported pre-commit hook
 - **GitHub Actions**: Quality dashboard workflow runs alongside existing test workflow
 - **SonarQube**: Quality metrics complement SonarQube analysis
 
@@ -418,11 +390,7 @@ Phase 5 builds on Phase 4 dashboard functionality:
 
 ### Upgrading Existing Hooks
 
-To upgrade existing pre-commit hooks:
-
-1. Backup current hooks: `cp .githooks/pre-commit .githooks/pre-commit.backup`
-2. Test enhanced hooks: `./scripts/enhanced-pre-commit-hook.sh`
-3. Replace when confident: `ln -sf ../scripts/enhanced-pre-commit-hook.sh .githooks/pre-commit`
+The enhanced pre-commit hook described above has been removed as dead code (see "Enhanced Pre-commit Hooks (removed)"). `.githooks/pre-commit` is the only supported pre-commit hook; there is no upgrade path to follow here anymore.
 
 ## Future Enhancements
 
@@ -436,20 +404,12 @@ EOF
 
 log_success "Phase 5 automation documentation created"
 
-# 8. Final setup validation
+# 7. Final setup validation
 log_info "Validating Phase 5 automation setup..."
 
 validation_errors=0
 
-# Check enhanced pre-commit hook
-if [ -x "$SCRIPT_DIR/enhanced-pre-commit-hook.sh" ]; then
-    log_success "Enhanced pre-commit hook is executable"
-else
-    log_error "Enhanced pre-commit hook is not executable"
-    ((validation_errors++))
-fi
-
-# Check quality monitor script  
+# Check quality monitor script
 if [ -x "$SCRIPT_DIR/quality-monitor.sh" ]; then
     log_success "Quality monitor script is executable"
 else
