@@ -86,6 +86,11 @@ tmp/
 #
 .pipeline-state/
 *.lock
+# tc-5lxy.9: flox's own manifest.lock is meant to be committed (flox marks
+# it `linguist-generated=true` in .flox/.gitattributes, the same way
+# devbox.lock was tracked before this bead deleted it) -- the broad
+# `*.lock` glob above would otherwise silently swallow it.
+!.flox/env/manifest.lock
 
 #########
 # FEAT-085: Quality Dashboard runtime artifacts

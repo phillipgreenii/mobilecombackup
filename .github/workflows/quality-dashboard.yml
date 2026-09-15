@@ -40,8 +40,8 @@ jobs:
         with:
           fetch-depth: 0 # Need full history for trend analysis
 
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.11.0
+      - name: Install flox
+        uses: flox/install-flox-action@v2.6.0
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -64,7 +64,9 @@ jobs:
       - name: Run comprehensive tests with coverage
         run: |
           echo "🧪 Running comprehensive test suite..."
-          devbox run go test -v -cover -coverprofile=coverage.out ./pkg/analyzer/core
+          # Arbitrary-command passthrough (was `devbox run go test ...`) --
+          # flox's equivalent is `flox activate -- <command>` (tc-5lxy.9 notes).
+          flox activate -- go test -v -cover -coverprofile=coverage.out ./pkg/analyzer/core
 
           # Extract coverage percentage
           coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
@@ -76,8 +78,14 @@ jobs:
         run: |
           echo "⚡ Running performance benchmarks..."
 
-          # Run benchmarks with timeout
-          timeout 300 devbox run go test -bench=BenchmarkAdvanced -benchmem -run=^$ ./pkg/analyzer/core > benchmark_results.txt || true
+          # Run benchmarks with timeout. Arbitrary-command passthrough (was
+          # `devbox run go test ...`) -- flox's equivalent is `flox activate
+          # -- <command>` (tc-5lxy.9 notes). The trailing `|| true` means
+          # this step stays green even if the swap silently broke and
+          # produced an empty file -- the dedicated verification step below
+          # is what actually catches that, per this bead's acceptance
+          # criteria.
+          timeout 300 flox activate -- go test -bench=BenchmarkAdvanced -benchmem -run=^$ ./pkg/analyzer/core > benchmark_results.txt || true
 
           # Extract key performance metrics
           if [ -f benchmark_results.txt ]; then
@@ -92,6 +100,22 @@ jobs:
             echo "benchmark_results_available=false" >> $GITHUB_OUTPUT
             echo "⚠️ Benchmark results not available"
           fi
+
+      - name: Verify benchmark output is non-empty
+        # tc-5lxy.9 acceptance criterion: the previous step's `|| true`
+        # means a broken `devbox run` -> `flox activate --` swap would
+        # otherwise still show green while silently producing an empty
+        # benchmark file. Verify the ACTUAL content, not just job status.
+        run: |
+          if [ ! -s benchmark_results.txt ]; then
+            echo "::error file=benchmark_results.txt::benchmark_results.txt is missing or empty -- the flox activate benchmark step likely failed silently (its '|| true' masks that)."
+            exit 1
+          fi
+          if ! grep -q "Benchmark" benchmark_results.txt; then
+            echo "::error file=benchmark_results.txt::benchmark_results.txt has no line containing 'Benchmark' -- the flox activate benchmark step likely failed silently (its '|| true' masks that)."
+            exit 1
+          fi
+          echo "✓ benchmark_results.txt is non-empty and contains a Benchmark line"
 
       - name: Generate quality dashboard report
         id: dashboard

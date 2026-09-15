@@ -118,9 +118,9 @@ linters:
 # go-builders.nix:319) requires this config to be safe to run unscoped
 # (`golangci-lint run ./...`), since that gate cannot use devbox's old
 # `--new-from-rev HEAD` diff scoping. The devbox `linter` recipe was
-# reconciled to match (see devbox.json) so both surfaces see the same
-# backlog instead of the gate silently importing one the diff-scoped
-# recipe had been hiding.
+# reconciled to match (now the justfile's `linter` recipe, tc-5lxy.8/.9)
+# so both surfaces see the same backlog instead of the gate silently
+# importing one the diff-scoped recipe had been hiding.
 #
 # The re-measure (golangci-lint v2.12.2, this config, `./...`) initially
 # read 147 issues across 11 linters, matching this bead's stale premise.

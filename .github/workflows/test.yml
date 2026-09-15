@@ -18,26 +18,29 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Required for version detection with git history
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.14.0
+      - name: Install flox
+        uses: flox/install-flox-action@v2.6.0
       - name: Extract version
         id: version
         run: |
           # scripts/build-version.sh is the single source of truth for the
-          # version-string algorithm (devbox/CI path; no nix coupling).
+          # version-string algorithm (flox/CI path; no nix coupling).
           DEV_VERSION=$(bash scripts/build-version.sh)
           # For SonarQube, use base version only (clean semantic version).
           SONAR_VERSION=$(bash scripts/build-version.sh --base)
           echo "dev_version=$DEV_VERSION" >> $GITHUB_OUTPUT
           echo "sonar_version=$SONAR_VERSION" >> $GITHUB_OUTPUT
       - name: Run formatter
-        run: devbox run formatter
+        run: flox activate -- just formatter
       - name: Run tests with coverage
-        run: devbox run go test -v -covermode=set -coverprofile=coverage.out ./...
+        # Arbitrary-command passthrough (was `devbox run go test ...`, not a
+        # named devbox.json script) -- flox's equivalent is `flox activate
+        # -- <command>`, not a `just` recipe swap (tc-5lxy.9 notes).
+        run: flox activate -- go test -v -covermode=set -coverprofile=coverage.out ./...
       - name: Run linter
-        run: devbox run linter
+        run: flox activate -- just linter
       - name: Build CLI
-        run: devbox run build-cli
+        run: flox activate -- just build-cli
       - name: SonarQube Scan
         # Skip for dependabot PRs (they don't have access to secrets)
         if: github.actor != 'dependabot[bot]'
