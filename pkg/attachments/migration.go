@@ -103,7 +103,6 @@ func (mm *MigrationManager) MigrateAllAttachments() (*MigrationSummary, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to stream attachments for migration: %w", err)
 	}
@@ -323,7 +322,6 @@ func (mm *MigrationManager) ValidateMigration() error {
 
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
@@ -409,7 +407,6 @@ func (mm *MigrationManager) GetMigrationStatus() (map[string]interface{}, error)
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get migration status: %w", err)
 	}

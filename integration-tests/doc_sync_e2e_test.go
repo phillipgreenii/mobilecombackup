@@ -51,7 +51,7 @@ func TestDocSyncCommand_E2E_Basic(t *testing.T) {
 	// Create test project structure
 	testDir := t.TempDir()
 	projectDir := filepath.Join(testDir, "test-project")
-	err := os.MkdirAll(projectDir, 0755)
+	err := os.MkdirAll(projectDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create test project directory: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestDocSyncCommand_E2E_Basic(t *testing.T) {
 	t.Run("CLI_BuildAndVersion", func(t *testing.T) {
 		// First try to build and test basic CLI functionality
 		buildDir := filepath.Join(testDir, "build")
-		err := os.MkdirAll(buildDir, 0755)
+		err := os.MkdirAll(buildDir, 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create build directory: %v", err)
 		}
@@ -169,7 +169,6 @@ func TestDocSyncCommand_E2E_BuildAvailability(t *testing.T) {
 		binPath := filepath.Join(t.TempDir(), "mobilecombackup-test")
 		cmd := exec.Command("go", "build", "-o", binPath, filepath.Join(repoModuleRoot(t), "cmd", "mobilecombackup"))
 		output, err := cmd.CombinedOutput()
-
 		if err != nil {
 			t.Logf("Build check failed (expected): %v", err)
 			t.Logf("Build output: %s", output)
@@ -213,7 +212,7 @@ func TestDocSyncCommand_E2E_Configuration(t *testing.T) {
 
 	testDir := t.TempDir()
 	projectDir := filepath.Join(testDir, "config-project")
-	err := os.MkdirAll(projectDir, 0755)
+	err := os.MkdirAll(projectDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create config test directory: %v", err)
 	}
@@ -233,7 +232,7 @@ func TestDocSyncCommand_E2E_Configuration(t *testing.T) {
 }
 `
 		configPath := filepath.Join(projectDir, ".doc-sync.json")
-		err := os.WriteFile(configPath, []byte(configContent), 0644)
+		err := os.WriteFile(configPath, []byte(configContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create config file: %v", err)
 		}
@@ -273,7 +272,6 @@ func TestDocSyncCommand_E2E_Configuration(t *testing.T) {
 			}
 			return nil
 		})
-
 		if err != nil {
 			t.Fatalf("Failed to walk project directory: %v", err)
 		}
@@ -438,12 +436,12 @@ Cross-reference files using ` + "`ExtractReferences`" + `.
 
 	for relPath, content := range structure {
 		fullPath := filepath.Join(projectDir, relPath)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", relPath, err)
 		}
 
-		err = os.WriteFile(fullPath, []byte(content), 0644)
+		err = os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", relPath, err)
 		}
@@ -473,12 +471,12 @@ Call ` + "`process()`" + ` to begin.
 
 	for relPath, content := range structure {
 		fullPath := filepath.Join(projectDir, relPath)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", relPath, err)
 		}
 
-		err = os.WriteFile(fullPath, []byte(content), 0644)
+		err = os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", relPath, err)
 		}

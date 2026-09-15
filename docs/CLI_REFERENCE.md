@@ -32,42 +32,44 @@ mobilecombackup validate
 
 All commands support these global flags:
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--repo-root string` | Path to repository root | `.` (current directory) |
-| `--quiet` | Suppress non-error output | `false` |
-| `--help, -h` | Show help information | |
-| `--version, -v` | Show version information | |
+| Flag                 | Description               | Default                 |
+| -------------------- | ------------------------- | ----------------------- |
+| `--repo-root string` | Path to repository root   | `.` (current directory) |
+| `--quiet`            | Suppress non-error output | `false`                 |
+| `--help, -h`         | Show help information     |                         |
+| `--version, -v`      | Show version information  |                         |
 
 ### Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable       | Description                  | Example                             |
+| -------------- | ---------------------------- | ----------------------------------- |
 | `MB_REPO_ROOT` | Default repository root path | `export MB_REPO_ROOT=/path/to/repo` |
 
 ## Commands Overview
 
-| Command | Purpose | Quick Example |
-|---------|---------|---------------|
-| [`init`](#init-command) | Initialize new repository | `mobilecombackup init` |
-| [`import`](#import-command) | Import backup files | `mobilecombackup import backup.xml` |
-| [`info`](#info-command) | Show repository information | `mobilecombackup info` |
-| [`validate`](#validate-command) | Validate repository integrity | `mobilecombackup validate` |
-| [`completion`](#completion-command) | Generate shell completion | `mobilecombackup completion bash` |
-| [`help`](#help-command) | Get help for commands | `mobilecombackup help import` |
+| Command                             | Purpose                       | Quick Example                       |
+| ----------------------------------- | ----------------------------- | ----------------------------------- |
+| [`init`](#init-command)             | Initialize new repository     | `mobilecombackup init`              |
+| [`import`](#import-command)         | Import backup files           | `mobilecombackup import backup.xml` |
+| [`info`](#info-command)             | Show repository information   | `mobilecombackup info`              |
+| [`validate`](#validate-command)     | Validate repository integrity | `mobilecombackup validate`          |
+| [`completion`](#completion-command) | Generate shell completion     | `mobilecombackup completion bash`   |
+| [`help`](#help-command)             | Get help for commands         | `mobilecombackup help import`       |
 
 ## init Command
 
 Initialize a new mobilecombackup repository with the required directory structure.
 
 ### Syntax
+
 ```bash
 mobilecombackup init [flags]
 ```
 
 ### Flags
-| Flag | Description | Default |
-|------|-------------|---------|
+
+| Flag        | Description                    | Default |
+| ----------- | ------------------------------ | ------- |
 | `--dry-run` | Preview without creating files | `false` |
 
 ### Examples
@@ -89,8 +91,9 @@ $ mobilecombackup init --quiet
 ### Created Structure
 
 The init command creates:
+
 - `calls/` - Directory for call log XML files
-- `sms/` - Directory for SMS/MMS XML files  
+- `sms/` - Directory for SMS/MMS XML files
 - `attachments/` - Directory for extracted attachment files
 - `.mobilecombackup.yaml` - Repository marker file with version metadata
 - `contacts.yaml` - Empty contacts file for future use
@@ -116,15 +119,17 @@ repo
 Validate a mobilecombackup repository for structure, content, and consistency.
 
 ### Syntax
+
 ```bash
 mobilecombackup validate [flags]
 ```
 
 ### Flags
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--output-json` | Output results in JSON format | `false` |
-| `--verbose` | Show detailed validation progress | `false` |
+
+| Flag            | Description                       | Default |
+| --------------- | --------------------------------- | ------- |
+| `--output-json` | Output results in JSON format     | `false` |
+| `--verbose`     | Show detailed validation progress | `false` |
 
 ### Examples
 
@@ -151,6 +156,7 @@ $ mobilecombackup validate --output-json
 ### Validation Checks
 
 The validate command performs comprehensive validation including:
+
 - Repository structure verification
 - Manifest file validation
 - Checksum verification
@@ -166,6 +172,7 @@ The validate command performs comprehensive validation including:
 ### Example Output
 
 **Valid repository:**
+
 ```
 Validating repository... done
 
@@ -175,6 +182,7 @@ Validation Report for: /path/to/repo
 ```
 
 **With violations:**
+
 ```
 Validating repository... done
 
@@ -197,7 +205,7 @@ invalid_format (1):
   "violations": [
     {
       "Type": "missing_file",
-      "Severity": "error", 
+      "Severity": "error",
       "File": "files.yaml",
       "Message": "Failed to load manifest"
     }
@@ -210,13 +218,15 @@ invalid_format (1):
 Show comprehensive information about a mobilecombackup repository including statistics, metadata, and validation status.
 
 ### Syntax
+
 ```bash
 mobilecombackup info [flags]
 ```
 
 ### Flags
-| Flag | Description | Default |
-|------|-------------|---------|
+
+| Flag     | Description                       | Default |
+| -------- | --------------------------------- | ------- |
 | `--json` | Output information in JSON format | `false` |
 
 ### Examples
@@ -288,7 +298,7 @@ Validation: OK
   "calls": {
     "2023": {
       "count": 1234,
-      "earliest": "2023-01-05T10:00:00Z", 
+      "earliest": "2023-01-05T10:00:00Z",
       "latest": "2023-12-28T15:30:00Z"
     }
   },
@@ -321,18 +331,20 @@ Validation: OK
 Import mobile backup files into the repository with deduplication, validation, and attachment extraction.
 
 ### Syntax
+
 ```bash
 mobilecombackup import [files/directories...] [flags]
 ```
 
 ### Flags
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--dry-run` | Preview import without changes | `false` |
-| `--filter string` | Import only specific data types (`calls`, `sms`) | (all types) |
-| `--verbose` | Show detailed import progress | `false` |
-| `--json` | Output results in JSON format | `false` |
-| `--no-error-on-rejects` | Continue even if rejected entries found | `false` |
+
+| Flag                    | Description                                      | Default     |
+| ----------------------- | ------------------------------------------------ | ----------- |
+| `--dry-run`             | Preview import without changes                   | `false`     |
+| `--filter string`       | Import only specific data types (`calls`, `sms`) | (all types) |
+| `--verbose`             | Show detailed import progress                    | `false`     |
+| `--json`                | Output results in JSON format                    | `false`     |
+| `--no-error-on-rejects` | Continue even if rejected entries found          | `false`     |
 
 ### Examples
 
@@ -340,7 +352,7 @@ mobilecombackup import [files/directories...] [flags]
 # Import specific files
 $ mobilecombackup import backup1.xml backup2.xml
 
-# Scan directory for backup files  
+# Scan directory for backup files
 $ mobilecombackup import /path/to/backups/
 
 # Import to specific repository
@@ -425,8 +437,8 @@ Time taken: 2.3s
     "errors": 0
   },
   "years": {
-    "2023": {"final": 53, "added": 35, "duplicates": 11, "rejected": 3},
-    "2024": {"final": 70, "added": 55, "duplicates": 21, "rejected": 5}
+    "2023": { "final": 53, "added": 35, "duplicates": 11, "rejected": 3 },
+    "2024": { "final": 70, "added": 55, "duplicates": 21, "rejected": 5 }
   },
   "rejection_files": ["rejected/calls/calls-abc12345-20240115.xml"]
 }
@@ -454,13 +466,15 @@ Time taken: 2.3s
 Generate shell completion scripts for bash, zsh, fish, or PowerShell.
 
 ### Syntax
+
 ```bash
 mobilecombackup completion [shell]
 ```
 
 ### Supported Shells
+
 - `bash`
-- `zsh` 
+- `zsh`
 - `fish`
 - `powershell`
 
@@ -482,6 +496,7 @@ $ mobilecombackup completion fish > ~/.config/fish/completions/mobilecombackup.f
 Get help information for any command.
 
 ### Syntax
+
 ```bash
 mobilecombackup help [command]
 ```
@@ -502,7 +517,7 @@ $ mobilecombackup help validate
 Standard exit codes used across all commands:
 
 - `0`: Success
-- `1`: Error (invalid command, flag, or execution error)  
+- `1`: Error (invalid command, flag, or execution error)
 - `2`: Runtime error (future subcommands may use this)
 
 ## Advanced Usage
@@ -552,7 +567,7 @@ done
 ## Next Steps
 
 - **[Installation Guide](INSTALLATION.md)** - Install or update MobileComBackup
-- **[Development Guide](DEVELOPMENT.md)** - Contribute to the project  
+- **[Development Guide](DEVELOPMENT.md)** - Contribute to the project
 - **[Architecture Overview](ARCHITECTURE.md)** - Understand system design
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Fix common issues
 

@@ -19,6 +19,7 @@ As of version 1.1.0, the validation interfaces have been enhanced with context-a
 Replace legacy method calls with their context-aware equivalents:
 
 #### Before (Legacy)
+
 ```go
 // Legacy validation methods (deprecated)
 report, err := validator.ValidateRepository()
@@ -29,6 +30,7 @@ consistencyViolations := validator.ValidateConsistency()
 ```
 
 #### After (Context-aware)
+
 ```go
 // Context-aware validation methods (recommended)
 ctx := context.Background()
@@ -44,6 +46,7 @@ consistencyViolations := validator.ValidateConsistencyContext(ctx)
 Take advantage of context features for better control:
 
 #### Timeout Control
+
 ```go
 // Set validation timeout
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -57,6 +60,7 @@ if errors.Is(err, context.DeadlineExceeded) {
 ```
 
 #### Cancellation Support
+
 ```go
 // Cancellable validation
 ctx, cancel := context.WithCancel(context.Background())
@@ -79,6 +83,7 @@ if errors.Is(err, context.Canceled) {
 Modify tests to use context-aware methods:
 
 #### Before
+
 ```go
 func TestValidation(t *testing.T) {
     validator := NewRepositoryValidator(repoPath)
@@ -90,6 +95,7 @@ func TestValidation(t *testing.T) {
 ```
 
 #### After
+
 ```go
 func TestValidation(t *testing.T) {
     validator := NewRepositoryValidator(repoPath)
@@ -129,6 +135,7 @@ case err != nil:
 ### RepositoryValidator Interface
 
 #### Deprecated Methods
+
 ```go
 // These methods are deprecated and will be removed in v2.0.0
 ValidateRepository() (*Report, error)
@@ -139,6 +146,7 @@ ValidateConsistency() []Violation
 ```
 
 #### New Context-Aware Methods
+
 ```go
 // Use these methods instead
 ValidateRepositoryContext(ctx context.Context) (*Report, error)
@@ -160,6 +168,7 @@ During the deprecation period (v1.1.0 to v2.0.0):
 ## Best Practices
 
 ### Use Context.Background() for Simple Cases
+
 ```go
 // For simple validation without timeout/cancellation needs
 ctx := context.Background()
@@ -167,6 +176,7 @@ report, err := validator.ValidateRepositoryContext(ctx)
 ```
 
 ### Set Reasonable Timeouts
+
 ```go
 // For long-running validation operations
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -174,6 +184,7 @@ defer cancel()
 ```
 
 ### Propagate Context from Callers
+
 ```go
 func MyValidationFunc(ctx context.Context, repoPath string) error {
     validator := NewRepositoryValidator(repoPath)
@@ -223,15 +234,19 @@ find . -name "*.go" -exec goimports -w {} \;
 ## Troubleshooting
 
 ### "context" Package Not Imported
+
 Add the context import:
+
 ```go
 import "context"
 ```
 
 ### Tests Failing with Context Errors
+
 Make sure to use `context.Background()` in tests unless specifically testing context behavior.
 
 ### Performance Concerns
+
 Context-aware methods have negligible performance overhead compared to legacy methods.
 
 ## Support

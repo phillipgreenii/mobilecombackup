@@ -18,9 +18,9 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 		{
 			name: "valid SMS with all fields",
 			xmlData: `<smses count="1">
-				<sms protocol="0" address="+15555550000" date="1373942505322" type="2" 
-				     subject="Test" body="Hello World" service_center="+13123149623" 
-				     read="1" status="-1" locked="0" date_sent="1373942505000" 
+				<sms protocol="0" address="+15555550000" date="1373942505322" type="2"
+				     subject="Test" body="Hello World" service_center="+13123149623"
+				     read="1" status="-1" locked="0" date_sent="1373942505000"
 				     readable_date="Jul 15, 2013 10:41:45 PM" contact_name="John Doe" />
 			</smses>`,
 			expected: SMS{
@@ -43,9 +43,9 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 		{
 			name: "SMS with null values",
 			xmlData: `<smses count="1">
-				<sms protocol="0" address="+15555550000" date="1373942505322" type="1" 
-				     subject="null" body="Test message" service_center="null" 
-				     read="1" status="-1" locked="0" date_sent="0" 
+				<sms protocol="0" address="+15555550000" date="1373942505322" type="1"
+				     subject="null" body="Test message" service_center="null"
+				     read="1" status="-1" locked="0" date_sent="0"
 				     readable_date="Jul 15, 2013 10:41:45 PM" contact_name="(Unknown)" />
 			</smses>`,
 			expected: SMS{
@@ -68,10 +68,10 @@ func TestXMLSMSReader_parseSMSElement(t *testing.T) {
 		{
 			name: "SMS with escaped characters",
 			xmlData: `<smses count="1">
-				<sms protocol="0" address="7535" date="1373929642000" type="1" 
-				     subject="null" body="Free AT&amp;T msg: Your account # ending in XXXX." 
-				     service_center="+13123149623" read="1" status="-1" locked="0" 
-				     date_sent="1373929642000" readable_date="Jul 15, 2013 7:07:22 PM" 
+				<sms protocol="0" address="7535" date="1373929642000" type="1"
+				     subject="null" body="Free AT&amp;T msg: Your account # ending in XXXX."
+				     service_center="+13123149623" read="1" status="-1" locked="0"
+				     date_sent="1373929642000" readable_date="Jul 15, 2013 7:07:22 PM"
 				     contact_name="(Unknown)" />
 			</smses>`,
 			expected: SMS{
@@ -145,11 +145,11 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 		{
 			name: "valid MMS with text part",
 			xmlData: `<smses count="1">
-				<mms callback_set="0" text_only="1" sub="" date="1414697344000" 
-				     read="1" msg_box="2" address="+15555550001" m_type="128" 
+				<mms callback_set="0" text_only="1" sub="" date="1414697344000"
+				     read="1" msg_box="2" address="+15555550001" m_type="128"
 				     readable_date="Oct 30, 2014 3:29:04 PM" contact_name="Ted Turner">
 					<parts>
-						<part seq="0" ct="text/plain" name="null" chset="106" 
+						<part seq="0" ct="text/plain" name="null" chset="106"
 						      text="I'm in" />
 					</parts>
 				</mms>
@@ -179,13 +179,13 @@ func TestXMLSMSReader_parseMMSElement(t *testing.T) {
 		{
 			name: "MMS with SMIL and text parts",
 			xmlData: `<smses count="1">
-				<mms callback_set="0" text_only="1" sub="null" date="1414712124000" 
-				     read="1" msg_box="1" address="+15555550001" m_type="132" 
+				<mms callback_set="0" text_only="1" sub="null" date="1414712124000"
+				     read="1" msg_box="1" address="+15555550001" m_type="132"
 				     readable_date="Oct 30, 2014 7:35:24 PM" contact_name="Ted Turner">
 					<parts>
-						<part seq="-1" ct="application/smil" name="smil.xml" 
+						<part seq="-1" ct="application/smil" name="smil.xml"
 						      text='&lt;smil&gt;&lt;head&gt;&lt;/head&gt;&lt;/smil&gt;' />
-						<part seq="0" ct="text/plain" name="text_0.txt" chset="106" 
+						<part seq="0" ct="text/plain" name="text_0.txt" chset="106"
 						      text="Maybe. I'm still at work." />
 					</parts>
 				</mms>
@@ -276,10 +276,10 @@ func TestXMLSMSReader_MessageInterface(t *testing.T) {
 	reader := NewXMLSMSReader("/test/repo")
 
 	xmlData := `<smses count="2">
-		<sms protocol="0" address="+15555550000" date="1373942505322" type="2" 
-		     body="SMS Test" readable_date="Jul 15, 2013 10:41:45 PM" 
+		<sms protocol="0" address="+15555550000" date="1373942505322" type="2"
+		     body="SMS Test" readable_date="Jul 15, 2013 10:41:45 PM"
 		     contact_name="John Doe" />
-		<mms date="1414697344000" msg_box="1" address="+15555550001" 
+		<mms date="1414697344000" msg_box="1" address="+15555550001"
 		     readable_date="Oct 30, 2014 3:29:04 PM" contact_name="Jane Smith">
 			<parts>
 				<part seq="0" ct="text/plain" text="MMS Test" />
@@ -292,7 +292,6 @@ func TestXMLSMSReader_MessageInterface(t *testing.T) {
 		messages = append(messages, msg)
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}
@@ -327,7 +326,6 @@ func TestXMLSMSReader_MessageInterface(t *testing.T) {
 }
 
 func TestXMLSMSReader_GetMessageCount(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		xmlData  string
@@ -402,8 +400,8 @@ func TestXMLSMSReader_ValidateSMSFile_CountMismatch(t *testing.T) {
 	// Test XML with count mismatch (count says 3 but only 1 message)
 	xmlData := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 		<smses count="3">
-			<sms protocol="0" address="+15555550000" date="1373942505322" type="2" 
-			     body="Only one message" readable_date="Jul 15, 2013 10:41:45 PM" 
+			<sms protocol="0" address="+15555550000" date="1373942505322" type="2"
+			     body="Only one message" readable_date="Jul 15, 2013 10:41:45 PM"
 			     contact_name="John Doe" />
 		</smses>`
 
@@ -413,7 +411,6 @@ func TestXMLSMSReader_ValidateSMSFile_CountMismatch(t *testing.T) {
 		actualCount++
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}
@@ -467,8 +464,8 @@ func TestXMLSMSReader_DateConversion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			xmlData := `<smses count="1">
-				<sms protocol="0" address="+15555550000" date="` + tt.dateAttr + `" type="2" 
-				     body="Test" readable_date="Jul 15, 2013 10:41:45 PM" 
+				<sms protocol="0" address="+15555550000" date="` + tt.dateAttr + `" type="2"
+				     body="Test" readable_date="Jul 15, 2013 10:41:45 PM"
 				     contact_name="John Doe" />
 			</smses>`
 
@@ -525,7 +522,6 @@ func TestXMLSMSReader_EmptyFile(t *testing.T) {
 		messageCount++
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("StreamMessagesFromReader() error = %v", err)
 	}

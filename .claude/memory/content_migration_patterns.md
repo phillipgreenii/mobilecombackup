@@ -5,23 +5,30 @@
 ### What STAYS in README.md (Essential Quick-Start Only)
 
 #### Project Overview (10-15 lines)
+
 ```markdown
 # Project Title
-[![badges]()] 
+
+[![badges]()]
 Brief description of what the tool does (1-2 sentences)
 ```
 
 #### Quick Installation (15-20 lines)
-```markdown
+
+````markdown
 ## Installation
+
 ### Quick Install (Primary Method Only)
+
 ```bash
 # Single command for most common installation
 nix run github:phillipgreenii/mobilecombackup -- --help
 ```
+````
 
 📖 **[See complete installation guide](docs/INSTALLATION.md)** for all methods and troubleshooting.
-```
+
+````
 
 #### Basic Usage (30-40 lines)
 ```markdown
@@ -33,10 +40,11 @@ mobilecombackup init
 
 # Import backup files
 mobilecombackup import backup.xml
-```
+````
 
 📖 **[See complete CLI reference](docs/CLI_REFERENCE.md)** for all commands and options.
-```
+
+````
 
 #### Documentation Navigation (20-30 lines)
 ```markdown
@@ -46,11 +54,12 @@ mobilecombackup import backup.xml
 - 🔧 **[Development Guide](docs/DEVELOPMENT.md)** - Setup, testing, and contribution
 - 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment
 - 🗂️ **[Documentation Index](docs/INDEX.md)** - Find everything
-```
+````
 
 ### What MOVES from README.md
 
 #### Installation Details → docs/INSTALLATION.md
+
 ```markdown
 MOVE: Detailed Nix flake examples
 MOVE: Build from source instructions
@@ -60,15 +69,17 @@ MOVE: Installation troubleshooting
 ```
 
 #### CLI Examples → docs/CLI_REFERENCE.md
+
 ```markdown
 MOVE: Detailed command examples (init, validate, info, import)
 MOVE: All flag documentation
-MOVE: JSON output examples  
+MOVE: JSON output examples
 MOVE: Exit code tables
 MOVE: Advanced usage scenarios
 ```
 
 #### Development Info → docs/DEVELOPMENT.md
+
 ```markdown
 MOVE: Development sandbox setup
 MOVE: Testing commands and strategies
@@ -80,7 +91,8 @@ MOVE: Contribution workflow details
 ## Migration Transformation Examples
 
 ### Before (README.md - Too Detailed)
-```markdown
+
+````markdown
 ### Init Command
 
 Initialize a new mobilecombackup repository with the required directory structure.
@@ -98,8 +110,10 @@ $ mobilecombackup init --dry-run
 # Initialize quietly (suppress output)
 $ mobilecombackup init --quiet
 ```
+````
 
 The init command creates:
+
 - `calls/` - Directory for call log XML files
 - `sms/` - Directory for SMS/MMS XML files
 - `attachments/` - Directory for extracted attachment files
@@ -108,6 +122,7 @@ The init command creates:
 - `summary.yaml` - Initial summary with zero counts
 
 Example output:
+
 ```
 Initialized mobilecombackup repository in: /path/to/repo
 
@@ -120,7 +135,8 @@ repo
 ├── contacts.yaml
 └── summary.yaml
 ```
-```
+
+````
 
 ### After (README.md - Essential Only)
 ```markdown
@@ -131,15 +147,16 @@ repo
 # Initialize repository
 mobilecombackup init
 
-# Import backup files  
+# Import backup files
 mobilecombackup import backup.xml
 
 # View repository info
 mobilecombackup info
-```
+````
 
 📖 **[Complete CLI Reference](docs/CLI_REFERENCE.md)** - All commands, flags, and examples.
-```
+
+````
 
 ### After (docs/CLI_REFERENCE.md - Detailed)
 ```markdown
@@ -152,9 +169,10 @@ Initialize a new mobilecombackup repository with the required directory structur
 ### Syntax
 ```bash
 mobilecombackup init [flags]
-```
+````
 
 ### Examples
+
 ```bash
 # Initialize in current directory
 $ mobilecombackup init
@@ -170,7 +188,9 @@ $ mobilecombackup init --quiet
 ```
 
 ### Created Structure
+
 The init command creates:
+
 - `calls/` - Directory for call log XML files
 - `sms/` - Directory for SMS/MMS XML files
 - `attachments/` - Directory for extracted attachment files
@@ -179,6 +199,7 @@ The init command creates:
 - `summary.yaml` - Initial summary with zero counts
 
 ### Example Output
+
 ```
 Initialized mobilecombackup repository in: /path/to/repo
 
@@ -193,7 +214,8 @@ repo
 ```
 
 [← Back to README](../README.md) | [Next: validate command](#validate-command)
-```
+
+````
 
 ## Navigation Pattern Examples
 
@@ -207,7 +229,7 @@ Find detailed information in our comprehensive documentation:
 - 📦 **[Installation Guide](docs/INSTALLATION.md)** - All installation methods, prerequisites, and troubleshooting
 - ⚡ **[Quick Start Tutorial](docs/CLI_REFERENCE.md#quick-start)** - Get up and running in 5 minutes
 
-### 📖 **Reference Guides**  
+### 📖 **Reference Guides**
 - 🛠️ **[Complete CLI Reference](docs/CLI_REFERENCE.md)** - Every command, flag, and example
 - 🏗️ **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and technical decisions
 
@@ -217,37 +239,44 @@ Find detailed information in our comprehensive documentation:
 
 ### 🔍 **Find Anything**
 - 🗂️ **[Documentation Index](docs/INDEX.md)** - Complete documentation directory and search guide
-```
+````
 
 ### Cross-Reference Pattern
+
 ```markdown
 <!-- In docs/INSTALLATION.md -->
+
 ## Next Steps
 
 After installation, see:
+
 - **[Quick Start Tutorial](CLI_REFERENCE.md#quick-start)** - Your first commands
 - **[Development Setup](DEVELOPMENT.md)** - Contributing to the project
 - **[← Back to README](../README.md)** - Project overview
 
 ---
+
 📖 **[Documentation Index](INDEX.md)** | 🏠 **[Back to README](../README.md)**
 ```
 
 ## Content Quality Standards
 
 ### Consistency Requirements
+
 - Use same terminology across all documents
 - Maintain unified code block formatting
 - Apply consistent emoji usage for navigation
 - Use standard heading hierarchy (H1=title, H2=sections, etc.)
 
 ### Link Management
+
 - Always use relative paths for internal docs
 - Include bidirectional navigation (forward/back)
 - Provide "up" navigation to parent topics
 - Test all links after migration
 
 ### User Experience Optimization
+
 - Lead with most common use cases
 - Group related information together
 - Use progressive disclosure (summary → details)
@@ -256,18 +285,21 @@ After installation, see:
 ## Validation Checklist
 
 ### Content Migration Verification
+
 - [ ] All original information preserved
-- [ ] No content duplication between files  
+- [ ] No content duplication between files
 - [ ] Consistent terminology across documents
 - [ ] Appropriate level of detail for each file
 
 ### Navigation Verification
+
 - [ ] All internal links functional
 - [ ] Clear path from README to detailed info
 - [ ] Bidirectional navigation where appropriate
 - [ ] docs/INDEX.md includes all topics
 
 ### User Experience Verification
+
 - [ ] New users can find installation quickly (<30 seconds)
 - [ ] Developers can find contribution info quickly (<1 minute)
 - [ ] Mobile-friendly reading experience

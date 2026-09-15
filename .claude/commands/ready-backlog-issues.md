@@ -1,6 +1,7 @@
 Process all issues in the backlog directory to assess readiness for implementation. Use agent spec-review-engineer to review each issue individually, following the same workflow as the `/ready-issue` command.
 
 **Processing Order:**
+
 1. **Bugs first, then features** (BUG-XXX before FEAT-XXX)
 2. **Alphabetical within each type** (BUG-001, BUG-002, then FEAT-001, FEAT-002)
 3. **Dependency awareness**: If an issue depends on another issue, the dependency must be ready first
@@ -22,10 +23,12 @@ Process all issues in the backlog directory to assess readiness for implementati
    - Leave the issue in backlog/ for further planning
 
 **Progress Reporting:**
+
 - Provide simple progress updates: "Processing [X] of [Y]: [ISSUE-ID]..."
 - Show summary at end: "Ready: [list], Updated: [list], Dependencies Blocked: [list]"
 
 **Important Notes:**
+
 - Ask questions whenever guidance is needed (fundamental problems, unclear dependencies, etc.)
 - Follow the same git mv and commit workflow as `/ready-issue` to prevent file handling issues
 - Each issue should result in exactly one commit (either move to ready, or update in backlog)

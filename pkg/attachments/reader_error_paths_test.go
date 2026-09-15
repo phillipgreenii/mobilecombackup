@@ -31,13 +31,13 @@ func TestAttachmentManager_ReadAttachment_LegacyReadError(t *testing.T) {
 	hash := "abc123def456"
 	prefix := hash[:2]
 	dirPath := repoPath + "/attachments/" + prefix
-	if err := fs.MkdirAll(dirPath, 0755); err != nil {
+	if err := fs.MkdirAll(dirPath, 0o755); err != nil {
 		t.Fatalf("failed to create directory: %v", err)
 	}
 
 	// Create a legacy attachment file but make it a directory (to cause read error)
 	attachmentPath := dirPath + "/" + hash
-	if err := fs.Mkdir(attachmentPath, 0755); err != nil {
+	if err := fs.Mkdir(attachmentPath, 0o755); err != nil {
 		t.Fatalf("failed to create directory: %v", err)
 	}
 

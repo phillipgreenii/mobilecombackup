@@ -18,10 +18,10 @@ To enable completions:
 Bash:
   # Temporary (current session only):
   source <(mobilecombackup completion bash)
-  
+
   # Permanent:
   echo 'source <(mobilecombackup completion bash)' >> ~/.bashrc
-  
+
   # On some systems you may need to install bash-completion:
   # Ubuntu/Debian: apt install bash-completion
   # CentOS/RHEL: yum install bash-completion
@@ -29,24 +29,24 @@ Bash:
 Zsh:
   # Temporary (current session only):
   source <(mobilecombackup completion zsh)
-  
+
   # Permanent:
   echo 'source <(mobilecombackup completion zsh)' >> ~/.zshrc
-  
+
   # Note: You may need to add this to the beginning of ~/.zshrc:
   # autoload -U compinit && compinit
 
 Fish:
   # Temporary (current session only):
   mobilecombackup completion fish | source
-  
+
   # Permanent:
   mobilecombackup completion fish > ~/.config/fish/completions/mobilecombackup.fish
 
 PowerShell:
   # Temporary (current session only):
   mobilecombackup completion powershell | Out-String | Invoke-Expression
-  
+
   # Permanent: Add the above line to your PowerShell profile
   # To edit your profile: notepad $PROFILE
 

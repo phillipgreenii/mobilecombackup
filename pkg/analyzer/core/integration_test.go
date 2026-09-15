@@ -68,7 +68,7 @@ Parses markdown and returns structured data.
 **Parameters:**
 - ` + "`filePath`" + `: Path to markdown file
 
-**Returns:**  
+**Returns:**
 - ` + "`types.Result[[]DocSection]`" + `: Parse results
 
 **Example:**
@@ -99,12 +99,12 @@ import "github.com/example/analyzer/core"
 func main() {
     logger := &TestLogger{}
     analyzer := core.NewSimpleMarkdownAnalyzer(logger)
-    
+
     result := analyzer.ParseMarkdown("README.md")
     if result.IsErr() {
         panic(result.Error)
     }
-    
+
     sections := result.Value
     for _, section := range sections {
         fmt.Printf("Section: %s (Level %d)\n", section.Title, section.Level)
@@ -128,11 +128,11 @@ Process results with ` + "`processResults(data)`" + `.
 	// Create all test files
 	for relPath, content := range testFiles {
 		fullPath := filepath.Join(testDir, relPath)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", relPath, err)
 		}
-		err = os.WriteFile(fullPath, []byte(content), 0644)
+		err = os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", relPath, err)
 		}
@@ -307,7 +307,7 @@ This is the original content.
 
 Initial section content.
 `
-		err := os.WriteFile(testFile, []byte(initialContent), 0644)
+		err := os.WriteFile(testFile, []byte(initialContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create initial file: %v", err)
 		}
@@ -347,7 +347,7 @@ Modified section content with additional details.
 
 This section was added in the modification.
 `
-		err = os.WriteFile(testFile, []byte(modifiedContent), 0644)
+		err = os.WriteFile(testFile, []byte(modifiedContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to modify file: %v", err)
 		}
@@ -429,7 +429,7 @@ func TestMarkdownAnalyzer_Integration_Performance(t *testing.T) {
 				content += "## Section " + string(rune('1'+j)) + "\n\n" + sectionContent + "\n"
 			}
 
-			err := os.WriteFile(fileName, []byte(content), 0644)
+			err := os.WriteFile(fileName, []byte(content), 0o644)
 			if err != nil {
 				t.Fatalf("Failed to create performance test file %d: %v", i, err)
 			}

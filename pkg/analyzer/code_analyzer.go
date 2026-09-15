@@ -777,7 +777,8 @@ func (id *InconsistencyDetector) DetectInconsistencies(projectPath string) types
 
 	// Phase 3: Compare and detect inconsistencies
 	inconsistenciesResult := id.comparisonEngine.DetectInconsistencies(
-		codeResult.Value, docResult.Value)
+		codeResult.Value, docResult.Value,
+	)
 	if inconsistenciesResult.Error != nil {
 		return types.NewResultError[*AnalysisResult](inconsistenciesResult.Error)
 	}
@@ -831,7 +832,8 @@ func (id *InconsistencyDetector) DetectIncrementalInconsistencies(projectPath st
 
 	// Detect inconsistencies for affected areas
 	inconsistenciesResult := id.comparisonEngine.DetectInconsistencies(
-		codeResult.Value, docResult.Value)
+		codeResult.Value, docResult.Value,
+	)
 	if inconsistenciesResult.Error != nil {
 		return types.NewResultError[*AnalysisResult](inconsistenciesResult.Error)
 	}

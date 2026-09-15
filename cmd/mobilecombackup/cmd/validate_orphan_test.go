@@ -133,7 +133,6 @@ func TestOrphanRemovalIntegration(t *testing.T) {
 
 			// Call orphan removal function
 			result, err := removeOrphanAttachmentsWithProgress(mockSMSReader, attachmentManager, reporter)
-
 			// Check no error occurred
 			if err != nil {
 				t.Fatalf("removeOrphanAttachmentsWithProgress returned error: %v", err)
@@ -312,7 +311,7 @@ func TestCleanupEmptyDirectory(t *testing.T) {
 		{
 			name: "empty directory is removed",
 			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0750)
+				err := os.MkdirAll(dirPath, 0o750)
 				if err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
@@ -322,14 +321,14 @@ func TestCleanupEmptyDirectory(t *testing.T) {
 		{
 			name: "non-empty directory is not removed",
 			setupDir: func(t *testing.T, dirPath string) {
-				err := os.MkdirAll(dirPath, 0750)
+				err := os.MkdirAll(dirPath, 0o750)
 				if err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
 
 				// Add a file to make it non-empty
 				filePath := filepath.Join(dirPath, "test.txt")
-				err = os.WriteFile(filePath, []byte("test"), 0600)
+				err = os.WriteFile(filePath, []byte("test"), 0o600)
 				if err != nil {
 					t.Fatalf("Failed to create test file: %v", err)
 				}
@@ -423,14 +422,14 @@ func createTestAttachment(t *testing.T, repoPath, hash, content string) {
 	// Create directory structure
 	prefix := hash[:2]
 	attachmentDir := filepath.Join(repoPath, "attachments", prefix)
-	err := os.MkdirAll(attachmentDir, 0750)
+	err := os.MkdirAll(attachmentDir, 0o750)
 	if err != nil {
 		t.Fatalf("Failed to create attachment directory: %v", err)
 	}
 
 	// Create attachment file
 	attachmentPath := filepath.Join(attachmentDir, hash)
-	err = os.WriteFile(attachmentPath, []byte(content), 0600)
+	err = os.WriteFile(attachmentPath, []byte(content), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create attachment file: %v", err)
 	}

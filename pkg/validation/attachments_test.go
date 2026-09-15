@@ -205,7 +205,7 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentsStructure_MissingDirectory(
 
 	// Create attachments directory but keep list error
 	attachmentsDir := filepath.Join(tempDir, "attachments")
-	err := os.MkdirAll(attachmentsDir, 0750)
+	err := os.MkdirAll(attachmentsDir, 0o750)
 	if err != nil {
 		t.Fatalf("Failed to create attachments directory: %v", err)
 	}
@@ -230,15 +230,15 @@ func TestAttachmentsValidatorImpl_ValidateAttachmentIntegrity(t *testing.T) {
 	corruptedHashPath := filepath.Join(tempDir, "attachments", "co", "corruptedhash789")
 
 	// Create directory structure
-	_ = os.MkdirAll(filepath.Dir(validHashPath), 0750)
-	_ = os.MkdirAll(filepath.Dir(corruptedHashPath), 0750)
+	_ = os.MkdirAll(filepath.Dir(validHashPath), 0o750)
+	_ = os.MkdirAll(filepath.Dir(corruptedHashPath), 0o750)
 
 	// Create valid attachment file with PNG signature for format recognition
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	_ = os.WriteFile(validHashPath, pngData, 0600)
+	_ = os.WriteFile(validHashPath, pngData, 0o600)
 
 	// Create corrupted attachment file
-	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0600)
+	_ = os.WriteFile(corruptedHashPath, []byte("corrupted content"), 0o600)
 
 	mockReader := &mockAttachmentReader{
 		attachments: []*attachments.Attachment{
@@ -454,7 +454,6 @@ func TestAttachmentsValidatorImpl_GetOrphanedAttachments(t *testing.T) {
 	}
 	validator := NewAttachmentsValidator(tempDir, mockReader, mockSMSReader, afero.NewOsFs())
 	orphaned, err := validator.GetOrphanedAttachments(referencedHashes)
-
 	if err != nil {
 		t.Fatalf("Failed to get orphaned attachments: %v", err)
 	}
@@ -516,7 +515,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test PNG detection
 	pngFile := filepath.Join(tempDir, "test.png")
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52} // PNG header
-	if err := os.WriteFile(pngFile, pngData, 0600); err != nil {
+	if err := os.WriteFile(pngFile, pngData, 0o600); err != nil {
 		t.Fatalf("Failed to write PNG test file: %v", err)
 	}
 
@@ -531,7 +530,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test JPEG detection
 	jpegFile := filepath.Join(tempDir, "test.jpg")
 	jpegData := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46} // JPEG header
-	if err := os.WriteFile(jpegFile, jpegData, 0600); err != nil {
+	if err := os.WriteFile(jpegFile, jpegData, 0o600); err != nil {
 		t.Fatalf("Failed to write JPEG test file: %v", err)
 	}
 
@@ -546,7 +545,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test GIF detection
 	gifFile := filepath.Join(tempDir, "test.gif")
 	gifData := []byte{0x47, 0x49, 0x46, 0x38, 0x39, 0x61} // GIF89a header
-	if err := os.WriteFile(gifFile, gifData, 0600); err != nil {
+	if err := os.WriteFile(gifFile, gifData, 0o600); err != nil {
 		t.Fatalf("Failed to write GIF test file: %v", err)
 	}
 
@@ -561,7 +560,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test MP4 detection
 	mp4File := filepath.Join(tempDir, "test.mp4")
 	mp4Data := []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x31} // MP4 header with ftyp at offset 4
-	if err := os.WriteFile(mp4File, mp4Data, 0600); err != nil {
+	if err := os.WriteFile(mp4File, mp4Data, 0o600); err != nil {
 		t.Fatalf("Failed to write MP4 test file: %v", err)
 	}
 
@@ -576,7 +575,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test PDF detection
 	pdfFile := filepath.Join(tempDir, "test.pdf")
 	pdfData := []byte{0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34} // %PDF-1.4 header
-	if err := os.WriteFile(pdfFile, pdfData, 0600); err != nil {
+	if err := os.WriteFile(pdfFile, pdfData, 0o600); err != nil {
 		t.Fatalf("Failed to write PDF test file: %v", err)
 	}
 
@@ -591,7 +590,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test unknown format
 	unknownFile := filepath.Join(tempDir, "test.unknown")
 	unknownData := []byte{0x01, 0x02, 0x03, 0x04, 0x05} // Unknown format
-	if err := os.WriteFile(unknownFile, unknownData, 0600); err != nil {
+	if err := os.WriteFile(unknownFile, unknownData, 0o600); err != nil {
 		t.Fatalf("Failed to write unknown test file: %v", err)
 	}
 
@@ -612,7 +611,7 @@ func TestDetectFileFormat(t *testing.T) {
 
 	// Test empty file
 	emptyFile := filepath.Join(tempDir, "empty.txt")
-	if err := os.WriteFile(emptyFile, []byte{}, 0600); err != nil {
+	if err := os.WriteFile(emptyFile, []byte{}, 0o600); err != nil {
 		t.Fatalf("Failed to write empty test file: %v", err)
 	}
 
@@ -624,7 +623,7 @@ func TestDetectFileFormat(t *testing.T) {
 	// Test file too small for signature
 	smallFile := filepath.Join(tempDir, "small.txt")
 	smallData := []byte{0x89} // Too small for PNG signature
-	if err := os.WriteFile(smallFile, smallData, 0600); err != nil {
+	if err := os.WriteFile(smallFile, smallData, 0o600); err != nil {
 		t.Fatalf("Failed to write small test file: %v", err)
 	}
 
@@ -643,13 +642,13 @@ func TestValidateAttachmentIntegrityWithFormatValidation(t *testing.T) {
 	pngFullPath := filepath.Join(tempDir, pngPath)
 
 	// Create directory structure
-	if err := os.MkdirAll(filepath.Dir(pngFullPath), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(pngFullPath), 0o750); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
 	// Write PNG signature (first 8 bytes are sufficient for format detection)
 	pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	if err := os.WriteFile(pngFullPath, pngData, 0600); err != nil {
+	if err := os.WriteFile(pngFullPath, pngData, 0o600); err != nil {
 		t.Fatalf("Failed to write PNG file: %v", err)
 	}
 
@@ -710,13 +709,13 @@ func TestValidateAttachmentIntegrityWithUnknownFormat(t *testing.T) {
 	unknownFullPath := filepath.Join(tempDir, unknownPath)
 
 	// Create directory structure
-	if err := os.MkdirAll(filepath.Dir(unknownFullPath), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(unknownFullPath), 0o750); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
 	// Write unknown format data
 	unknownData := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
-	if err := os.WriteFile(unknownFullPath, unknownData, 0600); err != nil {
+	if err := os.WriteFile(unknownFullPath, unknownData, 0o600); err != nil {
 		t.Fatalf("Failed to write unknown file: %v", err)
 	}
 

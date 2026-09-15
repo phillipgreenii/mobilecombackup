@@ -44,24 +44,28 @@ repository/
 ## Rationale
 
 ### Year-Based Partitioning Benefits
+
 - **Time-range queries**: Efficient access to specific year's data
 - **Scalable growth**: New years create new files, old files unchanged
 - **Backup efficiency**: Incremental backups only need current year
 - **Archive capability**: Old years can be archived or compressed independently
 
 ### UTC-Based Year Determination
+
 - **Consistent partitioning**: No timezone-dependent boundary issues
 - **Predictable behavior**: Same input always produces same output
 - **Global compatibility**: Works consistently across timezones
 - **Archival stability**: Year assignment never changes with timezone config
 
 ### Typed Directory Organization
+
 - **Clear separation**: Different data types in dedicated directories
 - **Tool compatibility**: Easy for scripts and tools to locate specific data
 - **Permission management**: Different access controls per data type
 - **Processing efficiency**: Can process one data type independently
 
 ### Repository Metadata
+
 - **Marker file**: `.mobilecombackup.yaml` identifies valid repositories
 - **Integrity checking**: Checksums and manifests detect corruption
 - **Statistics tracking**: Summary information for repository health
@@ -92,6 +96,7 @@ repository/
 ## Consequences
 
 ### Positive Consequences
+
 - **Efficient time queries**: Year-based access patterns optimized
 - **Scalable growth**: Repository size grows predictably over time
 - **Clear organization**: Users and tools easily understand structure
@@ -100,6 +105,7 @@ repository/
 - **Tool compatibility**: Standard directory structure easy to process
 
 ### Negative Consequences
+
 - **Year boundary complexity**: Records at year boundaries require careful handling
 - **Migration requirements**: Changing partitioning scheme requires data migration
 - **Cross-year queries**: Queries spanning multiple years require multiple file access
@@ -108,24 +114,28 @@ repository/
 ## Implementation
 
 ### Repository Creation
+
 1. Create directory structure with proper permissions
 2. Generate `.mobilecombackup.yaml` marker file with metadata
 3. Initialize empty data files for current year
 4. Create integrity manifest and checksums
 
 ### Data Organization Process
+
 1. Determine year from record timestamp (UTC-based)
 2. Route record to appropriate year file
 3. Update manifests and checksums incrementally
 4. Generate summary statistics per processing session
 
 ### Year Boundary Handling
+
 - Timestamps converted to UTC before year determination
 - Consistent year assignment regardless of local timezone
 - Clear documentation of UTC-based partitioning
 - Tools handle timezone conversion for user display
 
 ### Repository Validation
+
 - Marker file presence and format validation
 - File manifest consistency checking
 - Checksum verification for integrity

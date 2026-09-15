@@ -22,17 +22,20 @@ The toolchain affects all aspects of development workflow and long-term maintain
 We chose **Devbox** as the primary development environment manager with these core tools:
 
 ### Environment Management
+
 - **Devbox**: Reproducible development environments with Nix
 - **golangci-lint**: Comprehensive Go linting
 - **gotestsum**: Enhanced test output and reporting
 
 ### Code Quality Tools
+
 - **gofmt/gofumpt**: Code formatting
 - **staticcheck**: Advanced static analysis
 - **gosec**: Security-focused linting
 - **govet**: Go standard linting
 
 ### Testing and Coverage
+
 - **Go built-in testing**: Standard test framework
 - **testdata/**: Test fixture organization
 - **Coverage reporting**: Built-in Go coverage tools
@@ -40,6 +43,7 @@ We chose **Devbox** as the primary development environment manager with these co
 ## Rationale
 
 ### Devbox for Environment Management
+
 - **Reproducible environments**: Nix-based package management ensures consistency
 - **Cross-platform support**: Works on macOS, Linux, and Windows (WSL)
 - **Version pinning**: Exact tool versions specified and reproducible
@@ -47,6 +51,7 @@ We chose **Devbox** as the primary development environment manager with these co
 - **Isolation**: Project dependencies don't conflict with system tools
 
 ### Comprehensive Linting Strategy
+
 - **golangci-lint**: Meta-linter running multiple linters efficiently
 - **Static analysis**: Catches bugs before runtime
 - **Security scanning**: gosec integration for security vulnerabilities
@@ -54,12 +59,14 @@ We chose **Devbox** as the primary development environment manager with these co
 - **Consistency enforcement**: Automated code style consistency
 
 ### Enhanced Testing Experience
+
 - **gotestsum**: Better test output formatting and progress indication
 - **Parallel testing**: Efficient test execution with `-parallel` flags
 - **Coverage tracking**: Visibility into test coverage metrics
 - **Integration testing**: Separate test categories for different test types
 
 ### Git Hooks Integration
+
 - **Pre-commit validation**: Automated quality checks before commits
 - **Fast feedback**: Immediate notification of quality issues
 - **Consistent standards**: All commits meet quality requirements automatically
@@ -89,6 +96,7 @@ We chose **Devbox** as the primary development environment manager with these co
 ## Consequences
 
 ### Positive Consequences
+
 - **Onboarding simplicity**: New developers run `devbox shell` and have full environment
 - **Consistency**: All developers use identical tool versions
 - **Quality automation**: Pre-commit hooks prevent quality regressions
@@ -97,6 +105,7 @@ We chose **Devbox** as the primary development environment manager with these co
 - **Maintenance**: Tool updates managed centrally in devbox configuration
 
 ### Negative Consequences
+
 - **Learning curve**: Developers need to learn Devbox concepts
 - **Nix dependency**: Underlying dependency on Nix package manager
 - **Initial setup**: First-time Devbox installation requires setup steps
@@ -105,14 +114,10 @@ We chose **Devbox** as the primary development environment manager with these co
 ## Implementation
 
 ### Devbox Configuration
+
 ```json
 {
-  "packages": [
-    "go_1_21",
-    "golangci-lint",
-    "gotestsum",
-    "git"
-  ],
+  "packages": ["go_1_21", "golangci-lint", "gotestsum", "git"],
   "scripts": {
     "test": "gotestsum --format testname",
     "test-unit": "gotestsum --format testname -- -short",
@@ -123,6 +128,7 @@ We chose **Devbox** as the primary development environment manager with these co
 ```
 
 ### Development Workflow
+
 1. **Environment activation**: `devbox shell`
 2. **Development iteration**: Write code with immediate linting feedback
 3. **Testing**: `devbox run test-unit` for fast feedback
@@ -130,12 +136,14 @@ We chose **Devbox** as the primary development environment manager with these co
 5. **Commit**: Quality-assured commits only
 
 ### Quality Gates
+
 - **Formatter**: `gofumpt` ensures consistent code formatting
 - **Linter**: `golangci-lint` catches bugs and style issues
 - **Tests**: All tests must pass before commit
 - **Build**: Code must compile successfully
 
 ### Git Hooks
+
 - **Pre-commit**: Runs formatter, linter, tests, and build
 - **Commit validation**: Ensures all quality gates pass
 - **Fast execution**: Optimized for quick developer feedback

@@ -74,6 +74,7 @@ The mobilecombackup tool processes mobile phone backup files (SMS/MMS and call l
 ### Key Interfaces
 
 #### Reader Interfaces
+
 ```go
 // pkg/calls/reader.go
 type CallsReader interface {
@@ -83,7 +84,7 @@ type CallsReader interface {
     GetCallCount(year int) (int, error)
 }
 
-// pkg/sms/reader.go  
+// pkg/sms/reader.go
 type SMSReader interface {
     ReadMessages(year int) ([]Message, error)
     StreamMessagesForYear(year int, callback func(Message) error) error
@@ -93,6 +94,7 @@ type SMSReader interface {
 ```
 
 #### Storage Interfaces
+
 ```go
 // pkg/attachments/types.go
 type AttachmentStorage interface {
@@ -105,6 +107,7 @@ type AttachmentStorage interface {
 ```
 
 #### Coalescing Interface
+
 ```go
 // pkg/coalescer/types.go
 type Entry interface {
@@ -157,7 +160,7 @@ repository/
 │   ├── calls-2023.xml
 │   ├── calls-2024.xml
 │   └── summary.yaml
-├── sms/                     # SMS/MMS records by year  
+├── sms/                     # SMS/MMS records by year
 │   ├── sms-2023.xml
 │   ├── sms-2024.xml
 │   └── summary.yaml
@@ -176,36 +179,42 @@ repository/
 ## Key Design Decisions
 
 ### Streaming Architecture
+
 - **Why**: Handle files larger than available memory
 - **How**: Interface-based streaming with callback functions
 - **Trade-offs**: More complex code, but scales to any file size
 
 ### Content-Addressable Storage
+
 - **Why**: Automatic deduplication of identical attachments
 - **How**: SHA-256 hashes as primary keys with two-level directory structure
 - **Trade-offs**: More complex directory layout, but eliminates duplicate storage
 
 ### Year-Based Partitioning
+
 - **Why**: Enables efficient processing of specific time ranges
 - **How**: All data partitioned by UTC year with separate files
 - **Trade-offs**: More files to manage, but better performance for time-based queries
 
 ### Generic Coalescer
+
 - **Why**: Type-safe deduplication for any entry type
 - **How**: Go 1.18+ generics with hash-based deduplication
 - **Trade-offs**: Requires newer Go version, but eliminates code duplication
 
 ### UTC Time Handling
+
 - **Why**: Consistent timezone handling across all operations
 - **How**: All timestamps normalized to UTC with explicit conversion
 - **Trade-offs**: May lose original timezone info, but ensures consistency
 
 ### Contact Management Architecture
+
 - **Why**: Centralized contact name resolution with manual review workflow
 - **How**: Dual-section contacts.yaml with processed and unprocessed entries
 - **Key Features**:
   - Normalized phone number comparison prevents duplicates between sections (BUG-069 fix)
-  - Deterministic ordering ensures consistent file output across saves (BUG-070 fix)  
+  - Deterministic ordering ensures consistent file output across saves (BUG-070 fix)
   - Unprocessed section extracts contact names during import for manual review
   - O(1) lookup performance using hash maps for number-to-name mapping
 - **Trade-offs**: Manual review required for new contacts, but ensures data accuracy
@@ -213,6 +222,7 @@ repository/
 ## Security Architecture
 
 ### Path Validation (`pkg/security`)
+
 - All file paths validated to prevent directory traversal attacks
 - Comprehensive security audit fixes (BUG-056) ensure CLI operations use path validation
 - Relative path resolution with security boundary checks
@@ -221,11 +231,13 @@ repository/
 - **Repository Containment**: All file operations verified to stay within repository boundaries
 
 ### Hash Verification
+
 - SHA-256 checksums for all stored files
 - Streaming hash calculation during file operations
 - Integrity verification on read operations
 
 ### Input Validation
+
 - XML parser with resource limits to prevent DoS
 - Fuzz testing for parser security
 - Safe handling of malformed input data
@@ -233,16 +245,19 @@ repository/
 ## Performance Characteristics
 
 ### Memory Usage
+
 - **Streaming Operations**: O(1) memory usage regardless of file size
 - **Coalescing**: O(n) memory where n is unique entries
 - **Attachment Storage**: O(1) memory per operation
 
 ### I/O Patterns
+
 - **Sequential Reads**: Optimized for large XML file processing
 - **Random Writes**: Content-addressable storage optimized for diverse access patterns
 - **Atomic Operations**: Temporary files ensure consistency
 
 ### Scalability
+
 - **Horizontal**: Multiple repositories can be processed independently
 - **Vertical**: Streaming architecture handles arbitrarily large files
 - **Concurrent**: Thread-safe operations support parallel processing
@@ -250,16 +265,19 @@ repository/
 ## Error Handling Strategy
 
 ### Error Categories
+
 1. **Recoverable Errors**: Continue processing with error collection
 2. **Fatal Errors**: Stop processing immediately (e.g., disk full)
 3. **Validation Errors**: Collected for batch reporting and autofix
 
 ### Error Propagation
+
 - Errors bubble up through layers with context
 - Service layer collects and categorizes errors
 - CLI layer formats errors for user consumption
 
 ### Autofix Integration
+
 - Validation errors feed into autofix system
 - Common issues automatically repaired when safe
 - Dry-run mode for validation before applying fixes
@@ -267,21 +285,25 @@ repository/
 ## Testing Strategy
 
 ### Unit Tests
+
 - Individual package functionality
 - Interface compliance testing
 - Edge case and error condition coverage
 
 ### Integration Tests
+
 - End-to-end workflow testing
 - Real file processing validation
 - Cross-package interaction verification
 
 ### Performance Tests
+
 - Benchmark tests for critical paths
 - Memory usage validation
 - Large file processing verification
 
 ### Security Tests
+
 - Fuzz testing for parsers
 - Path traversal attack prevention
 - Input validation boundary testing
@@ -289,21 +311,25 @@ repository/
 ## Development Guidelines
 
 ### Code Organization
+
 - Interface-first design for testability
 - Package-level documentation with examples
 - Clear separation of concerns between layers
 
 ### Error Handling
+
 - Return errors, don't use os.Exit() in libraries
 - Include context in error messages
 - Collect errors for batch processing when appropriate
 
 ### Performance Considerations
+
 - Stream large files rather than loading into memory
 - Use content addressing for automatic deduplication
 - Implement atomic operations for consistency
 
 ### Security Best Practices
+
 - Validate all external input
 - Use secure file operations
 - Implement proper path sanitization
@@ -311,12 +337,14 @@ repository/
 ## Future Architecture Considerations
 
 ### Potential Extensions
+
 - Plugin architecture for additional data sources
 - Distributed processing for very large datasets
 - Database backend option for metadata storage
 - Compression support for stored files
 
 ### Scalability Improvements
+
 - Parallel processing pipelines
 - Incremental import capabilities
 - Background processing options

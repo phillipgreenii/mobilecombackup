@@ -131,7 +131,7 @@ func TestTaskGenerator_GenerateTasksFromIssue(t *testing.T) {
 - [ ] Create CLI interface
 - [ ] Add comprehensive tests
 
-## Acceptance Criteria  
+## Acceptance Criteria
 - Migrations run successfully
 - Rollbacks work correctly
 - CLI is user-friendly
@@ -366,7 +366,7 @@ func TestTaskGenerator_ParseTasks(t *testing.T) {
 	generator := NewTaskGenerator()
 
 	content := `- [ ] Implement feature A
-- [x] Add tests for B  
+- [x] Add tests for B
 - [ ] Document C functionality
 - [x] Review D implementation`
 
@@ -418,7 +418,7 @@ func TestTaskGenerator_ParseAcceptanceCriteria(t *testing.T) {
 	generator := NewTaskGenerator()
 
 	content := `- Feature works correctly
-- All edge cases handled  
+- All edge cases handled
 - Performance is acceptable
 Error handling is robust. System is maintainable.`
 

@@ -12,10 +12,8 @@ import (
 	"github.com/spf13/afero"
 )
 
-var (
-	// Compile regex once at package initialization
-	dirNameRegex = regexp.MustCompile("^[0-9a-f]{2}$")
-)
+// Compile regex once at package initialization
+var dirNameRegex = regexp.MustCompile("^[0-9a-f]{2}$")
 
 // AttachmentManager provides attachment management functionality
 type AttachmentManager struct {

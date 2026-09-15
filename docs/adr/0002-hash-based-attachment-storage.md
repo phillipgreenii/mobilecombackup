@@ -23,24 +23,28 @@ We chose **SHA-256 hash-based directory structure** with content addressing: `at
 ## Rationale
 
 ### Content Deduplication
+
 - SHA-256 hash uniquely identifies identical content
 - Multiple messages referencing same attachment store only one copy
 - Automatic deduplication without complex tracking mechanisms
 - Significant storage savings for shared media (profile photos, forwarded content)
 
 ### Integrity Verification
+
 - Hash serves as cryptographic checksum for corruption detection
 - File integrity verifiable without additional metadata
 - Failed verification indicates storage corruption or tampering
 - Supports data recovery and repair operations
 
 ### Scalable Organization
+
 - Two-level directory structure prevents filesystem performance issues
 - First level: 256 directories (00-ff) for hash distribution
 - Second level: Full hash directory containing actual files
 - Supports millions of attachments without directory traversal slowdown
 
 ### Content Addressing Benefits
+
 - Location independent of original filename or source
 - Enables content-based operations (find all instances of specific attachment)
 - Simplifies backup and synchronization (hash-based comparison)
@@ -67,6 +71,7 @@ We chose **SHA-256 hash-based directory structure** with content addressing: `at
 ## Consequences
 
 ### Positive Consequences
+
 - **Automatic deduplication**: Identical attachments stored once
 - **Integrity verification**: Built-in corruption detection
 - **Scalable performance**: Directory structure scales to millions of files
@@ -75,6 +80,7 @@ We chose **SHA-256 hash-based directory structure** with content addressing: `at
 - **Backup/sync friendly**: Hash-based comparison for efficient replication
 
 ### Negative Consequences
+
 - **Hash calculation overhead**: SHA-256 computation for every attachment
 - **Directory structure complexity**: Less intuitive than filename-based organization
 - **Recovery complexity**: Manual browsing requires hash-to-content mapping
@@ -83,6 +89,7 @@ We chose **SHA-256 hash-based directory structure** with content addressing: `at
 ## Implementation
 
 ### Directory Structure
+
 ```
 attachments/
 ├── ab/
@@ -95,18 +102,21 @@ attachments/
 ```
 
 ### Key Components
+
 - `AttachmentManager`: High-level interface for attachment operations
 - `DirectoryAttachmentStorage`: Implements hash-based file organization
 - Hash calculation during streaming import process
 - Metadata preservation for original filenames and MIME types
 
 ### Storage Process
+
 1. Calculate SHA-256 hash during attachment extraction
 2. Check if attachment already exists using hash
 3. If new, create directory structure and store file
 4. Record hash-to-metadata mapping for original context
 
 ### Retrieval Process
+
 1. Lookup attachment by hash
 2. Construct file path using hash-based directory structure
 3. Return file path or content with preserved metadata

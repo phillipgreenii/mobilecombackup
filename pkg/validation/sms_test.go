@@ -474,7 +474,8 @@ func TestSMSValidatorImpl_AttachmentReferenceValidation(t *testing.T) {
 
 // testSMSValidateStructure is a helper for testing SMS structure validation
 func testSMSValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
-	availableYears []int, validateFunc func() []Violation) {
+	availableYears []int, validateFunc func() []Violation,
+) {
 	// Test missing directory
 	violations := validateFunc()
 	if len(violations) != 1 {
@@ -483,7 +484,7 @@ func testSMSValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlConte
 
 	// Create directory
 	dir := filepath.Join(tempDir, dirName)
-	err := os.MkdirAll(dir, 0750)
+	err := os.MkdirAll(dir, 0o750)
 	if err != nil {
 		t.Fatalf("Failed to create %s directory: %v", dirName, err)
 	}
@@ -499,7 +500,7 @@ func testSMSValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlConte
 	for _, year := range availableYears {
 		fileName := fmt.Sprintf("%s-%d.xml", fileName, year)
 		filePath := filepath.Join(dir, fileName)
-		err := os.WriteFile(filePath, []byte(xmlContent), 0600)
+		err := os.WriteFile(filePath, []byte(xmlContent), 0o600)
 		if err != nil {
 			t.Fatalf("Failed to create %s file: %v", fileName, err)
 		}

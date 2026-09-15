@@ -43,7 +43,7 @@ func TestContactsManager_LoadContacts_ValidFile(t *testing.T) {
       - "8888888888"
       - "9999999999"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestContactsManager_LoadContacts_InvalidYAML(t *testing.T) {
     numbers:
       - "+15555551234"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestContactsManager_LoadContacts_EmptyContactName(t *testing.T) {
     numbers:
       - "+15555551234"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestContactsManager_LoadContacts_DuplicateNumbers(t *testing.T) {
     numbers:
       - "5555551234"  # Same number as Bob, normalized
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -158,7 +158,7 @@ func TestContactsManager_GetContactByNumber(t *testing.T) {
       - "+15555551234"
       - "5555555678"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestContactsManager_GetNumbersByContact(t *testing.T) {
     numbers:
       - "+15555559999"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -238,7 +238,7 @@ func TestContactsManager_ContactExists(t *testing.T) {
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
 	yamlContent := bobRossBasicYAML
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestContactsManager_IsKnownNumber(t *testing.T) {
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
 	yamlContent := bobRossBasicYAML
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -293,7 +293,7 @@ func TestContactsManager_GetAllContacts(t *testing.T) {
     numbers:
       - "+15555559999"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -377,7 +377,7 @@ func TestContactsManager_EmptyContacts(t *testing.T) {
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
 
 	yamlContent := `contacts: []`
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -412,7 +412,7 @@ func TestContactsManager_ContactsWithEmptyNumbers(t *testing.T) {
       - ""  # Empty number should be skipped
       - "5555555678"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -576,7 +576,7 @@ unprocessed:
   - "5558888888: "     # Should be ignored
   - "5557777777:   "   # Should be ignored (whitespace only)
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -716,7 +716,7 @@ func TestContactsManager_SaveContacts_ExistingContacts(t *testing.T) {
     numbers:
       - "+15555555678"
 `
-	err := os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	err := os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -876,7 +876,7 @@ contacts:
   - name: "Bob Ross"
     numbers: ["5551234567"]
 `
-	if err := os.WriteFile(contactsPath, []byte(contactsData), 0600); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsData), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -916,7 +916,7 @@ contacts:
   - name: "Jim Henson"
     numbers: ["5555550004"]
 `
-	if err := os.WriteFile(contactsPath, []byte(contactsData), 0600); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsData), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

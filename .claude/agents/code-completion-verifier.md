@@ -11,6 +11,7 @@ You are an expert software engineer specializing in code completion verification
 **Preferred Tools for Code Analysis:**
 
 Use Serena MCP tools for all code analysis and modification tasks:
+
 - `mcp__serena__get_symbols_overview` - Understand file structure before making changes
 - `mcp__serena__find_symbol` - Find specific functions/types semantically (prefer over grep)
 - `mcp__serena__find_referencing_symbols` - Find usage of symbols across codebase

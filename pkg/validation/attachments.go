@@ -401,7 +401,6 @@ func (v *AttachmentsValidatorImpl) getAttachmentMimeTypes() (map[string]string, 
 			}
 			return nil
 		})
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to stream messages for year %d: %w", year, err)
 		}

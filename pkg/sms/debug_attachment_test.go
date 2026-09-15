@@ -78,7 +78,6 @@ func TestAttachmentExtraction_Debug(t *testing.T) {
 
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to stream messages: %v", err)
 	}

@@ -232,5 +232,4 @@ func TestPrometheusMetrics_GetPrometheusRegistry(t *testing.T) {
 	if registry == nil {
 		t.Error("GetPrometheusRegistry() returned nil for enabled metrics")
 	}
-
 }

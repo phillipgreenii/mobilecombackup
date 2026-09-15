@@ -23,6 +23,7 @@ Use agent product-doc-sync to create a new bug report: $ARGUMENTS
 4. **Auto-commit the new bug report**:
    - Check git status to confirm only the new bug file is staged
    - Commit with proper message format:
+
    ```
    Create BUG-XXX: [Brief bug description]
 
@@ -34,6 +35,7 @@ Use agent product-doc-sync to create a new bug report: $ARGUMENTS
    ```
 
 **Template Completion Requirements:**
+
 - **Overview**: Clear description of the bug and its impact
 - **Reproduction Steps**: Detailed, step-by-step instructions
 - **Expected Behavior**: What should happen normally
@@ -44,6 +46,7 @@ Use agent product-doc-sync to create a new bug report: $ARGUMENTS
 - **Fix Approach**: Initial thoughts on resolution (can be "TBD")
 
 **Important Notes:**
+
 - Bug starts in `backlog/` directory for investigation
 - Use `/ready-issue` command once bug is fully investigated and ready for fixing
 - Prioritize high-severity bugs that affect core functionality

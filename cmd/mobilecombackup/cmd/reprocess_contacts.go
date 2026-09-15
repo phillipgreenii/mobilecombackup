@@ -17,16 +17,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	reprocessDryRun bool
-)
+var reprocessDryRun bool
 
 // reprocessContactsCmd represents the reprocess-contacts command
 var reprocessContactsCmd = &cobra.Command{
 	Use:   "reprocess-contacts",
 	Short: "Reprocess contact extraction from existing backup data",
-	Long: `Reprocess contact extraction by re-running contact extraction on existing 
-backup files in the repository. This is useful when you have updated your 
+	Long: `Reprocess contact extraction by re-running contact extraction on existing
+backup files in the repository. This is useful when you have updated your
 contacts.yaml file and want to re-extract contact names from the raw backup data.
 
 This command will:
@@ -137,8 +135,8 @@ func processFilesForContacts(resolvedRepoRoot string, _ reprocessInitialStats) (
 
 // handleReprocessResults handles the results and performs final operations
 func handleReprocessResults(resolvedRepoRoot string, contactsManager *contacts.Manager,
-	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats) error {
-
+	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats,
+) error {
 	if len(newUnprocessedEntries) == 0 {
 		if !quiet {
 			PrintInfo("No new contacts found to add")
@@ -162,8 +160,8 @@ func handleReprocessResults(resolvedRepoRoot string, contactsManager *contacts.M
 
 // mergeAndSaveContacts merges new contacts and saves them
 func mergeAndSaveContacts(resolvedRepoRoot string, contactsManager *contacts.Manager,
-	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats) error {
-
+	newUnprocessedEntries []contacts.UnprocessedEntry, initialStats reprocessInitialStats,
+) error {
 	// Merge new contacts with existing ones
 	for _, entry := range newUnprocessedEntries {
 		for _, name := range entry.ContactNames {
@@ -396,7 +394,6 @@ func extractContactsFromSMSFile(filePath string, contactsManager *contacts.Manag
 		}
 		return nil
 	})
-
 	if err != nil {
 		return messageCount, fmt.Errorf("failed to stream messages from file: %w", err)
 	}

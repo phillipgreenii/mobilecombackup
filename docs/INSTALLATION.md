@@ -20,11 +20,12 @@ If you have Nix with flakes enabled, this is the fastest method:
 # Run without installing
 nix run github:phillipgreenii/mobilecombackup -- --help
 
-# Install to profile  
+# Install to profile
 nix profile install github:phillipgreenii/mobilecombackup
 ```
 
 The Nix flake provides:
+
 - **Smart version detection**: Automatically detects release tags or development versions
 - **Static binary**: No runtime dependencies, works on any Linux system
 - **Multi-platform**: Supports x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin
@@ -41,7 +42,7 @@ Add to your `flake.nix` inputs for reproducible builds:
   inputs = {
     mobilecombackup.url = "github:phillipgreenii/mobilecombackup";
   };
-  
+
   outputs = { self, nixpkgs, mobilecombackup, ... }: {
     # Use in your development environment
     devShells.default = pkgs.mkShell {
@@ -185,12 +186,14 @@ mobilecombackup --version
 ### Updating
 
 #### Nix Installation
+
 ```bash
 # Update to latest version
 nix profile upgrade mobilecombackup
 ```
 
 #### Source Build
+
 ```bash
 # Pull latest changes
 git pull origin main
@@ -206,6 +209,7 @@ devbox run build-cli
 #### "command not found: mobilecombackup"
 
 **Solution**: Add Nix profile to your PATH:
+
 ```bash
 echo 'export PATH="$HOME/.nix-profile/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
@@ -214,6 +218,7 @@ source ~/.bashrc
 #### "experimental-features" error with Nix
 
 **Solution**: Enable flakes in Nix configuration:
+
 ```bash
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
@@ -222,6 +227,7 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 #### Build fails with "go: version too old"
 
 **Solution**: Use devbox for consistent Go version:
+
 ```bash
 devbox shell
 devbox run build-cli
@@ -248,7 +254,7 @@ If you encounter issues not covered here:
 After successful installation:
 
 - **[Quick Start Tutorial](CLI_REFERENCE.md#quick-start)** - Get up and running in 5 minutes
-- **[Complete CLI Reference](CLI_REFERENCE.md)** - Learn all available commands  
+- **[Complete CLI Reference](CLI_REFERENCE.md)** - Learn all available commands
 - **[Development Guide](DEVELOPMENT.md)** - Set up development environment
 - **[Architecture Overview](ARCHITECTURE.md)** - Understand system design
 

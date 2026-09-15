@@ -71,8 +71,8 @@ func DefaultConfig() *Config {
 		Repository: RepositoryConfig{
 			Root: ".",
 			Permissions: Permissions{
-				Dir:  0755,
-				File: 0644,
+				Dir:  0o755,
+				File: 0o644,
 			},
 		},
 		Import: ImportConfig{

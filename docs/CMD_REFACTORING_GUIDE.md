@@ -3,6 +3,7 @@
 ## Current Testability Issues
 
 ### 1. Direct `os.Exit()` Calls
+
 **Problem:** Functions call `os.Exit()` directly, terminating the test process.
 
 ```go
@@ -27,6 +28,7 @@ func createImporter(options *ImportOptions) (*Importer, error) {
 ```
 
 ### 2. Direct Filesystem Operations
+
 **Problem:** Uses `os.ReadFile()` instead of `afero.Fs` interface.
 
 ```go
@@ -45,6 +47,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 ```
 
 ### 3. Mixed Concerns
+
 **Problem:** Business logic mixed with I/O, presentation, and error handling.
 
 ```go
@@ -71,6 +74,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 ```
 
 ### 4. Global State
+
 **Problem:** Functions depend on package-level variables.
 
 ```go
@@ -462,26 +466,31 @@ func TestImportCommand_Execute(t *testing.T) {
 ## Migration Path
 
 ### Phase 1: Extract Pure Functions (Low Risk)
+
 1. ✅ Move pure logic to separate functions
 2. ✅ Add comprehensive unit tests
 3. ✅ No API changes needed
 
 **Files to refactor:**
+
 - Extract `DetermineExitCode()` from `handleExitCode()`
 - Extract `FormatImportSummary()` from `displaySummary()`
 - Extract `CalculateRepositoryHealth()` from `gatherRepositoryInfo()`
 
 ### Phase 2: Add Interfaces (Medium Risk)
+
 1. ✅ Create `ExitHandler` interface
 2. ✅ Create context objects with injected dependencies
 3. ✅ Keep existing functions as wrappers (backward compatible)
 
 **Files to refactor:**
+
 - Create `InfoContext` for info.go
 - Create `ImportContext` for import.go
 - Create `ExitHandler` interface
 
 ### Phase 3: Refactor Cobra Integration (Low Risk)
+
 1. ✅ Update Cobra command handlers to use new context objects
 2. ✅ Remove old wrapper functions
 3. ✅ Update tests
@@ -511,6 +520,7 @@ var infoCmd = &cobra.Command{
 ```
 
 ### Phase 4: Comprehensive Testing (High Value)
+
 1. ✅ Add unit tests for all pure functions
 2. ✅ Add integration tests with memory filesystem
 3. ✅ Achieve >80% coverage
@@ -520,6 +530,7 @@ var infoCmd = &cobra.Command{
 ## Benefits
 
 ### Before Refactoring
+
 - ❌ 51.4% coverage
 - ❌ Can't test `os.Exit()` paths
 - ❌ Requires real filesystem for all tests
@@ -527,6 +538,7 @@ var infoCmd = &cobra.Command{
 - ❌ Global state makes tests interfere
 
 ### After Refactoring
+
 - ✅ >80% coverage achievable
 - ✅ Exit handling fully testable
 - ✅ Tests run in memory (faster)
@@ -538,6 +550,7 @@ var infoCmd = &cobra.Command{
 ## Quick Wins (Implement First)
 
 ### 1. Extract Pure Functions (1-2 hours)
+
 ```go
 // Pure logic - test immediately
 func DetermineExitCode(summary *ImportSummary, allowRejects bool) int
@@ -547,12 +560,14 @@ func ShouldSkipFile(path string) bool
 ```
 
 ### 2. Add ExitHandler Interface (2-3 hours)
+
 ```go
 type ExitHandler interface { Exit(code int) }
 type TestExitHandler struct { Code int; Called bool }
 ```
 
 ### 3. Create Context Objects (4-6 hours)
+
 ```go
 type InfoContext struct { /* injectable dependencies */ }
 type ImportContext struct { /* injectable dependencies */ }
@@ -563,6 +578,7 @@ type ImportContext struct { /* injectable dependencies */ }
 ## Example: Complete Refactoring of `gatherRepositoryInfo`
 
 ### Before (Untestable)
+
 ```go
 func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
     // Hardcoded dependencies
@@ -577,6 +593,7 @@ func gatherRepositoryInfo(repoPath string) (*RepositoryInfo, error) {
 ```
 
 ### After (Fully Testable)
+
 ```go
 // Context with injected dependencies
 type InfoContext struct {
@@ -642,6 +659,7 @@ The refactoring focuses on **Dependency Injection** and **Separation of Concerns
 5. **Return** errors instead of calling `os.Exit()`
 
 This makes the code:
+
 - **100% unit testable** (with mocks)
 - **Fast** (in-memory tests)
 - **Reliable** (isolated tests)

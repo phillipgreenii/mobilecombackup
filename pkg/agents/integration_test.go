@@ -42,7 +42,7 @@ This is a base template for testing inheritance.
 Base functionality that all agents inherit.`
 
 	baseTemplatePath := filepath.Join(tempDir, "base-test-template.md")
-	err := os.WriteFile(baseTemplatePath, []byte(baseTemplateContent), 0644)
+	err := os.WriteFile(baseTemplatePath, []byte(baseTemplateContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create base template: %v", err)
 	}
@@ -74,7 +74,7 @@ This agent extends the base template.
 Agent-specific implementation details.`
 
 	childAgentPath := filepath.Join(tempDir, "child-test-agent.md")
-	err = os.WriteFile(childAgentPath, []byte(childAgentContent), 0644)
+	err = os.WriteFile(childAgentPath, []byte(childAgentContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create child agent: %v", err)
 	}
@@ -183,7 +183,7 @@ extends: agent2
 Agent 1 content`
 
 	agent2Content := `---
-name: agent2  
+name: agent2
 extends: agent1
 ---
 Agent 2 content`
@@ -191,12 +191,12 @@ Agent 2 content`
 	agent1Path := filepath.Join(tempDir, "agent1.md")
 	agent2Path := filepath.Join(tempDir, "agent2.md")
 
-	err := os.WriteFile(agent1Path, []byte(agent1Content), 0644)
+	err := os.WriteFile(agent1Path, []byte(agent1Content), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create agent1: %v", err)
 	}
 
-	err = os.WriteFile(agent2Path, []byte(agent2Content), 0644)
+	err = os.WriteFile(agent2Path, []byte(agent2Content), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create agent2: %v", err)
 	}
@@ -247,7 +247,7 @@ type: template
 ---
 Template 1`,
 		"template2.md": `---
-name: template2  
+name: template2
 type: template
 ---
 Template 2`,
@@ -266,7 +266,7 @@ Agent 2`,
 
 	// Create subdirectory with more agents
 	subDir := filepath.Join(tempDir, "subdirectory")
-	err := os.MkdirAll(subDir, 0755)
+	err := os.MkdirAll(subDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
@@ -279,7 +279,7 @@ Agent 3`
 	// Write all files
 	for filename, content := range files {
 		fullPath := filepath.Join(tempDir, filename)
-		err := os.WriteFile(fullPath, []byte(content), 0644)
+		err := os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create file %s: %v", filename, err)
 		}
@@ -347,7 +347,7 @@ tools:
 Template content with standard behaviors.`
 
 	templatePath := filepath.Join(tempDir, "base-template.md")
-	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
+	err := os.WriteFile(templatePath, []byte(templateContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create template: %v", err)
 	}

@@ -106,7 +106,6 @@ func (v *CallsValidatorImpl) validateCallsYearConsistency(year int) []Violation 
 		}
 		return nil
 	})
-
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     InvalidFormat,

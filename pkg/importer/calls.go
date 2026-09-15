@@ -95,7 +95,6 @@ func (ci *CallsImporter) LoadRepository() error {
 
 		return nil
 	})
-
 	if err != nil {
 		// Empty repository is OK
 		if !os.IsNotExist(err) {
@@ -258,7 +257,8 @@ func (ci *CallsImporter) parseCallsXML(filename string) (*struct {
 		ReadableDate string `xml:"readable_date,attr"`
 		ContactName  string `xml:"contact_name,attr"`
 	} `xml:"call"`
-}, error) {
+}, error,
+) {
 	file, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -293,7 +293,8 @@ func (ci *CallsImporter) parseCallsXML(filename string) (*struct {
 				filepath.Base(filename),
 				ci.options.MaxXMLSize,
 				0, // Don't know actual size
-				"XML parsing")
+				"XML parsing",
+			)
 		}
 		return nil, fmt.Errorf("failed to parse XML: %w", err)
 	}
@@ -310,7 +311,8 @@ func (ci *CallsImporter) processCalls(xmlCalls []struct {
 	Type         int    `xml:"type,attr"`
 	ReadableDate string `xml:"readable_date,attr"`
 	ContactName  string `xml:"contact_name,attr"`
-}) (*YearStat, []RejectedEntry) {
+},
+) (*YearStat, []RejectedEntry) {
 	stat := &YearStat{}
 	var rejections []RejectedEntry
 

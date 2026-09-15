@@ -279,7 +279,7 @@ Call ` + "`func()`" + `.
 	var filePaths []string
 	for filename, content := range qualityScenarios {
 		fullPath := filepath.Join(testDir, filename)
-		err := os.WriteFile(fullPath, []byte(content), 0644)
+		err := os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", filename, err)
 		}
@@ -335,7 +335,7 @@ func createScenarioFiles(t testing.TB, testDir string, scenario LoadTestScenario
 		fullPath := filepath.Join(testDir, filename)
 
 		content := generateFileContent(scenario.SectionsPerFile, scenario.ContentSize)
-		err := os.WriteFile(fullPath, []byte(content), 0644)
+		err := os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", filename, err)
 		}
@@ -356,7 +356,7 @@ func createSizedFiles(t testing.TB, testDir string, fileCount, sizeBytes int) []
 		fullPath := filepath.Join(testDir, filename)
 
 		content := generateContentOfSize(sizeBytes)
-		err := os.WriteFile(fullPath, []byte(content), 0644)
+		err := os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create sized test file %s: %v", filename, err)
 		}

@@ -20,9 +20,7 @@ const (
 	attachmentsDir = "attachments"
 )
 
-var (
-	dryRun bool
-)
+var dryRun bool
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -41,10 +39,10 @@ By default, creates repository in current directory. Use --repo-root to specify
 a different location.`,
 	Example: `  # Initialize in current directory
   mobilecombackup init
-  
+
   # Initialize in specific directory
   mobilecombackup init --repo-root /path/to/backup
-  
+
   # Preview what would be created (dry run)
   mobilecombackup init --dry-run`,
 	RunE: runInit,
@@ -226,7 +224,7 @@ func createRepositoryDirectories(
 	// Create root directory if it doesn't exist
 	if _, err := os.Stat(repoRoot); os.IsNotExist(err) {
 		if !dryRun {
-			if err := os.MkdirAll(repoRoot, 0750); err != nil {
+			if err := os.MkdirAll(repoRoot, 0o750); err != nil {
 				return fmt.Errorf("failed to create repository root: %w", err)
 			}
 			*createdPaths = append(*createdPaths, repoRoot)
@@ -238,7 +236,7 @@ func createRepositoryDirectories(
 	for _, dir := range directories {
 		dirPath := filepath.Join(repoRoot, dir)
 		if !dryRun {
-			if err := os.MkdirAll(dirPath, 0750); err != nil {
+			if err := os.MkdirAll(dirPath, 0o750); err != nil {
 				rollback()
 				return fmt.Errorf("failed to create directory %s: %w", dir, err)
 			}
@@ -285,7 +283,7 @@ func createMarkerFile(repoRoot string, dryRun bool, result *InitResult, createdP
 			rollback()
 			return fmt.Errorf("failed to marshal marker file: %w", err)
 		}
-		if err := os.WriteFile(markerPath, data, 0600); err != nil {
+		if err := os.WriteFile(markerPath, data, 0o600); err != nil {
 			rollback()
 			return fmt.Errorf("failed to create marker file: %w", err)
 		}
@@ -300,7 +298,7 @@ func createContactsFile(repoRoot string, dryRun bool, result *InitResult, create
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	if !dryRun {
 		// Write empty YAML array
-		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0600); err != nil {
+		if err := os.WriteFile(contactsPath, []byte("contacts: []\n"), 0o600); err != nil {
 			rollback()
 			return fmt.Errorf("failed to create contacts file: %w", err)
 		}
@@ -323,7 +321,7 @@ func createSummaryFile(repoRoot string, dryRun bool, result *InitResult, created
 			rollback()
 			return fmt.Errorf("failed to marshal summary file: %w", err)
 		}
-		if err := os.WriteFile(summaryPath, data, 0600); err != nil {
+		if err := os.WriteFile(summaryPath, data, 0o600); err != nil {
 			rollback()
 			return fmt.Errorf("failed to create summary file: %w", err)
 		}

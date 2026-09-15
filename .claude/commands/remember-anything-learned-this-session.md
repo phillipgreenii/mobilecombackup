@@ -4,6 +4,7 @@ Update CLAUDE.md with session learnings to improve future development workflows 
 Review the current session for valuable insights including:
 
 **Development Workflow Improvements:**
+
 - New patterns discovered during implementation
 - Quality assurance procedures that worked well
 - Git workflow optimizations
@@ -11,29 +12,34 @@ Review the current session for valuable insights including:
 - Code organization insights
 
 **Agent Performance Insights:**
+
 - Which agent approaches were most successful
-- Common pitfalls and how to avoid them  
+- Common pitfalls and how to avoid them
 - Effective communication patterns
 - Task breakdown strategies that worked
 
 **Technical Discoveries:**
+
 - New understanding of codebase architecture
 - Useful code patterns or utilities discovered
 - Integration challenges and solutions
 - Performance considerations learned
 
 **Process Improvements:**
+
 - Issue workflow refinements
 - Documentation standards updates
 - Commit message format optimizations
 - Verification step improvements
 
 **Update Workflow:**
+
 1. **Review session history** to identify key learnings
 2. **Categorize insights** by type (workflow, technical, process, etc.)
 3. **Update CLAUDE.md** with specific, actionable guidance
 4. **Include examples** where helpful to illustrate points
 5. **Auto-commit the updates** with descriptive message:
+
    ```
    Update CLAUDE.md with session learnings
 
@@ -46,6 +52,7 @@ Review the current session for valuable insights including:
    ```
 
 **Important Notes:**
+
 - Focus on actionable insights that will help future development sessions
 - Include specific examples and commands when possible
 - Update existing sections rather than just appending new content

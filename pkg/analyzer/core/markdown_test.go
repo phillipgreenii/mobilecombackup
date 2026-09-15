@@ -23,7 +23,7 @@ This is a test section.
 More content here.
 `
 		tmpFile := filepath.Join(t.TempDir(), "test.md")
-		err := os.WriteFile(tmpFile, []byte(content), 0644)
+		err := os.WriteFile(tmpFile, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -129,7 +129,7 @@ func TestSimpleMarkdownAnalyzer_EdgeCases(t *testing.T) {
 
 	t.Run("ParseMarkdown_EmptyFile", func(t *testing.T) {
 		tmpFile := filepath.Join(t.TempDir(), "empty.md")
-		err := os.WriteFile(tmpFile, []byte(""), 0644)
+		err := os.WriteFile(tmpFile, []byte(""), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -189,7 +189,7 @@ More details in subsection.
 Final content.
 `
 		tmpFile := filepath.Join(t.TempDir(), "complex.md")
-		err := os.WriteFile(tmpFile, []byte(content), 0644)
+		err := os.WriteFile(tmpFile, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -268,7 +268,7 @@ This is benchmark content for testing performance.
 
 Content here.
 
-## Section 2 
+## Section 2
 
 More content.
 
@@ -277,7 +277,7 @@ More content.
 Details.
 `
 	tmpFile := filepath.Join(b.TempDir(), "bench.md")
-	err := os.WriteFile(tmpFile, []byte(content), 0644)
+	err := os.WriteFile(tmpFile, []byte(content), 0o644)
 	if err != nil {
 		b.Fatalf("Failed to create test file: %v", err)
 	}

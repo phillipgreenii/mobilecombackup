@@ -9,6 +9,7 @@ This guide helps agents automatically fix common issues that arise during the ve
 ## When to Auto-Fix vs Ask User
 
 ### Auto-Fix These Issues:
+
 - Import errors and missing dependencies
 - Unused variables and dead code
 - Formatting and style violations
@@ -17,6 +18,7 @@ This guide helps agents automatically fix common issues that arise during the ve
 - Documentation comments
 
 ### Ask User for Guidance When:
+
 - Test logic appears incorrect (wrong expected values)
 - Multiple valid approaches to fix an issue
 - Fix would significantly change program behavior
@@ -28,7 +30,8 @@ This guide helps agents automatically fix common issues that arise during the ve
 ### Import and Dependency Errors
 
 **Pattern**: `undefined: functionName`
-**Fix**: 
+**Fix**:
+
 ```go
 // Add missing import
 import "github.com/phillipgreenii/mobilecombackup/pkg/missing"
@@ -38,6 +41,7 @@ import "github.com/phillipgreenii/mobilecombackup/pkg/missing"
 
 **Pattern**: `package not found`
 **Fix**:
+
 ```bash
 # Add missing dependency
 go mod tidy
@@ -49,6 +53,7 @@ go mod tidy
 
 **Pattern**: `cannot use x (type A) as type B`
 **Fix**:
+
 ```go
 // Add explicit type conversion
 result := TypeB(x)
@@ -61,6 +66,7 @@ result := x.Field
 
 **Pattern**: `declared but not used`
 **Fix**:
+
 ```go
 // Option 1: Remove unused variable
 // var unused string ← Delete this line
@@ -76,6 +82,7 @@ fmt.Println(previouslyUnused)
 
 **Pattern**: `no such file or directory: testdata/...`
 **Fix**:
+
 ```bash
 # Create missing test data directory
 mkdir -p testdata/
@@ -88,6 +95,7 @@ touch testdata/expected_output.xml
 
 **Pattern**: `permission denied`
 **Fix**:
+
 ```bash
 # Fix file permissions
 chmod 644 file.go
@@ -100,6 +108,7 @@ chmod 755 directory/
 
 **Pattern**: `declared but not used`
 **Fixes**:
+
 ```go
 // Remove unused variables
 // var unused string ← Delete
@@ -115,6 +124,7 @@ chmod 755 directory/
 
 **Pattern**: `Error return value is not checked`
 **Fixes**:
+
 ```go
 // Option 1: Handle the error
 err := someFunction()
@@ -135,6 +145,7 @@ if err := someFunction(); err != nil {
 
 **Pattern**: `should have comment or be unexported`
 **Fix**:
+
 ```go
 // Add documentation comment for exported functions
 // ProcessData processes the input data according to specification
@@ -152,6 +163,7 @@ func processData(input string) error {
 
 **Pattern**: Various formatting violations
 **Fix**:
+
 ```bash
 # Run formatter (should be automatic in workflow)
 devbox run formatter
@@ -164,6 +176,7 @@ gofmt -w .
 
 **Pattern**: Import order violations
 **Fix**:
+
 ```bash
 # Use goimports to fix import organization
 goimports -w .
@@ -177,6 +190,7 @@ goimports -w .
 
 **Pattern**: `undefined: SomeType`
 **Fix**:
+
 ```go
 // Add missing import
 import "github.com/phillipgreenii/mobilecombackup/pkg/types"
@@ -190,6 +204,7 @@ import "time"
 
 **Pattern**: Various syntax error messages
 **Fixes**:
+
 ```go
 // Missing closing brace
 func example() {
@@ -212,6 +227,7 @@ func (r *Receiver) Method() error { // ← Fix signature
 
 **Pattern**: `cannot find package`
 **Fix**:
+
 ```bash
 # Download missing dependencies
 go mod download
@@ -229,6 +245,7 @@ go mod verify
 
 **Pattern**: Type doesn't implement interface
 **Fix**:
+
 ```go
 // Implement missing methods
 func (t *Type) MissingMethod() error {
@@ -242,6 +259,7 @@ func (t *Type) MissingMethod() error {
 
 **Pattern**: Method set issues
 **Fix**:
+
 ```go
 // Use pointer receiver for mutating methods
 func (t *Type) SetValue(v string) {
@@ -258,6 +276,7 @@ func (t Type) GetValue() string {
 
 **Pattern**: Context-related issues
 **Fix**:
+
 ```go
 // Add context parameter
 func ProcessData(ctx context.Context, data string) error {
@@ -275,6 +294,7 @@ err := ProcessData(ctx, "data")
 
 **Pattern**: Incorrect import paths
 **Fix**:
+
 ```go
 // Use full import path
 import "github.com/phillipgreenii/mobilecombackup/pkg/calls"
@@ -287,6 +307,7 @@ import "github.com/phillipgreenii/mobilecombackup/pkg/calls"
 
 **Pattern**: Test data in wrong location
 **Fix**:
+
 ```go
 // Use testdata/ directory
 testFile := "testdata/sample.xml"
@@ -299,6 +320,7 @@ testFile := "testdata/sample.xml"
 
 **Pattern**: Timestamp conversion issues
 **Fix**:
+
 ```go
 // Timestamps are milliseconds, divide by 1000 for Unix time
 unixTime := timestamp / 1000
@@ -320,6 +342,7 @@ t := time.Unix(unixTime, 0).UTC()
 ### Multiple Errors
 
 When multiple errors exist:
+
 1. **Fix formatting first** - run `devbox run formatter`
 2. **Fix imports and dependencies** - resolve import issues
 3. **Fix syntax errors** - basic compilation issues
@@ -329,6 +352,7 @@ When multiple errors exist:
 ### Error Cascades
 
 Some errors cause others:
+
 - Missing imports → undefined symbols → test failures
 - Formatting issues → lint violations
 - Syntax errors → build failures → test failures
@@ -338,6 +362,7 @@ Fix root causes first, then re-run verification.
 ## Integration with Workflows
 
 This document supports:
+
 - [Verification Workflow](VERIFICATION_WORKFLOW.md) - provides fixes for verification failures
 - [Task Completion](TASK_COMPLETION.md) - enables automatic issue resolution
 - All agent implementations - standard fix patterns

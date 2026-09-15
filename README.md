@@ -25,7 +25,7 @@ nix profile install github:phillipgreenii/mobilecombackup
 # Initialize repository
 mobilecombackup init
 
-# Import backup files  
+# Import backup files
 mobilecombackup import backup.xml
 
 # View repository info
@@ -42,18 +42,22 @@ mobilecombackup validate
 Find detailed information in our comprehensive documentation:
 
 ### 🚀 **Getting Started**
+
 - 📦 **[Installation Guide](docs/INSTALLATION.md)** - All installation methods, prerequisites, and troubleshooting
 - ⚡ **[Quick Start Tutorial](docs/CLI_REFERENCE.md#quick-start)** - Get up and running in 5 minutes
 
-### 📖 **Reference Guides**  
+### 📖 **Reference Guides**
+
 - 🛠️ **[Complete CLI Reference](docs/CLI_REFERENCE.md)** - Every command, flag, and example
 - 🏗️ **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and technical decisions
 
 ### 🔧 **Development**
+
 - 👨‍💻 **[Development Guide](docs/DEVELOPMENT.md)** - Setup, testing, and contribution workflows
 - 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment and Docker usage
 
 ### 🔍 **Find Anything**
+
 - 🗂️ **[Documentation Index](docs/INDEX.md)** - Complete documentation directory and search guide
 
 ## Contributing

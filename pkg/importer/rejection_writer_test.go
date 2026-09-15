@@ -27,7 +27,7 @@ func TestXMLRejectionWriter_DirectoryCreatedOnFirstRejection(t *testing.T) {
 
 	// Create test file
 	testFile := filepath.Join(tempDir, "calls-test.xml")
-	if err := os.WriteFile(testFile, []byte("test data"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test data"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -77,7 +77,7 @@ func TestXMLRejectionWriter_EmptyRejectionsNoDirectory(t *testing.T) {
 
 	// Create test file
 	testFile := filepath.Join(tempDir, "calls-test.xml")
-	if err := os.WriteFile(testFile, []byte("test data"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test data"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -122,7 +122,7 @@ func TestXMLRejectionWriter_TypeSubdirectories(t *testing.T) {
 		t.Run(tt.filename, func(t *testing.T) {
 			// Create test file
 			testFile := filepath.Join(tempDir, tt.filename)
-			if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
+			if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 
@@ -156,7 +156,7 @@ func TestXMLRejectionWriter_ConcurrentWrites(t *testing.T) {
 
 	go func() {
 		testFile := filepath.Join(tempDir, "calls-1.xml")
-		_ = os.WriteFile(testFile, []byte("test"), 0600)
+		_ = os.WriteFile(testFile, []byte("test"), 0o600)
 		rejections := []RejectedEntry{{Line: 1, Data: "<call />", Violations: []string{"test"}}}
 		_, err := writer.WriteRejections(testFile, rejections)
 		if err != nil {
@@ -167,7 +167,7 @@ func TestXMLRejectionWriter_ConcurrentWrites(t *testing.T) {
 
 	go func() {
 		testFile := filepath.Join(tempDir, "sms-1.xml")
-		_ = os.WriteFile(testFile, []byte("test"), 0600)
+		_ = os.WriteFile(testFile, []byte("test"), 0o600)
 		rejections := []RejectedEntry{{Line: 1, Data: "<sms />", Violations: []string{"test"}}}
 		_, err := writer.WriteRejections(testFile, rejections)
 		if err != nil {
@@ -193,7 +193,7 @@ func TestXMLRejectionWriter_FileFormat(t *testing.T) {
 
 	// Create test file
 	testFile := filepath.Join(tempDir, "calls-test.xml")
-	if err := os.WriteFile(testFile, []byte("test data"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test data"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

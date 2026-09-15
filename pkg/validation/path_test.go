@@ -327,13 +327,13 @@ func TestSymlinkAttack(t *testing.T) {
 
 	// Create a directory inside the base
 	insideDir := filepath.Join(tmpDir, "inside")
-	if err := os.MkdirAll(insideDir, 0750); err != nil {
+	if err := os.MkdirAll(insideDir, 0o750); err != nil {
 		t.Fatalf("Failed to create inside directory: %v", err)
 	}
 
 	// Create a directory outside the base
 	outsideDir := filepath.Join(filepath.Dir(tmpDir), "outside")
-	if err := os.MkdirAll(outsideDir, 0750); err != nil {
+	if err := os.MkdirAll(outsideDir, 0o750); err != nil {
 		t.Fatalf("Failed to create outside directory: %v", err)
 	}
 
@@ -387,7 +387,6 @@ func TestPathValidationFuzzing(t *testing.T) {
 		// If validation fails, that's acceptable
 		return true
 	}, nil)
-
 	if err != nil {
 		t.Errorf("Fuzzing test failed: %v", err)
 	}

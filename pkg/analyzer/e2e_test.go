@@ -29,7 +29,7 @@ func TestDocSyncCommand_E2E(t *testing.T) {
 	}
 
 	projectDir := filepath.Join(testDir, "test-project")
-	err := os.MkdirAll(projectDir, 0755)
+	err := os.MkdirAll(projectDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create test project directory: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestDocSyncCommand_E2E_ConfigManagement(t *testing.T) {
 	}
 
 	projectDir := filepath.Join(testDir, "config-test-project")
-	err := os.MkdirAll(projectDir, 0755)
+	err := os.MkdirAll(projectDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create test project directory: %v", err)
 	}
@@ -386,12 +386,12 @@ See ` + "`types.Config`" + ` for available options.
 
 	for relPath, content := range structure {
 		fullPath := filepath.Join(projectDir, relPath)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", relPath, err)
 		}
 
-		err = os.WriteFile(fullPath, []byte(content), 0644)
+		err = os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", relPath, err)
 		}

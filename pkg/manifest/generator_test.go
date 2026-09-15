@@ -3,11 +3,12 @@ package manifest
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 func TestManifestGenerator_GenerateFileManifest(t *testing.T) {
@@ -71,13 +72,13 @@ func TestManifestGenerator_CrossPlatformPaths(t *testing.T) {
 
 	// Create nested directory structure
 	nestedDir := filepath.Join(tempDir, "calls", "2023")
-	if err := os.MkdirAll(nestedDir, 0750); err != nil {
+	if err := os.MkdirAll(nestedDir, 0o750); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create test file
 	testFile := filepath.Join(nestedDir, "calls-jan.xml")
-	if err := os.WriteFile(testFile, []byte("<calls></calls>"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("<calls></calls>"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -213,7 +214,7 @@ func TestManifestGenerator_WriteChecksumOnly(t *testing.T) {
 	}
 
 	// Modify the checksum file
-	if err := os.WriteFile(checksumPath, []byte("modified"), 0600); err != nil {
+	if err := os.WriteFile(checksumPath, []byte("modified"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -268,7 +269,7 @@ func TestCalculateFileHash(t *testing.T) {
 	testFile := filepath.Join(tempDir, "test.txt")
 	testContent := "Hello, World!"
 
-	if err := os.WriteFile(testFile, []byte(testContent), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte(testContent), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -291,7 +292,7 @@ func createTestRepository(t *testing.T, tempDir string) {
 	// Create directories
 	dirs := []string{"calls", "sms", "attachments", "rejected"}
 	for _, dir := range dirs {
-		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0750); err != nil {
+		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0o750); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -309,7 +310,7 @@ func createTestRepository(t *testing.T, tempDir string) {
 
 	for file, content := range files {
 		path := filepath.Join(tempDir, file)
-		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}

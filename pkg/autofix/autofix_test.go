@@ -369,12 +369,12 @@ func TestAutofixer_PermissionChecking(t *testing.T) {
 
 	// Create a read-only subdirectory
 	readOnlyDir := filepath.Join(tempDir, "readonly")
-	if err := os.Mkdir(readOnlyDir, 0500); err != nil {
+	if err := os.Mkdir(readOnlyDir, 0o500); err != nil {
 		t.Fatalf("Failed to create read-only directory: %v", err)
 	}
 	defer func() {
 		// Restore permissions for cleanup
-		_ = os.Chmod(readOnlyDir, 0750) // nolint:gosec // Cleanup permissions
+		_ = os.Chmod(readOnlyDir, 0o750) // nolint:gosec // Cleanup permissions
 	}()
 
 	autofixer := NewAutofixer(readOnlyDir, &NullProgressReporter{}, afero.NewOsFs())
@@ -422,7 +422,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 
 	// Create test XML file with count mismatch
 	callsDir := filepath.Join(tempDir, "calls")
-	if err := os.MkdirAll(callsDir, 0750); err != nil {
+	if err := os.MkdirAll(callsDir, 0o750); err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
 
@@ -433,7 +433,7 @@ func TestAutofixer_XMLCountFix_Integration(t *testing.T) {
 </calls>`
 
 	xmlFile := filepath.Join(callsDir, "calls-2024.xml")
-	if err := os.WriteFile(xmlFile, []byte(testXML), 0600); err != nil {
+	if err := os.WriteFile(xmlFile, []byte(testXML), 0o600); err != nil {
 		t.Fatalf("Failed to write test XML file: %v", err)
 	}
 
@@ -651,7 +651,7 @@ func TestCheckWritePermission_ResourceCleanup(t *testing.T) {
 
 	// Test file permission check with proper resource cleanup
 	testFile := filepath.Join(tempDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

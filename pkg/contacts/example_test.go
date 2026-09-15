@@ -204,7 +204,7 @@ func Example_phoneNumberNormalization() {
 func ExampleManager_AddUnprocessedContacts() {
 	// Create a manager for a temporary directory
 	tempDir := exampleTempDir
-	_ = os.MkdirAll(tempDir, 0750)
+	_ = os.MkdirAll(tempDir, 0o750)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := contacts.NewContactsManager(tempDir)
@@ -253,7 +253,7 @@ func ExampleManager_AddUnprocessedContacts_countMismatch() {
 // ExampleManager_GetUnprocessedEntries demonstrates the new structured format
 func ExampleManager_GetUnprocessedEntries() {
 	tempDir := exampleTempDir
-	_ = os.MkdirAll(tempDir, 0750)
+	_ = os.MkdirAll(tempDir, 0o750)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
@@ -270,7 +270,7 @@ unprocessed:
     contact_names: ["Jane Smith"]
 `
 
-	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 
 	manager := contacts.NewContactsManager(tempDir)
 	err := manager.LoadContacts(context.Background())
@@ -295,7 +295,7 @@ unprocessed:
 // Example_knownContactFiltering demonstrates how known contacts are excluded during processing
 func Example_knownContactFiltering() {
 	tempDir := exampleTempDir
-	_ = os.MkdirAll(tempDir, 0750)
+	_ = os.MkdirAll(tempDir, 0o750)
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	contactsPath := filepath.Join(tempDir, "contacts.yaml")
@@ -305,7 +305,7 @@ func Example_knownContactFiltering() {
   - name: "Alice Johnson"
     numbers: ["5551234567"]
 `
-	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0600)
+	_ = os.WriteFile(contactsPath, []byte(yamlContent), 0o600)
 
 	manager := contacts.NewContactsManager(tempDir)
 	_ = manager.LoadContacts(context.Background())

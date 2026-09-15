@@ -14,45 +14,45 @@ cd "$PROJECT_ROOT"
 # Test 1: Quality monitor setup
 echo "Test 1: Quality monitor setup..."
 if ./scripts/quality-monitor.sh setup; then
-    echo "✅ Quality monitor setup works"
+  echo "✅ Quality monitor setup works"
 else
-    echo "❌ Quality monitor setup failed"
-    exit 1
+  echo "❌ Quality monitor setup failed"
+  exit 1
 fi
 
 # Test 2: Quality monitoring components
 echo "Test 2: Quality monitoring components..."
 if ./scripts/quality-monitor.sh test; then
-    echo "✅ Quality monitoring test component works"
+  echo "✅ Quality monitoring test component works"
 else
-    echo "❌ Quality monitoring test component failed"
-    exit 1
+  echo "❌ Quality monitoring test component failed"
+  exit 1
 fi
 
 # Test 3: Dashboard generation
 echo "Test 3: Dashboard generation..."
 if ./scripts/quality-monitor.sh dashboard; then
-    echo "✅ Dashboard generation works"
+  echo "✅ Dashboard generation works"
 else
-    echo "❌ Dashboard generation failed"
-    exit 1
+  echo "❌ Dashboard generation failed"
+  exit 1
 fi
 
 # Test 4: Quality gates evaluation
 echo "Test 4: Quality gates evaluation..."
 if ./scripts/quality-monitor.sh gates; then
-    echo "✅ Quality gates evaluation works"
+  echo "✅ Quality gates evaluation works"
 else
-    echo "⚠️  Quality gates evaluation ran (may fail due to thresholds)"
+  echo "⚠️  Quality gates evaluation ran (may fail due to thresholds)"
 fi
 
 # Test 5: Historical report generation
 echo "Test 5: Historical report generation..."
 if ./scripts/quality-monitor.sh report; then
-    echo "✅ Historical report generation works"
+  echo "✅ Historical report generation works"
 else
-    echo "❌ Historical report generation failed"
-    exit 1
+  echo "❌ Historical report generation failed"
+  exit 1
 fi
 
 echo ""

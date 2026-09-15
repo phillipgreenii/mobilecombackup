@@ -442,7 +442,7 @@ func (dsm *DocumentationStateManager) Persist() types.Result[bool] {
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(dsm.statePath), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dsm.statePath), 0o750); err != nil {
 		return types.NewResultError[bool](fmt.Errorf("failed to create state directory: %w", err))
 	}
 
@@ -453,7 +453,7 @@ func (dsm *DocumentationStateManager) Persist() types.Result[bool] {
 	}
 
 	// Write to file with proper permissions
-	err = os.WriteFile(dsm.statePath, data, 0600)
+	err = os.WriteFile(dsm.statePath, data, 0o600)
 	if err != nil {
 		return types.NewResultError[bool](fmt.Errorf("failed to write documentation state file: %w", err))
 	}

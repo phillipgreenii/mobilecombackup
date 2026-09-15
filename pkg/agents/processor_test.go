@@ -229,7 +229,7 @@ This is the content of the test agent.
 - Test functionality
 - Validate parsing`
 
-	err := os.WriteFile(agentFile, []byte(agentContent), 0644)
+	err := os.WriteFile(agentFile, []byte(agentContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -311,7 +311,7 @@ tools:
 Base template content.`
 
 	templateFile := filepath.Join(tempDir, "base-test-template.md")
-	err := os.WriteFile(templateFile, []byte(templateContent), 0644)
+	err := os.WriteFile(templateFile, []byte(templateContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create template file: %v", err)
 	}
@@ -329,7 +329,7 @@ additional-tools:
 Agent content.`
 
 	agentFile := filepath.Join(tempDir, "test-agent.md")
-	err = os.WriteFile(agentFile, []byte(agentContent), 0644)
+	err = os.WriteFile(agentFile, []byte(agentContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create agent file: %v", err)
 	}

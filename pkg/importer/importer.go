@@ -330,7 +330,8 @@ func NewImporterWithDependencies(
 
 	// Create SMS importer with dependency injection and logger
 	smsImporter, err := NewSMSImporterWithDependenciesAndLogger(
-		options, contactsManager, smsTracker, smsReader, attachmentStorage, logger)
+		options, contactsManager, smsTracker, smsReader, attachmentStorage, logger,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SMS importer: %w", err)
 	}

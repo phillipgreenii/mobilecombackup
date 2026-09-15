@@ -312,7 +312,8 @@ func (si *SMSImporter) handleProcessingError(
 			filepath.Base(filePath),
 			si.options.MaxXMLSize,
 			0, // Don't know actual size
-			"SMS XML parsing")
+			"SMS XML parsing",
+		)
 	}
 	summary.Errors++
 	return summary, err
@@ -388,7 +389,8 @@ func (si *SMSImporter) validateMessageSize(msg sms.Message) error {
 			"message",
 			si.options.MaxMessageSize,
 			messageSize,
-			"Message size validation")
+			"Message size validation",
+		)
 	}
 
 	return nil

@@ -91,7 +91,7 @@ func TestMarkdownAnalyzer_ParseMarkdown(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary test file
 			tmpFile := filepath.Join(t.TempDir(), "test.md")
-			err := os.WriteFile(tmpFile, []byte(tt.content), 0644)
+			err := os.WriteFile(tmpFile, []byte(tt.content), 0o644)
 			if err != nil {
 				t.Fatalf("Failed to create test file: %v", err)
 			}
@@ -182,14 +182,14 @@ func TestMarkdownAnalyzer_ValidateLinks(t *testing.T) {
 [Valid link](valid.md)
 `
 	validFile := filepath.Join(testDir, "valid.md")
-	err := os.WriteFile(validFile, []byte(validContent), 0644)
+	err := os.WriteFile(validFile, []byte(validContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create valid test file: %v", err)
 	}
 
 	// Create the target file
 	targetFile := filepath.Join(testDir, "valid.md")
-	err = os.WriteFile(targetFile, []byte("# Target"), 0644)
+	err = os.WriteFile(targetFile, []byte("# Target"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create target file: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestMarkdownAnalyzer_ValidateLinks(t *testing.T) {
 [Broken link](#todo)
 `
 	brokenFile := filepath.Join(testDir, "broken.md")
-	err = os.WriteFile(brokenFile, []byte(brokenContent), 0644)
+	err = os.WriteFile(brokenFile, []byte(brokenContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create broken test file: %v", err)
 	}
@@ -327,7 +327,7 @@ func TestConcurrentDocumentScanner_Basic(t *testing.T) {
 	// Create test files
 	testDir := t.TempDir()
 	testFile := filepath.Join(testDir, "test.md")
-	err := os.WriteFile(testFile, []byte(testMarkdownSimple), 0644)
+	err := os.WriteFile(testFile, []byte(testMarkdownSimple), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -354,7 +354,7 @@ func BenchmarkMarkdownAnalyzer_ParseMarkdown(b *testing.B) {
 
 	// Create test file
 	tmpFile := filepath.Join(b.TempDir(), "bench.md")
-	err := os.WriteFile(tmpFile, []byte(testMarkdownContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(testMarkdownContent), 0o644)
 	if err != nil {
 		b.Fatalf("Failed to create test file: %v", err)
 	}

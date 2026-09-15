@@ -118,7 +118,7 @@ func (g *AgentGenerator) generateAgentContent(
 func (g *AgentGenerator) writeAgentToFile(agent *AgentDefinition, outputPath string) error {
 	// Ensure output directory exists
 	dir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
 

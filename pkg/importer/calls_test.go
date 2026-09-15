@@ -287,7 +287,7 @@ func setupValidRepository(t *testing.T, repoRoot string) {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0750); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
@@ -298,14 +298,14 @@ created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup v1.0.0"
 `
 	markerPath := filepath.Join(repoRoot, ".mobilecombackup.yaml")
-	if err := os.WriteFile(markerPath, []byte(markerContent), 0600); err != nil {
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0o600); err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
 
 	// Create empty contacts file
 	contactsPath := filepath.Join(repoRoot, "contacts.yaml")
 	contactsContent := "contacts: []\n"
-	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 
@@ -315,7 +315,7 @@ created_by: "mobilecombackup v1.0.0"
   calls: 0
   sms: 0
 `
-	if err := os.WriteFile(summaryPath, []byte(summaryContent), 0600); err != nil {
+	if err := os.WriteFile(summaryPath, []byte(summaryContent), 0o600); err != nil {
 		t.Fatalf("Failed to create summary file: %v", err)
 	}
 
@@ -361,7 +361,6 @@ func TestDependencyInjection(t *testing.T) {
 		mockAttachmentStorage,
 		logging.NewNullLogger(),
 	)
-
 	if err != nil {
 		t.Fatalf("NewImporterWithDependencies failed: %v", err)
 	}
@@ -405,7 +404,6 @@ func TestCallsImporterDependencyInjection(t *testing.T) {
 		yearTracker,
 		callsReader,
 	)
-
 	if err != nil {
 		t.Fatalf("NewCallsImporterWithDependencies failed: %v", err)
 	}

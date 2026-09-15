@@ -21,7 +21,7 @@ func TestChecksumValidatorImpl_CalculateFileChecksum(t *testing.T) {
 	// Create test file with known content
 	testContent := []byte("Hello, World!")
 	testFile := filepath.Join(tempDir, "test.txt")
-	err = os.WriteFile(testFile, testContent, 0600)
+	err = os.WriteFile(testFile, testContent, 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestChecksumValidatorImpl_VerifyFileChecksum(t *testing.T) {
 	// Create test file with known content
 	testContent := []byte("Hello, World!")
 	testFile := filepath.Join(tempDir, "test.txt")
-	err := os.WriteFile(testFile, testContent, 0600)
+	err := os.WriteFile(testFile, testContent, 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -100,13 +100,13 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums(t *testing.T) {
 		fullPath := filepath.Join(tempDir, fileName)
 
 		// Create directory if needed
-		err := os.MkdirAll(filepath.Dir(fullPath), 0750)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o750)
 		if err != nil {
 			t.Fatalf("Failed to create directory: %v", err)
 		}
 
 		// Write file
-		err = os.WriteFile(fullPath, []byte(content), 0600)
+		err = os.WriteFile(fullPath, []byte(content), 0o600)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", fileName, err)
 		}
@@ -207,7 +207,7 @@ func TestChecksumValidatorImpl_ValidateManifestChecksums_MultipleViolations(t *t
 	// Create one valid file
 	testContent := []byte("Valid content")
 	testFile := filepath.Join(tempDir, "valid.txt")
-	err := os.WriteFile(testFile, testContent, 0600)
+	err := os.WriteFile(testFile, testContent, 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -285,7 +285,7 @@ func TestChecksumValidatorImpl_LargeFilePerformance(t *testing.T) {
 	}
 
 	largeFile := filepath.Join(tempDir, "large.txt")
-	err := os.WriteFile(largeFile, largeContent, 0600)
+	err := os.WriteFile(largeFile, largeContent, 0o600)
 	if err != nil {
 		t.Fatalf("Failed to create large test file: %v", err)
 	}

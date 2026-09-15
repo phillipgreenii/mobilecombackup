@@ -48,7 +48,7 @@ This is test content for integration testing.
 Some content here.
 `
 		testFile := filepath.Join(testDir, "test.md")
-		err := os.WriteFile(testFile, []byte(testContent), 0644)
+		err := os.WriteFile(testFile, []byte(testContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test markdown file: %v", err)
 		}
@@ -118,7 +118,7 @@ Some content here.
 
 		// Create initial file
 		initialContent := "# Initial Content"
-		err := os.WriteFile(testFile, []byte(initialContent), 0644)
+		err := os.WriteFile(testFile, []byte(initialContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -156,7 +156,7 @@ Some content here.
 		// Wait over 1 second so mod time changes at Unix seconds precision
 		time.Sleep(1100 * time.Millisecond)
 		modifiedContent := "# Modified Content\n\nThis content has changed."
-		err = os.WriteFile(testFile, []byte(modifiedContent), 0644)
+		err = os.WriteFile(testFile, []byte(modifiedContent), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to modify test file: %v", err)
 		}
@@ -179,7 +179,7 @@ func TestConcurrentDocumentScanner_Integration(t *testing.T) {
 	// Create test directory structure
 	testDir := t.TempDir()
 	docsDir := filepath.Join(testDir, "docs")
-	err := os.MkdirAll(docsDir, 0755)
+	err := os.MkdirAll(docsDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}
@@ -194,7 +194,7 @@ This is the main project documentation.
 
 Instructions for installing.
 `,
-		"docs/api.md": `# API Documentation  
+		"docs/api.md": `# API Documentation
 
 API reference documentation.
 
@@ -216,11 +216,11 @@ First steps.
 
 	for relPath, content := range testFiles {
 		fullPath := filepath.Join(testDir, relPath)
-		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
 		if err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", relPath, err)
 		}
-		err = os.WriteFile(fullPath, []byte(content), 0644)
+		err = os.WriteFile(fullPath, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file %s: %v", relPath, err)
 		}

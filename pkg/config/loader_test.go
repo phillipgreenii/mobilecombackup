@@ -25,7 +25,7 @@ func TestDefaultConfig(t *testing.T) {
 		t.Errorf("Expected repository root to be '.', got %s", config.Repository.Root)
 	}
 
-	if config.Repository.Permissions.Dir != 0755 {
+	if config.Repository.Permissions.Dir != 0o755 {
 		t.Errorf("Expected directory permissions to be 0755, got %o", config.Repository.Permissions.Dir)
 	}
 
@@ -149,7 +149,7 @@ logging:
   color: false
 `
 
-	err := os.WriteFile(configFile, []byte(configContent), 0600)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to write test config file: %v", err)
 	}
@@ -165,7 +165,7 @@ logging:
 		t.Errorf("Expected repository root '/tmp/test-repo', got %s", config.Repository.Root)
 	}
 
-	if config.Repository.Permissions.Dir != 0750 {
+	if config.Repository.Permissions.Dir != 0o750 {
 		t.Errorf("Expected directory permissions 0750, got %o", config.Repository.Permissions.Dir)
 	}
 
@@ -342,7 +342,7 @@ repository:
   invalid: [ unclosed bracket
 `
 
-	err := os.WriteFile(configFile, []byte(invalidYAML), 0600)
+	err := os.WriteFile(configFile, []byte(invalidYAML), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid config file: %v", err)
 	}

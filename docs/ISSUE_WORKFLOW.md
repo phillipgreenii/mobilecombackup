@@ -11,6 +11,7 @@ Issues move through four states: **backlog** → **ready** → **active** → **
 ## Issue Lifecycle
 
 ### Quick Reference
+
 1. **Create issue**: Use `/create-feature` or `/create-bug` → `backlog/`
 2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
 3. **Ready issue**: Move to `issues/ready/` when fully planned (use `/ready-issue`)
@@ -28,6 +29,7 @@ issues/
 ```
 
 **State Transitions:**
+
 - `backlog/` → `ready/` : When specification is complete (manual or `/ready-issue`)
 - `ready/` → `active/` : When implementation starts (`/implement-issue`)
 - `active/` → `completed/` : When all tasks done, tested, and committed (automatic)
@@ -37,16 +39,19 @@ issues/
 ### Creating New Issues
 
 **Feature Issues:**
+
 ```bash
 /create-feature "Feature description"
 ```
 
 **Bug Issues:**
+
 ```bash
 /create-bug "Bug description"
 ```
 
 ### Initial Issue Location
+
 - New issues start in `issues/backlog/`
 - Format: `FEAT-XXX.md` or `BUG-XXX.md`
 - Contains specification template to fill out
@@ -70,12 +75,14 @@ Before moving to `ready/`, ensure the issue contains:
 ### Moving to Ready
 
 **Manual Process:**
+
 ```bash
 git mv issues/backlog/FEAT-XXX.md issues/ready/FEAT-XXX.md
 git commit -m "FEAT-XXX: Move to ready for implementation"
 ```
 
 **Command Process:**
+
 ```bash
 /ready-issue FEAT-XXX
 ```
@@ -85,11 +92,13 @@ git commit -m "FEAT-XXX: Move to ready for implementation"
 ### Starting Implementation
 
 **Recommended Command:**
+
 ```bash
 /implement-issue FEAT-XXX
 ```
 
 This command will:
+
 1. Move issue from `ready/` to `active/`
 2. Create TodoWrite list from issue tasks
 3. Begin implementation with agent guidance
@@ -106,6 +115,7 @@ During implementation:
 ### Task Breakdown
 
 Create TodoWrite list from issue specification:
+
 1. **Extract tasks** from issue's task section
 2. **Make tasks specific** and actionable
 3. **Work sequentially** - one task at a time
@@ -113,9 +123,10 @@ Create TodoWrite list from issue specification:
 5. **Commit progress** - after each completed task
 
 ### Example TodoWrite List
+
 ```
 1. Create core data structures for feature X
-2. Implement parsing logic with error handling  
+2. Implement parsing logic with error handling
 3. Add comprehensive test suite with edge cases
 4. Update documentation and examples
 5. Run full verification and fix any issues
@@ -146,7 +157,7 @@ See [Task Completion](TASK_COMPLETION.md) for detailed requirements.
 Use the `product-doc-sync` agent to:
 
 1. **Update issue document** with final implementation details
-2. **Update specifications** to match actual implementation  
+2. **Update specifications** to match actual implementation
 3. **Move completed issue** from `active/` to `completed/`
 4. **Commit documentation updates**
 
@@ -162,11 +173,12 @@ Use the `product-doc-sync` agent to:
 ## Directory Movement Commands
 
 ### Manual Git Commands
+
 ```bash
 # Backlog to Ready
 git mv issues/backlog/FEAT-XXX.md issues/ready/FEAT-XXX.md
 
-# Ready to Active  
+# Ready to Active
 git mv issues/ready/FEAT-XXX.md issues/active/FEAT-XXX.md
 
 # Active to Completed
@@ -174,6 +186,7 @@ git mv issues/active/FEAT-XXX.md issues/completed/FEAT-XXX.md
 ```
 
 ### Slash Commands
+
 ```bash
 /ready-issue FEAT-XXX          # Move backlog -> ready
 /implement-issue FEAT-XXX       # Move ready -> active + implement
@@ -192,16 +205,19 @@ git mv issues/active/FEAT-XXX.md issues/completed/FEAT-XXX.md
 ### Agent Integration
 
 **spec-implementation-engineer**:
+
 - Primary agent for implementing issues
 - Follows task completion requirements
 - Integrates with verification workflow
 
 **product-doc-sync**:
+
 - Updates documentation after implementation
 - Handles issue completion and movement
 - Ensures specifications match implementation
 
 **code-completion-verifier**:
+
 - Ensures all quality checks pass
 - Provides auto-fixes for common issues
 - Enforces task completion requirements
@@ -224,6 +240,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Implementation Best Practices
 
 ### Planning Phase
+
 - **Be specific** in requirements and acceptance criteria
 - **Include examples** of expected inputs/outputs
 - **Consider edge cases** and error scenarios
@@ -231,6 +248,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Break into manageable tasks**
 
 ### Implementation Phase
+
 - **Follow task sequence** - don't skip ahead
 - **Verify each step** - don't accumulate issues
 - **Commit frequently** - after each completed task
@@ -238,6 +256,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Ask for help** when blocked
 
 ### Completion Phase
+
 - **Update documentation** to match implementation
 - **Review against original requirements**
 - **Ensure all acceptance criteria met**
@@ -248,6 +267,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Throughout Implementation
 
 All implementation must follow:
+
 - [Verification Workflow](VERIFICATION_WORKFLOW.md) - mandatory quality checks
 - [Git Workflow](GIT_WORKFLOW.md) - commit standards and pre-commit hooks
 - [Task Completion](TASK_COMPLETION.md) - completion verification requirements
@@ -265,16 +285,19 @@ All implementation must follow:
 ### Common Issues
 
 **Issue stuck in backlog**:
+
 - Complete the specification requirements
 - Ensure all sections are filled out
 - Add specific acceptance criteria
 
 **Implementation blocked**:
+
 - Check [Common Fixes](COMMON_FIXES.md) for solutions
 - Ask for help rather than compromising quality
 - Break large tasks into smaller pieces
 
 **Verification failures**:
+
 - Follow [Verification Workflow](VERIFICATION_WORKFLOW.md)
 - Use [Common Fixes](COMMON_FIXES.md) patterns
 - Don't proceed until all checks pass
@@ -282,6 +305,7 @@ All implementation must follow:
 ### Getting Help
 
 When blocked:
+
 1. **Document the specific issue** you're facing
 2. **Include error messages** and commands run
 3. **Explain what you've tried** to fix it
@@ -297,16 +321,19 @@ When blocked:
 ## Issue Types
 
 ### Feature Issues (FEAT-XXX)
+
 - New functionality or capabilities
 - Enhancement to existing features
 - API additions or modifications
 
 ### Bug Issues (BUG-XXX)
+
 - Incorrect behavior fixes
 - Performance improvements
 - Security vulnerability fixes
 
 ### Documentation Issues (DOC-XXX)
+
 - Documentation updates
 - README improvements
 - API documentation changes

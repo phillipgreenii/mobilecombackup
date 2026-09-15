@@ -69,7 +69,7 @@ Create a system configuration with Nix:
   environment.systemPackages = [
     inputs.mobilecombackup.packages.${system}.default
   ];
-  
+
   # Optional: Create system service
   systemd.services.mobilecombackup = {
     description = "Mobile backup processing service";
@@ -155,7 +155,7 @@ CMD ["--help"]
 ### Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   mobilecombackup:
@@ -164,7 +164,7 @@ services:
       - ./data:/data
       - ./backups:/backups:ro
     command: import /backups
-    
+
   # Optional: Web interface (future)
   mobilecombackup-web:
     image: mobilecombackup-web:latest
@@ -189,23 +189,23 @@ spec:
   template:
     spec:
       containers:
-      - name: mobilecombackup
-        image: mobilecombackup:latest
-        command: ["mobilecombackup"]
-        args: ["import", "/backups"]
-        volumeMounts:
-        - name: data-volume
-          mountPath: /data
-        - name: backup-volume
-          mountPath: /backups
-          readOnly: true
+        - name: mobilecombackup
+          image: mobilecombackup:latest
+          command: ["mobilecombackup"]
+          args: ["import", "/backups"]
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+            - name: backup-volume
+              mountPath: /backups
+              readOnly: true
       volumes:
-      - name: data-volume
-        persistentVolumeClaim:
-          claimName: mobilecombackup-data
-      - name: backup-volume
-        configMap:
-          name: backup-files
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: mobilecombackup-data
+        - name: backup-volume
+          configMap:
+            name: backup-files
       restartPolicy: OnFailure
 ```
 
@@ -217,30 +217,30 @@ kind: CronJob
 metadata:
   name: mobilecombackup-scheduled
 spec:
-  schedule: "0 2 * * *"  # Daily at 2 AM
+  schedule: "0 2 * * *" # Daily at 2 AM
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: mobilecombackup
-            image: mobilecombackup:latest
-            command: ["mobilecombackup"]
-            args: ["import", "/backups", "--quiet"]
-            volumeMounts:
-            - name: data-volume
-              mountPath: /data
-            - name: backup-volume
-              mountPath: /backups
-              readOnly: true
+            - name: mobilecombackup
+              image: mobilecombackup:latest
+              command: ["mobilecombackup"]
+              args: ["import", "/backups", "--quiet"]
+              volumeMounts:
+                - name: data-volume
+                  mountPath: /data
+                - name: backup-volume
+                  mountPath: /backups
+                  readOnly: true
           volumes:
-          - name: data-volume
-            persistentVolumeClaim:
-              claimName: mobilecombackup-data
-          - name: backup-volume
-            nfs:
-              server: backup-server.example.com
-              path: /exports/mobile-backups
+            - name: data-volume
+              persistentVolumeClaim:
+                claimName: mobilecombackup-data
+            - name: backup-volume
+              nfs:
+                server: backup-server.example.com
+                path: /exports/mobile-backups
           restartPolicy: OnFailure
 ```
 
@@ -264,15 +264,15 @@ export MB_TEMP_DIR="/tmp/mb"      # Future: temporary file location
 # mobilecombackup.yaml
 repository:
   root: "/data/mobile-backups"
-  
+
 processing:
   max_workers: 4
   temp_dir: "/tmp/mb"
-  
+
 logging:
   level: "info"
   format: "json"
-  
+
 monitoring:
   metrics_enabled: true
   health_check_port: 8081
@@ -338,12 +338,14 @@ EOF
 ### Hardware Requirements
 
 #### Minimum Requirements
+
 - **CPU**: 1 core, 1GHz
 - **Memory**: 256MB RAM
 - **Storage**: 100MB for binary + data space
 - **Network**: Not required for local processing
 
 #### Recommended Production
+
 - **CPU**: 4+ cores for parallel processing (future)
 - **Memory**: 2GB+ RAM for large datasets
 - **Storage**: SSD for better I/O performance
@@ -529,7 +531,7 @@ echo "✅ Daily maintenance completed"
 After deployment:
 
 - **[CLI Reference](CLI_REFERENCE.md)** - Learn all available commands
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Fix operational issues  
+- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Fix operational issues
 - **[Development Guide](DEVELOPMENT.md)** - Contribute improvements
 - **[Architecture Overview](ARCHITECTURE.md)** - Understand system design
 

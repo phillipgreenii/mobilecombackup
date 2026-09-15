@@ -415,7 +415,7 @@ func TestCompleteWorkflow(t *testing.T) {
 - [ ] Add dependency validation
 - [ ] Create escalation manager
 
-## Acceptance Criteria  
+## Acceptance Criteria
 - All tasks tracked properly
 - Dependencies validated
 - Escalations work correctly`

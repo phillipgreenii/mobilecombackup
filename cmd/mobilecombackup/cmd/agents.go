@@ -34,7 +34,7 @@ var agentsCmd = &cobra.Command{
 	Use:   "agents",
 	Short: "Manage agent templates and generate new agents",
 	Long: `Manage agent templates and generate new agents from base templates.
-	
+
 This command provides functionality to:
 - Validate agent template definitions
 - List available templates with descriptions
@@ -46,15 +46,15 @@ Agent templates use YAML frontmatter to define metadata and inheritance,
 allowing for consistent agent creation with reduced duplication.`,
 	Example: `  # List all available templates
   mobilecombackup agents list-templates
-  
+
   # Validate all templates in directory
   mobilecombackup agents validate --templates-dir .claude/agents/templates
-  
+
   # Generate new agent from template
   mobilecombackup agents generate --template base-implementation-agent \
     --name my-new-agent --description "Custom agent for my tasks" \
     --output-path agents/my-new-agent.md
-  
+
   # Interactive agent generation
   mobilecombackup agents generate --interactive`,
 }
@@ -63,7 +63,7 @@ var listTemplatesCmd = &cobra.Command{
 	Use:   "list-templates",
 	Short: "List available agent templates",
 	Long: `List all available agent templates with their descriptions.
-	
+
 Shows template names, descriptions, and basic metadata to help you
 choose the appropriate base template for generating new agents.`,
 	RunE: runListTemplates,
@@ -73,7 +73,7 @@ var validateTemplatesCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate agent templates and definitions",
 	Long: `Validate agent template definitions and check for common issues.
-	
+
 Performs comprehensive validation including:
 - YAML frontmatter syntax validation
 - Required field checking (name, description, etc.)
@@ -90,25 +90,25 @@ var generateAgentCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a new agent from a template",
 	Long: `Generate a new agent definition file from an existing template.
-	
+
 Creates a new agent file with YAML frontmatter that extends the specified
 template. The generated agent inherits all base behaviors and tools from
 the template while allowing customization through overrides.
 
-You can specify additional tools, override model/color settings, and 
+You can specify additional tools, override model/color settings, and
 provide custom content for the generated agent.`,
 	Example: `  # Generate with basic settings
   mobilecombackup agents generate --template base-implementation-agent \
     --name database-agent --description "Database management agent" \
     --output-path agents/database-agent.md
-  
+
   # Generate with overrides and additional tools
   mobilecombackup agents generate --template base-review-agent \
     --name security-reviewer --description "Security code reviewer" \
     --override-model opus --override-color red \
     --additional-tools SecurityScanner,VulnDB \
     --output-path agents/security-reviewer.md
-  
+
   # Interactive generation
   mobilecombackup agents generate --interactive`,
 	RunE: runGenerateAgent,
@@ -118,7 +118,7 @@ var showHierarchyCmd = &cobra.Command{
 	Use:   "show-hierarchy",
 	Short: "Show template hierarchy and inheritance relationships",
 	Long: `Display the template hierarchy showing inheritance relationships.
-	
+
 Shows which templates exist, which agents extend which templates,
 and provides an overview of the inheritance structure to help
 understand the agent ecosystem.`,

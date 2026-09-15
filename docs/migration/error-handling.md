@@ -13,6 +13,7 @@ The error handling across the codebase has been standardized to provide consiste
 Errors now include more contextual information about the operation that failed:
 
 #### Before
+
 ```go
 // Old error messages
 err: "validation failed"
@@ -21,6 +22,7 @@ err: "processing error"
 ```
 
 #### After
+
 ```go
 // New error messages with context
 err: "failed to import SMS file 'messages.xml': validation failed"
@@ -33,6 +35,7 @@ err: "failed to process import files: stat: no such file or directory"
 All errors now properly preserve the error chain using `fmt.Errorf` with `%w`:
 
 #### Before
+
 ```go
 // Error chain was lost
 if err != nil {
@@ -41,6 +44,7 @@ if err != nil {
 ```
 
 #### After
+
 ```go
 // Error chain preserved
 if err != nil {
@@ -84,13 +88,13 @@ if err != nil {
         // Handle file system errors specifically
         fmt.Printf("File system error: %s\n", pathErr.Path)
     }
-    
+
     // Check for specific error conditions
     if errors.Is(err, os.ErrNotExist) {
         // Handle missing file case
         fmt.Println("File not found")
     }
-    
+
     // Get the full error context
     fmt.Printf("Import failed: %v\n", err)
 }
@@ -101,21 +105,27 @@ if err != nil {
 Errors are now classified into clear categories:
 
 ### User Errors
+
 Errors caused by invalid user input or configuration:
+
 ```go
 // File not found, invalid paths, malformed XML
 err: "failed to import SMS file '/missing/file.xml': no such file or directory"
 ```
 
 ### System Errors
+
 Errors caused by system limitations or I/O issues:
+
 ```go
 // Permission errors, disk space, network issues
 err: "failed to write attachment to '/path/file': permission denied"
 ```
 
 ### Logic Errors
+
 Programming errors or unexpected internal states:
+
 ```go
 // Validation failures, assertion errors, unexpected conditions
 err: "validation failed for repository '/repo': missing marker file"
@@ -128,6 +138,7 @@ err: "validation failed for repository '/repo': missing marker file"
 Review your error handling code to take advantage of enhanced error context:
 
 #### Before
+
 ```go
 _, err := importer.Import()
 if err != nil {
@@ -137,12 +148,13 @@ if err != nil {
 ```
 
 #### After
+
 ```go
 _, err := importer.Import()
 if err != nil {
     // Error already contains full context
     log.Printf("Import failed: %v", err)
-    
+
     // Or check for specific error types
     if errors.Is(err, os.ErrNotExist) {
         log.Printf("File not found during import")
@@ -163,7 +175,7 @@ if err != nil {
         "error": err,
         "operation": "import",
     }).Error("Import operation failed")
-    
+
     // Or extract specific error details
     var pathErr *os.PathError
     if errors.As(err, &pathErr) {
@@ -180,6 +192,7 @@ if err != nil {
 Update tests to check for improved error messages:
 
 #### Before
+
 ```go
 func TestImportError(t *testing.T) {
     _, err := importer.Import()
@@ -191,18 +204,19 @@ func TestImportError(t *testing.T) {
 ```
 
 #### After
+
 ```go
 func TestImportError(t *testing.T) {
     _, err := importer.Import()
     if err == nil {
         t.Error("Expected error")
     }
-    
+
     // Check for specific error context
     if !strings.Contains(err.Error(), "failed to process import files") {
         t.Errorf("Error missing expected context: %v", err)
     }
-    
+
     // Check error chain preservation
     var pathErr *os.PathError
     if !errors.As(err, &pathErr) {
@@ -268,18 +282,21 @@ err = fmt.Errorf("failed to process import files: %w", err)
 ## Best Practices
 
 ### Always Include Context
+
 ```go
 // Include relevant identifiers and operation details
 return fmt.Errorf("failed to import %s file %s: %w", fileType, filename, err)
 ```
 
 ### Preserve Error Chains
+
 ```go
 // Always use %w for error wrapping
 return fmt.Errorf("operation context: %w", err)
 ```
 
 ### Use Error Checking Functions
+
 ```go
 // Take advantage of errors.Is() and errors.As()
 if errors.Is(err, os.ErrNotExist) {
@@ -293,6 +310,7 @@ if errors.As(err, &pathErr) {
 ```
 
 ### Test Error Context
+
 ```go
 // Test that errors contain expected context
 if !strings.Contains(err.Error(), "expected context") {
@@ -309,7 +327,7 @@ Use error unwrapping to debug complex error chains:
 ```go
 func debugError(err error) {
     fmt.Printf("Error: %v\n", err)
-    
+
     // Walk the error chain
     for err != nil {
         fmt.Printf("  Caused by: %v\n", err)
@@ -325,7 +343,7 @@ Test for specific error types in the chain:
 ```go
 func TestSpecificError(t *testing.T) {
     _, err := someOperation()
-    
+
     // Check if specific error type exists in chain
     var targetErr *MyCustomError
     if !errors.As(err, &targetErr) {

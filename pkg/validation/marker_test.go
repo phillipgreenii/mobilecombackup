@@ -127,7 +127,7 @@ created_by: null
 			// Create marker file if content provided
 			if tt.markerContent != "" {
 				markerPath := filepath.Join(tempDir, ".mobilecombackup.yaml")
-				err := os.WriteFile(markerPath, []byte(tt.markerContent), 0600)
+				err := os.WriteFile(markerPath, []byte(tt.markerContent), 0o600)
 				if err != nil {
 					t.Fatalf("Failed to create test marker file: %v", err)
 				}
@@ -253,7 +253,6 @@ func TestMarkerFileValidator_ErrorHandling(t *testing.T) {
 	validator := NewMarkerFileValidator("/non/existent/path")
 
 	violations, versionSupported, err := validator.ValidateMarkerFile()
-
 	// Should not return error for non-existent directory (just missing file violation)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)

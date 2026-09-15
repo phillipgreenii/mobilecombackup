@@ -53,7 +53,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	}
 
 	// Create directory
-	if err := das.fs.MkdirAll(fullDirPath, 0750); err != nil {
+	if err := das.fs.MkdirAll(fullDirPath, 0o750); err != nil {
 		return fmt.Errorf("failed to create attachment directory: %w", err)
 	}
 
@@ -70,7 +70,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 	}
 
 	// Write attachment file
-	if err := afero.WriteFile(das.fs, attachmentPath, data, 0600); err != nil {
+	if err := afero.WriteFile(das.fs, attachmentPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write attachment file: %w", err)
 	}
 
@@ -90,7 +90,7 @@ func (das *DirectoryAttachmentStorage) Store(hash string, data []byte, metadata 
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0600); err != nil {
+	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0o600); err != nil {
 		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
@@ -169,7 +169,7 @@ func (das *DirectoryAttachmentStorage) createAttachmentDirectory(validatedDirPat
 	}
 
 	// Create directory
-	if err := das.fs.MkdirAll(fullDirPath, 0750); err != nil {
+	if err := das.fs.MkdirAll(fullDirPath, 0o750); err != nil {
 		// Check if it's a disk space issue
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)
@@ -197,7 +197,7 @@ func (das *DirectoryAttachmentStorage) streamDataToTempFile(
 	}
 
 	// Ensure file is closed, but only clean up temp file on error
-	var cleanupOnError = true
+	cleanupOnError := true
 	defer func() {
 		_ = file.Close()
 		if cleanupOnError {
@@ -274,7 +274,7 @@ func (das *DirectoryAttachmentStorage) writeMetadataFile(
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0600); err != nil {
+	if err := afero.WriteFile(das.fs, metadataPath, metadataData, 0o600); err != nil {
 		_ = das.fs.Remove(attachmentPath) // Cleanup attempt - ignore error
 		if strings.Contains(err.Error(), "no space left") {
 			return fmt.Errorf("%w: %v", ErrDiskFull, err)

@@ -213,7 +213,7 @@ func (qd *QualityDashboard) GenerateReport() (*DashboardReport, error) {
 // SaveReport saves the dashboard report to JSON file
 func (qd *QualityDashboard) SaveReport(report *DashboardReport, filename string) error {
 	// Ensure metrics directory exists
-	if err := os.MkdirAll(qd.metricsDir, 0750); err != nil {
+	if err := os.MkdirAll(qd.metricsDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create metrics directory: %w", err)
 	}
 
@@ -226,7 +226,7 @@ func (qd *QualityDashboard) SaveReport(report *DashboardReport, filename string)
 	}
 
 	// Write to file
-	if err := os.WriteFile(filepath, jsonData, 0600); err != nil {
+	if err := os.WriteFile(filepath, jsonData, 0o600); err != nil {
 		return fmt.Errorf("failed to write report file: %w", err)
 	}
 
@@ -350,5 +350,5 @@ func (qd *QualityDashboard) saveMetricsEntry(entry MetricsEntry) error {
 		return fmt.Errorf("failed to marshal metrics entry: %w", err)
 	}
 
-	return os.WriteFile(filepath, jsonData, 0600)
+	return os.WriteFile(filepath, jsonData, 0o600)
 }

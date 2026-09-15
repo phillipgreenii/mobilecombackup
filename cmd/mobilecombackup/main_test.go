@@ -145,7 +145,6 @@ func TestHelpSubcommand(t *testing.T) {
 	// Test help subcommand - Cobra provides automatic help command
 	cmd = exec.Command(binPath, "help") // #nosec G204
 	output, err = cmd.CombinedOutput()
-
 	// Help command should succeed
 	if err != nil {
 		t.Fatalf("Help command failed: %v\nOutput: %s", err, output)

@@ -39,7 +39,7 @@ and imports new entries into the repository organized by year.
 
 The repository location is determined by (in order of precedence):
 1. --repo-root flag
-2. MB_REPO_ROOT environment variable  
+2. MB_REPO_ROOT environment variable
 3. Current directory
 
 Exit Codes:
@@ -51,13 +51,13 @@ Arguments:
   paths    Files or directories to import (default: current directory)`,
 	Example: `  # Import specific files
   mobilecombackup import --repo-root /path/to/repo backup1.xml backup2.xml
-  
+
   # Scan directory for backup files
   mobilecombackup import --repo-root /path/to/repo /path/to/backups/
-  
+
   # Preview import without changes
   mobilecombackup import --repo-root /path/to/repo --dry-run backup.xml
-  
+
   # Import only call logs
   mobilecombackup import --repo-root /path/to/repo --filter calls backups/`,
 	RunE: runImport,

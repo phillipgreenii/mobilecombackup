@@ -5,29 +5,35 @@ This guide provides recommendations for setting up Neovim for Go development wit
 ## Essential Plugins
 
 ### LSP & Language Support
+
 - **nvim-lspconfig** - LSP configuration for `gopls` (Go language server)
 - **mason.nvim** + **mason-lspconfig.nvim** - Easy LSP server management
 - **nvim-treesitter** - Better syntax highlighting and code parsing
 
 ### Completion & Snippets
+
 - **nvim-cmp** - Autocompletion engine
 - **cmp-nvim-lsp** - LSP completion source
 - **LuaSnip** - Snippet engine
 - **friendly-snippets** - Pre-built snippets including Go
 
 ### Go-Specific Tools
+
 - **go.nvim** - Go development tools (test running, coverage, etc.)
 - **gopher.nvim** - Go utilities (struct tags, impl generation)
 
 ### File Management
+
 - **telescope.nvim** - Fuzzy finder for files, symbols, grep
 - **nvim-tree.lua** or **neo-tree.nvim** - File explorer
 
 ### Git Integration
+
 - **gitsigns.nvim** - Git status in gutter
 - **fugitive.vim** - Git commands in Neovim
 
 ### Debugging
+
 - **nvim-dap** - Debug Adapter Protocol
 - **nvim-dap-go** - Go debugging configuration
 - **nvim-dap-ui** - Debug UI
@@ -52,7 +58,7 @@ return {
       require("mason-lspconfig").setup({
         ensure_installed = { "gopls" }
       })
-      
+
       local lspconfig = require("lspconfig")
       lspconfig.gopls.setup({
         settings = {
@@ -67,7 +73,7 @@ return {
       })
     end,
   },
-  
+
   -- Go tools
   {
     "ray-x/go.nvim",
@@ -132,12 +138,14 @@ require("nvim-treesitter.configs").setup({
 This setup integrates with the project's development workflow:
 
 ### Quality Commands
+
 - `<leader>df` - Run devbox formatter
-- `<leader>dt` - Run devbox tests  
+- `<leader>dt` - Run devbox tests
 - `<leader>dl` - Run devbox linter
 - `<leader>db` - Build CLI
 
 ### Go Commands
+
 - `<leader>gr` - Run current Go file
 - `<leader>gt` - Run Go tests
 - `<leader>gc` - Show test coverage
@@ -145,6 +153,7 @@ This setup integrates with the project's development workflow:
 - `<leader>gi` - Add/organize imports
 
 ### LSP Features
+
 - `gd` - Go to definition
 - `gr` - Show references
 - `K` - Show documentation
@@ -177,29 +186,29 @@ Configure your base Neovim in `~/.config/home-manager/home.nix` or your home-man
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
-    
+
     # Base plugins for general development
     plugins = with pkgs.vimPlugins; [
       # Core functionality
       plenary-nvim
-      
+
       # File management
       telescope-nvim
       telescope-fzf-native-nvim
       neo-tree-nvim
-      
+
       # Git integration
       gitsigns-nvim
       vim-fugitive
-      
+
       # UI enhancements
       lualine-nvim
       bufferline-nvim
       nvim-web-devicons
-      
+
       # Treesitter for syntax highlighting
       nvim-treesitter.withAllGrammars
-      
+
       # LSP base (without language-specific servers)
       nvim-lspconfig
       nvim-cmp
@@ -208,13 +217,13 @@ Configure your base Neovim in `~/.config/home-manager/home.nix` or your home-man
       cmp-path
       luasnip
       cmp_luasnip
-      
+
       # General editing
       comment-nvim
       nvim-autopairs
       vim-surround
     ];
-    
+
     extraConfig = ''
       lua << EOF
       -- Basic settings
@@ -226,22 +235,22 @@ Configure your base Neovim in `~/.config/home-manager/home.nix` or your home-man
       vim.opt.smartindent = true
       vim.opt.wrap = false
       vim.opt.termguicolors = true
-      
+
       -- Set leader key
       vim.g.mapleader = " "
-      
+
       -- Telescope setup
       require('telescope').setup{}
-      
+
       -- Git signs
       require('gitsigns').setup{}
-      
+
       -- Comment
       require('Comment').setup{}
-      
+
       -- Autopairs
       require('nvim-autopairs').setup{}
-      
+
       -- Basic keymaps
       vim.keymap.set('n', '<leader>ff', ':Telescope find_files<CR>')
       vim.keymap.set('n', '<leader>fg', ':Telescope live_grep<CR>')
@@ -266,7 +275,7 @@ Add Neovim configuration to your `devbox.json`:
   "packages": [
     "go@1.24",
     "gopls@latest",
-    "golangci-lint@latest",
+    "golangci-lint@latest"
     // ... other packages
   ],
   "shell": {
@@ -419,7 +428,8 @@ vim.api.nvim_create_autocmd({'BufEnter', 'BufWinEnter'}, {
 ### Testing the Setup
 
 1. **Outside the project**: Run `vim` to get your base Neovim with file management and Git support
-2. **Inside the project**: 
+2. **Inside the project**:
+
    ```bash
    cd /path/to/mobilecombackup
    devbox shell

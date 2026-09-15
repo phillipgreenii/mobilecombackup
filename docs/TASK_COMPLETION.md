@@ -36,13 +36,13 @@ devbox run build-cli # Build must succeed
 
 ### Success Criteria
 
-| Requirement | Success Criteria |
-|-------------|------------------|
-| **Formatting** | Code is consistently formatted, no formatting errors |
-| **Tests** | ALL tests pass (not some, ALL), zero compilation errors |
-| **Linting** | ZERO violations, clean output |
-| **Build** | Successful build, executable created |
-| **Commit** | Successful commit that passes all pre-commit hooks |
+| Requirement    | Success Criteria                                        |
+| -------------- | ------------------------------------------------------- |
+| **Formatting** | Code is consistently formatted, no formatting errors    |
+| **Tests**      | ALL tests pass (not some, ALL), zero compilation errors |
+| **Linting**    | ZERO violations, clean output                           |
+| **Build**      | Successful build, executable created                    |
+| **Commit**     | Successful commit that passes all pre-commit hooks      |
 
 ## Task Completion Workflow
 
@@ -131,6 +131,7 @@ When blocked, provide:
 ### Related Documentation
 
 This document integrates with:
+
 - [Verification Workflow](VERIFICATION_WORKFLOW.md) - Commands to run
 - [Git Workflow](GIT_WORKFLOW.md) - Commit requirements
 - [Common Fixes](COMMON_FIXES.md) - Fix patterns for issues
@@ -139,6 +140,7 @@ This document integrates with:
 ### Agent Integration
 
 All agents must follow these completion requirements:
+
 - **spec-implementation-engineer**: Implements features with completion verification
 - **code-completion-verifier**: Specializes in ensuring completion requirements
 - **product-doc-sync**: Updates documentation with same completion rules
@@ -148,6 +150,7 @@ All agents must follow these completion requirements:
 ### During Development (Optional)
 
 For faster feedback during active development, you MAY use:
+
 - `go test ./pkg/specific` for targeted testing
 - `golangci-lint run ./pkg/specific` for focused linting
 - Quick builds with `go build ./pkg/specific`
@@ -168,6 +171,7 @@ Before task completion, you MUST run the complete verification workflow regardle
 ### Performance Considerations
 
 Balance thoroughness with efficiency:
+
 - Use incremental testing during development
 - Run full verification before completion
 - Fix issues immediately when found

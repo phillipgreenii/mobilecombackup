@@ -526,7 +526,7 @@ func (cm *Manager) SaveContacts(ctx context.Context, path string) error {
 
 	// Write to temp file first for atomic operation
 	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, yamlData, 0600); err != nil {
+	if err := os.WriteFile(tempPath, yamlData, 0o600); err != nil {
 		return fmt.Errorf("failed to write temp contacts file: %w", err)
 	}
 

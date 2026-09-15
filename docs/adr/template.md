@@ -22,10 +22,12 @@ Why do we think this is the right decision? What alternatives did we consider an
 What becomes easier or more difficult to do and any risks introduced by this change?
 
 ### Positive Consequences
+
 - [e.g., improvement in quality attribute]
 - [e.g., improvement in architectural characteristic]
 
 ### Negative Consequences
+
 - [e.g., compromising quality attribute]
 - [e.g., increased complexity]
 

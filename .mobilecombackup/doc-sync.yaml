@@ -2,20 +2,20 @@ enabled: true
 watch_mode: false
 auto_fix: false
 enabled_agents:
-    - analyzer
-    - codesync
-    - quality
+  - analyzer
+  - codesync
+  - quality
 agent_timeout: 300
 include_patterns:
-    - '*.md'
-    - '*.go'
-    - '*.yaml'
-    - '*.yml'
+  - "*.md"
+  - "*.go"
+  - "*.yaml"
+  - "*.yml"
 exclude_patterns:
-    - vendor/**
-    - node_modules/**
-    - .git/**
-    - tmp/**
+  - vendor/**
+  - node_modules/**
+  - .git/**
+  - tmp/**
 max_concurrency: 4
 batch_size: 10
 log_level: info

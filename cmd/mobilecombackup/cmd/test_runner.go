@@ -29,12 +29,12 @@ var (
 var testRunnerCmd = &cobra.Command{
 	Use:   "test-runner",
 	Short: "Run tests with performance optimizations",
-	Long: `Run tests with performance optimizations including parallel execution, 
+	Long: `Run tests with performance optimizations including parallel execution,
 result caching, and intelligent test ordering.
 
 This command provides comprehensive test performance optimizations:
 - Parallel test execution with configurable worker pools
-- Content-hash based result caching with intelligent invalidation  
+- Content-hash based result caching with intelligent invalidation
 - Smart test ordering (fail-fast, quick-first, etc.)
 - Integration with existing gotestsum infrastructure
 

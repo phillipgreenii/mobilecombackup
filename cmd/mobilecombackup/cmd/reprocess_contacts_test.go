@@ -28,18 +28,18 @@ func TestReprocessContactsManifestUpdate(t *testing.T) {
 
 	// Create a test calls.xml file with contact information
 	callsDir := filepath.Join(tempDir, "calls")
-	if err := os.MkdirAll(callsDir, 0750); err != nil {
+	if err := os.MkdirAll(callsDir, 0o750); err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
 
 	testCallsXML := `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <calls count="1">
-  <call number="+1234567890" duration="30" date="1640995200000" type="1" 
+  <call number="+1234567890" duration="30" date="1640995200000" type="1"
         readable_date="Jan 1, 2022 12:00:00 AM" contact_name="Test Contact" />
 </calls>`
 
 	callsFile := filepath.Join(callsDir, "calls_2022.xml")
-	if err := os.WriteFile(callsFile, []byte(testCallsXML), 0600); err != nil {
+	if err := os.WriteFile(callsFile, []byte(testCallsXML), 0o600); err != nil {
 		t.Fatalf("Failed to write test calls file: %v", err)
 	}
 
@@ -105,12 +105,12 @@ func setupBasicRepository(dir string) error {
 created_at: "2024-01-01T00:00:00Z"
 created_by: "test"`
 
-	if err := os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0o600); err != nil {
 		return err
 	}
 
 	// Create empty contacts.yaml
-	if err := os.WriteFile(filepath.Join(dir, "contacts.yaml"), []byte("contacts: []\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "contacts.yaml"), []byte("contacts: []\n"), 0o600); err != nil {
 		return err
 	}
 
@@ -119,13 +119,13 @@ created_by: "test"`
   calls: 0
   sms: 0`
 
-	if err := os.WriteFile(filepath.Join(dir, "summary.yaml"), []byte(summaryContent), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "summary.yaml"), []byte(summaryContent), 0o600); err != nil {
 		return err
 	}
 
 	// Create required directories
 	for _, subdir := range []string{"calls", "sms", "attachments"} {
-		if err := os.MkdirAll(filepath.Join(dir, subdir), 0750); err != nil {
+		if err := os.MkdirAll(filepath.Join(dir, subdir), 0o750); err != nil {
 			return err
 		}
 	}

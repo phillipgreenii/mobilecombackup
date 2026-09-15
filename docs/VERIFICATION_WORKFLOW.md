@@ -35,24 +35,28 @@ devbox run build-cli
 ### Command Details
 
 #### 1. Format Code (`devbox run formatter`)
+
 - **Purpose**: Ensures consistent code formatting across the project
 - **Requirement**: MUST be run first, before any other verification
 - **Success Criteria**: Command completes without errors
 - **Notes**: Formats all Go code according to project standards
 
 #### 2. Run Tests (`devbox run tests`)
+
 - **Purpose**: Validates all functionality works correctly
 - **Requirement**: ALL tests must pass (not some, ALL)
 - **Success Criteria**: Zero test failures, zero compilation errors
 - **Notes**: Runs complete test suite including unit and integration tests
 
 #### 3. Run Linter (`devbox run linter`)
+
 - **Purpose**: Enforces code quality and Go best practices
 - **Requirement**: ZERO lint violations allowed
 - **Success Criteria**: No warnings, no errors, clean output
 - **Notes**: Checks for code quality issues, unused variables, missing docs
 
 #### 4. Build CLI (`devbox run build-cli`)
+
 - **Purpose**: Ensures the application compiles and builds successfully
 - **Requirement**: Build must succeed without errors
 - **Success Criteria**: Executable is created without compilation errors
@@ -61,6 +65,7 @@ devbox run build-cli
 ## Development vs Completion Verification
 
 ### During Development (Optional for Efficiency)
+
 During active development, you MAY use targeted commands for faster feedback:
 
 ```bash
@@ -75,6 +80,7 @@ go build ./pkg/specific
 ```
 
 ### Before Task Completion (MANDATORY)
+
 Before marking any TodoWrite task complete, you **MUST** run the full verification workflow:
 
 ```bash
@@ -90,16 +96,17 @@ devbox run build-cli # MUST succeed
 
 All verification commands must meet these criteria:
 
-| Command | Success Criteria |
-|---------|------------------|
+| Command     | Success Criteria                            |
+| ----------- | ------------------------------------------- |
 | `formatter` | Completes without errors, code is formatted |
-| `tests` | Zero failures, zero compilation errors |
-| `linter` | Zero violations, clean output |
-| `build-cli` | Builds successfully, executable created |
+| `tests`     | Zero failures, zero compilation errors      |
+| `linter`    | Zero violations, clean output               |
+| `build-cli` | Builds successfully, executable created     |
 
 ## Failure Handling
 
 ### If ANY Command Fails:
+
 1. **Fix the issues** identified by the failing command
 2. **Re-run the complete verification workflow** from the beginning
 3. **Repeat until ALL commands pass**
@@ -108,18 +115,21 @@ All verification commands must meet these criteria:
 ### Common Failure Patterns:
 
 **Test Failures:**
+
 - Import errors → Fix imports or add missing dependencies
 - Type mismatches → Add proper type conversions
 - Unused variables → Remove or use the variables
 - Missing test data → Create required files in `testdata/`
 
 **Lint Violations:**
+
 - Unused code → Remove unused variables/imports/functions
 - Missing error checks → Add proper error handling
 - Missing documentation → Add comments for exported functions
 - Formatting issues → Ensure formatter ran successfully
 
 **Build Failures:**
+
 - Missing imports → Add required import statements
 - Syntax errors → Fix Go syntax issues
 - Dependency issues → Run `go mod tidy`
@@ -127,6 +137,7 @@ All verification commands must meet these criteria:
 ## Integration with Other Workflows
 
 This verification workflow is referenced by:
+
 - [Task Completion Requirements](TASK_COMPLETION.md)
 - [Git Workflow](GIT_WORKFLOW.md) (before commits)
 - All agent implementations

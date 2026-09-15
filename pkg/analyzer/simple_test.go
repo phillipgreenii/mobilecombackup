@@ -26,7 +26,7 @@ This is a test section.
 More content here.
 `
 		tmpFile := filepath.Join(t.TempDir(), "test.md")
-		err := os.WriteFile(tmpFile, []byte(content), 0644)
+		err := os.WriteFile(tmpFile, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -121,7 +121,7 @@ func TestMarkdownAnalyzer_EdgeCases(t *testing.T) {
 
 	t.Run("ParseMarkdown_EmptyFile", func(t *testing.T) {
 		tmpFile := filepath.Join(t.TempDir(), "empty.md")
-		err := os.WriteFile(tmpFile, []byte(""), 0644)
+		err := os.WriteFile(tmpFile, []byte(""), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}

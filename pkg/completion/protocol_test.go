@@ -183,11 +183,11 @@ func TestCompletionProtocol_AnalyzeWorkspace_WithChanges(t *testing.T) {
 	}
 
 	// Create some changes
-	if err := os.WriteFile("test.txt", []byte("modified content"), 0644); err != nil {
+	if err := os.WriteFile("test.txt", []byte("modified content"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile("new.txt", []byte("new file"), 0644); err != nil {
+	if err := os.WriteFile("new.txt", []byte("new file"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -242,12 +242,12 @@ func TestCompletionProtocol_AnalyzeWorkspace_WithTempFiles(t *testing.T) {
 
 	// Create temp directory and file
 	tempSubDir := filepath.Join(tempDir, "tmp")
-	if err := os.MkdirAll(tempSubDir, 0755); err != nil {
+	if err := os.MkdirAll(tempSubDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
 	tempFile := filepath.Join(tempSubDir, "temp.txt")
-	if err := os.WriteFile(tempFile, []byte("temporary content"), 0644); err != nil {
+	if err := os.WriteFile(tempFile, []byte("temporary content"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -310,12 +310,12 @@ func TestCompletionProtocol_CleanupTemporaryFiles(t *testing.T) {
 
 	// Create temp directory and file
 	tempSubDir := filepath.Join(tempDir, "tmp")
-	if err := os.MkdirAll(tempSubDir, 0755); err != nil {
+	if err := os.MkdirAll(tempSubDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
 	tempFile := filepath.Join(tempSubDir, "temp.txt")
-	if err := os.WriteFile(tempFile, []byte("temporary content"), 0644); err != nil {
+	if err := os.WriteFile(tempFile, []byte("temporary content"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -514,7 +514,7 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 
 	// Create initial file and commit
 	testFile := filepath.Join(dir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("initial content"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("initial content"), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

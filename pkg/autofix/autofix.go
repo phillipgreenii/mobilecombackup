@@ -470,7 +470,7 @@ func (a *AutofixerImpl) fixMissingDirectory(violation validation.Violation) erro
 
 	a.reporter.StartOperation(OperationCreateDirectory, safeDirPath)
 
-	err = os.MkdirAll(safeDirPath, 0750)
+	err = os.MkdirAll(safeDirPath, 0o750)
 
 	a.reporter.CompleteOperation(err == nil, fmt.Sprintf("Directory: %s", safeDirPath))
 
@@ -534,7 +534,7 @@ func (a *AutofixerImpl) fixCountMismatch(violation validation.Violation) error {
 	// which was already run through pathValidator.ValidatePath/GetSafePath
 	// above; gosec's taint analysis does not see through that validation.
 	tempPath := filePath + ".tmp"
-	if err := os.WriteFile(tempPath, fixedContent, 0600); err != nil { //nolint:gosec
+	if err := os.WriteFile(tempPath, fixedContent, 0o600); err != nil { //nolint:gosec
 		a.reporter.CompleteOperation(false, violation.File)
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}
@@ -590,7 +590,7 @@ func (a *AutofixerImpl) createMarkerFile() error {
 
 	// Write to file atomically
 	tempPath := markerPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write temporary marker file: %w", err)
 	}
 
@@ -629,7 +629,7 @@ func (a *AutofixerImpl) createEmptyContactsFile() error {
 
 	// Write to file atomically
 	tempPath := contactsPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write temporary contacts file: %w", err)
 	}
 
@@ -667,7 +667,7 @@ func (a *AutofixerImpl) createSummaryFile() error {
 
 	// Write to file atomically
 	tempPath := summaryPath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write temporary summary file: %w", err)
 	}
 

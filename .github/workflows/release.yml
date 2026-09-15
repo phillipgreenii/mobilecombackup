@@ -3,14 +3,13 @@ name: "go: build versioned binaries"
 on:
   push:
     tags:
-      - 'v*'  # Trigger on tags starting with 'v' (v2.0.0 format)
+      - "v*" # Trigger on tags starting with 'v' (v2.0.0 format)
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-
   build-release-binaries_linux:
     runs-on: ubuntu-latest
     strategy:
@@ -24,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # Required for version detection and git tag access
+          fetch-depth: 0 # Required for version detection and git tag access
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.14.0
       - name: Go Release Binaries

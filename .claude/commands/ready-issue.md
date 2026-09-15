@@ -1,4 +1,4 @@
-Use agent spec-review-engineer to read through issue $ARGUMENTS.  It needs to verify that there is enough detail to start the implementation.  
+Use agent spec-review-engineer to read through issue $ARGUMENTS. It needs to verify that there is enough detail to start the implementation.
 
 If the issue is ready for implementation:
 
@@ -15,9 +15,9 @@ marked [ISSUE-ID] ready
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-**Important**: 
+**Important**:
+
 - ONLY use `git mv` for the file movement - never copy and delete separately
-- The final git status should show the file as renamed/moved, not as separate add/delete operations  
+- The final git status should show the file as renamed/moved, not as separate add/delete operations
 - If git mv fails or git status shows anything other than a clean rename, investigate before committing
 - Do NOT leave modified files in backlog/ or uncommitted files in ready/
-

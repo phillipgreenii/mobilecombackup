@@ -146,7 +146,6 @@ func (g *Generator) GenerateFileManifest() (*FileManifest, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan repository: %w", err)
 	}
@@ -225,7 +224,7 @@ func (g *Generator) writeManifest(manifest *FileManifest) error {
 
 	// Write to file atomically
 	tempPath := manifestPath + ".tmp"
-	if err := afero.WriteFile(g.fs, tempPath, data, 0600); err != nil {
+	if err := afero.WriteFile(g.fs, tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write temporary files manifest: %w", err)
 	}
 
@@ -254,7 +253,7 @@ func (g *Generator) writeManifestChecksum() error {
 
 	// Write to file atomically
 	tempPath := checksumPath + ".tmp"
-	if err := afero.WriteFile(g.fs, tempPath, []byte(checksumContent), 0600); err != nil {
+	if err := afero.WriteFile(g.fs, tempPath, []byte(checksumContent), 0o600); err != nil {
 		return fmt.Errorf("failed to write temporary checksum file: %w", err)
 	}
 

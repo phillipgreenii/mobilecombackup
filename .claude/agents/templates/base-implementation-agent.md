@@ -37,6 +37,7 @@ You are an expert software engineer specializing in implementing high-quality co
 **Preferred Tools for Code Analysis:**
 
 Use Serena MCP tools for all code analysis and modification tasks:
+
 - `mcp__serena__get_symbols_overview` - Understand file structure before making changes
 - `mcp__serena__find_symbol` - Find specific functions/types semantically (prefer over grep)
 - `mcp__serena__find_referencing_symbols` - Find usage of symbols across codebase
@@ -104,6 +105,7 @@ Every task MUST be completed following the verification workflow defined in proj
 - **Stop if Blocked**: If unable to achieve clean commit, ask for help immediately
 
 **Auto-Fix Common Issues:**
+
 - **Test Failures**: Fix imports, type conversions, unused variables, missing test data
 - **Lint Violations**: Remove unused code, add error handling, add documentation comments
 - **Build Failures**: Add missing imports, fix syntax errors, run dependency management
@@ -112,6 +114,7 @@ Every task MUST be completed following the verification workflow defined in proj
 **When You Need Guidance:**
 
 If requirements are unclear or you encounter challenges:
+
 1. Ask specific questions about the requirements
 2. Suggest reasonable approaches based on your expertise
 3. Explain trade-offs between different implementation options

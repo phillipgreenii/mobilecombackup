@@ -141,7 +141,6 @@ func TestInfoCommandWithData(t *testing.T) {
 	// Test text output
 	cmd := exec.Command(testBin, "info", "--repo-root", repoPath) // #nosec G204
 	output, err := cmd.CombinedOutput()
-
 	if err != nil {
 		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
@@ -168,7 +167,6 @@ func TestInfoCommandWithData(t *testing.T) {
 	// Test JSON output
 	cmd = exec.Command(testBin, "info", "--repo-root", repoPath, "--json") // #nosec G204
 	output, err = cmd.CombinedOutput()
-
 	if err != nil {
 		t.Fatalf("JSON command failed: %v\nOutput: %s", err, output)
 	}
@@ -209,7 +207,6 @@ func TestInfoCommandEnvironmentVariable(t *testing.T) {
 	cmd.Env = append(os.Environ(), "MB_REPO_ROOT="+repoPath)
 
 	output, err := cmd.CombinedOutput()
-
 	if err != nil {
 		t.Fatalf("Command with env var failed: %v\nOutput: %s", err, output)
 	}
@@ -232,7 +229,7 @@ func setupTestRepository(t *testing.T, repoPath string) {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0750); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
@@ -243,14 +240,14 @@ created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup v1.0.0"
 `
 	markerPath := filepath.Join(repoPath, ".mobilecombackup.yaml")
-	if err := os.WriteFile(markerPath, []byte(markerContent), 0600); err != nil {
+	if err := os.WriteFile(markerPath, []byte(markerContent), 0o600); err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
 
 	// Create empty contacts file
 	contactsPath := filepath.Join(repoPath, "contacts.yaml")
 	contactsContent := "contacts: []\n"
-	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 }
@@ -271,7 +268,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </calls>`
 
 	callsPath := filepath.Join(repoPath, "calls", "calls-2014.xml")
-	if err := os.WriteFile(callsPath, []byte(callsContent), 0600); err != nil {
+	if err := os.WriteFile(callsPath, []byte(callsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create calls file: %v", err)
 	}
 
@@ -283,7 +280,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </calls>`
 
 	calls2015Path := filepath.Join(repoPath, "calls", "calls-2015.xml")
-	if err := os.WriteFile(calls2015Path, []byte(calls2015Content), 0600); err != nil {
+	if err := os.WriteFile(calls2015Path, []byte(calls2015Content), 0o600); err != nil {
 		t.Fatalf("Failed to create 2015 calls file: %v", err)
 	}
 
@@ -302,7 +299,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
 </smses>`
 
 	smsPath := filepath.Join(repoPath, "sms", "sms-2014.xml")
-	if err := os.WriteFile(smsPath, []byte(smsContent), 0600); err != nil {
+	if err := os.WriteFile(smsPath, []byte(smsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create SMS file: %v", err)
 	}
 
@@ -314,7 +311,7 @@ func setupTestRepositoryWithData(t *testing.T, repoPath string) {
     numbers: ["555-5678"]
 `
 	contactsPath := filepath.Join(repoPath, "contacts.yaml")
-	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0600); err != nil {
+	if err := os.WriteFile(contactsPath, []byte(contactsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create contacts file: %v", err)
 	}
 }

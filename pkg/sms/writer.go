@@ -18,7 +18,7 @@ type XMLSMSWriter struct {
 // NewXMLSMSWriter creates a new XML SMS writer
 func NewXMLSMSWriter(repoPath string, fs afero.Fs) (*XMLSMSWriter, error) {
 	// Ensure the sms directory exists
-	if err := fs.MkdirAll(repoPath, 0750); err != nil {
+	if err := fs.MkdirAll(repoPath, 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create sms directory: %w", err)
 	}
 

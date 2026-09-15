@@ -67,7 +67,7 @@ report := tracker.GetProgressReport()
 
 // Provides:
 // - Completion percentage and counts
-// - Time elapsed and estimated remaining  
+// - Time elapsed and estimated remaining
 // - Velocity (tasks per hour)
 // - Efficiency ratio (actual vs estimated time)
 // - Current task and available tasks
@@ -114,7 +114,7 @@ tracker := NewTaskTracker()
 // Add tasks
 task1 := &EnhancedTodo{
     ID:         "setup",
-    Content:    "Set up development environment", 
+    Content:    "Set up development environment",
     Complexity: ComplexitySimple,
     Priority:   PriorityHigh,
 }
@@ -151,7 +151,7 @@ issueContent := `# FEAT-123: User Authentication
 - [x] Add password hashing
 - [ ] Create login endpoint
 
-## Acceptance Criteria  
+## Acceptance Criteria
 - Users can register successfully
 - Login works with valid credentials
 - Password security meets requirements`
@@ -163,7 +163,7 @@ if err != nil {
 
 // Tasks are automatically categorized, estimated, and ordered
 for _, task := range tasks {
-    fmt.Printf("Task: %s [%s, %v]\n", 
+    fmt.Printf("Task: %s [%s, %v]\n",
         task.Content, task.Complexity, task.GetEstimatedDuration())
 }
 ```
@@ -206,7 +206,7 @@ config := &TaskGenerationConfig{
     DefaultPriority:        PriorityMedium,
     ComplexityMultiplier: map[ComplexityLevel]float64{
         ComplexitySimple:  0.5,
-        ComplexityMedium:  1.0, 
+        ComplexityMedium:  1.0,
         ComplexityComplex: 2.5,
     },
 }
@@ -226,7 +226,7 @@ The system provides comprehensive status reporting:
 ==================================================
 
 📈 Overall Progress: 3/10 tasks (30.0%)
-⏱️ Time: 2h15m elapsed, ~5h30m remaining  
+⏱️ Time: 2h15m elapsed, ~5h30m remaining
 🚀 Velocity: 1.3 tasks/hour (85.2% efficiency)
 
 🎯 CURRENT TASK
@@ -269,6 +269,7 @@ The system automatically analyzes task content to determine complexity:
 - **Complex** (2 hours): Implement, build, architect, comprehensive, end-to-end
 
 Categories are detected based on keywords:
+
 - **Implementation**: implement, create, build, develop
 - **Testing**: test, verify, validate, check
 - **Documentation**: document, write, readme, guide
@@ -289,7 +290,7 @@ Time estimates are calculated using:
 The system provides sophisticated dependency handling:
 
 - **Topological Sorting**: Ensures dependencies are satisfied
-- **Circular Detection**: Prevents impossible dependency chains  
+- **Circular Detection**: Prevents impossible dependency chains
 - **Critical Path**: Identifies the longest path through dependencies
 - **Parallelization**: Finds tasks that can run simultaneously
 - **Validation**: Comprehensive dependency validation with detailed errors
@@ -356,6 +357,7 @@ The package includes comprehensive tests:
 - **Edge Case Tests**: Circular dependencies, invalid data, etc.
 
 Run tests:
+
 ```bash
 go test ./pkg/progress/... -v
 go test ./pkg/progress/... -short  # Skip integration tests

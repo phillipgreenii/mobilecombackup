@@ -69,6 +69,7 @@ You are an expert technical writer and documentation specialist focused on creat
 **Code Integration Tasks (When Applicable):**
 
 When your work involves code modifications (updating code examples, configuration files, etc.):
+
 - Run project verification workflow (formatter, tests, linter, build)
 - Ensure zero lint violations and all tests pass
 - Follow project commit standards

@@ -145,11 +145,11 @@ func TestEdgeCase_ReadOnlyDirectory(t *testing.T) {
 
 	// Make attachments directory read-only
 	attachmentsDir := filepath.Join(tempDir, "attachments")
-	_ = os.MkdirAll(attachmentsDir, 0750)
-	_ = os.Chmod(attachmentsDir, 0444) // nolint:gosec // Intentionally restrictive for testing
+	_ = os.MkdirAll(attachmentsDir, 0o750)
+	_ = os.Chmod(attachmentsDir, 0o444) // nolint:gosec // Intentionally restrictive for testing
 
 	// Restore permissions after test
-	defer func() { _ = os.Chmod(attachmentsDir, 0750) }() // nolint:gosec // Cleanup permissions
+	defer func() { _ = os.Chmod(attachmentsDir, 0o750) }() // nolint:gosec // Cleanup permissions
 
 	extractor := NewAttachmentExtractor(tempDir, afero.NewOsFs())
 	config := GetDefaultContentTypeConfig()
@@ -196,10 +196,10 @@ func TestEdgeCase_DiskFull(t *testing.T) {
 	// Now make the attachment subdirectory read-only
 	attachmentPath := filepath.Join(tempDir, result.Path)
 	subDir := filepath.Dir(attachmentPath)
-	_ = os.Chmod(subDir, 0444) // nolint:gosec // Intentionally restrictive for testing
+	_ = os.Chmod(subDir, 0o444) // nolint:gosec // Intentionally restrictive for testing
 
 	// Restore permissions after test
-	defer func() { _ = os.Chmod(subDir, 0750) }() // nolint:gosec // Cleanup permissions
+	defer func() { _ = os.Chmod(subDir, 0o750) }() // nolint:gosec // Cleanup permissions
 
 	// Try to extract a different attachment to the same subdirectory
 	newPart := &MMSPart{

@@ -19,6 +19,7 @@ Use agent product-doc-sync to create a new feature issue: $ARGUMENTS
 4. **Auto-commit the new feature**:
    - Check git status to confirm only the new feature file is staged
    - Commit with proper message format:
+
    ```
    Create FEAT-XXX: [Brief feature description]
 
@@ -30,14 +31,16 @@ Use agent product-doc-sync to create a new feature issue: $ARGUMENTS
    ```
 
 **Template Completion Guidelines:**
+
 - **Overview**: Clear, concise description of what the feature does
-- **Requirements**: Specific functional and non-functional requirements  
+- **Requirements**: Specific functional and non-functional requirements
 - **Design**: High-level approach and technical considerations
 - **Tasks**: Actionable implementation tasks
 - **Testing**: Comprehensive testing strategy
 - **Priority**: Assign appropriate priority level
 
 **Important Notes:**
+
 - Feature starts in `backlog/` directory for further planning
 - Use `/ready-issue` command once feature is fully planned
 - Ask questions to ensure complete specification before committing

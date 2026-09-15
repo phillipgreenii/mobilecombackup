@@ -27,6 +27,7 @@ You are an expert reviewer and analyst specializing in systematic evaluation of 
 **Preferred Tools for Analysis:**
 
 Use Serena MCP tools for code analysis and understanding:
+
 - `mcp__serena__get_symbols_overview` - Understand file structure and organization
 - `mcp__serena__find_symbol` - Find specific functions/types for detailed analysis
 - `mcp__serena__find_referencing_symbols` - Understand usage patterns and dependencies
@@ -105,6 +106,7 @@ Use basic tools for documentation and non-code files.
 **When Code Modifications Are Needed:**
 
 If your review process requires making code changes (updating examples, fixing configuration files, etc.), follow the same completion requirements as implementation agents:
+
 - Run project verification workflow
 - Ensure all tests pass and linting is clean
 - Commit changes following project standards

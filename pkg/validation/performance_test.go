@@ -248,7 +248,6 @@ func TestOptimizedRepositoryValidator_ValidateRepositoryWithOptions_EarlyTermina
 
 	ctx := context.Background()
 	_, err := optimized.ValidateRepositoryWithOptions(ctx, options)
-
 	// Should get early termination error if there are critical violations
 	// Note: This test depends on the mock implementation producing critical errors
 	// For now, we'll just verify the function doesn't panic

@@ -3,9 +3,10 @@ Execute a comprehensive 5-stage multi-agent review pipeline to prepare an issue 
 **Usage**: `/prepare-issue FEAT-XXX or BUG-XXX [options]`
 
 **Options:**
+
 - `--skip-stage <stage>` - Skip specific review stage (spec, tech-design, test-strategy, implementation, final)
 - `--fast` - Run minimal reviews with reduced validation criteria
-- `--strict` - Enhanced review criteria with additional validation steps  
+- `--strict` - Enhanced review criteria with additional validation steps
 - `--resume` - Resume pipeline from last successful stage (auto-detected from state)
 
 ## Pipeline Overview
@@ -21,6 +22,7 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
 ## Stage Execution Process
 
 ### Stage 1: Specification Review (spec-review-engineer)
+
 1. **Load issue from backlog/** directory
 2. **Use spec-review-engineer agent** to review completeness and clarity:
    - Validate all requirements are clearly defined
@@ -28,19 +30,22 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
    - Ensure acceptance criteria are measurable
    - Add clarifications and improvements to the specification
 3. **Commit improvements** with message format:
+
    ```
    [ISSUE-ID] Stage 1: Specification review improvements
 
    - Enhanced requirements clarity
-   - Added missing acceptance criteria  
+   - Added missing acceptance criteria
    - Resolved specification ambiguities
 
    🤖 Generated with [Claude Code](https://claude.ai/code)
    Co-Authored-By: Claude <noreply@anthropic.com>
    ```
+
 4. **Update pipeline state** (`.pipeline-state/[ISSUE-ID].json`) with stage completion
 
-### Stage 2: Technical Design Review (technical-design-reviewer)  
+### Stage 2: Technical Design Review (technical-design-reviewer)
+
 1. **Use technical-design-reviewer agent** to validate architecture and approach:
    - Review system design and component relationships
    - Validate architectural patterns and scalability
@@ -50,6 +55,7 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
 3. **Update pipeline state** with technical review completion
 
 ### Stage 3: Test Strategy Review (test-strategy-reviewer)
+
 1. **Use test-strategy-reviewer agent** to ensure comprehensive test coverage:
    - Analyze test scenarios for completeness
    - Add specific test cases and edge conditions
@@ -59,6 +65,7 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
 3. **Update pipeline state** with test strategy completion
 
 ### Stage 4: Implementation Planning (implementation-planner)
+
 1. **Use implementation-planner agent** for detailed task breakdown:
    - Decompose feature into concrete implementation tasks
    - Add effort estimates and complexity assessments
@@ -68,15 +75,17 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
 3. **Update pipeline state** with implementation planning completion
 
 ### Stage 5: Final Readiness Validation
+
 1. **Validate all pipeline stages completed successfully**
 2. **Verify issue contains all required sections and details**
 3. **Move issue to ready/** directory using `git mv`
 4. **Commit final transition** with message:
+
    ```
    [ISSUE-ID] Ready: Completed 5-stage preparation pipeline
 
    Pipeline completed successfully:
-   ✓ Stage 1: Specification review  
+   ✓ Stage 1: Specification review
    ✓ Stage 2: Technical design review
    ✓ Stage 3: Test strategy review
    ✓ Stage 4: Implementation planning
@@ -87,12 +96,15 @@ Backlog → [Stage 1] → [Stage 2] → [Stage 3] → [Stage 4] → [Stage 5] �
    🤖 Generated with [Claude Code](https://claude.ai/code)
    Co-Authored-By: Claude <noreply@anthropic.com>
    ```
+
 5. **Clean up pipeline state** after successful completion
 
 ## Implementation Guidelines
 
 ### Pipeline State Management
+
 Create and maintain pipeline state in `.pipeline-state/[ISSUE-ID].json`:
+
 ```json
 {
   "issue_id": "FEAT-084",
@@ -115,19 +127,23 @@ Create and maintain pipeline state in `.pipeline-state/[ISSUE-ID].json`:
 ```
 
 ### Error Handling and Recovery
+
 - **Interruption Handling**: Save state after each stage completion
 - **Resume Capability**: Use `--resume` flag to continue from last successful stage
 - **Stage Failures**: Report specific failure reasons and resolution steps
 - **Rollback Support**: Maintain git history for safe rollback if needed
 
 ### Agent Integration
+
 - **Clean Handoffs**: Each agent commits improvements before next stage
 - **Completion Protocol**: Use FEAT-077 completion protocol for each stage
 - **Quality Verification**: Run verification steps before stage commits
 - **Error Reporting**: Agents report BLOCKED status with resolution steps
 
 ### Progress Reporting
+
 Provide real-time progress updates:
+
 ```
 🚀 Starting issue preparation pipeline for FEAT-084
 📋 Issue: Automated Documentation Synchronization System
@@ -137,26 +153,29 @@ Stage 1/5: Specification Review
   ⏳ Running spec-review-engineer...
   ✓ Specification enhanced (12 improvements)
   ✓ Committed stage 1 changes
-  
+
 Stage 2/5: Technical Design Review
   ⏳ Running technical-design-reviewer...
 ```
 
 ### Options Implementation
+
 - **--skip-stage**: Skip specified stages (with warnings about reduced quality)
 - **--fast**: Use expedited review with minimal validation criteria
-- **--strict**: Enhanced validation with additional quality checks  
+- **--strict**: Enhanced validation with additional quality checks
 - **--resume**: Auto-detect state and resume from last successful stage
 
 ## Quality Assurance
 
 ### Verification Requirements
+
 - All agents must complete successfully before stage advancement
 - Git working directory must be clean after each stage commit
 - Pipeline state must be consistent and recoverable
 - Final issue must pass readiness validation
 
 ### Safety Mechanisms
+
 - Atomic stage operations (complete success or clean rollback)
 - State persistence for interruption recovery
 - Git history preservation for manual recovery

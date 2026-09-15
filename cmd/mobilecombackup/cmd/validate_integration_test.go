@@ -62,9 +62,9 @@ func TestValidateCommandIntegration(t *testing.T) {
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
 				// Create directories but no marker file
-				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0750)
-				_ = os.MkdirAll(filepath.Join(dir, "sms"), 0750)
-				_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0750)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0o750)
+				_ = os.MkdirAll(filepath.Join(dir, "sms"), 0o750)
+				_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0o750)
 				return dir
 			},
 			wantExitCode: 1,
@@ -87,7 +87,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 			args: []string{"validate", "--quiet"},
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0750)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0o750)
 				return dir
 			},
 			wantExitCode: 1,
@@ -121,7 +121,7 @@ func TestValidateCommandIntegration(t *testing.T) {
 			args: []string{"validate", "--output-json"},
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
-				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0750)
+				_ = os.MkdirAll(filepath.Join(dir, "calls"), 0o750)
 				return dir
 			},
 			wantExitCode: 1,
@@ -243,7 +243,7 @@ func TestValidateJSONSchema(t *testing.T) {
 
 	// Create repository with violation
 	repoRoot := t.TempDir()
-	_ = os.MkdirAll(filepath.Join(repoRoot, "calls"), 0750)
+	_ = os.MkdirAll(filepath.Join(repoRoot, "calls"), 0o750)
 
 	// Run validate with JSON output
 	cmd := exec.Command(testBin, "validate", "--repo-root", repoRoot, "--output-json") // #nosec G204
@@ -309,7 +309,7 @@ func TestValidatePerformance(t *testing.T) {
 		content += "\n</calls>"
 
 		filename := filepath.Join(repoRoot, "calls", fmt.Sprintf("calls-%d.xml", year))
-		_ = os.WriteFile(filename, []byte(content), 0600)
+		_ = os.WriteFile(filename, []byte(content), 0o600)
 	}
 
 	// Time the validation
@@ -339,16 +339,16 @@ func createValidRepository(t *testing.T) string {
 	dir := t.TempDir()
 
 	// Create directories
-	_ = os.MkdirAll(filepath.Join(dir, "calls"), 0750)
-	_ = os.MkdirAll(filepath.Join(dir, "sms"), 0750)
-	_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0750)
+	_ = os.MkdirAll(filepath.Join(dir, "calls"), 0o750)
+	_ = os.MkdirAll(filepath.Join(dir, "sms"), 0o750)
+	_ = os.MkdirAll(filepath.Join(dir, "attachments"), 0o750)
 
 	// Create marker file
 	markerContent := `repository_structure_version: "1"
 created_at: "2024-01-01T10:00:00Z"
 created_by: "test"
 `
-	_ = os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0600)
+	_ = os.WriteFile(filepath.Join(dir, ".mobilecombackup.yaml"), []byte(markerContent), 0o600)
 
 	// Note: In reality, a valid repository would need files.yaml with all files listed,
 	// proper checksums, etc. For integration tests, we're focusing on command behavior
@@ -520,7 +520,7 @@ func createRepoWithOrphans(t *testing.T) string {
 
 	// Create repository structure
 	for _, dir := range []string{"calls", "sms", "attachments", "contacts"} {
-		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0750); err != nil {
+		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0o750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
@@ -530,7 +530,7 @@ func createRepoWithOrphans(t *testing.T) string {
 created_at: "2024-01-01T10:00:00Z"
 created_by: "test"
 `
-	if err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, ".mobilecombackup.yaml"), []byte(markerContent), 0o600); err != nil {
 		t.Fatalf("Failed to create marker file: %v", err)
 	}
 
@@ -539,7 +539,7 @@ created_by: "test"
 <smses count="1">
   <sms address="555-1234" type="1" subject="null" body="Test message" date="1609459200000" readable_date="Jan 1, 2021 12:00:00 AM" />
 </smses>`
-	if err := os.WriteFile(filepath.Join(tempDir, "sms", "sms-2021.xml"), []byte(smsContent), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, "sms", "sms-2021.xml"), []byte(smsContent), 0o600); err != nil {
 		t.Fatalf("Failed to create SMS file: %v", err)
 	}
 
@@ -549,19 +549,19 @@ created_by: "test"
 
 	// Create referenced attachment
 	refDir := filepath.Join(tempDir, "attachments", "a1")
-	if err := os.MkdirAll(refDir, 0750); err != nil {
+	if err := os.MkdirAll(refDir, 0o750); err != nil {
 		t.Fatalf("Failed to create referenced attachment directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(refDir, referencedHash), []byte("referenced content"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(refDir, referencedHash), []byte("referenced content"), 0o600); err != nil {
 		t.Fatalf("Failed to create referenced attachment: %v", err)
 	}
 
 	// Create orphaned attachment
 	orphanDir := filepath.Join(tempDir, "attachments", "ab")
-	if err := os.MkdirAll(orphanDir, 0750); err != nil {
+	if err := os.MkdirAll(orphanDir, 0o750); err != nil {
 		t.Fatalf("Failed to create orphan attachment directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(orphanDir, orphanHash), []byte("orphaned content"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(orphanDir, orphanHash), []byte("orphaned content"), 0o600); err != nil {
 		t.Fatalf("Failed to create orphan attachment: %v", err)
 	}
 

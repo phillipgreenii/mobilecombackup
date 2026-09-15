@@ -276,7 +276,6 @@ func TestInfoMarkerFileContentUnmarshaling(t *testing.T) {
 	jsonData := `{"repository_structure_version":"1","created_at":"2024-01-15T10:30:00Z",` +
 		`"created_by":"mobilecombackup v1.0.0"}`
 	err := json.Unmarshal([]byte(jsonData), &marker)
-
 	// For JSON test
 	if err != nil {
 		t.Fatalf("Failed to unmarshal marker file content: %v", err)

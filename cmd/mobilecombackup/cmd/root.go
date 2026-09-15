@@ -19,7 +19,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "mobilecombackup",
 	Short: "mobilecombackup processes call logs and SMS/MMS messages",
-	Long: `mobilecombackup processes call logs and SMS/MMS messages from 
+	Long: `mobilecombackup processes call logs and SMS/MMS messages from
 mobile phone backup files, removing duplicates and organizing by year.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// If args provided without a valid subcommand, show error

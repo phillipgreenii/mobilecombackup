@@ -160,7 +160,6 @@ func (v *ManifestValidatorImpl) CheckManifestCompleteness(manifest *FileManifest
 		actualFiles = append(actualFiles, relPath)
 		return nil
 	})
-
 	if err != nil {
 		violations = append(violations, Violation{
 			Type:     StructureViolation,

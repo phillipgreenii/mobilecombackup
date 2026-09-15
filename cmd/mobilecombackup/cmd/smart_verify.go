@@ -33,7 +33,7 @@ This command:
 
 Change Categories:
   docs-only     - Only documentation files changed (skip tests, ~90% time saved)
-  test-only     - Only test files changed (run affected tests, ~50% time saved) 
+  test-only     - Only test files changed (run affected tests, ~50% time saved)
   single-package - Changes within one package (targeted tests, ~60% time saved)
   multi-package - Changes across packages (full verification for safety)
   mixed         - Mixed changes (full verification for safety)`,

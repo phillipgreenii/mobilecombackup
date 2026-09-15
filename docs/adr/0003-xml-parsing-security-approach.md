@@ -23,24 +23,28 @@ We implemented a **custom secure XML decoder wrapper** that enforces security co
 ## Rationale
 
 ### Security by Default
+
 - All XML parsing goes through security-hardened wrapper
 - No possibility of accidentally using unsafe parsing in new code
 - Centralized security controls easy to audit and update
 - Conservative defaults with explicit opt-in for advanced features
 
 ### XXE Prevention
+
 - External entity resolution completely disabled
 - No network access during XML parsing
 - Local file system access blocked
 - Prevents data exfiltration through malicious XML
 
 ### Resource Limit Enforcement
+
 - Maximum XML document size limits
 - Entity expansion depth restrictions
 - Processing time limits to prevent DoS
 - Memory usage bounds for parser operations
 
 ### Compatibility Preservation
+
 - Standard XML parsing for legitimate backup files works unchanged
 - No impact on normal parsing performance
 - Maintains compatibility with all known backup file formats
@@ -71,6 +75,7 @@ We implemented a **custom secure XML decoder wrapper** that enforces security co
 ## Consequences
 
 ### Positive Consequences
+
 - **Security by default**: All XML parsing is automatically secured
 - **Centralized protection**: Single point of security control
 - **XXE prevention**: Complete protection against external entity attacks
@@ -79,6 +84,7 @@ We implemented a **custom secure XML decoder wrapper** that enforces security co
 - **Compatibility**: No changes required for legitimate backup files
 
 ### Negative Consequences
+
 - **Additional abstraction layer**: Wrapper adds complexity to XML parsing
 - **Limited flexibility**: Security restrictions may block legitimate edge cases
 - **Custom implementation**: Need to maintain security wrapper code
@@ -87,6 +93,7 @@ We implemented a **custom secure XML decoder wrapper** that enforces security co
 ## Implementation
 
 ### Core Security Features
+
 ```go
 // Secure XML decoder configuration
 type SecureXMLConfig struct {
@@ -98,6 +105,7 @@ type SecureXMLConfig struct {
 ```
 
 ### Security Controls
+
 - **External entities disabled**: No file or network access
 - **Entity expansion limits**: Prevent billion laughs attacks
 - **Document size limits**: Prevent memory exhaustion
@@ -105,12 +113,14 @@ type SecureXMLConfig struct {
 - **Strict parsing mode**: Reject malformed or suspicious XML
 
 ### Wrapper Implementation
+
 - Transparent replacement for standard XML parsing
 - Consistent error handling for security violations
 - Detailed logging of security-related parsing failures
 - Performance monitoring for security overhead
 
 ### Usage Pattern
+
 ```go
 // All XML parsing uses secure wrapper
 decoder := security.NewSecureXMLDecoder(reader, config)
@@ -128,6 +138,7 @@ for {
 ## Security Updates
 
 ### Path Validation Security (2025-08-19)
+
 In addition to XML parsing security, the system now enforces comprehensive path validation to prevent directory traversal attacks:
 
 - **Validate Command Security (BUG-056)**: All file operations in validation commands use `security.PathValidator` to ensure operations remain within repository boundaries

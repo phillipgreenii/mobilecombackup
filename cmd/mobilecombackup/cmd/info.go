@@ -19,9 +19,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	outputInfoJSON bool
-)
+var outputInfoJSON bool
 
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{

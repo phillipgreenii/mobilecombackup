@@ -291,7 +291,8 @@ func TestCallsValidatorImpl_ErrorHandling(t *testing.T) {
 
 // testCallsValidateStructure is a helper for testing calls structure validation
 func testCallsValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlContent string,
-	availableYears []int, validateFunc func() []Violation) {
+	availableYears []int, validateFunc func() []Violation,
+) {
 	// Test missing directory
 	violations := validateFunc()
 	if len(violations) != 1 {
@@ -300,7 +301,7 @@ func testCallsValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlCon
 
 	// Create directory
 	dir := filepath.Join(tempDir, dirName)
-	err := os.MkdirAll(dir, 0750)
+	err := os.MkdirAll(dir, 0o750)
 	if err != nil {
 		t.Fatalf("Failed to create %s directory: %v", dirName, err)
 	}
@@ -316,7 +317,7 @@ func testCallsValidateStructure(t *testing.T, tempDir, dirName, fileName, xmlCon
 	for _, year := range availableYears {
 		fileName := fmt.Sprintf("%s-%d.xml", fileName, year)
 		filePath := filepath.Join(dir, fileName)
-		err := os.WriteFile(filePath, []byte(xmlContent), 0600)
+		err := os.WriteFile(filePath, []byte(xmlContent), 0o600)
 		if err != nil {
 			t.Fatalf("Failed to create %s file: %v", fileName, err)
 		}

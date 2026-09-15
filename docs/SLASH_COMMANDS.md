@@ -5,7 +5,9 @@ The repository includes custom slash commands in `.claude/commands/` to streamli
 ## Available Commands
 
 ### `/implement-issue FEAT-XXX or BUG-XXX`
+
 Implement an issue following the complete development workflow:
+
 - **Moves issue from `ready/` to `active/`** using `git mv`
 - **Creates TodoWrite list** from issue tasks for progress tracking
 - **Implements one task at a time** with mandatory quality verification
@@ -20,14 +22,18 @@ Implement an issue following the complete development workflow:
 - **Updates documentation** when complete using product-doc-sync agent
 
 ### `/ready-issue FEAT-XXX or BUG-XXX`
+
 Validate if an issue has enough detail for implementation:
+
 - **Reviews issue document completeness** using spec-review-engineer agent
 - **Uses `git mv` to cleanly move from `backlog/` to `ready/`** if sufficiently detailed
 - **Auto-commits the file movement** with standardized message format
 - **Prevents file handling issues** by using proper git mv workflow
 
 ### `/prepare-issue FEAT-XXX or BUG-XXX [options]`
+
 Orchestrate comprehensive multi-agent review pipeline to prepare issue for implementation:
+
 - **5-Stage Pipeline Process**: Sequential agent reviews with clean handoffs
 - **Stage 1: Specification Review** (spec-review-engineer) - validates completeness and clarity
 - **Stage 2: Technical Design Review** (technical-design-reviewer) - validates architecture and approach
@@ -41,12 +47,14 @@ Orchestrate comprehensive multi-agent review pipeline to prepare issue for imple
 - **Quality Assurance**: Each agent commits improvements before passing to next stage
 
 **Options:**
+
 - `--skip-stage <stage>` - Skip specific review stage (spec, tech-design, test-strategy, implementation, final)
 - `--fast` - Run minimal reviews with reduced validation criteria
 - `--strict` - Enhanced review criteria with additional validation steps
 - `--resume` - Resume pipeline from last successful stage (auto-detected from state)
 
 **Pipeline Architecture:**
+
 ```
 Backlog → [Pipeline] → Ready
           │
@@ -73,14 +81,18 @@ Backlog → [Pipeline] → Ready
 ```
 
 ### `/review-issue FEAT-XXX or BUG-XXX`
+
 Review an issue specification for completeness and clarity:
+
 - **Uses spec-review-engineer agent** for thorough specification review
 - **Provides feedback and suggestions** for improvements
 - **Asks clarifying questions** about requirements and implementation details
 - **Auto-commits any improvements** made to the issue document during review
 
 ### `/ready-backlog-issues`
+
 Process all issues in backlog to assess readiness:
+
 - **Reviews each issue individually** using same criteria as `/ready-issue`
 - **Smart processing order**: Bugs first, then features, alphabetically within each type
 - **Dependency awareness**: Ensures prerequisite issues are ready before dependent ones
@@ -90,7 +102,9 @@ Process all issues in backlog to assess readiness:
 - **Processes one issue at a time** to ensure quality
 
 ### `/create-feature <description>`
+
 Create a new feature issue with comprehensive planning:
+
 - **Finds next sequential issue number** across all FEAT-XXX and BUG-XXX files
 - **Creates FEAT-XXX document** from template with kebab-case naming
 - **Completes comprehensive template** with requirements, design, tasks, and testing
@@ -99,7 +113,9 @@ Create a new feature issue with comprehensive planning:
 - **Auto-commits the created feature document** with standardized message
 
 ### `/create-bug <description>`
+
 Create a new bug report with complete investigation details:
+
 - **Finds next sequential issue number** across all FEAT-XXX and BUG-XXX files
 - **Creates BUG-XXX document** from template with detailed bug information
 - **Gathers complete information** including reproduction steps, environment, severity
@@ -108,7 +124,9 @@ Create a new bug report with complete investigation details:
 - **Auto-commits the created bug document** with standardized message
 
 ### `/plan-and-implement-ready-issues`
+
 Plan and implement all issues in the ready directory:
+
 - **Reviews all ready issues** to understand scope and dependencies
 - **Creates implementation plan** considering priorities and dependencies
 - **Implements each issue sequentially** using separate agent instances
@@ -117,7 +135,9 @@ Plan and implement all issues in the ready directory:
 - **Uses quality verification** for each task within each issue
 
 ### `/remember-anything-learned-this-session`
+
 Capture session learnings to improve future development:
+
 - **Reviews session history** for valuable development insights
 - **Categorizes learnings** by workflow, technical, process improvements
 - **Updates CLAUDE.md** with specific, actionable guidance
@@ -125,7 +145,9 @@ Capture session learnings to improve future development:
 - **Auto-commits updates** with description of improvements added
 
 ### `/review-and-update-documentation`
+
 Comprehensively review and synchronize all project documentation:
+
 - **Reviews all documentation** including CLAUDE.md, README.md, specifications
 - **Compares code vs docs** to identify discrepancies
 - **Updates content** to accurately reflect current implementation
@@ -142,6 +164,7 @@ These commands provide structured, quality-assured workflows for all issue devel
 All slash commands include sophisticated auto-commit functionality with quality verification.
 
 ### When Auto-Commit Occurs
+
 - **After completing each TodoWrite task** in `/implement-issue` (with full verification)
 - **After each pipeline stage completion** in `/prepare-issue` (with agent handoff protocol)
 - **After creating feature documents** with `/create-feature`
@@ -165,6 +188,7 @@ devbox run build-cli # Build must succeed
 ```
 
 **ABSOLUTE RULES**:
+
 - **No exceptions**: If ANY verification step fails, the task remains incomplete
 - **ALL tests must pass**: Not some, but ALL tests without exception
 - **ZERO lint violations**: Not reduced, but completely eliminated
@@ -191,6 +215,7 @@ comm -13 /tmp/before_task /tmp/after_task | cut -c4- | xargs -r git add
 ### Commit Message Formats
 
 **Implementation Tasks:**
+
 ```
 [ISSUE-ID]: [Brief task description]
 
@@ -202,6 +227,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Issue Management:**
+
 ```
 [Action] [ISSUE-ID]: [Brief description]
 

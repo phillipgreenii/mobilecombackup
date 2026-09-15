@@ -30,7 +30,7 @@ func TestCallsImporter_ImportEmptyRepository(t *testing.T) {
   <call number="+15555555555" duration="0" date="1609632000000" type="3" readable_date="Jan 3, 2021 12:00:00 AM" contact_name="" />
 </calls>`
 
-	if err := os.WriteFile(testFile, []byte(testXML), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte(testXML), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -105,7 +105,7 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
 
 	// Create existing repository with one call
 	callsDir := filepath.Join(repoRoot, "calls")
-	if err := os.MkdirAll(callsDir, 0750); err != nil {
+	if err := os.MkdirAll(callsDir, 0o750); err != nil {
 		t.Fatalf("Failed to create calls directory: %v", err)
 	}
 
@@ -114,7 +114,7 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
   <call number="+15551234567" duration="120" date="1609459200000" type="1" readable_date="Jan 1, 2021 12:00:00 AM" contact_name="John Doe" />
 </calls>`
 
-	if err := os.WriteFile(filepath.Join(callsDir, "calls-2021.xml"), []byte(existingXML), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(callsDir, "calls-2021.xml"), []byte(existingXML), 0o600); err != nil {
 		t.Fatalf("Failed to create existing file: %v", err)
 	}
 
@@ -127,7 +127,7 @@ func TestCallsImporter_DuplicateDetection(t *testing.T) {
   <call number="+15555555555" duration="0" date="1609632000000" type="3" readable_date="Jan 3, 2021 12:00:00 AM" contact_name="" />
 </calls>`
 
-	if err := os.WriteFile(testFile, []byte(testXML), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte(testXML), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -203,7 +203,7 @@ func TestCallsImporter_InvalidEntries(t *testing.T) {
   <call number="+15552222222" duration="45" date="1609718400000" type="99" readable_date="Jan 4, 2021 12:00:00 AM" contact_name="Invalid Type" />
 </calls>`
 
-	if err := os.WriteFile(testFile, []byte(testXML), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte(testXML), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -307,7 +307,7 @@ func TestCallsImporter_OrderPreservation(t *testing.T) {
   <call number="+15555555555" duration="50" date="1609459200000" type="3" readable_date="Jan 1, 2021 12:00:00 AM" contact_name="Fifth" />
 </calls>`
 
-	if err := os.WriteFile(testFile, []byte(testXML), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte(testXML), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

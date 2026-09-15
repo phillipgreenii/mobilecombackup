@@ -96,7 +96,6 @@ func ExampleAttachmentManager_StreamAttachments() {
 		fmt.Printf("Processing attachment %s...\n", attachment.Hash[:8])
 		return nil
 	})
-
 	if err != nil {
 		log.Fatal(err)
 	}

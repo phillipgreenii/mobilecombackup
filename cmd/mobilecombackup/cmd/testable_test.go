@@ -643,7 +643,7 @@ func TestInfoContextReadRepositoryMetadata(t *testing.T) {
 repository_structure_version: "1.0.0"
 created_at: "2024-01-15T10:30:00Z"
 created_by: "mobilecombackup"
-`), 0644)
+`), 0o644)
 
 		ctx := &InfoContext{
 			RepoPath: "/test",
@@ -652,7 +652,6 @@ created_by: "mobilecombackup"
 
 		info := &RepositoryInfo{}
 		err := ctx.readRepositoryMetadata(info)
-
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -684,7 +683,7 @@ created_by: "mobilecombackup"
 	t.Run("handles invalid yaml", func(t *testing.T) {
 		t.Parallel()
 		fs := afero.NewMemMapFs()
-		_ = afero.WriteFile(fs, "/test/.mobilecombackup.yaml", []byte(`invalid: yaml: content:`), 0644)
+		_ = afero.WriteFile(fs, "/test/.mobilecombackup.yaml", []byte(`invalid: yaml: content:`), 0o644)
 
 		ctx := &InfoContext{
 			RepoPath: "/test",
@@ -707,11 +706,11 @@ func TestInfoContextCountRejections(t *testing.T) {
 	t.Run("counts rejection files correctly", func(t *testing.T) {
 		t.Parallel()
 		fs := afero.NewMemMapFs()
-		_ = fs.MkdirAll("/test/rejected", 0755)
-		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_1.xml", []byte("data"), 0644)
-		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_2.xml", []byte("data"), 0644)
-		_ = afero.WriteFile(fs, "/test/rejected/sms_rejected_1.xml", []byte("data"), 0644)
-		_ = afero.WriteFile(fs, "/test/rejected/other.txt", []byte("data"), 0644)
+		_ = fs.MkdirAll("/test/rejected", 0o755)
+		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_1.xml", []byte("data"), 0o644)
+		_ = afero.WriteFile(fs, "/test/rejected/calls_rejected_2.xml", []byte("data"), 0o644)
+		_ = afero.WriteFile(fs, "/test/rejected/sms_rejected_1.xml", []byte("data"), 0o644)
+		_ = afero.WriteFile(fs, "/test/rejected/other.txt", []byte("data"), 0o644)
 
 		ctx := &InfoContext{
 			RepoPath: "/test",
@@ -758,7 +757,7 @@ func TestInfoContextGatherRepositoryInfo(t *testing.T) {
 	t.Run("gathers info successfully", func(t *testing.T) {
 		t.Parallel()
 		fs := afero.NewMemMapFs()
-		_ = fs.MkdirAll("/test/attachments", 0755)
+		_ = fs.MkdirAll("/test/attachments", 0o755)
 
 		ctx := &InfoContext{
 			RepoPath: "/test",
@@ -781,7 +780,6 @@ func TestInfoContextGatherRepositoryInfo(t *testing.T) {
 		}
 
 		info, err := ctx.GatherRepositoryInfo()
-
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -796,7 +794,7 @@ func TestInfoContextGatherRepositoryInfo(t *testing.T) {
 	t.Run("tracks errors from readers", func(t *testing.T) {
 		t.Parallel()
 		fs := afero.NewMemMapFs()
-		_ = fs.MkdirAll("/test/attachments", 0755)
+		_ = fs.MkdirAll("/test/attachments", 0o755)
 
 		ctx := &InfoContext{
 			RepoPath: "/test",
@@ -814,7 +812,6 @@ func TestInfoContextGatherRepositoryInfo(t *testing.T) {
 		}
 
 		info, err := ctx.GatherRepositoryInfo()
-
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

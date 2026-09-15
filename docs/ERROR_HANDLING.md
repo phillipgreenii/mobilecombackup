@@ -13,7 +13,7 @@ The project uses structured error types that provide context information and mai
 The `pkg/errors` package provides several structured error types:
 
 - **ValidationError**: For validation failures with file/line context
-- **ProcessingError**: For data processing errors with stage and input file context  
+- **ProcessingError**: For data processing errors with stage and input file context
 - **ImportError**: For import operation errors with phase, entity, and count context
 - **FileError**: For file operation errors with path and operation context
 - **ConfigurationError**: For configuration-related errors with key/value context
@@ -25,7 +25,7 @@ Each error type includes a category code for programmatic handling:
 ```go
 const (
     ErrCodeValidation    ErrorCode = "VALIDATION_ERROR"
-    ErrCodeFileNotFound  ErrorCode = "FILE_NOT_FOUND" 
+    ErrCodeFileNotFound  ErrorCode = "FILE_NOT_FOUND"
     ErrCodeParsing       ErrorCode = "PARSE_ERROR"
     ErrCodePermission    ErrorCode = "PERMISSION_ERROR"
     ErrCodeStorage       ErrorCode = "STORAGE_ERROR"
@@ -71,7 +71,7 @@ if err := validateInput(data); err != nil {
     return customerrors.WrapWithValidation("validate user data", err)
 }
 
-// Wrap with processing context  
+// Wrap with processing context
 if err := parseFile(filename); err != nil {
     return customerrors.WrapWithProcessing("parsing", filename, err)
 }
@@ -197,17 +197,17 @@ Test error types and context preservation:
 func TestValidationErrorContext(t *testing.T) {
     originalErr := errors.New("invalid value")
     err := customerrors.NewValidationError("validate input", originalErr)
-    
+
     // Test error message contains context
     if !strings.Contains(err.Error(), "validate input failed") {
         t.Error("Error message should contain operation context")
     }
-    
+
     // Test error unwrapping
     if !errors.Is(err, originalErr) {
         t.Error("Should be able to unwrap to original error")
     }
-    
+
     // Test error code
     if !customerrors.IsErrorCode(err, customerrors.ErrCodeValidation) {
         t.Error("Should have validation error code")
@@ -223,13 +223,13 @@ Test error propagation through operation chains:
 func TestErrorPropagation(t *testing.T) {
     // Simulate operation that produces structured error
     err := performOperation()
-    
+
     // Verify error type and context are preserved
     var validationErr *customerrors.ValidationError
     if !errors.As(err, &validationErr) {
         t.Error("Should propagate ValidationError type")
     }
-    
+
     // Verify specific context is available
     if validationErr.Operation != "expected operation" {
         t.Error("Operation context should be preserved")
@@ -245,28 +245,28 @@ func TestErrorPropagation(t *testing.T) {
 func ProcessBackupFile(filename string) error {
     // Validate input
     if filename == "" {
-        return customerrors.NewValidationError("validate filename", 
+        return customerrors.NewValidationError("validate filename",
             errors.New("filename cannot be empty"))
     }
-    
+
     // Open file
     file, err := os.Open(filename)
     if err != nil {
         return customerrors.WrapWithFile(filename, "open", err)
     }
     defer file.Close()
-    
+
     // Parse content
     data, err := parseXML(file)
     if err != nil {
         return customerrors.WrapWithProcessing("parsing XML", filename, err)
     }
-    
+
     // Validate content
     if err := validateData(data); err != nil {
         return customerrors.WrapWithValidation("validate parsed data", err)
     }
-    
+
     return nil
 }
 
@@ -274,16 +274,16 @@ func ProcessBackupFile(filename string) error {
 if err := ProcessBackupFile("backup.xml"); err != nil {
     // Log with context
     log.Error("Backup processing failed", "error", err)
-    
+
     // Handle specific error types
     if customerrors.IsErrorCode(err, customerrors.ErrCodeFileNotFound) {
         return fmt.Errorf("backup file not found, please check the path")
     }
-    
+
     if customerrors.IsErrorCode(err, customerrors.ErrCodeValidation) {
         return fmt.Errorf("backup file contains invalid data")
     }
-    
+
     return fmt.Errorf("backup processing failed: %w", err)
 }
 ```

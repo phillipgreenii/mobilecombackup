@@ -349,38 +349,38 @@ func (drg *DefaultReportGenerator) GenerateHTMLReport(result *AnalysisResult) ty
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentation Analysis Report</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: #f5f5f5; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            background-color: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1, h2, h3 { color: #333; margin-top: 2em; }
         h1 { border-bottom: 3px solid #007acc; padding-bottom: 10px; }
         h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; }
-        .summary-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background-color: #f9f9f9; 
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #f9f9f9;
         }
-        .summary-table th, .summary-table td { 
-            padding: 12px; 
-            text-align: left; 
-            border: 1px solid #ddd; 
+        .summary-table th, .summary-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
         }
-        .summary-table th { 
-            background-color: #007acc; 
-            color: white; 
-            font-weight: bold; 
+        .summary-table th {
+            background-color: #007acc;
+            color: white;
+            font-weight: bold;
         }
         .coverage-bar {
             width: 100%;

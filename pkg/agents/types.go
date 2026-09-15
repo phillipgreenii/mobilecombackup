@@ -398,7 +398,7 @@ func (sm *DocSyncStateManager) Persist() types.Result[bool] {
 	}
 
 	// Write to file with proper permissions
-	err = os.WriteFile(sm.statePath, data, 0600)
+	err = os.WriteFile(sm.statePath, data, 0o600)
 	if err != nil {
 		return types.NewResultError[bool](fmt.Errorf("failed to write state file: %w", err))
 	}
@@ -989,11 +989,15 @@ func (r *RBACController) initializeDefaultPermissions() {
 	defaultPermissions := []types.SecurityPermission{
 		{ID: "doc.read", Name: "Read Documentation", Resource: "doc", Action: "read", Description: "Read documentation files"},
 		{ID: "doc.write", Name: "Write Documentation", Resource: "doc", Action: "write", Description: "Modify documentation files"},
-		{ID: "doc.sync", Name: "Sync Documentation", Resource: "doc", Action: "sync",
-			Description: "Execute documentation synchronization"},
+		{
+			ID: "doc.sync", Name: "Sync Documentation", Resource: "doc", Action: "sync",
+			Description: "Execute documentation synchronization",
+		},
 		{ID: "config.read", Name: "Read Configuration", Resource: "config", Action: "read", Description: "Read system configuration"},
-		{ID: "config.write", Name: "Write Configuration", Resource: "config", Action: "write",
-			Description: "Modify system configuration"},
+		{
+			ID: "config.write", Name: "Write Configuration", Resource: "config", Action: "write",
+			Description: "Modify system configuration",
+		},
 		{ID: "audit.read", Name: "Read Audit Logs", Resource: "audit", Action: "read", Description: "Access audit log information"},
 		{ID: "user.manage", Name: "Manage Users", Resource: "user", Action: "manage", Description: "Create, update, and delete users"},
 		{ID: "role.manage", Name: "Manage Roles", Resource: "role", Action: "manage", Description: "Create, update, and delete roles"},
@@ -1278,7 +1282,7 @@ func (a *AuditLoggerImpl) eventMatchesQuery(event types.AuditEvent, queryLower s
 func (a *AuditLoggerImpl) persistEvent(event types.AuditEvent) error {
 	// Create log directory if it doesn't exist
 	logDir := filepath.Dir(a.logFile)
-	if err := os.MkdirAll(logDir, 0750); err != nil {
+	if err := os.MkdirAll(logDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
@@ -1289,7 +1293,7 @@ func (a *AuditLoggerImpl) persistEvent(event types.AuditEvent) error {
 	}
 
 	// Append to log file with newline
-	file, err := os.OpenFile(a.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(a.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
