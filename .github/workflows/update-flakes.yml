@@ -1,0 +1,44 @@
+name: Update Flake Dependencies
+
+# Thin caller of the reusable workflow hosted in the public phillipg-nix-repo-base
+# (bead pg2-wwpy9 / tc-5lxy.6). Replaces the retired nix-flake-updates.yml and
+# devbox-updates.yml schedulers (and dependabot's gomod ecosystem,
+# .github/dependabot.yml) — everything is now centralized in
+# update-flakes-reusable.yml, which runs ./update-locks.sh --ci here. The
+# schedule stays local; everything else is centralized.
+#
+# automerge: none — same rationale as nix-agent-support's caller: this repo's
+# branch-protection / required-status-checks configuration was not verified
+# from this worktree (no network access to inspect it), so a human merges the
+# lock-bump PR after confirming CI passed, rather than assuming auto-merge is
+# safe to enable. Flip to squash/rebase once branch protection with required
+# checks is confirmed.
+#
+# needs_private_deps_auth omitted (default false): mobilecombackup's only
+# phillipgreenii input is the public nix-repo-base (flake.lock's
+# "phillipgreenii-nix-base" node), so no read token is needed to run
+# `nix flake update`.
+
+on:
+  schedule:
+    # Run every Tuesday at 09:00 UTC, matching the retired
+    # nix-flake-updates.yml/devbox-updates.yml schedule and dependabot's
+    # surviving github-actions ecosystem entry.
+    - cron: "0 9 * * 2"
+  workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: update-flakes
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # required for FlakeHub Cache OIDC auth when enabled
+
+jobs:
+  update-flakes:
+    uses: phillipgreenii/nix-repo-base/.github/workflows/update-flakes-reusable.yml@main
+    secrets: inherit
+    with:
+      automerge: none

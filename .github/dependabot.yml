@@ -2,59 +2,19 @@
 # Dependabot configuration for mobilecombackup
 #
 # Features:
-# - Go module ecosystem monitoring (weekly updates)
 # - GitHub Actions ecosystem monitoring (weekly updates)
 # - Security updates (handled automatically by Dependabot)
-# - Production vs development dependency grouping
 # - Auto-merge for patch updates when CI passes
+#
+# tc-5lxy.6 (OPERATOR RULING 2026-08-16, "yes, drop dependabot"): the gomod
+# ecosystem entry is RETIRED. Dependabot bumped go.mod/go.sum but never
+# regenerated gomod2nix.toml, so every dependabot Go PR broke `nix build`.
+# Go dependency updates now flow through update-locks.sh's update-go-deps
+# step, which bumps go.mod/go.sum AND regenerates gomod2nix.toml together in
+# one commit. The github-actions ecosystem below is UNCHANGED/SURVIVES.
 
 version: 2
 updates:
-  # Go modules - Weekly updates with automatic security updates
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "09:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "phillipgreenii"
-    assignees:
-      - "phillipgreenii"
-    commit-message:
-      prefix: "deps"
-      prefix-development: "deps(dev)"
-      include: "scope"
-    groups:
-      # Production dependencies - critical for runtime
-      production:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*test*"
-          - "*dev*"
-          - "*mock*"
-          - "*testify*"
-          - "*assert*"
-        update-types:
-          - "minor"
-          - "patch"
-      # Development dependencies - tools and testing
-      development:
-        patterns:
-          - "*test*"
-          - "*dev*"
-          - "*mock*"
-          - "*testify*"
-          - "*assert*"
-          - "golang.org/x/tools*"
-          - "golang.org/x/lint*"
-        update-types:
-          - "minor"
-          - "patch"
-
   # GitHub Actions - Weekly updates
   - package-ecosystem: "github-actions"
     directory: "/"
