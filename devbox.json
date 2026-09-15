@@ -9,6 +9,7 @@
     "golangci-lint@latest",
     "gotestsum@latest",
     "jq@latest",
+    "just@latest",
     "ripgrep@latest",
     "uv@latest",
     "viu@latest",
@@ -29,48 +30,27 @@
       "fi"
     ],
     "scripts": {
-      "list-issues": ["ls -1 issues/{active,ready,backlog}"],
-      "formatter": ["go fmt ./..."],
-      "builder": ["go build -v ./..."],
-      "tests": ["gotestsum --format testname -- -covermode=set ./..."],
-      "test-unit": ["gotestsum --format testname -- -short ./..."],
-      "test-integration": [
-        "gotestsum --format testname -- -run Integration ./..."
-      ],
-      "linter": ["golangci-lint run ./..."],
-      "linter-fix": ["golangci-lint run --fix ./..."],
-      "build-cli": [
-        "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup'"
-      ],
-      "validate-version": ["bash scripts/validate-version.sh"],
-      "ci": [
-        "devbox run formatter",
-        "devbox run tests",
-        "devbox run linter",
-        "devbox run build-cli"
-      ],
-      "coverage": [
-        "echo '📊 Running test coverage analysis...'",
-        "gotestsum --format testname -- -coverprofile=coverage.out ./...",
-        "go tool cover -html=coverage.out -o coverage.html",
-        "echo '✅ Coverage report generated: coverage.html'"
-      ],
-      "coverage-summary": [
-        "echo '📈 Test Coverage Summary:'",
-        "gotestsum --format testname -- -cover ./..."
-      ],
-      "validate-docs": ["bash scripts/validate-docs.sh"],
-      "update-doc-health": ["bash scripts/update-doc-health.sh"],
-      "ccusage": [
-        "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"
-      ],
-      "smart-verify": ["./mobilecombackup smart-verify"],
-      "test-fast": ["./mobilecombackup test-runner --mode=fast"],
-      "test-smart": [
-        "./mobilecombackup test-runner --mode=smart --order=fail-fast"
-      ],
-      "test-cached": ["./mobilecombackup test-runner --cache-dir=.test-cache"],
-      "test-clear-cache": ["./mobilecombackup test-runner --clear-cache"]
+      "list-issues": ["just list-issues"],
+      "formatter": ["just formatter"],
+      "builder": ["just builder"],
+      "tests": ["just tests"],
+      "test-unit": ["just test-unit"],
+      "test-integration": ["just test-integration"],
+      "linter": ["just linter"],
+      "linter-fix": ["just linter-fix"],
+      "build-cli": ["just build-cli"],
+      "validate-version": ["just validate-version"],
+      "ci": ["just ci"],
+      "coverage": ["just coverage"],
+      "coverage-summary": ["just coverage-summary"],
+      "validate-docs": ["just validate-docs"],
+      "update-doc-health": ["just update-doc-health"],
+      "ccusage": ["just ccusage"],
+      "smart-verify": ["just smart-verify"],
+      "test-fast": ["just test-fast"],
+      "test-smart": ["just test-smart"],
+      "test-cached": ["just test-cached"],
+      "test-clear-cache": ["just test-clear-cache"]
     }
   }
 }

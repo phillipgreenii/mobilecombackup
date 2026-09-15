@@ -42,13 +42,13 @@ lspconfig.gopls.setup({
   end,
 })
 
--- Project-specific keymaps for devbox commands
-vim.keymap.set('n', '<leader>df', ':!devbox run formatter<CR>', { desc = 'Run formatter' })
-vim.keymap.set('n', '<leader>dt', ':!devbox run test-unit<CR>', { desc = 'Run unit tests' })
-vim.keymap.set('n', '<leader>dT', ':!devbox run tests<CR>', { desc = 'Run all tests' })
-vim.keymap.set('n', '<leader>dl', ':!devbox run linter<CR>', { desc = 'Run linter' })
-vim.keymap.set('n', '<leader>db', ':!devbox run build-cli<CR>', { desc = 'Build CLI' })
-vim.keymap.set('n', '<leader>dc', ':!devbox run coverage-summary<CR>', { desc = 'Coverage summary' })
+-- Project-specific keymaps (tc-5lxy.8: retargeted from `devbox run` to `just`)
+vim.keymap.set('n', '<leader>df', ':!just formatter<CR>', { desc = 'Run formatter' })
+vim.keymap.set('n', '<leader>dt', ':!just test-unit<CR>', { desc = 'Run unit tests' })
+vim.keymap.set('n', '<leader>dT', ':!just tests<CR>', { desc = 'Run all tests' })
+vim.keymap.set('n', '<leader>dl', ':!just linter<CR>', { desc = 'Run linter' })
+vim.keymap.set('n', '<leader>db', ':!just build-cli<CR>', { desc = 'Build CLI' })
+vim.keymap.set('n', '<leader>dc', ':!just coverage-summary<CR>', { desc = 'Coverage summary' })
 
 -- Go-specific commands
 vim.api.nvim_create_user_command('GoTest', '!go test -v ./%:h', {})

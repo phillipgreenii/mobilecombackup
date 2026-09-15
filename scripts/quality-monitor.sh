@@ -70,12 +70,9 @@ setup_monitoring() {
     log_info "Created quality monitoring log file: $LOG_FILE"
   fi
 
-  # Verify dependencies
-  if ! command -v devbox >/dev/null 2>&1; then
-    log_error "devbox is not installed or not in PATH"
-    return 1
-  fi
-
+  # Verify dependencies. This script drives `go test` directly (tc-5lxy.8) so
+  # it no longer hard-requires the devbox binary itself -- only go, which was
+  # already a separate, independent check below.
   if ! command -v go >/dev/null 2>&1; then
     log_error "Go is not installed or not in PATH"
     return 1
@@ -94,7 +91,7 @@ run_comprehensive_tests() {
   local test_output_file="/tmp/quality_test_output_$$.log"
   local coverage_file="/tmp/coverage_$$.out"
 
-  if devbox run go test -v -cover -coverprofile="$coverage_file" ./pkg/analyzer/core >"$test_output_file" 2>&1; then
+  if go test -v -cover -coverprofile="$coverage_file" ./pkg/analyzer/core >"$test_output_file" 2>&1; then
     log_success "Test suite completed successfully"
 
     # Extract coverage
@@ -128,7 +125,7 @@ run_performance_benchmarks() {
   local benchmark_output_file="/tmp/benchmark_output_$$.log"
 
   # Run benchmarks with timeout
-  if timeout 300 devbox run go test -bench=BenchmarkAdvanced -benchmem -run=^$ ./pkg/analyzer/core >"$benchmark_output_file" 2>&1; then
+  if timeout 300 go test -bench=BenchmarkAdvanced -benchmem -run=^$ ./pkg/analyzer/core >"$benchmark_output_file" 2>&1; then
     log_success "Performance benchmarks completed"
 
     # Extract performance metrics

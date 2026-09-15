@@ -3,7 +3,7 @@
 set -e
 
 echo ">> Build Project"
-devbox run build-cli
+just build-cli
 
 echo ">> Create Repo Directory"
 repodir=./tmp/full-test
