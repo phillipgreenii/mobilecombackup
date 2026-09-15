@@ -16,13 +16,15 @@ Phase 5 provides comprehensive automation for quality monitoring, including:
 
 **File**: `scripts/enhanced-pre-commit-hook.sh` (removed — dead code, never wired into `core.hooksPath` execution, and hardcoded absolute paths to a single contributor's home directory made it non-functional for anyone else)
 
-This was an opt-in alternative pre-commit hook with analyzer-specific quality dashboard checks. It was never installed automatically (git only executes the file literally named `pre-commit` in the hooks directory) and required a manual symlink swap that nothing in this repo performed by default. The active pre-commit hook remains `.githooks/pre-commit`.
+This was an opt-in alternative pre-commit hook with analyzer-specific quality dashboard checks. It was never installed automatically (git only executes the file literally named `pre-commit` in the hooks directory) and required a manual symlink swap that nothing in this repo performed by default. `.githooks/pre-commit` has since been retired too (tc-5lxy.5): pre-commit hooks are now managed by
+the nix-repo-base `flakeModules.pre-commit` module — see [Git Workflow](GIT_WORKFLOW.md#git-hooks).
 
 ### 2. GitHub Actions Quality Dashboard
 
 **File**: `.github/workflows/quality-dashboard.yml`
 
 Automated CI/CD integration that:
+
 - Runs on every push and pull request
 - Executes comprehensive test suite with coverage tracking
 - Generates quality dashboard reports
@@ -31,6 +33,7 @@ Automated CI/CD integration that:
 - Uploads quality artifacts for historical analysis
 
 **Quality Gates**:
+
 - Coverage ≥ 80%
 - Quality Score ≥ 60
 - Critical Issues = 0
@@ -41,6 +44,7 @@ Automated CI/CD integration that:
 **File**: `scripts/quality-monitor.sh`
 
 Standalone quality monitoring system that:
+
 - Runs comprehensive tests and benchmarks
 - Generates quality dashboard reports
 - Evaluates quality gates with configurable thresholds
@@ -49,6 +53,7 @@ Standalone quality monitoring system that:
 - Supports cron job automation
 
 **Usage**:
+
 ```bash
 # Run full quality monitoring
 ./scripts/quality-monitor.sh
@@ -81,11 +86,13 @@ export EMAIL_RECIPIENTS="team@example.com"
 ### Automation Setup
 
 1. **Setup Phase 5 automation**:
+
    ```bash
    ./scripts/setup-phase5-automation.sh
    ```
 
 2. **Test integration**:
+
    ```bash
    ./scripts/test-phase5-integration.sh
    ```
@@ -100,19 +107,19 @@ export EMAIL_RECIPIENTS="team@example.com"
 
 Phase 5 implements comprehensive quality gates:
 
-| Gate | Threshold | Description |
-|------|-----------|-------------|
-| Test Coverage | ≥ 80% | Minimum test coverage percentage |
-| Quality Score | ≥ 60 | Overall quality score (0-100) |
-| Critical Issues | = 0 | Number of critical quality issues |
-| Performance | ≥ 25 files/sec | Minimum processing performance |
+| Gate            | Threshold      | Description                       |
+| --------------- | -------------- | --------------------------------- |
+| Test Coverage   | ≥ 80%          | Minimum test coverage percentage  |
+| Quality Score   | ≥ 60           | Overall quality score (0-100)     |
+| Critical Issues | = 0            | Number of critical quality issues |
+| Performance     | ≥ 25 files/sec | Minimum processing performance    |
 
 ## Notifications
 
 Automated notifications are sent when quality gates fail:
 
 - **Slack**: Rich formatted messages with quality metrics
-- **Email**: Plain text summaries for email clients  
+- **Email**: Plain text summaries for email clients
 - **GitHub**: PR comments and check runs with detailed reports
 
 ## Historical Reporting
@@ -131,14 +138,14 @@ Quality metrics are tracked over time:
 Phase 5 integrates with existing project infrastructure:
 
 - **devbox**: Quality commands available via devbox scripts
-- **Git Hooks**: `.githooks/pre-commit` remains the only supported pre-commit hook
+- **Git Hooks**: nix-managed (`flakeModules.pre-commit`, tc-5lxy.5); `.githooks/pre-commit` is retired
 - **GitHub Actions**: Quality dashboard workflow runs alongside existing test workflow
 - **SonarQube**: Quality metrics complement SonarQube analysis
 
 ### With Phase 1-4 Components
 
 - **Phase 1 & 2**: Uses comprehensive test suite infrastructure
-- **Phase 3**: Integrates performance benchmarks and memory monitoring  
+- **Phase 3**: Integrates performance benchmarks and memory monitoring
 - **Phase 4**: Leverages quality dashboard for real-time metrics
 
 ## Troubleshooting
@@ -182,7 +189,7 @@ Phase 5 builds on Phase 4 dashboard functionality:
 
 ### Upgrading Existing Hooks
 
-The enhanced pre-commit hook described above has been removed as dead code (see "Enhanced Pre-commit Hooks (removed)"). `.githooks/pre-commit` is the only supported pre-commit hook; there is no upgrade path to follow here anymore.
+The enhanced pre-commit hook described above has been removed as dead code (see "Enhanced Pre-commit Hooks (removed)"). `.githooks/pre-commit` has since been retired too (tc-5lxy.5) in favor of the nix-managed hook set; there is no upgrade path to follow here anymore.
 
 ## Future Enhancements
 

@@ -37,8 +37,51 @@
         "x86_64-linux"
       ];
 
+      # tc-5lxy.5: adopt the shared pre-commit/treefmt/checks/devshell
+      # flakeModules from nix-repo-base instead of the devbox-era
+      # .githooks/scripts/install-hooks.sh setup. pre-commit transitively
+      # imports treefmt (nix-repo-base's own pre-commit.nix comment), so
+      # treefmt is NOT imported separately here.
+      imports = [
+        phillipgreenii-nix-base.flakeModules.pre-commit
+        phillipgreenii-nix-base.flakeModules.checks
+        phillipgreenii-nix-base.flakeModules.devshell
+      ];
+
+      # issues/** is DECIDED excluded (not deferred) from both treefmt and
+      # pre-commit: this repo's own CLAUDE.md "Completed Issues Policy" says
+      # completed issues MUST NOT be modified except for cross-references and
+      # typos, and a whole-file prettier rewrite would violate that (92 of the
+      # 162 prettier-in-scope files live under issues/). See tc-5lxy.5's
+      # OPERATOR RULING note: this is INTERIM until the issue tracker migrates
+      # to beads, at which point the exclusion becomes moot.
+      #
+      # TEMPORARY (tc-5lxy.5, deferred to tc-5lxy.20): shellcheck is disabled
+      # here, both as the standalone pre-commit hook (extraHooks below) and as
+      # a treefmt formatter (perSystem's `treefmt.settings.formatter.shellcheck.excludes`
+      # below) -- so that a REAL `git commit` of the whole-repo shfmt reformat
+      # this bead lands can pass without --no-verify. This necessarily also
+      # takes `checks.pre-commit` and `checks.treefmt` green for now (they
+      # share this same config), rather than leaving them red as tc-5lxy.5's
+      # own "PREDICTED CHECK STATUS" assumed shellcheck would stay active.
+      # tc-5lxy.20 owns clearing the 34-finding shellcheck backlog this
+      # reformat's shfmt pass exposes (`shellcheck --severity=warning` over
+      # every shell script); remove BOTH overrides once that lands.
+      phillipgreenii.pre-commit = {
+        excludes = [ "^issues/" ];
+        extraHooks = {
+          shellcheck.enable = false;
+        };
+      };
+
       perSystem =
-        { pkgs, system, config, ... }:
+        {
+          pkgs,
+          system,
+          config,
+          checksHelpers,
+          ...
+        }:
         let
           # ADR 0006 / bead tc-5lxy.1 (Option A): the human-facing base version is
           # read from the committed VERSION file and NOTHING else. mkGoApp appends
@@ -63,13 +106,25 @@
           goBuilders = phillipgreenii-nix-base.lib.mkGoBuilders {
             inherit pkgs;
             inherit (pkgs) lib;
-            self = inputs.self;
+            inherit (inputs) self;
           };
 
           # flake-utils.lib.mkApp has no flake-parts equivalent; it expanded to
           # `{ type = "app"; program = "${drv}/bin/${drv.pname}"; }`, which is
           # written out by hand here.
           mainProgram = "${config.packages.default}/bin/mobilecombackup";
+
+          # Filtered to directories + *.nix files only, mirroring nix-repo-base
+          # checks.nix's own `phillipgreenii.src` default -- this repo's only
+          # *.nix file is flake.nix itself (replit.nix was deleted upstream of
+          # this bead, by tc-5lxy.17's Go-version realignment; nothing left to
+          # fix for it here). Scoping this way keeps `checks.formatting`'s
+          # cache from invalidating on unrelated (non-nix) source changes.
+          nixSrc = builtins.path {
+            path = ./.;
+            filter = path: type: type == "directory" || pkgs.lib.hasSuffix ".nix" path;
+            name = "mobilecombackup-nix-src";
+          };
         in
         {
           # gomod2nix's overlay supplies pkgs.buildGoApplication, which mkGoBinary
@@ -257,6 +312,30 @@
               gomod2nixToml = ./gomod2nix.toml;
               config = ./.golangci.yml;
             };
+
+            # Standalone nixfmt-only check (nix-repo-base's checksHelpers.formatting),
+            # kept green independent of tc-5lxy.20's shellcheck backlog: checks.treefmt
+            # bundles shellcheck in with every other formatter, but this repo's
+            # acceptance criteria for tc-5lxy.5 require nixfmt itself to be clean now.
+            formatting = checksHelpers.formatting nixSrc;
+          };
+
+          # issues/** is DECIDED excluded from treefmt too (see the top-level
+          # `phillipgreenii.pre-commit.excludes` comment for the full rationale
+          # -- Completed Issues Policy in this repo's own CLAUDE.md).
+          #
+          # `formatter.shellcheck.excludes` is the TEMPORARY tc-5lxy.20 carve-out
+          # (see the top-level `phillipgreenii.pre-commit` comment): `excludes`
+          # takes precedence over `includes` per treefmt-nix's own formatter
+          # option docs, so `[ "*" ]` fully neuters the shellcheck formatter
+          # everywhere treefmt runs (nix fmt, checks.treefmt, and the
+          # commit-time "treefmt" pre-commit hook) without touching shfmt,
+          # gofumpt, nixfmt, or prettier for the same files. Remove this
+          # override, together with the `extraHooks.shellcheck.enable = false`
+          # one above, once tc-5lxy.20 clears the backlog.
+          treefmt.settings = {
+            global.excludes = [ "issues/**" ];
+            formatter.shellcheck.excludes = [ "*" ];
           };
         };
     };

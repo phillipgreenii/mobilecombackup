@@ -19,7 +19,6 @@
     "init_hook": [
       "go mod tidy",
       "echo '📋 Setting up development environment...'",
-      "if [ -f scripts/install-hooks.sh ]; then bash scripts/install-hooks.sh; fi",
       "# Load project-specific Neovim config if it exists",
       "export NVIM_PROJECT_CONFIG=$PWD/.config/nvim",
       "if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then",
@@ -30,48 +29,25 @@
       "fi"
     ],
     "scripts": {
-      "list-issues": [
-        "ls -1 issues/{active,ready,backlog}"
-      ],
-      "formatter": [
-        "go fmt ./..."
-      ],
-      "builder": [
-        "go build -v ./..."
-      ],
-      "tests": [
-        "gotestsum --format testname -- -covermode=set ./..."
-      ],
-      "test-unit": [
-        "gotestsum --format testname -- -short ./..."
-      ],
+      "list-issues": ["ls -1 issues/{active,ready,backlog}"],
+      "formatter": ["go fmt ./..."],
+      "builder": ["go build -v ./..."],
+      "tests": ["gotestsum --format testname -- -covermode=set ./..."],
+      "test-unit": ["gotestsum --format testname -- -short ./..."],
       "test-integration": [
         "gotestsum --format testname -- -run Integration ./..."
       ],
-      "linter": [
-        "golangci-lint run ./..."
-      ],
-      "linter-fix": [
-        "golangci-lint run --fix ./..."
-      ],
+      "linter": ["golangci-lint run ./..."],
+      "linter-fix": ["golangci-lint run --fix ./..."],
       "build-cli": [
         "sh -c 'VERSION=$(bash scripts/build-version.sh) && go build -ldflags \"-X main.Version=$VERSION\" -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobilecombackup'"
       ],
-      "validate-version": [
-        "bash scripts/validate-version.sh"
-      ],
+      "validate-version": ["bash scripts/validate-version.sh"],
       "ci": [
         "devbox run formatter",
         "devbox run tests",
         "devbox run linter",
         "devbox run build-cli"
-      ],
-      "install-hooks": [
-        "bash scripts/install-hooks.sh"
-      ],
-      "test-hooks": [
-        "echo '🧪 Testing pre-commit hooks...'",
-        ".githooks/pre-commit"
       ],
       "coverage": [
         "echo '📊 Running test coverage analysis...'",
@@ -83,30 +59,18 @@
         "echo '📈 Test Coverage Summary:'",
         "gotestsum --format testname -- -cover ./..."
       ],
-      "validate-docs": [
-        "bash scripts/validate-docs.sh"
-      ],
-      "update-doc-health": [
-        "bash scripts/update-doc-health.sh"
-      ],
+      "validate-docs": ["bash scripts/validate-docs.sh"],
+      "update-doc-health": ["bash scripts/update-doc-health.sh"],
       "ccusage": [
-	      "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"
+        "deno run   -E   -R=$HOME/.claude/ -R=$HOME/.config/claude/ -R=/tmp   -S=homedir   -N='raw.githubusercontent.com:443'   npm:ccusage@latest blocks --live"
       ],
-      "smart-verify": [
-        "./mobilecombackup smart-verify"
-      ],
-      "test-fast": [
-        "./mobilecombackup test-runner --mode=fast"
-      ],
+      "smart-verify": ["./mobilecombackup smart-verify"],
+      "test-fast": ["./mobilecombackup test-runner --mode=fast"],
       "test-smart": [
         "./mobilecombackup test-runner --mode=smart --order=fail-fast"
       ],
-      "test-cached": [
-        "./mobilecombackup test-runner --cache-dir=.test-cache"
-      ],
-      "test-clear-cache": [
-        "./mobilecombackup test-runner --clear-cache"
-      ]
+      "test-cached": ["./mobilecombackup test-runner --cache-dir=.test-cache"],
+      "test-clear-cache": ["./mobilecombackup test-runner --clear-cache"]
     }
   }
 }

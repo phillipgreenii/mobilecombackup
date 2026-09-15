@@ -23,6 +23,7 @@ This document defines the standard Git workflow and commit rules that must be fo
 5. Code MUST be formatted
 
 **ENFORCEMENT**:
+
 - A task is NOT complete until a successful commit is made
 - If ANY quality check fails, the task remains incomplete
 - If there's a blocker preventing commit, STOP and ask for help
@@ -33,7 +34,7 @@ This document defines the standard Git workflow and commit rules that must be fo
 Before every commit, you MUST:
 
 1. **Run verification workflow** (see [Verification Workflow](VERIFICATION_WORKFLOW.md))
-2. **Pass all pre-commit hooks** (installed via `devbox run install-hooks`)
+2. **Pass all pre-commit hooks** (installed via `nix run .#install-pre-commit-hooks`; see [Git Hooks](#git-hooks))
 3. **Stage only relevant files** (never use `git add .`)
 
 ## File Staging Best Practices
@@ -56,7 +57,7 @@ Use git status comparison to identify files you modified:
 # Before starting task
 git status --porcelain > /tmp/before_task
 
-# After completing task  
+# After completing task
 git status --porcelain > /tmp/after_task
 
 # Identify changed files and stage them
@@ -82,6 +83,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Examples
 
 **Feature Implementation:**
+
 ```
 FEAT-055: Add context support to SMS parser
 
@@ -94,6 +96,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Bug Fix:**
+
 ```
 BUG-123: Fix duplicate detection in call coalescer
 
@@ -106,6 +109,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Documentation Update:**
+
 ```
 DOC: Update architecture overview in CLAUDE.md
 
@@ -128,13 +132,28 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Git Hooks
 
 ### Installation
+
+Hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5), not devbox:
+
 ```bash
-devbox run install-hooks  # Install pre-commit hooks
-devbox run test-hooks     # Test hooks without committing
+nix run .#install-pre-commit-hooks # Install/refresh pre-commit + pre-push hooks
 ```
 
+Entering the nix devShell (`nix develop`) installs/refreshes the hooks automatically too.
+
+### One-time `core.hooksPath` migration
+
+A clone set up before tc-5lxy.5 may still have `git config core.hooksPath .githooks` (written by
+the retired `scripts/install-hooks.sh`) — a **relative** value that silently disables hooks in any
+linked git worktree. `nix run .#install-pre-commit-hooks` (or a devShell entry) detects and
+corrects this automatically; no manual step is required. To verify:
+`git config --local --get core.hooksPath` should come back either unset or an absolute path
+afterward.
+
 ### Hook Validation
+
 Pre-commit hooks will automatically run:
+
 - Code formatting checks
 - Lint validation
 - Test execution
@@ -186,11 +205,13 @@ EOF
 ## Branch Management
 
 ### Main Branch
+
 - **Name**: `main`
 - **Protection**: All commits must pass pre-commit hooks
 - **Usage**: Direct commits for features and fixes
 
 ### Working with Branches
+
 - Check current branch: `git branch`
 - Switch branches: `git checkout branch-name`
 - Create new branch: `git checkout -b feature-branch`
@@ -198,6 +219,7 @@ EOF
 ## Integration with Development Workflow
 
 This Git workflow integrates with:
+
 - [Task Completion Requirements](TASK_COMPLETION.md)
 - [Verification Workflow](VERIFICATION_WORKFLOW.md)
 - [Issue Development Workflow](ISSUE_WORKFLOW.md)
@@ -205,6 +227,7 @@ This Git workflow integrates with:
 ## Error Handling
 
 ### If Commit Fails Due to Hooks:
+
 1. **Read the hook error message** carefully
 2. **Fix the identified issues**
 3. **Re-run verification workflow**
@@ -212,6 +235,7 @@ This Git workflow integrates with:
 5. **Ask for help** if issues persist
 
 ### If Verification Fails:
+
 1. **Do NOT attempt to commit**
 2. **Fix the failing checks** first
 3. **Re-run complete verification**

@@ -9,6 +9,7 @@ This is a Go command-line tool for processing mobile phone backup files (Call an
 ## Quick Commands Reference
 
 ### Most Common Development Commands
+
 ```bash
 # Environment
 devbox shell              # Enter development environment
@@ -24,6 +25,7 @@ devbox run build-cli      # Build CLI with version info
 ```
 
 ### Issue Workflow Commands
+
 ```bash
 # Create issues
 /create-feature "description"    # Create new feature issue
@@ -42,6 +44,7 @@ devbox run build-cli      # Build CLI with version info
 ```
 
 ### File Locations Quick Reference
+
 - **Source code**: `pkg/` (Go packages) and `cmd/mobilecombackup/` (CLI)
 - **Documentation**: `docs/` (specialized docs) and `README.md` (overview)
 - **Issues**: `issues/{backlog,ready,active,completed}/`
@@ -63,6 +66,7 @@ devbox shell
 ```
 
 **Key Facts:**
+
 - Devbox provides a reproducible development environment via Nix
 - All tools are automatically available when in `devbox shell`
 - Commands like `devbox run test` work from any directory within the repo
@@ -74,27 +78,32 @@ devbox shell
 These tools are defined in `devbox.json` and automatically available in the devbox shell:
 
 **Go Development:**
+
 - `go` - Go compiler and toolchain (version pinned by the `go@<version>` entry in `devbox.json`)
 - `gopls@latest` - Go language server for editor integration
 - `golangci-lint@latest` - Comprehensive Go linter
 - `gotestsum@latest` - Enhanced test output formatter
 
 **Code Analysis:**
+
 - `ast-grep@latest` - Structural code search and refactoring for Go
 - `fd@latest` - Fast file finder (alternative to find)
 - `ripgrep@latest` - Fast text search (alternative to grep)
 
 **Data Processing:**
+
 - `jq@latest` - JSON query and manipulation tool
 - `yq@latest` - YAML query and manipulation tool
 
 **Utilities:**
+
 - `viu@latest` - Terminal image viewer
 - `deno@2` - JavaScript/TypeScript runtime
 - `uv@latest` - Fast Python package installer
 - `claude-code@1.0.72` - Claude Code CLI
 
 **Available via MCP (Claude Code extension):**
+
 - Serena MCP tools - Semantic code analysis
 - All `mcp__serena__*` functions for Go code manipulation
 
@@ -103,6 +112,7 @@ These tools are defined in `devbox.json` and automatically available in the devb
 All `devbox run` commands are defined in `devbox.json` under `shell.scripts`:
 
 **Core Development:**
+
 ```bash
 devbox run formatter        # Run go fmt ./...
 devbox run builder          # Build all packages
@@ -116,6 +126,7 @@ devbox run ci               # Full CI pipeline: format, test, lint, build
 ```
 
 **Quality & Validation:**
+
 ```bash
 devbox run validate-docs     # Validate documentation health
 devbox run update-doc-health # Update dashboard metrics
@@ -124,9 +135,11 @@ devbox run coverage-summary  # Show coverage summary
 ```
 
 **Development Workflow:**
+
+Pre-commit hooks are now managed by nix (tc-5lxy.5), not devbox — see
+[Git Workflow](docs/GIT_WORKFLOW.md#git-hooks): `nix run .#install-pre-commit-hooks`.
+
 ```bash
-devbox run install-hooks     # Install pre-commit git hooks
-devbox run test-hooks        # Test hooks without committing
 devbox run validate-version  # Validate version strings
 devbox run list-issues       # List all issues
 devbox run ccusage           # Monitor Claude Code usage
@@ -135,46 +148,55 @@ devbox run ccusage           # Monitor Claude Code usage
 ### Tool Availability Rules
 
 **✅ Available in devbox shell:**
+
 - All 13 tools listed above with specified versions
 - All `devbox run` commands
 - Git operations (system git)
 - Standard shell commands (bash, etc.)
 
 **❌ NOT available outside devbox shell:**
+
 - `ast-grep`, `fd`, `ripgrep`, `gopls`, `golangci-lint`, `gotestsum`
 - The pinned Go version (see the `go@<version>` entry in `devbox.json`)
 - `jq`, `yq`, `viu`, `deno`, `uv`, `claude-code`
 - Project-specific `devbox run` commands
 
 **⚠️ May vary if used outside devbox:**
+
 - `go` - System version likely different from the version pinned in `devbox.json`
 - `jq`, `yq` - May be installed globally but different versions
 
 ### Common Environment Issues
 
 **Issue: `command not found: devbox`**
+
 - **Cause**: Devbox not installed on system
 - **Solution**: Install devbox or use manual setup (see [Development Guide](docs/DEVELOPMENT.md#manual-setup))
 
 **Issue: `command not found: ast-grep` (or other devbox tool)**
+
 - **Cause**: Not in devbox shell environment
 - **Solution**: Run `devbox shell` first
 
 **Issue: Wrong Go version (system Go instead of the version pinned in `devbox.json`)**
+
 - **Cause**: Using system Go instead of devbox Go
 - **Solution**: Ensure you're in `devbox shell`, verify with `go version`
 
 **Issue: `devbox run test` doesn't work**
+
 - **Cause**: Not in project directory or subdirectory
 - **Solution**: `cd` to project root where `devbox.json` exists
 
 **Issue: Changes to `devbox.json` not taking effect**
+
 - **Cause**: Need to reload devbox shell
 - **Solution**: Exit and re-enter: `exit` then `devbox shell`
 
 ### Environment Verification Commands
 
 **Check if you're in devbox shell:**
+
 ```bash
 # Method 1: Check environment variable
 echo $DEVBOX_SHELL_ENABLED  # Should output: 1
@@ -187,6 +209,7 @@ which ast-grep  # Should show path in /nix/store/...
 ```
 
 **Verify specific tools:**
+
 ```bash
 # Check all devbox-provided tools are available
 ast-grep --version
@@ -202,6 +225,7 @@ go version  # Should match the `go@<version>` pin in devbox.json
 ```
 
 **List all available devbox commands:**
+
 ```bash
 devbox run --help  # Shows all commands defined in devbox.json
 ```
@@ -211,51 +235,58 @@ devbox run --help  # Shows all commands defined in devbox.json
 When you run `devbox shell`, these commands run automatically:
 
 1. `go mod tidy` - Ensures Go dependencies are clean
-2. `scripts/install-hooks.sh` - Installs git pre-commit hooks (if script exists)
-3. Neovim config setup - Loads project-specific Neovim config (if `.config/nvim` exists)
+2. Neovim config setup - Loads project-specific Neovim config (if `.config/nvim` exists)
 
 **This means:**
+
 - Dependencies are always up-to-date when entering shell
-- Git hooks are automatically installed
-- No manual setup steps needed
+
+Git hooks are separately managed by nix (tc-5lxy.5) — see
+[Git Workflow](docs/GIT_WORKFLOW.md#git-hooks). They install/refresh automatically on `nix develop`
+devShell entry, or via `nix run .#install-pre-commit-hooks`.
 
 ### Assumptions in Documentation
 
 **When you see `devbox run <command>`:**
+
 - Assumes devbox is installed
 - Assumes you're in project directory (where `devbox.json` exists)
 - Can be run from any subdirectory of the project
 
 **When you see `ast-grep`, `jq`, `yq`, etc:**
+
 - Assumes you're in `devbox shell`
 - These are NOT system commands, they're devbox-provided
 
 **When you see `go build`, `go test`, etc:**
+
 - Assumes you're in `devbox shell` (using the Go version pinned in `devbox.json`)
 - Assumes `go mod tidy` has run (automatic in init hook)
 
 **When you see scripts like `bash scripts/something.sh`:**
+
 - Assumes script has executable permissions
 - Assumes bash is available (standard on Linux/macOS)
 - Assumes running from project root
 
 ### Quick Reference Table
 
-| What | Where | Command |
-|------|-------|---------|
-| **Enter devbox** | Any directory | `devbox shell` |
-| **Exit devbox** | In devbox shell | `exit` or Ctrl+D |
-| **Check if in devbox** | In shell | `echo $DEVBOX_SHELL_ENABLED` |
-| **Verify Go version** | In devbox | `go version` (should match the `go@` pin in `devbox.json`) |
-| **Run tests** | In devbox | `devbox run tests` |
-| **Validate docs** | In devbox | `devbox run validate-docs` |
-| **Full CI pipeline** | In devbox | `devbox run ci` |
-| **List all commands** | In devbox | `devbox run --help` |
-| **Update environment** | Outside devbox | `devbox update` |
+| What                   | Where           | Command                                                    |
+| ---------------------- | --------------- | ---------------------------------------------------------- |
+| **Enter devbox**       | Any directory   | `devbox shell`                                             |
+| **Exit devbox**        | In devbox shell | `exit` or Ctrl+D                                           |
+| **Check if in devbox** | In shell        | `echo $DEVBOX_SHELL_ENABLED`                               |
+| **Verify Go version**  | In devbox       | `go version` (should match the `go@` pin in `devbox.json`) |
+| **Run tests**          | In devbox       | `devbox run tests`                                         |
+| **Validate docs**      | In devbox       | `devbox run validate-docs`                                 |
+| **Full CI pipeline**   | In devbox       | `devbox run ci`                                            |
+| **List all commands**  | In devbox       | `devbox run --help`                                        |
+| **Update environment** | Outside devbox  | `devbox update`                                            |
 
 ### Why Devbox?
 
 **Benefits:**
+
 - **Reproducible**: Exact same environment on every machine
 - **Isolated**: Doesn't pollute global system with project tools
 - **Declarative**: Environment defined in `devbox.json`
@@ -274,14 +305,14 @@ For verification workflow and quality commands, see [Verification Workflow](docs
 devbox shell         # Enter development environment
 devbox run builder   # Build all packages
 
-# Git hooks (quality enforcement)
-devbox run install-hooks  # Install pre-commit hooks
-devbox run test-hooks     # Test hooks without committing
+# Git hooks (quality enforcement) -- managed by nix (tc-5lxy.5), not devbox
+nix run .#install-pre-commit-hooks  # Install/refresh pre-commit + pre-push hooks
 ```
 
 ## Architecture Overview
 
 ### Core Packages
+
 - **cmd/mobilecombackup**: CLI entry point with Cobra commands
 - **pkg/calls**: Call log processing with streaming XML reader
 - **pkg/sms**: SMS/MMS processing (handles complex MMS parts)
@@ -292,6 +323,7 @@ devbox run test-hooks     # Test hooks without committing
 - **pkg/coalescer**: Deduplication logic
 
 ### Key Design Principles
+
 - **Streaming APIs**: Process large files without loading into memory
 - **Error resilience**: Continue on individual failures, collect errors
 - **Hash-based storage**: SHA-256 for content addressing
@@ -299,6 +331,7 @@ devbox run test-hooks     # Test hooks without committing
 - **UTC-based**: All timestamps and year partitioning use UTC
 
 ### Repository Structure
+
 ```
 repository/
 ├── .mobilecombackup.yaml  # Repository marker
@@ -313,6 +346,7 @@ repository/
 For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLOW.md).
 
 ### Quick Reference
+
 1. **Create issue**: Use automation script or slash commands
    - **Preferred**: `./issues/create-issue.sh FEATURE "title"` or `./issues/create-issue.sh BUG "title"`
    - **Alternative**: `/create-feature` or `/create-bug` commands
@@ -322,6 +356,7 @@ For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLO
 5. **Complete**: Updates move to `issues/completed/`
 
 ### Issue Creation Automation (FEAT-075)
+
 The project includes an automated issue creation script that reduces manual overhead:
 
 ```bash
@@ -329,12 +364,13 @@ The project includes an automated issue creation script that reduces manual over
 ./issues/create-issue.sh FEATURE "implement user authentication"
 # Creates: issues/backlog/FEAT-076-implement-user-authentication.md
 
-# Create new bug issue  
+# Create new bug issue
 ./issues/create-issue.sh BUG "validation fails on empty input"
 # Creates: issues/backlog/BUG-077-validation-fails-on-empty-input.md
 ```
 
 **Benefits:**
+
 - Automatic sequential numbering across all issue types
 - Kebab-case title conversion with comprehensive error handling
 - Template copying and title replacement
@@ -344,18 +380,21 @@ The project includes an automated issue creation script that reduces manual over
 ## Documentation Rules
 
 ### Living Documentation
+
 - **issues/specification.md** is a **living representation** of the project
 - **MUST be updated** whenever documentation changes to match current system state
 - Serves as the single source of truth for current architecture and capabilities
 
 ### Completed Issues Policy
+
 - **Completed issues** (in `issues/completed/`) should **NOT be updated**
 - They serve as historical records of what was implemented
 - **Allowed exceptions only**:
   - Adding cross-references to newer issues that modified the functionality
   - Minor text improvements (typos, readability) that don't change interpretation
-  
+
 ### Documentation Update Workflow
+
 1. **Always review** `issues/specification.md` when updating docs
 2. **Verify** code state matches documentation
 3. **Update** specification.md if system has evolved
@@ -367,6 +406,7 @@ The project includes an automated issue creation script that reduces manual over
 The project maintains a documentation health dashboard in `docs/INDEX.md` that tracks metrics and quality indicators.
 
 **Automated Updates** (No Agent Action Required):
+
 - Metrics are automatically updated by `scripts/update-doc-health.sh` via pre-commit hooks
 - Automated metrics include: file counts, line counts, broken links, freshness, validation status
 - These update on every commit that touches documentation files
@@ -391,24 +431,31 @@ Agents MUST update the qualitative sections in `docs/INDEX.md` dashboard when:
    - When stale docs are identified (>45 days old)
 
 **What to Update** (Agent-Maintained Sections):
+
 ```markdown
 ### Overall Health: 🟢/🟡/🟠/🔴
+
 <!-- Update if assessment changes -->
 
 ### Coverage by Category
+
 <!-- Update when new docs added or gaps closed -->
 
 ### Known Gaps
+
 <!-- Add when gaps identified, remove when closed -->
 
 ### Action Items
+
 <!-- Update priorities based on automated metrics -->
 
 ### Recent Significant Changes
+
 <!-- Add entry for major documentation work -->
 ```
 
 **How to Update**:
+
 1. Read current dashboard state from `docs/INDEX.md`
 2. Update only the agent-maintained sections (marked with comments)
 3. Do NOT modify auto-generated sections (timestamps, metrics, freshness)
@@ -416,10 +463,12 @@ Agents MUST update the qualitative sections in `docs/INDEX.md` dashboard when:
 5. Dashboard will auto-update metrics on commit
 
 **Example Agent Update**:
+
 ```markdown
 # Agent completed Docker troubleshooting documentation
 
 Updates to docs/INDEX.md dashboard:
+
 1. Coverage by Category: Troubleshooting ✅ Complete (was ⚠️ Good)
 2. Known Gaps: Removed "Docker troubleshooting"
 3. Action Items: Marked "Add Docker troubleshooting" as complete
@@ -427,6 +476,7 @@ Updates to docs/INDEX.md dashboard:
 ```
 
 **When NOT to Update**:
+
 - Minor typo fixes that don't affect coverage
 - Formatting/style changes only
 - Updating metadata (Last Updated dates)
@@ -442,7 +492,7 @@ The project follows a hierarchical documentation structure designed to optimize 
 
 ```
 README.md (<300 lines)     # Project overview, quick install, basic usage, navigation
-├── docs/INSTALLATION.md   # Comprehensive installation methods & troubleshooting  
+├── docs/INSTALLATION.md   # Comprehensive installation methods & troubleshooting
 ├── docs/CLI_REFERENCE.md  # Complete command documentation & examples
 ├── docs/DEVELOPMENT.md    # Development setup, testing, CI/CD workflows
 ├── docs/DEPLOYMENT.md     # Production deployment & Docker usage
@@ -459,12 +509,14 @@ README.md (<300 lines)     # Project overview, quick install, basic usage, navig
 When adding or updating documentation, use this decision tree:
 
 **Step 1: Is this essential for new users?**
+
 - **YES** → Add to README.md (if under 300 line limit)
 - **NO** → Continue to Step 2
 
 **Step 2: What type of content is this?**
+
 - **Installation methods/troubleshooting** → docs/INSTALLATION.md
-- **CLI commands/usage examples** → docs/CLI_REFERENCE.md  
+- **CLI commands/usage examples** → docs/CLI_REFERENCE.md
 - **Development workflows/setup** → docs/DEVELOPMENT.md
 - **Production deployment** → docs/DEPLOYMENT.md
 - **System architecture/design** → docs/ARCHITECTURE.md
@@ -475,6 +527,7 @@ When adding or updating documentation, use this decision tree:
 
 **Step 3: README.md Content Rules**
 README.md should ONLY contain:
+
 1. Project overview & badges (10-15 lines)
 2. Quick installation (basic method only) (15-20 lines)
 3. Essential usage examples (2-3 basic commands) (30-40 lines)
@@ -484,6 +537,7 @@ README.md should ONLY contain:
 
 **Step 4: Content Migration Strategy**
 When README.md approaches 280 lines:
+
 1. Identify non-essential content for migration
 2. Move detailed examples to appropriate docs/ files
 3. Replace with summary + link to detailed documentation
@@ -523,6 +577,7 @@ When README.md approaches 280 lines:
 Before completing any documentation task:
 
 1. **Line Count Verification**
+
    ```bash
    wc -l README.md  # Must be < 300 lines
    ```
@@ -562,7 +617,9 @@ For complete git workflow and commit rules, see [Git Workflow](docs/GIT_WORKFLOW
 **CRITICAL**: Every task MUST end with a commit that passes ALL quality checks. NEVER use `git commit --no-verify`.
 
 ### Pre-commit Hook Optimization (FEAT-072)
+
 The pre-commit hook is optimized for documentation-focused workflows:
+
 - **Markdown-only commits**: Skip tests, run formatter + linter only (~6s, target <10s)
 - **Code/mixed commits**: Run full checks (formatter + tests + linter, target <30s)
 - **Automatic detection**: Uses `git diff --cached --name-only` to analyze staged files
@@ -571,6 +628,7 @@ The pre-commit hook is optimized for documentation-focused workflows:
 ## Development Tools
 
 ### Code Analysis (Preferred - Semantic Tools)
+
 - **Serena MCP**: Advanced semantic code analysis and symbol manipulation
   - `mcp__serena__find_symbol` - Semantic symbol search (prefer over grep for code)
   - `mcp__serena__search_for_pattern` - Advanced pattern matching with code awareness
@@ -580,17 +638,21 @@ The pre-commit hook is optimized for documentation-focused workflows:
   - `mcp__serena__insert_after_symbol` / `mcp__serena__insert_before_symbol` - Structured code insertion
 
 ### Code Analysis (Fallback - Structural Tools)
+
 - **ast-grep**: Structural code search and refactoring (when Serena MCP insufficient)
 - **fd**: Fast file finding
 - **ripgrep**: Fast text search (use only for non-code content)
 
 #### Tool Selection Guidelines
+
 **For code analysis tasks, prefer this hierarchy:**
+
 1. **Serena MCP tools** - For symbol finding, code structure analysis, precise modifications
-2. **ast-grep** - For structural patterns when Serena MCP insufficient  
+2. **ast-grep** - For structural patterns when Serena MCP insufficient
 3. **ripgrep/grep** - Only for non-code text search or when semantic tools fail
 
 #### Common ast-grep Patterns
+
 ```bash
 # Find function definitions
 ast-grep --pattern 'func $NAME($$$) $RET { $$$ }'
@@ -603,6 +665,7 @@ ast-grep --pattern 'func Test$_($$$) { $$$ }'
 ```
 
 #### Serena MCP Workflow Examples
+
 ```bash
 # Recommended workflow for code analysis:
 # 1. Get file overview before editing
@@ -621,52 +684,62 @@ mcp__serena__replace_symbol_body
 ## Common Patterns
 
 ### Testing
+
 - Target 80%+ coverage
 - Use `testdata/` for test files
 - Test both success and failure paths
 - Create `example_test.go` for usage docs
 
 #### Test Commands
+
 - `devbox run test-unit`: Fast unit tests only (uses `gotestsum` for better output)
 - `devbox run test-integration`: Integration tests only (CLI and file I/O tests)
 - `devbox run test`: Full test suite (both unit and integration tests with enhanced output)
 
 #### Test Development Workflow
+
 1. **During development**: Use `devbox run test-unit` for rapid feedback
 2. **Before committing**: Run `devbox run test` to ensure all tests pass
 3. **Integration tests**: Use `testing.Short()` to skip in unit-only runs
 4. **Unit tests**: Add `t.Parallel()` to pure logic tests for performance
 
 ### Error Handling
+
 - Return errors, don't `os.Exit()` in libraries
 - Include context in error messages
 - Continue processing on individual failures
 - Collect and report all errors at end
 
 ### XML Security
+
 - Always use `security.NewSecureXMLDecoder` for XML parsing
 - Direct `xml.NewDecoder` usage is prohibited (XXE vulnerability)
 
 ### File Organization
+
 - `types.go`: Structs and interfaces
 - `reader.go`: Main implementation
 - `*_test.go`: Unit and integration tests
 - `example_test.go`: Usage examples
 
 ### Git Workflow
+
 See [Git Workflow](docs/GIT_WORKFLOW.md) for complete commit standards and staging practices.
 
 ## Agent Tool Preferences
 
 ### Required Agent Permissions
+
 The following agents require full access to all Serena MCP tools:
 
 **Agents Requiring Serena MCP Access:**
+
 - `code-completion-verifier`
-- `spec-implementation-engineer` 
+- `spec-implementation-engineer`
 - `spec-review-engineer`
 
 **Required Serena MCP Tools:**
+
 - `mcp__serena__get_symbols_overview`
 - `mcp__serena__find_symbol`
 - `mcp__serena__find_referencing_symbols`
@@ -687,6 +760,7 @@ The following agents require full access to all Serena MCP tools:
 - `mcp__serena__think_about_whether_you_are_done`
 
 ### Code Analysis Workflow
+
 When working with Go code, agents should:
 
 1. **Start with Serena MCP** for all code analysis:
@@ -705,6 +779,7 @@ When working with Go code, agents should:
    - Simple text-based operations
 
 ### Tool Selection Examples
+
 ```bash
 # ✅ PREFERRED: Semantic analysis for Go code
 mcp__serena__find_symbol --name_path "ProcessCalls"
@@ -712,14 +787,14 @@ mcp__serena__find_symbol --name_path "ProcessCalls"
 # ❌ AVOID: Text search for code symbols
 grep "func ProcessCalls"
 
-# ✅ PREFERRED: Understanding code structure  
+# ✅ PREFERRED: Understanding code structure
 mcp__serena__get_symbols_overview --relative_path "pkg/calls"
 
 # ❌ AVOID: Basic file reading for code analysis
 cat pkg/calls/reader.go
 
 # ✅ PREFERRED: Finding symbol references
-mcp__serena__find_referencing_symbols --name_path "Call" 
+mcp__serena__find_referencing_symbols --name_path "Call"
 
 # ❌ AVOID: Text-based reference search
 grep -r "Call" .
@@ -728,6 +803,7 @@ grep -r "Call" .
 ## Additional Documentation
 
 ### Core Workflow Documentation
+
 - **Verification Workflow**: `docs/VERIFICATION_WORKFLOW.md` - Quality verification commands
 - **Git Workflow**: `docs/GIT_WORKFLOW.md` - Commit rules and standards
 - **Task Completion**: `docs/TASK_COMPLETION.md` - Task completion requirements
@@ -735,6 +811,7 @@ grep -r "Call" .
 - **Issue Workflow**: `docs/ISSUE_WORKFLOW.md` - Complete development lifecycle
 
 ### Project Documentation
+
 - **Architecture**: `docs/ARCHITECTURE.md` - System architecture and design decisions
 - **Troubleshooting**: `docs/TROUBLESHOOTING.md` - Test/lint failures and fixes
 - **Version Management**: `docs/VERSION_MANAGEMENT.md` - Release workflow
@@ -812,7 +889,7 @@ When stuck on common issues:
 1. **Tests failing**: Run `devbox run formatter` first - formatting fixes many test issues
 2. **Linter errors**: Check if it's an import issue - run `go mod tidy`
 3. **Build failing**: Verify all imports use full paths: `github.com/phillipgreenii/mobilecombackup/pkg/...`
-4. **Git hook blocking**: Check `.githooks/pre-commit` - it auto-detects markdown-only commits
+4. **Git hook blocking**: Run `nix run .#install-pre-commit-hooks` to reinstall/refresh, or `prek run` to see hook output directly (see [Git Workflow](docs/GIT_WORKFLOW.md#git-hooks))
 5. **Can't find package**: Verify it exists in `pkg/` directory with correct name
 
 ## Important Reminders

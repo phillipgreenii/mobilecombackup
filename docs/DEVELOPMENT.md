@@ -131,24 +131,10 @@ source changes rather than on every commit. This is distinct from the
 
 ### Git Hooks and Quality Enforcement
 
-The project uses pre-commit hooks to enforce code quality:
-
-```bash
-# Install git hooks
-devbox run install-hooks
-
-# Test hooks without committing
-devbox run test-hooks
-```
-
-#### Pre-commit Hook Optimization
-
-The pre-commit hook is optimized for different workflow types:
-
-- **Markdown-only commits**: Skip tests, run formatter + linter only (~6s, target <10s)
-- **Code/mixed commits**: Run full checks (formatter + tests + linter, target <30s)
-- **Automatic detection**: Uses `git diff --cached --name-only` to analyze staged files
-- **Clear feedback**: Shows optimization decisions and performance metrics
+Pre-commit hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5),
+not devbox. See [Git Workflow](GIT_WORKFLOW.md#git-hooks) for installation, the one-time
+`core.hooksPath` migration for older clones, and the hook set (treefmt, statix, deadnix,
+shellcheck, trailing-whitespace/end-of-file fixers, etc.).
 
 **CRITICAL**: Every commit MUST pass ALL quality checks. NEVER use `git commit --no-verify`.
 
@@ -163,7 +149,7 @@ The project has comprehensive testing with different scopes:
 devbox run test-unit
 
 # Integration tests only (CLI and file I/O tests)
-devbox run test-integration  
+devbox run test-integration
 
 # Full test suite (both unit and integration tests with enhanced output)
 devbox run test
@@ -181,7 +167,7 @@ go test -v -covermode=set ./...
   - Target 80%+ coverage
   - Test both success and failure paths
 
-- **Integration Tests**: CLI and file I/O testing  
+- **Integration Tests**: CLI and file I/O testing
   - Use `testing.Short()` to skip in unit-only runs
   - Test real file system interactions
   - Validate CLI command integration
@@ -203,13 +189,13 @@ go test -v -covermode=set ./...
 ```go
 func TestProcessCalls(t *testing.T) {
     t.Parallel() // For unit tests
-    
+
     // Test success path
     t.Run("valid input", func(t *testing.T) {
         // Test implementation
     })
-    
-    // Test failure path  
+
+    // Test failure path
     t.Run("invalid input", func(t *testing.T) {
         // Error handling test
     })
@@ -271,7 +257,7 @@ decoder := xml.NewDecoder(reader) // XXE vulnerability
 ### File Organization Standards
 
 - `types.go`: Structs and interfaces
-- `reader.go`: Main implementation  
+- `reader.go`: Main implementation
 - `*_test.go`: Unit and integration tests
 - `example_test.go`: Usage examples
 
@@ -286,17 +272,19 @@ devbox run ci
 ```
 
 This executes:
+
 1. `devbox run formatter` (go fmt ./...)
 2. `devbox run test` (full test suite with coverage)
-3. `devbox run linter` (golangci-lint run)  
+3. `devbox run linter` (golangci-lint run)
 4. `devbox run build-cli` (versioned binary build)
 
 ### CI Environment
 
 The same CI pipeline runs automatically on:
+
 - Pull requests to main branch
 - Pushes to main branch
-- Manual workflow dispatch  
+- Manual workflow dispatch
 - Release builds (tags)
 
 All CI workflows use devbox to ensure consistency between local development and CI environments.
@@ -307,7 +295,7 @@ The project integrates with SonarQube Cloud for automated code quality analysis:
 
 - **Quality Gate**: Ensures code meets maintainability and reliability standards
 - **Coverage Tracking**: Monitors test coverage trends and identifies untested code
-- **Security Analysis**: Scans for potential security vulnerabilities  
+- **Security Analysis**: Scans for potential security vulnerabilities
 - **Code Smells Detection**: Identifies maintainability issues and technical debt
 - **Duplication Analysis**: Tracks code duplication across the codebase
 
@@ -353,12 +341,13 @@ $ devbox run validate-version
 3. **Set up development environment**:
    ```bash
    devbox shell
-   devbox run install-hooks
+   nix run .#install-pre-commit-hooks
    ```
 
 ### Development Process
 
 1. **Create feature branch**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -369,11 +358,13 @@ $ devbox run validate-version
    - Follow existing code patterns
 
 3. **Test thoroughly**:
+
    ```bash
    devbox run ci  # Full CI pipeline
    ```
 
 4. **Commit with quality checks**:
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
@@ -413,7 +404,7 @@ For complete issue development workflow, see [Issue Workflow](ISSUE_WORKFLOW.md)
 For code analysis tasks, prefer this hierarchy:
 
 1. **Serena MCP tools** - Semantic symbol search and code structure analysis
-2. **ast-grep** - Structural patterns when Serena MCP insufficient  
+2. **ast-grep** - Structural patterns when Serena MCP insufficient
 3. **ripgrep/grep** - Only for non-code text search
 
 ### Serena MCP Workflow Examples
@@ -481,11 +472,11 @@ golangci-lint run --fix
 #### Git Hook Issues
 
 ```bash
-# Reinstall hooks if they're not working
-devbox run install-hooks
+# Reinstall/refresh hooks if they're not working
+nix run .#install-pre-commit-hooks
 
-# Test hooks manually
-devbox run test-hooks
+# Run hooks manually against staged files
+prek run
 ```
 
 ### Getting Help
