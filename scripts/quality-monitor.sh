@@ -33,7 +33,8 @@ NC='\033[0m' # No Color
 log_message() {
   local level=$1
   local message=$2
-  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
   echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
 }
 
@@ -96,15 +97,19 @@ run_comprehensive_tests() {
 
     # Extract coverage
     if [ -f "$coverage_file" ]; then
-      local coverage=$(go tool cover -func="$coverage_file" | grep total | awk '{print $3}' | sed 's/%//')
+      local coverage
+      coverage=$(go tool cover -func="$coverage_file" | grep total | awk '{print $3}' | sed 's/%//')
       echo "$coverage" >"/tmp/coverage_percent_$$.txt"
       log_info "Current test coverage: ${coverage}%"
     fi
 
     # Parse test results
-    local total_tests=$(grep -c "=== RUN" "$test_output_file" || echo "0")
-    local passed_tests=$(grep -c "--- PASS:" "$test_output_file" || echo "0")
-    local failed_tests=$(grep -c "--- FAIL:" "$test_output_file" || echo "0")
+    local total_tests
+    total_tests=$(grep -c "=== RUN" "$test_output_file" || echo "0")
+    local passed_tests
+    passed_tests=$(grep -c "--- PASS:" "$test_output_file" || echo "0")
+    local failed_tests
+    failed_tests=$(grep -c "--- FAIL:" "$test_output_file" || echo "0")
 
     echo "$total_tests:$passed_tests:$failed_tests" >"/tmp/test_stats_$$.txt"
     log_info "Test results: $passed_tests passed, $failed_tests failed out of $total_tests total"
@@ -129,7 +134,8 @@ run_performance_benchmarks() {
     log_success "Performance benchmarks completed"
 
     # Extract performance metrics
-    local files_per_sec=$(grep "files/sec" "$benchmark_output_file" | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "0")
+    local files_per_sec
+    files_per_sec=$(grep "files/sec" "$benchmark_output_file" | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "0")
     echo "$files_per_sec" >"/tmp/performance_$$.txt"
     log_info "Current performance: ${files_per_sec} files/sec"
 
@@ -145,17 +151,20 @@ generate_quality_dashboard() {
 
   cd "$DASHBOARD_METRICS_DIR"
 
-  local dashboard_output_file="quality_report_$(date +%Y%m%d_%H%M%S).log"
-  local dashboard_json_file="quality_report_$(date +%Y%m%d_%H%M%S).json"
+  local dashboard_output_file
+  dashboard_output_file="quality_report_$(date +%Y%m%d_%H%M%S).log"
 
   # Run dashboard generator
   if timeout 120 go run "$PROJECT_ROOT/demos/dashboard/main.go" >"$dashboard_output_file" 2>&1; then
     log_success "Quality dashboard generated: $dashboard_output_file"
 
     # Extract key metrics
-    local overall_score=$(grep "Overall Score:" "$dashboard_output_file" | grep -oE '[0-9]+\.[0-9]+' || echo "0")
-    local critical_issues=$(grep -c "Critical:" "$dashboard_output_file" || echo "0")
-    local status=$(grep "Status:" "$dashboard_output_file" | awk '{print $2}' || echo "unknown")
+    local overall_score
+    overall_score=$(grep "Overall Score:" "$dashboard_output_file" | grep -oE '[0-9]+\.[0-9]+' || echo "0")
+    local critical_issues
+    critical_issues=$(grep -c "Critical:" "$dashboard_output_file" || echo "0")
+    local status
+    status=$(grep "Status:" "$dashboard_output_file" | awk '{print $2}' || echo "unknown")
 
     echo "$overall_score:$critical_issues:$status" >"/tmp/dashboard_metrics_$$.txt"
     log_info "Dashboard metrics - Score: $overall_score, Critical Issues: $critical_issues, Status: $status"
@@ -175,9 +184,12 @@ evaluate_quality_gates() {
   local alerts=()
 
   # Load metrics
-  local coverage=$(cat "/tmp/coverage_percent_$$.txt" 2>/dev/null || echo "0")
-  local performance=$(cat "/tmp/performance_$$.txt" 2>/dev/null || echo "0")
-  local dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt" 2>/dev/null || echo "0:0:unknown")
+  local coverage
+  coverage=$(cat "/tmp/coverage_percent_$$.txt" 2>/dev/null || echo "0")
+  local performance
+  performance=$(cat "/tmp/performance_$$.txt" 2>/dev/null || echo "0")
+  local dashboard_metrics
+  dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt" 2>/dev/null || echo "0:0:unknown")
 
   IFS=':' read -r overall_score critical_issues status <<<"$dashboard_metrics"
 
@@ -256,9 +268,12 @@ send_notifications() {
   log_info "Sending quality monitoring notifications..."
 
   # Load metrics for notification
-  local coverage=$(cat "/tmp/coverage_percent_$$.txt" 2>/dev/null || echo "0")
-  local performance=$(cat "/tmp/performance_$$.txt" 2>/dev/null || echo "0")
-  local dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt" 2>/dev/null || echo "0:0:unknown")
+  local coverage
+  coverage=$(cat "/tmp/coverage_percent_$$.txt" 2>/dev/null || echo "0")
+  local performance
+  performance=$(cat "/tmp/performance_$$.txt" 2>/dev/null || echo "0")
+  local dashboard_metrics
+  dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt" 2>/dev/null || echo "0:0:unknown")
   IFS=':' read -r overall_score critical_issues status <<<"$dashboard_metrics"
 
   local notification_title
@@ -295,7 +310,8 @@ send_notifications() {
 
   # Send Slack notification
   if [ -n "$SLACK_WEBHOOK_URL" ]; then
-    local slack_payload="{
+    local slack_payload
+    slack_payload="{
             \"text\": \"$notification_title\",
             \"attachments\": [{
                 \"color\": \"$notification_color\",
@@ -317,7 +333,8 @@ send_notifications() {
   # Send email notification (if mail command is available)
   if [ -n "$EMAIL_RECIPIENTS" ] && command -v mail >/dev/null 2>&1; then
     local email_subject="Quality Monitor: $notification_title"
-    local email_body=$(echo -e "$message" | sed 's/\*//g' | sed 's/:.*://g')
+    local email_body
+    email_body=$(echo -e "$message" | sed 's/\*//g' | sed 's/:.*://g')
 
     if echo "$email_body" | mail -s "$email_subject" "$EMAIL_RECIPIENTS" >/dev/null 2>&1; then
       log_success "Email notification sent to $EMAIL_RECIPIENTS"
@@ -330,7 +347,8 @@ send_notifications() {
 generate_historical_report() {
   log_info "Generating historical quality report..."
 
-  local report_file="$DASHBOARD_METRICS_DIR/historical_quality_report_$(date +%Y%m%d).md"
+  local report_file
+  report_file="$DASHBOARD_METRICS_DIR/historical_quality_report_$(date +%Y%m%d).md"
 
   cat >"$report_file" <<EOF
 # Quality Monitoring Historical Report
@@ -345,7 +363,8 @@ EOF
 
   # Add current metrics
   if [ -f "/tmp/dashboard_metrics_$$.txt" ]; then
-    local dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt")
+    local dashboard_metrics
+    dashboard_metrics=$(cat "/tmp/dashboard_metrics_$$.txt")
     IFS=':' read -r overall_score critical_issues status <<<"$dashboard_metrics"
 
     echo "- **Overall Score**: $overall_score/100" >>"$report_file"
@@ -354,12 +373,14 @@ EOF
   fi
 
   if [ -f "/tmp/coverage_percent_$$.txt" ]; then
-    local coverage=$(cat "/tmp/coverage_percent_$$.txt")
+    local coverage
+    coverage=$(cat "/tmp/coverage_percent_$$.txt")
     echo "- **Test Coverage**: ${coverage}%" >>"$report_file"
   fi
 
   if [ -f "/tmp/performance_$$.txt" ]; then
-    local performance=$(cat "/tmp/performance_$$.txt")
+    local performance
+    performance=$(cat "/tmp/performance_$$.txt")
     echo "- **Performance**: ${performance} files/sec" >>"$report_file"
   fi
 
@@ -370,7 +391,8 @@ EOF
 EOF
 
   if [ -f "/tmp/gates_passed_$$.txt" ]; then
-    local gates_passed=$(cat "/tmp/gates_passed_$$.txt")
+    local gates_passed
+    gates_passed=$(cat "/tmp/gates_passed_$$.txt")
     if [ "$gates_passed" = "true" ]; then
       echo "✅ All quality gates **PASSED**" >>"$report_file"
     else
@@ -406,7 +428,8 @@ cleanup_temp_files() {
 }
 
 main() {
-  local start_time=$(date +%s)
+  local start_time
+  start_time=$(date +%s)
 
   echo -e "${PURPLE}🎯 FEAT-085 Quality Monitoring System${NC}"
   echo -e "${PURPLE}=====================================${NC}"

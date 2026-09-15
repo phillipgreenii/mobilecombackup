@@ -58,23 +58,8 @@
       # 162 prettier-in-scope files live under issues/). See tc-5lxy.5's
       # OPERATOR RULING note: this is INTERIM until the issue tracker migrates
       # to beads, at which point the exclusion becomes moot.
-      #
-      # TEMPORARY (tc-5lxy.5, deferred to tc-5lxy.20): shellcheck is disabled
-      # here, both as the standalone pre-commit hook (extraHooks below) and as
-      # a treefmt formatter (perSystem's `treefmt.settings.formatter.shellcheck.excludes`
-      # below) -- so that a REAL `git commit` of the whole-repo shfmt reformat
-      # this bead lands can pass without --no-verify. This necessarily also
-      # takes `checks.pre-commit` and `checks.treefmt` green for now (they
-      # share this same config), rather than leaving them red as tc-5lxy.5's
-      # own "PREDICTED CHECK STATUS" assumed shellcheck would stay active.
-      # tc-5lxy.20 owns clearing the 34-finding shellcheck backlog this
-      # reformat's shfmt pass exposes (`shellcheck --severity=warning` over
-      # every shell script); remove BOTH overrides once that lands.
       phillipgreenii.pre-commit = {
         excludes = [ "^issues/" ];
-        extraHooks = {
-          shellcheck.enable = false;
-        };
       };
 
       perSystem =
@@ -326,19 +311,8 @@
           # issues/** is DECIDED excluded from treefmt too (see the top-level
           # `phillipgreenii.pre-commit.excludes` comment for the full rationale
           # -- Completed Issues Policy in this repo's own CLAUDE.md).
-          #
-          # `formatter.shellcheck.excludes` is the TEMPORARY tc-5lxy.20 carve-out
-          # (see the top-level `phillipgreenii.pre-commit` comment): `excludes`
-          # takes precedence over `includes` per treefmt-nix's own formatter
-          # option docs, so `[ "*" ]` fully neuters the shellcheck formatter
-          # everywhere treefmt runs (nix fmt, checks.treefmt, and the
-          # commit-time "treefmt" pre-commit hook) without touching shfmt,
-          # gofumpt, nixfmt, or prettier for the same files. Remove this
-          # override, together with the `extraHooks.shellcheck.enable = false`
-          # one above, once tc-5lxy.20 clears the backlog.
           treefmt.settings = {
             global.excludes = [ "issues/**" ];
-            formatter.shellcheck.excludes = [ "*" ];
           };
         };
     };

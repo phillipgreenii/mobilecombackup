@@ -66,7 +66,8 @@ validate_links_in_file() {
   fi
 
   # Get directory of the file for resolving relative paths
-  local file_dir=$(dirname "$file")
+  local file_dir
+  file_dir=$(dirname "$file")
 
   # Extract markdown links: [text](path) and also plain file paths in backticks
   # Look for patterns like docs/FILE.md, issues/FILE.md, scripts/FILE.sh
