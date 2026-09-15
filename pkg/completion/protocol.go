@@ -75,10 +75,6 @@ const (
 // finds nothing to do; shared by both call sites and their test.
 const msgWorkspaceAlreadyClean = "Workspace is already clean"
 
-// devboxConfigFile is this project's devbox manifest filename, checked in
-// isConfigFile-style classification and its test.
-const devboxConfigFile = "devbox.json"
-
 // CategorizedChange represents a file change with its category
 type CategorizedChange struct {
 	Filename string         `json:"filename"`
@@ -115,10 +111,10 @@ type CompletionProtocol struct {
 func NewCompletionProtocol() *CompletionProtocol {
 	return &CompletionProtocol{
 		VerifyCommands: []string{
-			"devbox run formatter",
-			"devbox run tests",
-			"devbox run linter",
-			"devbox run build-cli",
+			"just formatter",
+			"just tests",
+			"just linter",
+			"just build-cli",
 		},
 		// TempDirs MUST NOT default to "/tmp/" (or any other absolute,
 		// host-shared directory). CleanupTemporaryFiles() unconditionally
@@ -662,7 +658,15 @@ func (wc *WorkspaceCleanup) categorizeFile(filename string) ChangeCategory {
 
 	// Configuration files
 	configExtensions := []string{".yml", ".yaml", ".json", ".toml", ".xml"}
-	configFiles := []string{"Dockerfile", devboxConfigFile, "devbox.lock", ".gitignore", ".golangci.yml"}
+	// The former build tool's manifest ("*.json", still handled by the
+	// ".json" configExtensions case above -- listing it here was always a
+	// no-op) and its lockfile (retired along with tc-5lxy.14) are
+	// intentionally absent here. "justfile" replaces that manifest as the
+	// build config this path exists to verify -- it has no extension, so
+	// unlike a ".json" file it MUST be listed here explicitly or it falls
+	// through to CategoryOther and this verification path never fires on
+	// it.
+	configFiles := []string{"Dockerfile", "justfile", ".gitignore", ".golangci.yml"}
 
 	for _, ext := range configExtensions {
 		if strings.HasSuffix(filename, ext) {
@@ -953,10 +957,10 @@ func (wc *WorkspaceCleanup) runCategorizedVerification(categories []ChangeCatego
 			}
 		case CategoryConfig:
 			// Run lighter verification for config changes
-			if err := wc.runVerificationCommand("devbox run formatter"); err != nil {
+			if err := wc.runVerificationCommand("just formatter"); err != nil {
 				return fmt.Errorf("config formatting failed: %w", err)
 			}
-			if err := wc.runVerificationCommand("devbox run linter"); err != nil {
+			if err := wc.runVerificationCommand("just linter"); err != nil {
 				return fmt.Errorf("config linting failed: %w", err)
 			}
 		}

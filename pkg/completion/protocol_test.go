@@ -536,7 +536,7 @@ func setupCleanGitRepo(t *testing.T, dir string) {
 func TestNewWorkspaceCleanup(t *testing.T) {
 	t.Parallel()
 
-	verifyCommands := []string{"devbox run formatter", "devbox run test"}
+	verifyCommands := []string{"just formatter", "just tests"}
 	tempDirs := []string{"tmp", "temp"}
 
 	wc := NewWorkspaceCleanup(verifyCommands, tempDirs)
@@ -580,8 +580,8 @@ func TestWorkspaceCleanup_categorizeFile(t *testing.T) {
 		{"docs/development/setup.md", CategoryDoc},
 
 		// Configuration files
-		{devboxConfigFile, CategoryConfig},
-		{"devbox.lock", CategoryConfig},
+		{"config.json", CategoryConfig},
+		{"justfile", CategoryConfig},
 		{".gitignore", CategoryConfig},
 		{".golangci.yml", CategoryConfig},
 		{"config.yaml", CategoryConfig},
@@ -640,7 +640,7 @@ func TestWorkspaceCleanup_determineVerificationNeeds(t *testing.T) {
 		{
 			name: "config changes need verification",
 			changes: []CategorizedChange{
-				{Filename: devboxConfigFile, Category: CategoryConfig, Status: "M"},
+				{Filename: "justfile", Category: CategoryConfig, Status: "M"},
 			},
 			expected: []ChangeCategory{CategoryConfig},
 		},

@@ -350,7 +350,7 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:un
 		if verboseOutput {
 			fmt.Println("🎨 Running formatter...")
 		}
-		if err := runDevBoxCommand("formatter"); err != nil {
+		if err := runJustCommand("formatter"); err != nil {
 			fmt.Printf("❌ Formatter failed: %v\n", err)
 			success = false
 		}
@@ -376,7 +376,7 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:un
 			}
 		} else {
 			// Run all tests
-			if err := runDevBoxCommand("tests"); err != nil {
+			if err := runJustCommand("tests"); err != nil {
 				fmt.Printf("❌ Tests failed: %v\n", err)
 				success = false
 			}
@@ -387,7 +387,7 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:un
 		if verboseOutput {
 			fmt.Println("🔍 Running linter...")
 		}
-		if err := runDevBoxCommand("linter"); err != nil {
+		if err := runJustCommand("linter"); err != nil {
 			fmt.Printf("❌ Linter failed: %v\n", err)
 			success = false
 		}
@@ -397,7 +397,7 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:un
 		if verboseOutput {
 			fmt.Println("🔨 Running build...")
 		}
-		if err := runDevBoxCommand("build-cli"); err != nil {
+		if err := runJustCommand("build-cli"); err != nil {
 			fmt.Printf("❌ Build failed: %v\n", err)
 			success = false
 		}
@@ -406,26 +406,34 @@ func executeStrategy(strategy *VerificationStrategy) (bool, error) { //nolint:un
 	return success, nil
 }
 
-func runDevBoxCommand(command string) error {
-	// command is always one of this file's own hardcoded literals ("linter",
+func runJustCommand(recipe string) error {
+	// recipe is always one of this file's own hardcoded literals ("linter",
 	// "build-cli", ...), never external input.
-	cmd := exec.Command("devbox", "run", command) //nolint:gosec
+	cmd := exec.Command("just", recipe) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
+// runTargetedTests runs gotestsum against a runtime-computed package list.
+// The prior task runner's arbitrary-command passthrough handled this by
+// appending the package globs onto a fixed "run -- gotestsum ..." prefix;
+// `just` has no equivalent passthrough verb, so tc-5lxy.14 adds a
+// parameterized `test-packages` recipe to the justfile (tc-5lxy.8)
+// specifically to give this call a named target. The package globs are
+// joined into one positional argument, which the recipe's own bash body
+// re-splits on whitespace.
 func runTargetedTests(packages []string) error {
-	args := make([]string, 0, 6+len(packages))
-	args = append(args, "run", "--", "gotestsum", "--format", "testname", "--")
+	pkgArgs := make([]string, 0, len(packages))
 	for _, pkg := range packages {
-		args = append(args, fmt.Sprintf("./%s/...", pkg))
+		pkgArgs = append(pkgArgs, fmt.Sprintf("./%s/...", pkg))
 	}
 
-	// args is built from a fixed literal prefix plus package names formatted
-	// into a fixed "./%s/..." pattern -- never externally supplied shell
-	// input, and exec.Command never invokes a shell.
-	cmd := exec.Command("devbox", args...) //nolint:gosec
+	// pkgArgs is built from package names formatted into a fixed
+	// "./%s/..." pattern -- never externally supplied shell input -- and
+	// exec.Command never invokes a shell, so joining them into a single
+	// argument for just to re-split internally is safe.
+	cmd := exec.Command("just", "test-packages", strings.Join(pkgArgs, " ")) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

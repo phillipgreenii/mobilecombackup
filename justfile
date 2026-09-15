@@ -36,6 +36,17 @@ test-integration:
 linter:
     golangci-lint run ./...
 
+# Parameterized recipe backing `mobilecombackup smart-verify`'s targeted-test
+# path (cmd/mobilecombackup/cmd/smart_verify.go's runTargetedTests). The
+# prior devbox-based implementation invoked devbox's arbitrary-command
+# passthrough with a runtime-computed ./pkg/... list; `just` has no
+# passthrough verb, so this recipe exists solely to give that call a named
+# target (tc-5lxy.14). `pkgs` is one space-separated string of package
+# globs (e.g. "./pkg/calls/... ./pkg/sms/...") that this recipe's own bash
+# body re-splits on whitespace -- pass it quoted as a single argument.
+test-packages pkgs:
+    gotestsum --format testname -- {{pkgs}}
+
 linter-fix:
     golangci-lint run --fix ./...
 
