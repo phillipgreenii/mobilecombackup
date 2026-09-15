@@ -1,0 +1,75 @@
+name: Nix Flake Check
+
+# tc-5lxy.27: this is a NEW, SEPARATE workflow file -- deliberately not folded
+# into test.yml/release.yml/quality-dashboard.yml, so a future flox-related
+# rewrite of those three (as tc-5lxy.9 already did once) cannot silently drop
+# Nix CI coverage along with it.
+#
+# Split of responsibility against the flox/devbox job (no duplicated work):
+#   - test.yml's `ci` job (flox-based) runs `just formatter`, `go test -v
+#     -covermode=set ... ./...`, `just linter`, `just build-cli` and the
+#     SonarQube scan -- the day-to-day Go toolchain path, via flox.
+#   - test.yml's `gomod2nix-drift` job already touches Nix, but only runs
+#     `nix run github:nix-community/gomod2nix -- generate` to catch a stale
+#     gomod2nix.toml; it does NOT run `nix flake check`.
+#   - THIS job runs `nix flake check`, which evaluates/builds
+#     checks.{build,integration,help,packaging,lint,formatting} declared in
+#     flake.nix: `build`/`integration`/`help`/`packaging` exercise the actual
+#     package derivation (mkGoBinary output: binary, man page, completions,
+#     tldr page); `lint` is mkGoLint/golangci-lint (tc-5lxy.19, ./... scope);
+#     `formatting` is nixfmt over this repo's *.nix sources. None of those
+#     run anywhere else in CI -- this job is their only gate.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@c70cb8ae92d68c66953db28a26a63db1665bc837 # v3
+        with:
+          # mobilecombackup's own flake.nix carries no nixConfig block, and a
+          # flake's nixConfig is never inherited by a consumer/CI invocation
+          # (see nix-personal/flake.nix's note on the same point) -- so the
+          # substituters this job needs must be named here explicitly, or a
+          # cold GitHub Actions runner falls back to building everything from
+          # source and the job times out.
+          #
+          # This repo imports phillipgreenii-nix-base's pre-commit/checks/
+          # devshell flakeModules (flake.nix `imports`) -- the same
+          # pre-commit-hooks.nix/treefmt-nix tooling closure nix-repo-base's
+          # own CI (nix-repo-base/.github/workflows/ci.yml) trusts
+          # cache.numtide.com for. Named here for the same reason. NOT
+          # including cache.flox.dev: that cache is for
+          # phillipgreenii-nix-base's flox overlay (flake-modules/overlays/
+          # flox.nix), which this flake does not import -- mobilecombackup's
+          # flox tooling (post tc-5lxy.9) is a separate, non-Nix CLI consumed
+          # by test.yml/release.yml/quality-dashboard.yml via
+          # flox/install-flox-action, not by `nix flake check`.
+          extra-conf: |
+            extra-substituters = https://cache.numtide.com
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+
+      - name: Setup Nix store cache
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@3164002371bc90729c68af0e24d5aacf20d7c9f6 # v12
+        with:
+          ignore-missing-flake-lock: false
+          fail-mode: true
+          send-statistics: false
+
+      - name: Run nix flake check
+        run: nix flake check --show-trace -L
