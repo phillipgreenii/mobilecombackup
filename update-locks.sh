@@ -89,25 +89,4 @@ ul_run_step "update-go-deps" \
   "update-locks: update Go deps + regenerate gomod2nix.toml" \
   bash -c 'go get -u ./... && go mod tidy && nix run github:nix-community/gomod2nix -- generate'
 
-# devbox is FULLY RETIRED as of tc-5lxy.9 (landed mobilecombackup main
-# dfda2d7, 2026-09-15): devbox.json/devbox.lock were deleted, flox is the dev
-# environment. This step is a guarded no-op/deferral, not a functioning
-# devbox updater — devbox.json no longer exists to update, so it always
-# defers (UL_RC_ATTEMPTED) rather than pretending to run `devbox update`
-# against a file that isn't there. Kept only to satisfy tc-5lxy.6's
-# acceptance criterion that a devbox-update step exist; the bead body's own
-# premise ("devbox is STILL the dev environment until tc-5lxy.9, which is 2+
-# beads later") is now STALE — tc-5lxy.9 already closed. This step is dead
-# weight and a human should decide whether to delete it outright now that
-# devbox is gone, rather than carrying a permanent no-op.
-ul_run_step "devbox-update" \
-  "update-locks: update devbox packages" \
-  bash -c '
-    if [ ! -f devbox.json ]; then
-      echo "devbox-update: devbox.json absent (devbox retired, tc-5lxy.9) -- nothing to update" >&2
-      exit 75 # UL_RC_ATTEMPTED (75 == EX_TEMPFAIL); bash -c does not inherit the lib var
-    fi
-    devbox update
-  '
-
 ul_finalize
