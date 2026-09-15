@@ -1,5 +1,7 @@
 # Nix flake for mobilecombackup - Tool for processing mobile phone backup files
-# This provides package-only distribution (development uses devbox exclusively)
+# Package distribution, plus (tc-5lxy.5) the pre-commit/treefmt/checks/devshell
+# flakeModules -- development still primarily uses devbox for now, but git
+# hooks and `nix develop` are nix-managed.
 {
   description = "Tool for processing mobile phone backup files";
 
