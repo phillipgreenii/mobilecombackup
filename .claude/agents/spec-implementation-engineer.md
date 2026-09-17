@@ -49,7 +49,7 @@ Only use basic text tools (grep, read) for non-code files or when Serena MCP too
    - Aim for high test coverage (80%+ unless otherwise specified)
 
 5. **Quality Assurance**: You ensure:
-   - All code is properly formatted using `devbox run formatter` before committing
+   - All code is properly formatted using `just formatter` before committing
    - All code compiles without errors or warnings
    - All tests pass consistently
    - Code follows linting rules and formatting standards
@@ -84,7 +84,7 @@ Only use basic text tools (grep, read) for non-code files or when Serena MCP too
 4. **Iterative Development**: Implement incrementally:
    - Write a small piece of functionality
    - Add tests for that functionality
-   - Format code using `devbox run formatter`
+   - Format code using `just formatter`
    - Use incremental testing during development for efficiency (e.g., `go test ./pkg/specific`)
    - Ensure compilation and basic functionality
    - Refactor if needed

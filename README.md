@@ -1,11 +1,12 @@
 # MobileComBackup
 
-[![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=phillipgreenii_mobilecombackup&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=phillipgreenii_mobilecombackup)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=phillipgreenii_mobilecombackup&metric=coverage)](https://sonarcloud.io/summary/new_code?id=phillipgreenii_mobilecombackup)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=phillipgreenii_mobilecombackup&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=phillipgreenii_mobilecombackup)
 
 A command-line tool for processing mobile phone backup files (Call and SMS logs in XML format). It coalesces multiple backup files, removes duplicates, extracts attachments, and organizes data by year.
+
+Developed with [Flox](https://flox.dev) and [just](https://just.systems).
 
 ## Quick Install
 
@@ -64,8 +65,8 @@ Find detailed information in our comprehensive documentation:
 
 ```bash
 # Quick setup for contributors
-devbox shell          # Enter development environment
-devbox run ci         # Run full CI pipeline
+flox activate         # Enter development environment (or let direnv auto-activate it)
+just ci                # Run full CI pipeline
 ```
 
 📖 **[Development Guide](docs/DEVELOPMENT.md)** - Complete setup, testing, and contribution workflow.

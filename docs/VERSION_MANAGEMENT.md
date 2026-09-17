@@ -24,7 +24,7 @@ git add VERSION
 git commit -m "Start v2.1.0 development"
 
 # During development, builds show: 2.1.0-dev-g1234567
-devbox run build-cli
+just build-cli
 ./mobilecombackup --version  # Shows: mobilecombackup version 2.1.0-dev-g1234567
 ```
 
@@ -60,7 +60,7 @@ The build system follows this priority order:
 
 ```bash
 # Automatic version injection during build
-devbox run build-cli  # Uses scripts/build-version.sh
+just build-cli  # Uses scripts/build-version.sh
 
 # Manual version extraction for testing
 bash scripts/build-version.sh  # Shows current version string
@@ -102,7 +102,7 @@ The `scripts/build-version.sh` script handles all edge cases:
 - [ ] Update VERSION file with new base version (e.g., `2.1.0-dev`)
 - [ ] Commit VERSION file update with clear message
 - [ ] Verify development builds show new version format
-- [ ] Test `devbox run validate-version` passes
+- [ ] Test `just validate-version` passes
 
 ### Preparing for Release
 

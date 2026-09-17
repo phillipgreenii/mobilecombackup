@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Standalone developer utility — not Nix-wrapped intentionally
 #
-# tc-5lxy.6: replaces the retired nix-flake-updates.yml / devbox-updates.yml
-# CI schedulers (and dependabot's gomod ecosystem, OPERATOR RULING 2026-08-16
+# tc-5lxy.6: replaces the retired nix-flake-updates.yml / the old
+# package-manager-lock-update CI schedulers (and dependabot's gomod ecosystem, OPERATOR RULING 2026-08-16
 # on tc-5lxy.6 — "yes, drop dependabot") with a single script sourcing
 # nix-repo-base's shared update-locks-lib.bash, driven by
 # .github/workflows/update-flakes.yml -> nix-repo-base's

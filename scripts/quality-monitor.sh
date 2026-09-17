@@ -72,8 +72,8 @@ setup_monitoring() {
   fi
 
   # Verify dependencies. This script drives `go test` directly (tc-5lxy.8) so
-  # it no longer hard-requires the devbox binary itself -- only go, which was
-  # already a separate, independent check below.
+  # it no longer hard-requires the old dev-shell wrapper binary itself --
+  # only go, which was already a separate, independent check below.
   if ! command -v go >/dev/null 2>&1; then
     log_error "Go is not installed or not in PATH"
     return 1

@@ -18,13 +18,14 @@ git clone https://github.com/phillipgreenii/mobilecombackup.git
 cd mobilecombackup
 
 # 2. Enter development environment
-devbox shell
+flox activate
+# (or rely on direnv auto-activation: `direnv allow` once, then cd in)
 
 # 3. Run tests
-devbox run test
+just tests
 
 # 4. Make changes and test
-devbox run ci  # Full CI pipeline
+just ci  # Full CI pipeline
 ```
 
 ## Development Environment Setup
@@ -34,19 +35,23 @@ devbox run ci  # Full CI pipeline
 - **Nix with flakes**: For reproducible development environment
 - **Git**: Version control and contribution workflow
 
-### Using Devbox (Recommended)
+### Using Flox (Recommended)
 
-Devbox provides a consistent development environment with all required tools:
+Flox provides a consistent development environment with all required tools, declared in
+`.flox/env/manifest.toml` (locked in `.flox/env/manifest.lock`):
 
 ```bash
-# Install devbox (if not already installed)
-curl -fsSL https://get.jetify.com/devbox | bash
+# Install flox (if not already installed) -- see https://flox.dev/docs/install-flox/
 
 # Enter development environment
-devbox shell
+flox activate
+
+# Or, with direnv (the repo's .envrc contains `use flox`): run `direnv allow`
+# once, and the environment auto-activates whenever you cd into the repo.
 
 # Available tools in the environment:
-# - Go 1.24
+# - Go 1.26.5
+# - just (task runner for the commands below)
 # - golangci-lint (code linting)
 # - gotestsum (enhanced test output)
 # - claude-code (AI development assistant)
@@ -68,27 +73,27 @@ If you prefer manual setup:
 
 ```bash
 # Build all packages
-devbox run builder
+just builder
 
 # Run tests with enhanced output
-devbox run test
+just tests
 
 # Run linting
-devbox run linter
+just linter
 
 # Format code
-devbox run formatter
+just formatter
 
 # Build CLI with version information
-devbox run build-cli
+just build-cli
 
 # Run complete CI pipeline locally
-devbox run ci
+just ci
 ```
 
 ### Nix packaging (gomod2nix)
 
-Day-to-day development uses devbox; the Nix flake exists for packaged
+Day-to-day development uses flox (with `just` as the task runner); the Nix flake exists for packaged
 distribution (`nix build`, `nix run`). The flake builds the CLI with
 `mkGoBinary` from `nix-repo-base`, which resolves Go dependencies from the
 committed `gomod2nix.toml` instead of a hand-maintained `vendorHash`.
@@ -127,12 +132,12 @@ The nix-built `--version` string is `<semver>-<8hex>`, e.g.
 `VERSION` file and the 8-hex suffix is a digest of the package's own source tree
 (ADR 0006 digest versioning in `nix-repo-base`), so the version changes when the
 source changes rather than on every commit. This is distinct from the
-`devbox run build-cli` version string, which still embeds the git description.
+`just build-cli` version string, which still embeds the git description.
 
 ### Git Hooks and Quality Enforcement
 
-Pre-commit hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5),
-not devbox. See [Git Workflow](GIT_WORKFLOW.md#git-hooks) for installation, the one-time
+Pre-commit hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5).
+See [Git Workflow](GIT_WORKFLOW.md#git-hooks) for installation, the one-time
 `core.hooksPath` migration for older clones, and the hook set (treefmt, statix, deadnix,
 shellcheck, trailing-whitespace/end-of-file fixers, etc.).
 
@@ -146,13 +151,13 @@ The project has comprehensive testing with different scopes:
 
 ```bash
 # Fast unit tests only (uses gotestsum for better output)
-devbox run test-unit
+just test-unit
 
 # Integration tests only (CLI and file I/O tests)
-devbox run test-integration
+just test-integration
 
 # Full test suite (both unit and integration tests with enhanced output)
-devbox run test
+just tests
 
 # Run tests with coverage
 go test -v -covermode=set ./...
@@ -180,8 +185,8 @@ go test -v -covermode=set ./...
 
 #### Test Development Workflow
 
-1. **During development**: Use `devbox run test-unit` for rapid feedback
-2. **Before committing**: Run `devbox run test` to ensure all tests pass
+1. **During development**: Use `just test-unit` for rapid feedback
+2. **Before committing**: Run `just tests` to ensure all tests pass
 3. **Create examples**: Add `example_test.go` files for usage documentation
 
 ### Example Test Structure
@@ -268,15 +273,15 @@ decoder := xml.NewDecoder(reader) // XXE vulnerability
 Run the complete CI pipeline locally before pushing:
 
 ```bash
-devbox run ci
+just ci
 ```
 
 This executes:
 
-1. `devbox run formatter` (go fmt ./...)
-2. `devbox run test` (full test suite with coverage)
-3. `devbox run linter` (golangci-lint run)
-4. `devbox run build-cli` (versioned binary build)
+1. `just formatter` (`nix fmt` -- treefmt/gofumpt; stricter than plain `go fmt ./...`)
+2. `just tests` (full test suite with coverage)
+3. `just linter` (golangci-lint run)
+4. `just build-cli` (versioned binary build)
 
 ### CI Environment
 
@@ -287,7 +292,8 @@ The same CI pipeline runs automatically on:
 - Manual workflow dispatch
 - Release builds (tags)
 
-All CI workflows use devbox to ensure consistency between local development and CI environments.
+All CI workflows install flox (via `flox/install-flox-action`) and run commands as
+`flox activate -- <command>` to ensure consistency between local development and CI environments.
 
 ### Code Quality Analysis
 
@@ -325,7 +331,7 @@ $ mobilecombackup --version
 mobilecombackup version 2.0.0-dev-g1234567
 
 # Validate version file format
-$ devbox run validate-version
+$ just validate-version
 ```
 
 ## Contribution Workflow
@@ -340,7 +346,7 @@ $ devbox run validate-version
    ```
 3. **Set up development environment**:
    ```bash
-   devbox shell
+   flox activate
    nix run .#install-pre-commit-hooks
    ```
 
@@ -360,7 +366,7 @@ $ devbox run validate-version
 3. **Test thoroughly**:
 
    ```bash
-   devbox run ci  # Full CI pipeline
+   just ci  # Full CI pipeline
    ```
 
 4. **Commit with quality checks**:
@@ -447,8 +453,8 @@ ast-grep --pattern 'func Test$_($$$) { $$$ }'
 
 ```bash
 # Fix: Ensure clean environment
-devbox shell --pure
-devbox run builder
+flox activate
+just builder
 ```
 
 #### Test Failures

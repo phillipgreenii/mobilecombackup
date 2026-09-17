@@ -162,13 +162,13 @@ func FuzzXMLParser(f *testing.F) {
 
 ```bash
 # Run all tests
-devbox run tests
+just tests
 
 # Run with coverage
-devbox run coverage
+just coverage
 
 # Run coverage summary
-devbox run coverage-summary
+just coverage-summary
 
 # Run benchmarks
 go test -bench=. ./...
@@ -181,7 +181,7 @@ go test -fuzz=FuzzXMLParser -fuzztime=30s ./pkg/sms
 
 ```bash
 # Generate detailed coverage report
-devbox run coverage
+just coverage
 
 # View coverage in browser
 open coverage.html
@@ -270,11 +270,11 @@ Priority for improvement: `pkg/sms`, `pkg/calls`, `pkg/metrics`, `pkg/importer`
 
 ```bash
 # Complete testing workflow
-devbox run formatter  # Format code
-devbox run tests      # Run all tests
-devbox run linter     # Check code quality
-devbox run coverage   # Generate coverage report
-devbox run build-cli  # Verify builds
+just formatter  # Format code
+just tests      # Run all tests
+just linter     # Check code quality
+just coverage   # Generate coverage report
+just build-cli  # Verify builds
 ```
 
 This ensures code quality, test coverage, and build integrity before deployment.

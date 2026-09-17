@@ -1,8 +1,8 @@
 # Nix flake for mobilecombackup - Tool for processing mobile phone backup files
 # Package distribution, plus (tc-5lxy.5) the pre-commit/treefmt/checks/devshell
 # flakeModules -- day-to-day development uses flox (.flox/env/manifest.toml,
-# tc-5lxy.9; devbox retired), while git hooks and `nix develop` are
-# nix-managed.
+# tc-5lxy.9; the previous shell-management tool was retired), while git hooks
+# and `nix develop` are nix-managed.
 {
   description = "Tool for processing mobile phone backup files";
 
@@ -41,7 +41,7 @@
       ];
 
       # tc-5lxy.5: adopt the shared pre-commit/treefmt/checks/devshell
-      # flakeModules from nix-repo-base instead of the devbox-era
+      # flakeModules from nix-repo-base instead of the prior
       # .githooks/scripts/install-hooks.sh setup. pre-commit transitively
       # imports treefmt (nix-repo-base's own pre-commit.nix comment), so
       # treefmt is NOT imported separately here.

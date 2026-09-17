@@ -1,5 +1,5 @@
-# mobilecombackup justfile — translated from devbox.json's shell.scripts
-# (tc-5lxy.8). Recipes stay thin; heavy logic stays in scripts/*.
+# mobilecombackup justfile — translated from the previous package manifest's
+# shell.scripts (tc-5lxy.8). Recipes stay thin; heavy logic stays in scripts/*.
 #
 # just's default shell is `sh -cu`, which several recipes below rely on
 # bash for (e.g. full-test.sh's bash-only `[[ ]]`). Force bash for every
@@ -13,7 +13,8 @@ default:
 
 # Upgraded from `go fmt ./...` to `nix fmt` (treefmt, which runs the
 # stricter gofumpt) now that tc-5lxy.5 gives the flake a formatter output.
-# This is the one permitted difference from devbox's `formatter` script.
+# This is the one permitted difference from the previous manifest's
+# `formatter` script.
 formatter:
     nix fmt
 
@@ -34,7 +35,7 @@ linter:
 
 # Parameterized recipe backing `mobilecombackup smart-verify`'s targeted-test
 # path (cmd/mobilecombackup/cmd/smart_verify.go's runTargetedTests). The
-# prior devbox-based implementation invoked devbox's arbitrary-command
+# prior implementation invoked the old package manager's arbitrary-command
 # passthrough with a runtime-computed ./pkg/... list; `just` has no
 # passthrough verb, so this recipe exists solely to give that call a named
 # target (tc-5lxy.14). `pkgs` is one space-separated string of package
@@ -59,7 +60,7 @@ full-test:
     bash full-test.sh
 
 # Composed via recipe dependencies (not by shelling out to `just`), in the
-# same order devbox.json's ci ran them: formatter, tests, linter, build-cli.
+# same order the previous manifest's ci ran them: formatter, tests, linter, build-cli.
 ci: formatter tests linter build-cli
 
 # --- coverage ---

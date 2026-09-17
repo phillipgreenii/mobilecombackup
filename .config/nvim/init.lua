@@ -7,7 +7,7 @@ end
 -- Project-specific Go configuration
 local project_root = vim.fn.getcwd()
 
--- Ensure gopls is available (provided by devbox)
+-- Ensure gopls is available (provided by flox)
 local lspconfig = require('lspconfig')
 
 -- Configure gopls for Go development
@@ -42,7 +42,8 @@ lspconfig.gopls.setup({
   end,
 })
 
--- Project-specific keymaps (tc-5lxy.8: retargeted from `devbox run` to `just`)
+-- Project-specific keymaps (tc-5lxy.8: retargeted from the old shell
+-- wrapper's `run` subcommand to `just`)
 vim.keymap.set('n', '<leader>df', ':!just formatter<CR>', { desc = 'Run formatter' })
 vim.keymap.set('n', '<leader>dt', ':!just test-unit<CR>', { desc = 'Run unit tests' })
 vim.keymap.set('n', '<leader>dT', ':!just tests<CR>', { desc = 'Run all tests' })

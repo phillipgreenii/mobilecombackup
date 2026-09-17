@@ -1,6 +1,6 @@
 # ADR-0005: Development Tool Ecosystem Choices
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0006](0006-flox-based-development-environment.md)
 **Date:** 2024-01-15
 **Author:** Development Team
 **Deciders:** Core development team
@@ -152,3 +152,7 @@ We chose **Devbox** as the primary development environment manager with these co
 
 - **ADR-0001**: Streaming Processing - Development tools support streaming architecture testing
 - **ADR-0003**: XML Security - Security linting integrated into development workflow
+- **Superseded by**: [ADR-0006](0006-flox-based-development-environment.md) (Flox-Based
+  Development Environment, 2026-09-15) — this ADR's content below is left unedited as the
+  historical record of the decision as originally made; it does not describe the project's
+  current tooling.

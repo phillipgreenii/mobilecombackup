@@ -12,16 +12,16 @@ This is a Go command-line tool for processing mobile phone backup files (Call an
 
 ```bash
 # Environment
-devbox shell              # Enter development environment
-devbox run ci             # Run full CI pipeline (format + test + lint + build)
+flox activate              # Enter development environment (or rely on direnv auto-activation)
+just ci                    # Run full CI pipeline (format + test + lint + build)
 
 # Testing & Quality
-devbox run test           # Run all tests
-devbox run formatter      # Format code
-devbox run linter         # Run linter
+just tests                 # Run all tests
+just formatter             # Format code (nix fmt / treefmt+gofumpt)
+just linter                # Run linter
 
 # Building
-devbox run build-cli      # Build CLI with version info
+just build-cli              # Build CLI with version info
 ```
 
 ### Issue Workflow Commands
@@ -52,11 +52,13 @@ bd create -t bug "description"       # Create new bug issue
 
 ### Development Environment
 
-**All development and agent work assumes you are in the Devbox shell environment.**
+**All development and agent work assumes you are in the activated Flox environment.**
 
 ```bash
 # Enter the development environment
-devbox shell
+flox activate
+# (or just cd into the repo -- .envrc runs `use flox`, so direnv
+# auto-activates after a one-time `direnv allow`)
 
 # You'll see this message when environment loads:
 📋 Setting up development environment...
@@ -64,19 +66,19 @@ devbox shell
 
 **Key Facts:**
 
-- Devbox provides a reproducible development environment via Nix
-- All tools are automatically available when in `devbox shell`
-- Commands like `devbox run test` work from any directory within the repo
+- Flox provides a reproducible development environment via Nix
+- All tools are automatically available once the environment is activated
+- Commands like `just tests` work from any directory within the repo
 - Environment is isolated - doesn't affect your global system
-- Running `devbox shell` automatically runs `go mod tidy` and installs git hooks
+- Activating the environment automatically runs `go mod tidy` (via the manifest's `[hook]`) and sets up the project-specific Neovim config; git hooks are installed separately via nix (see [Git Workflow](docs/GIT_WORKFLOW.md#git-hooks))
 
-### Tools Provided by Devbox
+### Tools Provided by Flox
 
-These tools are defined in `devbox.json` and automatically available in the devbox shell:
+These tools are defined in `.flox/env/manifest.toml` and automatically available once the environment is activated:
 
 **Go Development:**
 
-- `go` - Go compiler and toolchain (version pinned by the `go@<version>` entry in `devbox.json`)
+- `go` - Go compiler and toolchain (version pinned by `go.version` in `.flox/env/manifest.toml`, currently 1.26.5)
 - `gopls@latest` - Go language server for editor integration
 - `golangci-lint@latest` - Comprehensive Go linter
 - `gotestsum@latest` - Enhanced test output formatter
@@ -97,109 +99,112 @@ These tools are defined in `devbox.json` and automatically available in the devb
 - `viu@latest` - Terminal image viewer
 - `deno@2` - JavaScript/TypeScript runtime
 - `uv@latest` - Fast Python package installer
-- `claude-code@1.0.72` - Claude Code CLI
+- `claude-code` - Claude Code CLI (unpinned/floats to latest -- see `.flox/env/manifest.toml`'s `[install]` comment for why)
 
 **Available via MCP (Claude Code extension):**
 
 - Serena MCP tools - Semantic code analysis
 - All `mcp__serena__*` functions for Go code manipulation
 
-### Devbox Commands
+### just Commands
 
-All `devbox run` commands are defined in `devbox.json` under `shell.scripts`:
+All `just` recipes are defined in the repo-root `justfile` (translated from the previous
+manifest's `shell.scripts`, tc-5lxy.8):
 
 **Core Development:**
 
 ```bash
-devbox run formatter        # Run go fmt ./...
-devbox run builder          # Build all packages
-devbox run tests            # Run all tests with gotestsum
-devbox run test-unit        # Run unit tests only (skip integration)
-devbox run test-integration # Run integration tests only
-devbox run linter           # Run golangci-lint
-devbox run linter-fix       # Run linter with auto-fix
-devbox run build-cli        # Build CLI with version info
-devbox run ci               # Full CI pipeline: format, test, lint, build
+just formatter        # Run nix fmt (treefmt/gofumpt -- stricter than plain go fmt)
+just builder           # Build all packages
+just tests             # Run all tests with gotestsum
+just test-unit         # Run unit tests only (skip integration)
+just test-integration  # Run integration tests only
+just linter            # Run golangci-lint
+just linter-fix        # Run linter with auto-fix
+just build-cli         # Build CLI with version info
+just ci                # Full CI pipeline: format, test, lint, build
 ```
 
 **Quality & Validation:**
 
 ```bash
-devbox run validate-docs     # Validate documentation health
-devbox run update-doc-health # Update dashboard metrics
-devbox run coverage          # Generate HTML coverage report
-devbox run coverage-summary  # Show coverage summary
+just validate-docs     # Validate documentation health
+just update-doc-health # Update dashboard metrics
+just coverage          # Generate HTML coverage report
+just coverage-summary  # Show coverage summary
 ```
 
 **Development Workflow:**
 
-Pre-commit hooks are now managed by nix (tc-5lxy.5), not devbox — see
+Pre-commit hooks are managed by nix (tc-5lxy.5) — see
 [Git Workflow](docs/GIT_WORKFLOW.md#git-hooks): `nix run .#install-pre-commit-hooks`.
 
 ```bash
-devbox run validate-version  # Validate version strings
-devbox run list-issues       # List all issues
-devbox run ccusage           # Monitor Claude Code usage
+just validate-version  # Validate version strings
+just ccusage            # Monitor Claude Code usage
 ```
+
+(The old `list-issues` script has no replacement — the `issues/` markdown tracker was retired
+in favor of `bd`; see [Issue Development Workflow](#issue-development-workflow) below.)
 
 ### Tool Availability Rules
 
-**✅ Available in devbox shell:**
+**✅ Available in the activated Flox environment:**
 
 - All 13 tools listed above with specified versions
-- All `devbox run` commands
+- All `just` recipes
 - Git operations (system git)
 - Standard shell commands (bash, etc.)
 
-**❌ NOT available outside devbox shell:**
+**❌ NOT available outside the activated Flox environment:**
 
 - `ast-grep`, `fd`, `ripgrep`, `gopls`, `golangci-lint`, `gotestsum`
-- The pinned Go version (see the `go@<version>` entry in `devbox.json`)
+- The pinned Go version (see `go.version` in `.flox/env/manifest.toml`)
 - `jq`, `yq`, `viu`, `deno`, `uv`, `claude-code`
-- Project-specific `devbox run` commands
+- Project-specific `just` recipes that call flox-provided tools directly
 
-**⚠️ May vary if used outside devbox:**
+**⚠️ May vary if used outside the Flox environment:**
 
-- `go` - System version likely different from the version pinned in `devbox.json`
+- `go` - System version likely different from the version pinned in `.flox/env/manifest.toml`
 - `jq`, `yq` - May be installed globally but different versions
 
 ### Common Environment Issues
 
-**Issue: `command not found: devbox`**
+**Issue: `command not found: flox`**
 
-- **Cause**: Devbox not installed on system
-- **Solution**: Install devbox or use manual setup (see [Development Guide](docs/DEVELOPMENT.md#manual-setup))
+- **Cause**: Flox not installed on system
+- **Solution**: Install Flox (see https://flox.dev/docs/install-flox/) or use manual setup (see [Development Guide](docs/DEVELOPMENT.md#manual-setup))
 
-**Issue: `command not found: ast-grep` (or other devbox tool)**
+**Issue: `command not found: ast-grep` (or other Flox-provided tool)**
 
-- **Cause**: Not in devbox shell environment
-- **Solution**: Run `devbox shell` first
+- **Cause**: Not in the activated Flox environment
+- **Solution**: Run `flox activate` first (or let direnv auto-activate)
 
-**Issue: Wrong Go version (system Go instead of the version pinned in `devbox.json`)**
+**Issue: Wrong Go version (system Go instead of the version pinned in `.flox/env/manifest.toml`)**
 
-- **Cause**: Using system Go instead of devbox Go
-- **Solution**: Ensure you're in `devbox shell`, verify with `go version`
+- **Cause**: Using system Go instead of the Flox-provided Go
+- **Solution**: Ensure you're in the activated Flox environment, verify with `go version`
 
-**Issue: `devbox run test` doesn't work**
+**Issue: `just tests` doesn't work**
 
 - **Cause**: Not in project directory or subdirectory
-- **Solution**: `cd` to project root where `devbox.json` exists
+- **Solution**: `cd` to project root where `justfile` exists
 
-**Issue: Changes to `devbox.json` not taking effect**
+**Issue: Changes to `.flox/env/manifest.toml` not taking effect**
 
-- **Cause**: Need to reload devbox shell
-- **Solution**: Exit and re-enter: `exit` then `devbox shell`
+- **Cause**: Need to reactivate the Flox environment
+- **Solution**: Exit and re-enter: `flox deactivate` then `flox activate`
 
 ### Environment Verification Commands
 
-**Check if you're in devbox shell:**
+**Check if you're in the activated Flox environment:**
 
 ```bash
-# Method 1: Check environment variable
-echo $DEVBOX_SHELL_ENABLED  # Should output: 1
+# Method 1: Check environment variable (flox exports this while active)
+echo $FLOX_ENV  # Should output a /nix/store/... path, not empty
 
 # Method 2: Check Go version
-go version  # Should match the `go@<version>` pin in devbox.json
+go version  # Should match the `go.version` pin in .flox/env/manifest.toml
 
 # Method 3: Check tool availability
 which ast-grep  # Should show path in /nix/store/...
@@ -208,7 +213,7 @@ which ast-grep  # Should show path in /nix/store/...
 **Verify specific tools:**
 
 ```bash
-# Check all devbox-provided tools are available
+# Check all Flox-provided tools are available
 ast-grep --version
 fd --version
 ripgrep --version
@@ -218,25 +223,26 @@ gotestsum --version
 jq --version
 yq --version
 deno --version
-go version  # Should match the `go@<version>` pin in devbox.json
+go version  # Should match the `go.version` pin in .flox/env/manifest.toml
 ```
 
-**List all available devbox commands:**
+**List all available just recipes:**
 
 ```bash
-devbox run --help  # Shows all commands defined in devbox.json
+just --list  # Shows all recipes defined in the justfile
 ```
 
-### Init Hook Automation
+### Activation Hook Automation
 
-When you run `devbox shell`, these commands run automatically:
+When you run `flox activate` (or direnv auto-activates), these commands run automatically
+(the manifest's `[hook]` on-activate, plus `[profile]` for interactive-shell aliases):
 
 1. `go mod tidy` - Ensures Go dependencies are clean
-2. Neovim config setup - Loads project-specific Neovim config (if `.config/nvim` exists)
+2. Neovim config setup - Exports `NVIM_PROJECT_CONFIG` and (in an interactive shell) aliases `vim`/`nvim` to load the project-specific Neovim config (if `.config/nvim` exists)
 
 **This means:**
 
-- Dependencies are always up-to-date when entering shell
+- Dependencies are always up-to-date when entering the environment
 
 Git hooks are separately managed by nix (tc-5lxy.5) — see
 [Git Workflow](docs/GIT_WORKFLOW.md#git-hooks). They install/refresh automatically on `nix develop`
@@ -244,21 +250,21 @@ devShell entry, or via `nix run .#install-pre-commit-hooks`.
 
 ### Assumptions in Documentation
 
-**When you see `devbox run <command>`:**
+**When you see `just <recipe>`:**
 
-- Assumes devbox is installed
-- Assumes you're in project directory (where `devbox.json` exists)
+- Assumes `just` is on PATH (it's one of the Flox-installed packages)
+- Assumes you're in project directory (where `justfile` exists)
 - Can be run from any subdirectory of the project
 
 **When you see `ast-grep`, `jq`, `yq`, etc:**
 
-- Assumes you're in `devbox shell`
-- These are NOT system commands, they're devbox-provided
+- Assumes the Flox environment is activated
+- These are NOT system commands, they're Flox-provided
 
 **When you see `go build`, `go test`, etc:**
 
-- Assumes you're in `devbox shell` (using the Go version pinned in `devbox.json`)
-- Assumes `go mod tidy` has run (automatic in init hook)
+- Assumes the Flox environment is activated (using the Go version pinned in `.flox/env/manifest.toml`)
+- Assumes `go mod tidy` has run (automatic in the activation hook)
 
 **When you see scripts like `bash scripts/something.sh`:**
 
@@ -268,30 +274,31 @@ devShell entry, or via `nix run .#install-pre-commit-hooks`.
 
 ### Quick Reference Table
 
-| What                   | Where           | Command                                                    |
-| ---------------------- | --------------- | ---------------------------------------------------------- |
-| **Enter devbox**       | Any directory   | `devbox shell`                                             |
-| **Exit devbox**        | In devbox shell | `exit` or Ctrl+D                                           |
-| **Check if in devbox** | In shell        | `echo $DEVBOX_SHELL_ENABLED`                               |
-| **Verify Go version**  | In devbox       | `go version` (should match the `go@` pin in `devbox.json`) |
-| **Run tests**          | In devbox       | `devbox run tests`                                         |
-| **Validate docs**      | In devbox       | `devbox run validate-docs`                                 |
-| **Full CI pipeline**   | In devbox       | `devbox run ci`                                            |
-| **List all commands**  | In devbox       | `devbox run --help`                                        |
-| **Update environment** | Outside devbox  | `devbox update`                                            |
+| What                     | Where            | Command                                                               |
+| ------------------------ | ---------------- | --------------------------------------------------------------------- |
+| **Enter Flox env**       | Any directory    | `flox activate` (or direnv auto-activation)                           |
+| **Exit Flox env**        | In Flox env      | `flox deactivate` or Ctrl+D                                           |
+| **Check if in Flox env** | In shell         | `echo $FLOX_ENV`                                                      |
+| **Verify Go version**    | In Flox env      | `go version` (should match `go.version` in `.flox/env/manifest.toml`) |
+| **Run tests**            | In Flox env      | `just tests`                                                          |
+| **Validate docs**        | In Flox env      | `just validate-docs`                                                  |
+| **Full CI pipeline**     | In Flox env      | `just ci`                                                             |
+| **List all recipes**     | In Flox env      | `just --list`                                                         |
+| **Update environment**   | Outside Flox env | `flox update`                                                         |
 
-### Why Devbox?
+### Why Flox?
 
 **Benefits:**
 
 - **Reproducible**: Exact same environment on every machine
 - **Isolated**: Doesn't pollute global system with project tools
-- **Declarative**: Environment defined in `devbox.json`
-- **Versioned**: Specific tool versions guaranteed (pins declared in `devbox.json`)
+- **Declarative**: Environment defined in `.flox/env/manifest.toml`
+- **Versioned**: Specific tool versions guaranteed (pins declared in the manifest)
 - **Fast**: Nix caching makes environment activation quick
-- **Comprehensive**: All 13 tools in one `devbox shell` command
+- **Comprehensive**: All 13 tools plus `just` in one `flox activate` command
+- **Workspace-native**: Nix-based, so it composes with the rest of this repo's shared `pn-workspace.toml` infrastructure (see [ADR-0006](docs/adr/0006-flox-based-development-environment.md))
 
-**Alternative:** If devbox isn't available, see [Development Guide - Manual Setup](docs/DEVELOPMENT.md#manual-setup) for installing tools individually.
+**Alternative:** If Flox isn't available, see [Development Guide - Manual Setup](docs/DEVELOPMENT.md#manual-setup) for installing tools individually.
 
 ## Development Commands
 
@@ -299,10 +306,10 @@ For verification workflow and quality commands, see [Verification Workflow](docs
 
 ```bash
 # Development shortcuts
-devbox shell         # Enter development environment
-devbox run builder   # Build all packages
+flox activate        # Enter development environment (or rely on direnv auto-activation)
+just builder         # Build all packages
 
-# Git hooks (quality enforcement) -- managed by nix (tc-5lxy.5), not devbox
+# Git hooks (quality enforcement) -- managed by nix (tc-5lxy.5)
 nix run .#install-pre-commit-hooks  # Install/refresh pre-commit + pre-push hooks
 ```
 
@@ -669,14 +676,14 @@ mcp__serena__replace_symbol_body
 
 #### Test Commands
 
-- `devbox run test-unit`: Fast unit tests only (uses `gotestsum` for better output)
-- `devbox run test-integration`: Integration tests only (CLI and file I/O tests)
-- `devbox run test`: Full test suite (both unit and integration tests with enhanced output)
+- `just test-unit`: Fast unit tests only (uses `gotestsum` for better output)
+- `just test-integration`: Integration tests only (CLI and file I/O tests)
+- `just tests`: Full test suite (both unit and integration tests with enhanced output)
 
 #### Test Development Workflow
 
-1. **During development**: Use `devbox run test-unit` for rapid feedback
-2. **Before committing**: Run `devbox run test` to ensure all tests pass
+1. **During development**: Use `just test-unit` for rapid feedback
+2. **Before committing**: Run `just tests` to ensure all tests pass
 3. **Integration tests**: Use `testing.Short()` to skip in unit-only runs
 4. **Unit tests**: Add `t.Parallel()` to pure logic tests for performance
 
@@ -876,7 +883,7 @@ This section documents frequent mistakes agents make and how to avoid them.
 
 When stuck on common issues:
 
-1. **Tests failing**: Run `devbox run formatter` first - formatting fixes many test issues
+1. **Tests failing**: Run `just formatter` first - formatting fixes many test issues
 2. **Linter errors**: Check if it's an import issue - run `go mod tidy`
 3. **Build failing**: Verify all imports use full paths: `github.com/phillipgreenii/mobilecombackup/pkg/...`
 4. **Git hook blocking**: Run `nix run .#install-pre-commit-hooks` to reinstall/refresh, or `prek run` to see hook output directly (see [Git Workflow](docs/GIT_WORKFLOW.md#git-hooks))

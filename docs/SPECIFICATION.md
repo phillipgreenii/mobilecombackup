@@ -1897,7 +1897,8 @@ Automatic code formatting is integrated into the development workflow to ensure 
 
 **Formatting Requirements:**
 
-- All Go code must be formatted using `devbox run formatter` (executes `go fmt ./...`)
+- All Go code must be formatted using `just formatter` (executes `nix fmt` -- treefmt/gofumpt,
+  stricter than plain `go fmt ./...`)
 - Formatting is mandatory before testing and committing
 - Follows standard Go formatting conventions without custom configuration
 
@@ -1910,7 +1911,8 @@ Automatic code formatting is integrated into the development workflow to ensure 
 
 **Implementation:**
 
-- Uses existing `devbox run formatter` script in devbox.json
+- Uses existing `formatter` recipe in the repo-root `justfile` (the successor to the retired
+  shell-scripts config, translated by tc-5lxy.8)
 - Was integrated into the agent auto-commit workflow via `.claude/commands/implement-issue.md`, retired in tc-5lxy.22 along with the rest of the git-based `issues/` tracker; the same formatter-first ordering now applies to `bd`-based work via CLAUDE.md's Git Workflow section
 - Quality verification process updated to include formatting as first step
 - Comprehensive documentation in CLAUDE.md Code Formatting Best Practices section
@@ -1998,10 +2000,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 The completion protocol integrates with the existing quality pipeline:
 
-1. **Format**: `devbox run formatter` - Code formatting verification
-2. **Test**: `devbox run tests` - Unit and integration test execution
-3. **Lint**: `devbox run linter` - Static analysis and style checks
-4. **Build**: `devbox run build-cli` - Compilation verification
+1. **Format**: `just formatter` - Code formatting verification
+2. **Test**: `just tests` - Unit and integration test execution
+3. **Lint**: `just linter` - Static analysis and style checks
+4. **Build**: `just build-cli` - Compilation verification
 
 This ensures that all agent-committed code meets project quality standards before being committed to the repository.
 
@@ -2043,122 +2045,83 @@ This enhanced protocol maintains full backward compatibility while providing sig
 
 ### Pre-Commit Hook Optimization (FEAT-072)
 
-The project includes an optimized pre-commit hook system that intelligently skips expensive test operations for documentation-only changes, significantly improving developer productivity while maintaining all safety guarantees.
+Historically, the project's pre-commit hook was a custom bash script that intelligently skipped
+expensive test operations for documentation-only changes, analyzing
+`git diff --cached --name-only` to detect markdown-only commits and running formatter + linter
+only (skipping tests) in that case, while any mixed/code commit ran the full check set.
 
-#### Optimization Logic
+That custom script (`scripts/install-hooks.sh` and `.githooks/pre-commit`) was deleted when
+pre-commit hooks were migrated to the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5).
+Hooks are now installed/refreshed with `nix run .#install-pre-commit-hooks` (this also runs
+automatically on `nix develop` devShell entry), and can be run directly with
+`prek run --all-files` (all files) or `prek run` (changed files). Whether the current hook set
+still applies the same markdown-only-skips-tests optimization is not established here; consult
+the flake's pre-commit hook configuration for the current behavior.
 
-The pre-commit hook analyzes staged files using `git diff --cached --name-only` to determine the commit type:
-
-```bash
-is_markdown_only_commit() {
-    staged_files=$(git diff --cached --name-only --diff-filter=AMDRC)
-
-    if [ -z "$staged_files" ]; then
-        return 1  # No staged files
-    fi
-
-    for file in $staged_files; do
-        case "$file" in
-            *.md|*.markdown) continue ;;
-            *) return 1 ;;  # Non-markdown file found
-        esac
-    done
-
-    return 0  # All staged files are markdown
-}
-```
-
-#### Check Strategies
-
-- **Markdown-only commits**: Runs formatter and linter only (skips tests)
-- **Mixed/code commits**: Runs all checks (formatter, tests, linter)
-- **Empty commits**: Runs all checks (safety default)
-
-#### Performance Achievements
-
-- **Markdown-only commits**: 6-7s execution time (70%+ improvement from ~30s baseline)
-- **Code commits**: <30s execution time (unchanged, maintains full quality checks)
-- **Detection overhead**: ~0.1s (minimal impact)
-
-#### Safety Guarantees
-
-- **Preserved Quality Checks**: Formatter and linter always run for all commits
-- **Conservative Logic**: Any mixed content triggers full quality pipeline
-- **Bypass Mechanism**: `git commit --no-verify` still available when needed
-- **Clear Messaging**: Users informed about optimization decisions and performance metrics
-
-#### Integration
-
-- **Installation**: Included in standard `devbox run install-hooks` workflow
-- **Compatibility**: Works seamlessly with existing devbox scripts
-- **User Experience**: Clear progress indicators show which optimization path is taken
-- **Edge Cases**: Handles file renames, deletions, case sensitivity, and complex git operations
-
-This optimization specifically targets the common developer workflow of making documentation updates, reducing friction while maintaining all essential quality controls.
-
-## Continuous Integration with Devbox (FEAT-026)
+## Continuous Integration with Flox (FEAT-026)
 
 ### Overview
 
-The project uses devbox for continuous integration to ensure consistency between local development and CI environments. All CI workflows use the same tool versions and configurations as local development.
+The project uses Flox for continuous integration to ensure consistency between local development
+and CI environments. All CI workflows use the same tool versions and configurations as local
+development. (Migrated to Flox from an earlier per-project environment manager by the tc-5lxy
+series of issues: tc-5lxy.9/.8/.5/.6/.22.)
 
 ### CI Pipeline
 
-The CI pipeline is defined as a single devbox script that executes all quality checks in sequence:
+The local CI pipeline is defined as a `just` recipe (repo-root `justfile`) that executes all
+quality checks in sequence:
 
-```json
-{
-  "scripts": {
-    "ci": [
-      "devbox run formatter",
-      "devbox run tests",
-      "devbox run linter",
-      "devbox run build-cli"
-    ]
-  }
-}
+```
+ci: formatter tests linter build-cli
 ```
 
 ### GitHub Actions Integration
 
-Both CI workflows use the `jetify-com/devbox-install-action@v0.11.0` instead of direct tool installation:
+CI workflows install the environment with `flox/install-flox-action@v2.6.0`, then run each step as
+`flox activate -- <command>` instead of direct tool installation:
 
 #### Test Workflow (.github/workflows/test.yml)
 
 - Triggers on: pushes to main, pull requests to main, manual dispatch
-- Single job that runs `devbox run ci`
-- Replaces separate lint and test jobs with unified CI pipeline
+- Runs `flox activate -- just formatter`, `flox activate -- go test -v -covermode=set
+-coverprofile=coverage.out ./...`, `flox activate -- just linter`, and
+  `flox activate -- just build-cli` as discrete steps, followed by the SonarQube scan
+- Replaced separate lint and test jobs with this unified pipeline
 
 #### Release Workflow (.github/workflows/release.yml)
 
 - Triggers on: tag pushes, manual dispatch
-- Runs CI pipeline before building release binaries via `pre_command: devbox run ci`
-- Uses same Go 1.24 version as local development
+- Runs the CI pipeline before building release binaries via
+  `pre_command: flox activate -- just ci && export CGO_ENABLED=0`
+- Builds with `flox activate -- just build-cli`
+- Uses the same Go version (1.26.5) as local development
 
 ### Benefits
 
 **Environment Consistency:**
 
-- Same Go version (1.24) in local development and CI
+- Same Go version (1.26.5) in local development and CI
 - Same golangci-lint version and configuration
 - Same build and test commands
 - No version drift between environments
 
 **Simplified Maintenance:**
 
-- Tool versions managed in single location (devbox.json)
+- Tool versions managed in a single location (`.flox/env/manifest.toml`, locked in
+  `.flox/env/manifest.lock`)
 - No need to update multiple workflow files when dependencies change
 - Reduced CI configuration complexity
 
 **Developer Experience:**
 
-- `devbox run ci` provides local CI simulation
+- `just ci` (inside an activated Flox environment) provides local CI simulation
 - Developers can verify changes before pushing
 - Consistent failure modes between local and CI environments
 
 ### Pipeline Steps
 
-1. **Formatting** (`go fmt ./...`): Ensures consistent code style
+1. **Formatting** (`nix fmt` -- treefmt/gofumpt, via `just formatter`): Ensures consistent code style
 2. **Testing** (`go test -v -covermode=set ./...`): Runs full test suite with coverage
 3. **Linting** (`golangci-lint run`): Static analysis and code quality checks
 4. **Building** (`go build` with version injection): Validates compilation
@@ -2173,10 +2136,14 @@ Both CI workflows use the `jetify-com/devbox-install-action@v0.11.0` instead of 
 
 **Current Approach:**
 
-- Unified devbox environment using `jetify-com/devbox-install-action@v0.11.0`
-- Go 1.24 (significant version upgrade from 1.16.x)
+- Unified Flox environment via `flox/install-flox-action@v2.6.0`, activated per-step with
+  `flox activate -- <command>`
+- Go 1.26.5 (a significant version upgrade from 1.16.x)
+- Task commands defined as `just` recipes (repo-root `justfile`), tool versions defined in
+  `.flox/env/manifest.toml`
 - All tools and versions consistent with local development environment
-- Single `devbox run ci` command for complete pipeline execution
+- Single `just ci` command (run inside an activated Flox environment) for complete pipeline
+  execution
 
 ## Consistent Versioning Scheme (FEAT-031)
 
@@ -2207,11 +2174,11 @@ The build system follows this priority order:
 - Handles all version extraction scenarios with proper edge case handling
 - Supports git tag-based releases and development builds
 - Graceful fallbacks for missing git or VERSION file
-- Used by devbox build-cli command for consistent version injection
+- Used by the `just build-cli` recipe for consistent version injection
 
 #### Build System Integration
 
-- **devbox.json**: `build-cli` command uses version extraction script
+- **justfile**: `build-cli` recipe uses the version extraction script
 - **GitHub Actions**: Updated workflows with proper git history access (`fetch-depth: 0`)
 - **SonarQube Integration**: Dynamic version passing via command-line arguments
 
@@ -2237,8 +2204,8 @@ The build system follows this priority order:
 
 **Developer Experience:**
 
-- Simple `devbox run build-cli` for version-aware builds
-- `devbox run validate-version` for version file verification
+- Simple `just build-cli` for version-aware builds
+- `just validate-version` for version file verification
 - Clear checklists for version update workflows
 - Automatic handling of all edge cases and fallbacks
 
@@ -2278,7 +2245,7 @@ The project integrates with SonarQube Cloud for automated code quality analysis,
 **Seamless Integration:**
 
 - Runs automatically on pull requests and main branch commits
-- Integrates with existing devbox-based CI pipeline
+- Integrates with the existing Flox-based CI pipeline
 - Dynamic version extraction using FEAT-031 versioning system
 - Coverage reports generated using standard Go tooling
 
@@ -2297,7 +2264,7 @@ The project integrates with SonarQube Cloud for automated code quality analysis,
 - Extended existing CI workflow with SonarQube analysis step
 - Uses `SonarSource/sonarqube-scan-action@v2` for analysis
 - Requires `SONAR_TOKEN` repository secret for authentication
-- Coverage generation via `devbox run go test -coverprofile=coverage.out`
+- Coverage generation via `flox activate -- go test -v -covermode=set -coverprofile=coverage.out ./...`
 
 ### Quality Metrics and Badges
 
@@ -2344,10 +2311,10 @@ The project integrates with SonarQube Cloud for automated code quality analysis,
 
 The SonarQube analysis integrates seamlessly with the existing CI pipeline:
 
-1. **Code Formatting**: `devbox run formatter` (existing)
-2. **Test Execution**: `devbox run go test -coverprofile=coverage.out` (enhanced for coverage)
-3. **Linting**: `devbox run linter` (existing)
-4. **CLI Build**: `devbox run build-cli` (existing)
+1. **Code Formatting**: `just formatter` (existing)
+2. **Test Execution**: `flox activate -- go test -coverprofile=coverage.out ./...` (enhanced for coverage)
+3. **Linting**: `just linter` (existing)
+4. **CLI Build**: `just build-cli` (existing)
 5. **SonarQube Analysis**: Runs after successful completion of all previous steps
 
 This integration maintains the established quality workflow while adding comprehensive code quality analysis and historical tracking capabilities.

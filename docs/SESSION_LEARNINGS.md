@@ -6,7 +6,7 @@ This document captures implementation-specific learnings from various feature de
 
 ### YAML Dependency Management
 
-- **Adding Go dependencies**: Use `devbox run go get package` or enter `devbox shell` and run `go get package`
+- **Adding Go dependencies**: Enter `flox activate` and run `go get package` (or `flox activate -- go get package` to run it in one shot without staying in the shell)
 - **Dependency visibility**: Added `gopkg.in/yaml.v3 v3.0.1` to `go.mod` for contacts YAML parsing
 - **Build verification**: Always test compilation after adding dependencies
 
@@ -219,7 +219,7 @@ Projects achieved excellent test coverage through systematic testing:
 
 ### Common Issues and Solutions
 
-- **Devbox environment problems**: Use `devbox run command` to run commands without entering the shell
+- **Flox environment problems**: Use `flox activate -- command` to run a command in the environment without staying in the shell, or rely on direnv auto-activation (`.envrc` runs `use flox`)
 - **Legacy code conflicts**: Remove old implementations when starting fresh features
 - **Import path issues**: Always use full module path `github.com/phillipgreenii/mobilecombackup/pkg/...`
 - **Date conversion**: Timestamps are in milliseconds, not seconds - divide by 1000 for Unix time

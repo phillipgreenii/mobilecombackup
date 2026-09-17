@@ -60,7 +60,7 @@ Add to your `flake.nix` inputs for reproducible builds:
 
 - **Go 1.24+**: Required for building
 - **Git**: For cloning the repository
-- **Devbox** (optional): For consistent development environment
+- **Flox** (optional): For consistent development environment
 
 #### Build Steps
 
@@ -70,7 +70,7 @@ git clone https://github.com/phillipgreenii/mobilecombackup.git
 cd mobilecombackup
 
 # Option 1: Build with automatic version injection (recommended)
-devbox run build-cli
+just build-cli
 
 # Option 2: Manual build with version information
 VERSION=$(bash scripts/build-version.sh)
@@ -82,13 +82,17 @@ go build -o mobilecombackup github.com/phillipgreenii/mobilecombackup/cmd/mobile
 
 #### Development Environment Setup
 
-For active development, use the devbox environment:
+For active development, use the Flox environment:
 
 ```bash
 # Enter development environment with all dependencies
-devbox shell
+flox activate
 
-# Available tools: go 1.24, golangci-lint, gotestsum, and more
+# Or rely on direnv: the repo's .envrc runs `use flox`, so after a
+# one-time `direnv allow`, cd'ing into the repo auto-activates it.
+
+# Available tools: go 1.26.5, golangci-lint, gotestsum, just, and more
+# (see .flox/env/manifest.toml for the full [install] list)
 ```
 
 ### Binary Releases
@@ -199,7 +203,7 @@ nix profile upgrade mobilecombackup
 git pull origin main
 
 # Rebuild with latest version
-devbox run build-cli
+just build-cli
 ```
 
 ## Troubleshooting
@@ -226,11 +230,11 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
 #### Build fails with "go: version too old"
 
-**Solution**: Use devbox for consistent Go version:
+**Solution**: Use Flox for a consistent Go version:
 
 ```bash
-devbox shell
-devbox run build-cli
+flox activate
+just build-cli
 ```
 
 #### Version shows as "dev" instead of actual version

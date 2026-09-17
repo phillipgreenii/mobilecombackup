@@ -28,10 +28,10 @@ A task is **COMPLETE** only when:
 **ALL** of the following must succeed:
 
 ```bash
-devbox run formatter  # Code must be formatted
-devbox run tests     # All tests must pass
-devbox run linter    # Zero lint violations
-devbox run build-cli # Build must succeed
+just formatter  # Code must be formatted
+just tests      # All tests must pass
+just linter     # Zero lint violations
+just build-cli  # Build must succeed
 ```
 
 ### Success Criteria
@@ -51,10 +51,10 @@ devbox run build-cli # Build must succeed
 1. **Complete the work** specified in the task
 2. **Run verification workflow**:
    ```bash
-   devbox run formatter  # Always format first
-   devbox run tests     # All must pass
-   devbox run linter    # Zero violations
-   devbox run build-cli # Must succeed
+   just formatter  # Always format first
+   just tests      # All must pass
+   just linter     # Zero violations
+   just build-cli  # Must succeed
    ```
 3. **Fix any issues** found by verification
 4. **Re-run verification** until ALL commands pass
@@ -181,10 +181,10 @@ Balance thoroughness with efficiency:
 
 ```
 1. Implement feature X
-2. Run devbox run formatter - ✅ Success
-3. Run devbox run tests - ✅ All pass
-4. Run devbox run linter - ✅ Zero violations
-5. Run devbox run build-cli - ✅ Build succeeds
+2. Run just formatter - ✅ Success
+3. Run just tests - ✅ All pass
+4. Run just linter - ✅ Zero violations
+5. Run just build-cli - ✅ Build succeeds
 6. Commit changes - ✅ Hooks pass
 7. Mark task complete in TodoWrite
 ```
@@ -193,7 +193,7 @@ Balance thoroughness with efficiency:
 
 ```
 1. Implement feature X
-2. Run devbox run tests - ❌ 2 tests fail
+2. Run just tests - ❌ 2 tests fail
 3. Mark task complete anyway ← WRONG!
 ```
 

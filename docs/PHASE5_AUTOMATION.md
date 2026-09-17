@@ -137,7 +137,7 @@ Quality metrics are tracked over time:
 
 Phase 5 integrates with existing project infrastructure:
 
-- **devbox**: Quality commands available via devbox scripts
+- **Flox/just environment**: `./scripts/quality-monitor.sh` is invoked directly and only hard-requires `go` (tc-5lxy.8) -- no environment-manager-specific integration exists
 - **Git Hooks**: nix-managed (`flakeModules.pre-commit`, tc-5lxy.5); `.githooks/pre-commit` is retired
 - **GitHub Actions**: Quality dashboard workflow runs alongside existing test workflow
 - **SonarQube**: Quality metrics complement SonarQube analysis

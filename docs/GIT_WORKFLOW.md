@@ -133,7 +133,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Installation
 
-Hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5), not devbox:
+Hooks are managed by the nix-repo-base `flakeModules.pre-commit` module (tc-5lxy.5), not by Flox or a manual script:
 
 ```bash
 nix run .#install-pre-commit-hooks # Install/refresh pre-commit + pre-push hooks
@@ -168,10 +168,10 @@ Pre-commit hooks will automatically run:
 1. **Complete your work** on a specific task
 2. **Run verification workflow**:
    ```bash
-   devbox run formatter  # Format first
-   devbox run tests     # All tests pass
-   devbox run linter    # Zero violations
-   devbox run build-cli # Successful build
+   just formatter  # Format first (runs `nix fmt` — treefmt/gofumpt)
+   just tests       # All tests pass
+   just linter      # Zero violations
+   just build-cli   # Successful build
    ```
 3. **Check git status** to see modified files
 4. **Stage specific files** you modified

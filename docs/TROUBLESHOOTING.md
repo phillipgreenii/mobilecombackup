@@ -128,13 +128,13 @@ This document contains common test failures, lint violations, and their fixes.
 #### Import ordering
 
 - **Cause**: Imports not in standard Go order
-- **Fix**: Use `goimports` or `devbox run formatter` to fix
+- **Fix**: Use `goimports` or `just formatter` to fix
 - **Standard order**: stdlib, third-party, local packages
 
 #### Formatting inconsistencies
 
 - **Cause**: Code not formatted according to `gofmt` standards
-- **Fix**: Run `gofmt` or `devbox run formatter`
+- **Fix**: Run `gofmt` or `just formatter`
 
 ## Common Auto-Fix Patterns
 
@@ -150,7 +150,7 @@ This document contains common test failures, lint violations, and their fixes.
 - `declared but not used` → Remove unused variables/imports/functions
 - `Error return value is not checked` → Add proper error handling
 - `should have comment or be unexported` → Add documentation comments
-- Formatting issues → Run `gofmt` or use `devbox run formatter`
+- Formatting issues → Run `gofmt` or use `just formatter`
 
 ### Build Failures
 
@@ -172,7 +172,7 @@ Ask for user guidance when:
 
 ### Using ast-grep for Structural Code Search
 
-For complex code analysis and refactoring, use `ast-grep` (available in devbox):
+For complex code analysis and refactoring, use `ast-grep` (available in the Flox environment):
 
 ```bash
 # Find all function definitions
@@ -202,10 +202,13 @@ For text-based search:
 - **ripgrep/grep**: Text search, finding strings, error messages
 - **fd**: Finding files by name patterns
 
-## Devbox Environment Issues
+## Flox Environment Issues
 
-- **Problem**: Commands fail outside devbox environment
-- **Solution**: Use `devbox run command` to run commands without entering the shell
+- **Problem**: Commands fail outside the Flox environment
+- **Solution**: Run `flox activate` to enter the environment, or rely on direnv auto-activation
+  (the repo's `.envrc` runs `use flox`, so a one-time `direnv allow` activates it automatically
+  on `cd`). Most day-to-day commands are also exposed as `just` recipes (e.g. `just tests`,
+  `just formatter`), which run correctly once the Flox environment is active.
 
 ## Test Data Quirks
 

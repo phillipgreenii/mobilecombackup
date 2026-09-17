@@ -33,9 +33,10 @@ jobs:
       - name: Run formatter
         run: flox activate -- just formatter
       - name: Run tests with coverage
-        # Arbitrary-command passthrough (was `devbox run go test ...`, not a
-        # named devbox.json script) -- flox's equivalent is `flox activate
-        # -- <command>`, not a `just` recipe swap (tc-5lxy.9 notes).
+        # Arbitrary-command passthrough (previously ran via the old shell
+        # wrapper's `run go test ...`, not a named script in its manifest)
+        # -- flox's equivalent is `flox activate -- <command>`, not a
+        # `just` recipe swap (tc-5lxy.9 notes).
         run: flox activate -- go test -v -covermode=set -coverprofile=coverage.out ./...
       - name: Run linter
         run: flox activate -- just linter

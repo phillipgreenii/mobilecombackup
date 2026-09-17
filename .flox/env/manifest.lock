@@ -49,7 +49,7 @@
       }
     },
     "hook": {
-      "on-activate": "  go mod tidy\n  echo '📋 Setting up development environment...'\n  # Load project-specific Neovim config if it exists. FLOX_ENV_PROJECT is\n  # flox's own project-root variable (see the template comment above) --\n  # more robust than devbox's original $PWD, which only worked when\n  # activating from the repo root.\n  export NVIM_PROJECT_CONFIG=\"$FLOX_ENV_PROJECT/.config/nvim\"\n  if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then\n    export XDG_CONFIG_HOME_NVIM=\"$FLOX_ENV_PROJECT/.config\"\n    echo '🔧 Project-specific Neovim configuration loaded'\n  fi\n"
+      "on-activate": "  go mod tidy\n  echo '📋 Setting up development environment...'\n  # Load project-specific Neovim config if it exists. FLOX_ENV_PROJECT is\n  # flox's own project-root variable (see the template comment above) --\n  # more robust than the previous tool's original $PWD, which only worked\n  # when activating from the repo root.\n  export NVIM_PROJECT_CONFIG=\"$FLOX_ENV_PROJECT/.config/nvim\"\n  if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then\n    export XDG_CONFIG_HOME_NVIM=\"$FLOX_ENV_PROJECT/.config\"\n    echo '🔧 Project-specific Neovim configuration loaded'\n  fi\n"
     },
     "profile": {
       "bash": "  if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then\n    alias vim=\"nvim -u $NVIM_PROJECT_CONFIG/init.lua\"\n    alias nvim=\"nvim -u $NVIM_PROJECT_CONFIG/init.lua\"\n  fi\n",

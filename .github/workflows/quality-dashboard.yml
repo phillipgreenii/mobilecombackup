@@ -64,8 +64,9 @@ jobs:
       - name: Run comprehensive tests with coverage
         run: |
           echo "🧪 Running comprehensive test suite..."
-          # Arbitrary-command passthrough (was `devbox run go test ...`) --
-          # flox's equivalent is `flox activate -- <command>` (tc-5lxy.9 notes).
+          # Arbitrary-command passthrough (previously ran via the old shell
+          # wrapper's `run go test ...`) -- flox's equivalent is
+          # `flox activate -- <command>` (tc-5lxy.9 notes).
           flox activate -- go test -v -cover -coverprofile=coverage.out ./pkg/analyzer/core
 
           # Extract coverage percentage
@@ -78,9 +79,10 @@ jobs:
         run: |
           echo "⚡ Running performance benchmarks..."
 
-          # Run benchmarks with timeout. Arbitrary-command passthrough (was
-          # `devbox run go test ...`) -- flox's equivalent is `flox activate
-          # -- <command>` (tc-5lxy.9 notes). The trailing `|| true` means
+          # Run benchmarks with timeout. Arbitrary-command passthrough
+          # (previously ran via the old shell wrapper's `run go test ...`)
+          # -- flox's equivalent is `flox activate -- <command>` (tc-5lxy.9
+          # notes). The trailing `|| true` means
           # this step stays green even if the swap silently broke and
           # produced an empty file -- the dedicated verification step below
           # is what actually catches that, per this bead's acceptance
@@ -103,7 +105,7 @@ jobs:
 
       - name: Verify benchmark output is non-empty
         # tc-5lxy.9 acceptance criterion: the previous step's `|| true`
-        # means a broken `devbox run` -> `flox activate --` swap would
+        # means a broken old-wrapper-run -> `flox activate --` swap would
         # otherwise still show green while silently producing an empty
         # benchmark file. Verify the ACTUAL content, not just job status.
         run: |

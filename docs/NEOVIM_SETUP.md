@@ -103,11 +103,11 @@ vim.keymap.set("n", "<leader>gc", ":GoCoverage<CR>", { desc = "Go Coverage" })
 vim.keymap.set("n", "<leader>gf", ":GoFmt<CR>", { desc = "Go Format" })
 vim.keymap.set("n", "<leader>gi", ":GoImport<CR>", { desc = "Go Import" })
 
--- Project-specific devbox commands
-vim.keymap.set("n", "<leader>df", ":!devbox run formatter<CR>", { desc = "Run formatter" })
-vim.keymap.set("n", "<leader>dt", ":!devbox run tests<CR>", { desc = "Run tests" })
-vim.keymap.set("n", "<leader>dl", ":!devbox run linter<CR>", { desc = "Run linter" })
-vim.keymap.set("n", "<leader>db", ":!devbox run build-cli<CR>", { desc = "Build CLI" })
+-- Project-specific just commands
+vim.keymap.set("n", "<leader>df", ":!just formatter<CR>", { desc = "Run formatter" })
+vim.keymap.set("n", "<leader>dt", ":!just tests<CR>", { desc = "Run tests" })
+vim.keymap.set("n", "<leader>dl", ":!just linter<CR>", { desc = "Run linter" })
+vim.keymap.set("n", "<leader>db", ":!just build-cli<CR>", { desc = "Build CLI" })
 
 -- LSP mappings (add these to your LSP configuration)
 vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition" })
@@ -139,9 +139,9 @@ This setup integrates with the project's development workflow:
 
 ### Quality Commands
 
-- `<leader>df` - Run devbox formatter
-- `<leader>dt` - Run devbox tests
-- `<leader>dl` - Run devbox linter
+- `<leader>df` - Run `just formatter`
+- `<leader>dt` - Run `just tests`
+- `<leader>dl` - Run `just linter`
 - `<leader>db` - Build CLI
 
 ### Go Commands
@@ -171,7 +171,7 @@ This setup integrates with the project's development workflow:
 
 ## NixOS and Home-Manager Setup
 
-This section describes how to set up Neovim with NixOS and home-manager, keeping base configuration system-wide while loading Go-specific tooling only within this project via devbox.
+This section describes how to set up Neovim with NixOS and home-manager, keeping base configuration system-wide while loading Go-specific tooling only within this project via Flox.
 
 ### Base Neovim Configuration (Home-Manager)
 
@@ -264,33 +264,25 @@ Configure your base Neovim in `~/.config/home-manager/home.nix` or your home-man
 
 ### Project-Specific Go Configuration
 
-Create a project-local Neovim configuration that devbox will load:
+Create a project-local Neovim configuration that Flox will load:
 
-#### 1. Update devbox.json
+#### 1. Flox Manifest Configuration
 
-Add Neovim configuration to your `devbox.json`:
+This project's `.flox/env/manifest.toml` already wires this up — this section is here for
+reference, not something you need to add yourself.
 
-```json
-{
-  "packages": [
-    "go@1.24",
-    "gopls@latest",
-    "golangci-lint@latest"
-    // ... other packages
-  ],
-  "shell": {
-    "init_hook": [
-      // ... existing hooks
-      "# Load project-specific Neovim config",
-      "export NVIM_PROJECT_CONFIG=$PWD/.config/nvim",
-      "if [ -d \"$NVIM_PROJECT_CONFIG\" ]; then",
-      "  export XDG_CONFIG_HOME_NVIM=$PWD/.config",
-      "  alias vim='nvim -u $NVIM_PROJECT_CONFIG/init.lua'",
-      "  alias nvim='nvim -u $NVIM_PROJECT_CONFIG/init.lua'",
-      "fi"
-    ]
-  }
-}
+The `[install]` section installs `go`, `gopls`, `golangci-lint`, and the rest of the toolchain
+(plus `just`). The `[hook]` on-activate section exports
+`NVIM_PROJECT_CONFIG=$FLOX_ENV_PROJECT/.config/nvim`, and the `[profile]` section (sourced by the
+interactive shell — for both bash and zsh, so the aliases persist across the session, unlike a
+plain activation hook) defines:
+
+```toml
+[profile]
+common = '''
+  alias vim="nvim -u $NVIM_PROJECT_CONFIG/init.lua"
+  alias nvim="nvim -u $NVIM_PROJECT_CONFIG/init.lua"
+'''
 ```
 
 #### 2. Create Project Neovim Configuration
@@ -307,7 +299,7 @@ end
 -- Project-specific Go configuration
 local project_root = vim.fn.getcwd()
 
--- Ensure gopls is available (provided by devbox)
+-- Ensure gopls is available (provided by the Flox environment)
 local lspconfig = require('lspconfig')
 
 -- Configure gopls for Go development
@@ -342,13 +334,13 @@ lspconfig.gopls.setup({
   end,
 })
 
--- Project-specific keymaps for devbox commands
-vim.keymap.set('n', '<leader>df', ':!devbox run formatter<CR>', { desc = 'Run formatter' })
-vim.keymap.set('n', '<leader>dt', ':!devbox run test-unit<CR>', { desc = 'Run unit tests' })
-vim.keymap.set('n', '<leader>dT', ':!devbox run tests<CR>', { desc = 'Run all tests' })
-vim.keymap.set('n', '<leader>dl', ':!devbox run linter<CR>', { desc = 'Run linter' })
-vim.keymap.set('n', '<leader>db', ':!devbox run build-cli<CR>', { desc = 'Build CLI' })
-vim.keymap.set('n', '<leader>dc', ':!devbox run coverage-summary<CR>', { desc = 'Coverage summary' })
+-- Project-specific keymaps for just commands
+vim.keymap.set('n', '<leader>df', ':!just formatter<CR>', { desc = 'Run formatter' })
+vim.keymap.set('n', '<leader>dt', ':!just test-unit<CR>', { desc = 'Run unit tests' })
+vim.keymap.set('n', '<leader>dT', ':!just tests<CR>', { desc = 'Run all tests' })
+vim.keymap.set('n', '<leader>dl', ':!just linter<CR>', { desc = 'Run linter' })
+vim.keymap.set('n', '<leader>db', ':!just build-cli<CR>', { desc = 'Build CLI' })
+vim.keymap.set('n', '<leader>dc', ':!just coverage-summary<CR>', { desc = 'Coverage summary' })
 
 -- Code analysis tools
 vim.keymap.set('n', '<leader>af', ':!ast-grep --pattern "func $NAME($$$) $RET { $$$ }"<CR>', { desc = 'Find function definitions' })
@@ -384,13 +376,14 @@ cmp.setup.filetype('go', {
 print("✅ Loaded project-specific Go configuration")
 ```
 
-#### 3. Alternative: Using direnv with devbox
+#### 3. Alternative: Using direnv with Flox
 
-If you prefer using direnv, create `.envrc` in your project:
+This project already uses this approach: its `.envrc` contains `use flox`, so after a one-time
+`direnv allow`, cd'ing into the repo auto-activates the Flox environment.
 
 ```bash
 # .envrc
-use devbox
+use flox
 
 # Set up project-specific Neovim config
 export NVIM_APPNAME="nvim-go"
@@ -432,7 +425,7 @@ vim.api.nvim_create_autocmd({'BufEnter', 'BufWinEnter'}, {
 
    ```bash
    cd /path/to/mobilecombackup
-   devbox shell
+   flox activate  # or rely on direnv auto-activation
    vim  # Now includes Go LSP and project commands
    ```
 
@@ -446,7 +439,7 @@ vim.api.nvim_create_autocmd({'BufEnter', 'BufWinEnter'}, {
 
 - **Separation of concerns**: System-wide config stays minimal and general
 - **Project isolation**: Go tools only load when working on Go projects
-- **Reproducible**: Team members get the same Go setup via devbox
+- **Reproducible**: Team members get the same Go setup via Flox
 - **Flexible**: Can extend for other language projects similarly
 - **Clean**: No Go cruft in your system when working on non-Go projects
 
@@ -458,4 +451,4 @@ vim.api.nvim_create_autocmd({'BufEnter', 'BufWinEnter'}, {
 - Use Telescope for fuzzy finding across your codebase
 - Consider adding vim-test for more flexible test running
 
-This configuration provides a complete Go development environment that integrates well with this project's devbox-based workflow.
+This configuration provides a complete Go development environment that integrates well with this project's Flox-based workflow.

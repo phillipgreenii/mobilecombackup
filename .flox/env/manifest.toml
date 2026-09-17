@@ -7,16 +7,16 @@ schema-version = "1.17.0"
 ##  $ flox show gum     <- show all versions of a package
 ## -------------------------------------------------------------------
 
-# Translated 1:1 from devbox.json's `packages` array (tc-5lxy.9), plus
-# `just` (added by tc-5lxy.8). All 13 devbox packages + just resolved
-# directly from flox's own nixpkgs-backed catalog -- none needed
+# Translated 1:1 from the previous JSON package manifest's `packages` array
+# (tc-5lxy.9), plus `just` (added by tc-5lxy.8). All 13 packages + just
+# resolved directly from flox's own nixpkgs-backed catalog -- none needed
 # nix-overlay/nvfetcher, verified empirically with `flox search` /
 # `flox show` per-package before this manifest was authored.
 #
 # go.version = "1.26.5" matches quality-dashboard.yml's actions/setup-go
-# pin exactly (both realigned together by tc-5lxy.17) -- devbox.json's
-# floating `go@1.26` had itself resolved to this same 1.26.5 in
-# devbox.lock, so this is not a behavior change.
+# pin exactly (both realigned together by tc-5lxy.17) -- the previous
+# manifest's floating `go@1.26` had itself resolved to this same 1.26.5 in
+# its lockfile, so this is not a behavior change.
 #
 # claude-code has NO exact `1.0.72` build in flox's catalog (confirmed via
 # `flox show claude-code`: versions jump 1.0.69 -> 1.0.74, and that pin is
@@ -41,7 +41,7 @@ uv.pkg-path = "uv"
 viu.pkg-path = "viu"
 yq.pkg-path = "yq"
 # claude-code: see the [install] block comment above for why this floats
-# unpinned instead of matching devbox.json's claude-code@1.0.72.
+# unpinned instead of matching the previous manifest's claude-code@1.0.72.
 claude-code.pkg-path = "claude-code"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
@@ -58,7 +58,7 @@ claude-code.pkg-path = "claude-code"
 ## Activation Hook ---------------------------------------------------
 ##  ... run by _bash_ shell when you run 'flox activate'.
 ## -------------------------------------------------------------------
-# Translated from devbox.json's shell.init_hook (tc-5lxy.9). `export`s here
+# Translated from the previous manifest's shell.init_hook (tc-5lxy.9). `export`s here
 # are captured by flox and propagated into the activated environment; alias
 # definitions are NOT (a plain `alias` in on-activate does not survive into
 # the caller's interactive shell), so the Neovim aliases live in [profile]
@@ -69,8 +69,8 @@ on-activate = '''
   echo '📋 Setting up development environment...'
   # Load project-specific Neovim config if it exists. FLOX_ENV_PROJECT is
   # flox's own project-root variable (see the template comment above) --
-  # more robust than devbox's original $PWD, which only worked when
-  # activating from the repo root.
+  # more robust than the previous tool's original $PWD, which only worked
+  # when activating from the repo root.
   export NVIM_PROJECT_CONFIG="$FLOX_ENV_PROJECT/.config/nvim"
   if [ -d "$NVIM_PROJECT_CONFIG" ]; then
     export XDG_CONFIG_HOME_NVIM="$FLOX_ENV_PROJECT/.config"
@@ -82,7 +82,7 @@ on-activate = '''
 ## Profile script ----------------------------------------------------
 ## ... sourced by _your shell_ when you run 'flox activate'.
 ## -------------------------------------------------------------------
-# Aliases from devbox.json's init_hook. This section is sourced by the
+# Aliases from the previous manifest's init_hook. This section is sourced by the
 # caller's actual interactive shell (unlike [hook], which runs once in a
 # bash subshell), so aliases defined here DO persist -- this is the fix for
 # the "aliases may not survive a non-interactive hook" risk noted on this
@@ -137,8 +137,8 @@ zsh = '''
 
 
 ## Other Environment Options -----------------------------------------
-# devbox.json declared no explicit platform list either (a devbox
-# environment is implicitly single-machine); left at flox's own default
+# The previous manifest declared no explicit platform list either (that
+# kind of environment is implicitly single-machine); left at flox's own default
 # here rather than widened to flake.nix's 4-system list, since `go`
 # itself has no x86_64-darwin build in flox's catalog today (`flox show
 # go` lists only aarch64-darwin/aarch64-linux/x86_64-linux) --

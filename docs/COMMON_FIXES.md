@@ -166,7 +166,7 @@ func processData(input string) error {
 
 ```bash
 # Run formatter (should be automatic in workflow)
-devbox run formatter
+just formatter
 
 # Or direct gofmt
 gofmt -w .
@@ -181,7 +181,7 @@ gofmt -w .
 # Use goimports to fix import organization
 goimports -w .
 
-# Should be handled by devbox run formatter
+# Should be handled by just formatter
 ```
 
 ## Build Failure Patterns
@@ -343,7 +343,7 @@ t := time.Unix(unixTime, 0).UTC()
 
 When multiple errors exist:
 
-1. **Fix formatting first** - run `devbox run formatter`
+1. **Fix formatting first** - run `just formatter`
 2. **Fix imports and dependencies** - resolve import issues
 3. **Fix syntax errors** - basic compilation issues
 4. **Fix logic errors** - test and lint violations

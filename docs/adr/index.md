@@ -8,13 +8,14 @@ Architecture Decision Records (ADRs) are documents that capture important archit
 
 ## Current ADRs
 
-| ADR #                                         | Title                              | Status   | Date       | Description                                                     |
-| --------------------------------------------- | ---------------------------------- | -------- | ---------- | --------------------------------------------------------------- |
-| [0001](0001-streaming-vs-batch-processing.md) | Streaming vs Batch Processing      | Accepted | 2024-01-15 | Decision to use streaming processing for large XML files        |
-| [0002](0002-hash-based-attachment-storage.md) | Hash-based Attachment Storage      | Accepted | 2024-01-15 | Use SHA-256 content addressing for attachment storage           |
-| [0003](0003-xml-parsing-security-approach.md) | XML Parsing Security Approach      | Accepted | 2024-01-15 | Security measures for XML processing including XXE prevention   |
-| [0004](0004-repository-structure-design.md)   | Repository Structure Design        | Accepted | 2024-01-15 | Year-based partitioning with typed directories using UTC        |
-| [0005](0005-development-tool-choices.md)      | Development Tool Ecosystem Choices | Accepted | 2024-01-15 | Devbox-based development environment with comprehensive tooling |
+| ADR #                                              | Title                              | Status     | Date       | Description                                                                 |
+| -------------------------------------------------- | ---------------------------------- | ---------- | ---------- | --------------------------------------------------------------------------- |
+| [0001](0001-streaming-vs-batch-processing.md)      | Streaming vs Batch Processing      | Accepted   | 2024-01-15 | Decision to use streaming processing for large XML files                    |
+| [0002](0002-hash-based-attachment-storage.md)      | Hash-based Attachment Storage      | Accepted   | 2024-01-15 | Use SHA-256 content addressing for attachment storage                       |
+| [0003](0003-xml-parsing-security-approach.md)      | XML Parsing Security Approach      | Accepted   | 2024-01-15 | Security measures for XML processing including XXE prevention               |
+| [0004](0004-repository-structure-design.md)        | Repository Structure Design        | Accepted   | 2024-01-15 | Year-based partitioning with typed directories using UTC                    |
+| [0005](0005-development-tool-choices.md)           | Development Tool Ecosystem Choices | Superseded | 2024-01-15 | Original development environment choice; see ADR-0006 for the current setup |
+| [0006](0006-flox-based-development-environment.md) | Flox-Based Development Environment | Accepted   | 2026-09-15 | Flox + just development environment with nix-managed git hooks/CI           |
 
 ## ADR Lifecycle
 

@@ -2,7 +2,7 @@ name: Update Flake Dependencies
 
 # Thin caller of the reusable workflow hosted in the public phillipg-nix-repo-base
 # (bead pg2-wwpy9 / tc-5lxy.6). Replaces the retired nix-flake-updates.yml and
-# devbox-updates.yml schedulers (and dependabot's gomod ecosystem,
+# the old package-manager-lock-update schedulers (and dependabot's gomod ecosystem,
 # .github/dependabot.yml) — everything is now centralized in
 # update-flakes-reusable.yml, which runs ./update-locks.sh --ci here. The
 # schedule stays local; everything else is centralized.
@@ -22,8 +22,8 @@ name: Update Flake Dependencies
 on:
   schedule:
     # Run every Tuesday at 09:00 UTC, matching the retired
-    # nix-flake-updates.yml/devbox-updates.yml schedule and dependabot's
-    # surviving github-actions ecosystem entry.
+    # nix-flake-updates.yml and old package-manager-lock-update schedule
+    # and dependabot's surviving github-actions ecosystem entry.
     - cron: "0 9 * * 2"
   workflow_dispatch: # Allow manual trigger
 

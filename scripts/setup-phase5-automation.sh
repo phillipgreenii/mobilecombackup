@@ -72,29 +72,11 @@ EOF
 
 log_success "Quality monitoring configuration created: .quality-config.env"
 
-# 2. Setup devbox integration
-log_info "Setting up devbox integration..."
-
-# Add quality monitoring commands to devbox.json if it exists
-if [ -f "$PROJECT_ROOT/devbox.json" ]; then
-  log_info "Checking devbox.json for quality monitoring commands..."
-
-  # Check if quality commands already exist
-  if grep -q "quality-monitor" "$PROJECT_ROOT/devbox.json"; then
-    log_warning "Quality monitoring commands already exist in devbox.json"
-  else
-    log_info "Adding quality monitoring commands to devbox.json..."
-    # Note: This would require jq to properly modify JSON
-    # For now, just provide instructions
-    log_warning "Manual step required: Add these commands to devbox.json scripts section:"
-    echo ""
-    echo '    "quality-monitor": "./scripts/quality-monitor.sh",'
-    echo '    "quality-setup": "./scripts/setup-phase5-automation.sh",'
-    echo '    "quality-gates": "./scripts/quality-monitor.sh gates",'
-    echo '    "quality-report": "./scripts/quality-monitor.sh report"'
-    echo ""
-  fi
-fi
+# 2. (Historical) This step used to register quality-monitoring commands in
+# the old shell-wrapper's package manifest when one existed. The dev
+# environment has since migrated to Flox + just (tc-5lxy.9, tc-5lxy.8), which
+# has no equivalent registration step, so this is now a no-op kept only for
+# step-numbering continuity with the rest of this script.
 
 # 3. Setup GitHub Actions integration
 log_info "Verifying GitHub Actions integration..."
@@ -339,7 +321,7 @@ Quality metrics are tracked over time:
 
 Phase 5 integrates with existing project infrastructure:
 
-- **devbox**: Quality commands available via devbox scripts
+- **Flox/just environment**: `./scripts/quality-monitor.sh` is invoked directly and only hard-requires `go` (tc-5lxy.8) -- no environment-manager-specific integration exists
 - **Git Hooks**: nix-managed (`flakeModules.pre-commit`, tc-5lxy.5); `.githooks/pre-commit` is retired
 - **GitHub Actions**: Quality dashboard workflow runs alongside existing test workflow
 - **SonarQube**: Quality metrics complement SonarQube analysis

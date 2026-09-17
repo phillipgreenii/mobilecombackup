@@ -6,7 +6,7 @@ This document defines the standard verification workflow that must be followed b
 
 **Last Updated**: 2025-01-15
 **Related Documents**: [Git Workflow](GIT_WORKFLOW.md) | [Task Completion](TASK_COMPLETION.md) | [Development Guide](DEVELOPMENT.md)
-**Prerequisites**: Devbox shell environment, pre-commit hooks installed
+**Prerequisites**: Activated Flox environment (`flox activate`, or auto-activated via direnv), pre-commit hooks installed (`nix run .#install-pre-commit-hooks`)
 
 ---
 
@@ -20,42 +20,42 @@ The verification workflow consists of four commands that **MUST** be run in this
 
 ```bash
 # 1. Format code first (ALWAYS run first)
-devbox run formatter
+just formatter
 
 # 2. Run all tests (ALL must pass)
-devbox run tests
+just tests
 
 # 3. Check code quality (ZERO violations)
-devbox run linter
+just linter
 
 # 4. Build the CLI (must succeed)
-devbox run build-cli
+just build-cli
 ```
 
 ### Command Details
 
-#### 1. Format Code (`devbox run formatter`)
+#### 1. Format Code (`just formatter`)
 
 - **Purpose**: Ensures consistent code formatting across the project
 - **Requirement**: MUST be run first, before any other verification
 - **Success Criteria**: Command completes without errors
-- **Notes**: Formats all Go code according to project standards
+- **Notes**: Runs `nix fmt` (treefmt/gofumpt) — stricter than plain `go fmt ./...`
 
-#### 2. Run Tests (`devbox run tests`)
+#### 2. Run Tests (`just tests`)
 
 - **Purpose**: Validates all functionality works correctly
 - **Requirement**: ALL tests must pass (not some, ALL)
 - **Success Criteria**: Zero test failures, zero compilation errors
 - **Notes**: Runs complete test suite including unit and integration tests
 
-#### 3. Run Linter (`devbox run linter`)
+#### 3. Run Linter (`just linter`)
 
 - **Purpose**: Enforces code quality and Go best practices
 - **Requirement**: ZERO lint violations allowed
 - **Success Criteria**: No warnings, no errors, clean output
 - **Notes**: Checks for code quality issues, unused variables, missing docs
 
-#### 4. Build CLI (`devbox run build-cli`)
+#### 4. Build CLI (`just build-cli`)
 
 - **Purpose**: Ensures the application compiles and builds successfully
 - **Requirement**: Build must succeed without errors
@@ -84,10 +84,10 @@ go build ./pkg/specific
 Before marking any TodoWrite task complete, you **MUST** run the full verification workflow:
 
 ```bash
-devbox run formatter  # MUST be first
-devbox run tests     # ALL tests MUST pass
-devbox run linter    # ZERO violations
-devbox run build-cli # MUST succeed
+just formatter  # MUST be first
+just tests      # ALL tests MUST pass
+just linter     # ZERO violations
+just build-cli  # MUST succeed
 ```
 
 **CRITICAL**: Task is NOT complete without running and passing all four commands.

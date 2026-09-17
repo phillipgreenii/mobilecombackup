@@ -5,7 +5,7 @@ name: Nix Flake Check
 # rewrite of those three (as tc-5lxy.9 already did once) cannot silently drop
 # Nix CI coverage along with it.
 #
-# Split of responsibility against the flox/devbox job (no duplicated work):
+# Split of responsibility against the flox-based job (no duplicated work):
 #   - test.yml's `ci` job (flox-based) runs `just formatter`, `go test -v
 #     -covermode=set ... ./...`, `just linter`, `just build-cli` and the
 #     SonarQube scan -- the day-to-day Go toolchain path, via flox.
