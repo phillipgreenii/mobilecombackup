@@ -1911,7 +1911,7 @@ Automatic code formatting is integrated into the development workflow to ensure 
 **Implementation:**
 
 - Uses existing `devbox run formatter` script in devbox.json
-- Integrated into agent auto-commit workflow in `.claude/commands/implement-issue.md`
+- Was integrated into the agent auto-commit workflow via `.claude/commands/implement-issue.md`, retired in tc-5lxy.22 along with the rest of the git-based `issues/` tracker; the same formatter-first ordering now applies to `bd`-based work via CLAUDE.md's Git Workflow section
 - Quality verification process updated to include formatting as first step
 - Comprehensive documentation in CLAUDE.md Code Formatting Best Practices section
 
@@ -1953,11 +1953,11 @@ All Claude commands and agents are configured with automatic commit functionalit
 
 #### When Auto-Commit Occurs
 
-- After completing each TodoWrite task in `/implement-issue`
-- After creating feature documents with `/create-feature`
-- After creating bug documents with `/create-bug`
+- After completing each TodoWrite task while working a `bd` issue
 - After completing documentation updates in agents
 - **Enforced by completion protocol** for all agent task completions
+
+(`/implement-issue`, `/create-feature`, and `/create-bug` were retired in tc-5lxy.22 along with the rest of the git-based `issues/` tracker; issue creation now goes through `bd create`.)
 
 #### Workspace State Analysis
 

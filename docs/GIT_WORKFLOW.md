@@ -222,7 +222,7 @@ This Git workflow integrates with:
 
 - [Task Completion Requirements](TASK_COMPLETION.md)
 - [Verification Workflow](VERIFICATION_WORKFLOW.md)
-- [Issue Development Workflow](ISSUE_WORKFLOW.md)
+- [Issue Development Workflow](DEVELOPMENT.md#issue-development-workflow)
 
 ## Error Handling
 

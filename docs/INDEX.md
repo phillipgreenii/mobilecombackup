@@ -51,16 +51,16 @@ covered with quality documentation.
 
 ### Coverage by Category
 
-| Category            | Status      | Coverage | Notes                               |
-| ------------------- | ----------- | -------- | ----------------------------------- |
-| **Getting Started** | ✅ Complete | 100%     | README + Installation + Quick Start |
-| **CLI Reference**   | ✅ Complete | 100%     | All commands documented             |
-| **Development**     | ✅ Complete | 100%     | Setup, testing, workflows           |
-| **Architecture**    | ✅ Complete | 100%     | All packages + 5 ADRs               |
-| **Troubleshooting** | ✅ Complete | 100%     | Common issues covered               |
-| **Deployment**      | ✅ Complete | 100%     | Docker + production guides          |
-| **Testing**         | ✅ Complete | 100%     | Unit + integration strategies       |
-| **Issue Workflow**  | ✅ Complete | 100%     | Complete 4-state lifecycle          |
+| Category            | Status      | Coverage | Notes                                      |
+| ------------------- | ----------- | -------- | ------------------------------------------ |
+| **Getting Started** | ✅ Complete | 100%     | README + Installation + Quick Start        |
+| **CLI Reference**   | ✅ Complete | 100%     | All commands documented                    |
+| **Development**     | ✅ Complete | 100%     | Setup, testing, workflows                  |
+| **Architecture**    | ✅ Complete | 100%     | All packages + 5 ADRs                      |
+| **Troubleshooting** | ✅ Complete | 100%     | Common issues covered                      |
+| **Deployment**      | ✅ Complete | 100%     | Docker + production guides                 |
+| **Testing**         | ✅ Complete | 100%     | Unit + integration strategies              |
+| **Issue Workflow**  | ✅ Complete | 100%     | bd-based (tc-5lxy.22); git tracker retired |
 
 ### Known Gaps
 
@@ -77,6 +77,15 @@ _No urgent action items._ Documentation is in excellent health.
 - Keep dashboard current after significant changes
 
 ### Recent Significant Changes
+
+**2026-09-17**: Retired the git-based `issues/` tracker's commands, agents and docs (tc-5lxy.22)
+
+- Removed docs/ISSUE_WORKFLOW.md and docs/SLASH_COMMANDS.md (fully superseded by `bd` +
+  bead-grooming/prepare-issue/drain-beads); relocated docs/SPECIFICATION.md out of `issues/`.
+- Updated every cross-reference to the two removed files across CLAUDE.md, DEVELOPMENT.md,
+  GIT_WORKFLOW.md, TASK_COMPLETION.md, and this index.
+- `issues/completed/` (87 historical records) stays on disk, untouched, until tc-5lxy.24
+  imports it into `bd`.
 
 **2025-01-15**: Major documentation quality improvements
 
@@ -123,12 +132,11 @@ Comprehensive documentation for all features:
 
 Resources for developers and contributors:
 
-| Document                                | Focus                     | Audience            |
-| --------------------------------------- | ------------------------- | ------------------- |
-| **[Development Guide](DEVELOPMENT.md)** | Setup, testing, workflows | Contributors        |
-| **[Deployment Guide](DEPLOYMENT.md)**   | Production deployment     | Operations teams    |
-| **[Git Workflow](GIT_WORKFLOW.md)**     | Commit standards          | All developers      |
-| **[Issue Workflow](ISSUE_WORKFLOW.md)** | Development process       | Project maintainers |
+| Document                                | Focus                     | Audience         |
+| --------------------------------------- | ------------------------- | ---------------- |
+| **[Development Guide](DEVELOPMENT.md)** | Setup, testing, workflows | Contributors     |
+| **[Deployment Guide](DEPLOYMENT.md)**   | Production deployment     | Operations teams |
+| **[Git Workflow](GIT_WORKFLOW.md)**     | Commit standards          | All developers   |
 
 ### 🛠️ **Operational Guides**
 
@@ -158,7 +166,7 @@ For those wanting to contribute:
 1. **[Development Setup](DEVELOPMENT.md#development-environment-setup)** ← Environment setup
 2. **[Testing Strategy](DEVELOPMENT.md#testing-strategy)** ← Understanding tests
 3. **[Git Workflow](GIT_WORKFLOW.md)** ← Contribution standards
-4. **[Issue Workflow](ISSUE_WORKFLOW.md)** ← Development process
+4. **[Issue Development Workflow](DEVELOPMENT.md#issue-development-workflow)** ← Development process (bd-based, tc-5lxy.22)
 5. **[Architecture Overview](ARCHITECTURE.md)** ← System understanding
 
 ### Operations Journey
@@ -199,7 +207,7 @@ For production deployment and maintenance:
 ### 📋 **Process & Standards**
 
 - **[Git Workflow](GIT_WORKFLOW.md)** - Commit standards and branching
-- **[Issue Workflow](ISSUE_WORKFLOW.md)** - Development lifecycle
+- **[Issue Development Workflow](DEVELOPMENT.md#issue-development-workflow)** - Development lifecycle (bd-based)
 - **[Task Completion](TASK_COMPLETION.md)** - Completion requirements
 
 ### 🔍 **Troubleshooting & Support**
@@ -212,7 +220,6 @@ For production deployment and maintenance:
 
 - **[Version Management](VERSION_MANAGEMENT.md)** - Release and versioning
 - **[Neovim Setup](NEOVIM_SETUP.md)** - Editor configuration
-- **[Slash Commands](SLASH_COMMANDS.md)** - Available CLI shortcuts
 
 ## Specialized Documentation
 

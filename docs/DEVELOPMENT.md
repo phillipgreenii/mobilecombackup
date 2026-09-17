@@ -5,7 +5,7 @@ Complete guide to setting up, developing, testing, and contributing to MobileCom
 ---
 
 **Last Updated**: 2025-01-15
-**Related Documents**: [Git Workflow](GIT_WORKFLOW.md) | [Issue Workflow](ISSUE_WORKFLOW.md) | [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Architecture](ARCHITECTURE.md)
+**Related Documents**: [Git Workflow](GIT_WORKFLOW.md) | [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Architecture](ARCHITECTURE.md)
 **Prerequisites**: Nix with flakes, Git
 
 ---
@@ -501,7 +501,7 @@ After setting up your development environment:
 
 - **[Complete CLI Reference](CLI_REFERENCE.md)** - Understand all available commands
 - **[Architecture Overview](ARCHITECTURE.md)** - Learn system design principles
-- **[Issue Workflow](ISSUE_WORKFLOW.md)** - Understand development process
+- **[Issue Development Workflow](#issue-development-workflow)** - Understand development process
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Fix common development issues
 
 ---

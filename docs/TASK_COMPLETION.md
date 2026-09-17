@@ -5,7 +5,7 @@ This document defines what it means for a task to be "complete" and the mandator
 ---
 
 **Last Updated**: 2025-01-15
-**Related Documents**: [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Git Workflow](GIT_WORKFLOW.md) | [Issue Workflow](ISSUE_WORKFLOW.md)
+**Related Documents**: [Verification Workflow](VERIFICATION_WORKFLOW.md) | [Git Workflow](GIT_WORKFLOW.md) | [Issue Development Workflow](DEVELOPMENT.md#issue-development-workflow)
 **Prerequisites**: Understanding of TodoWrite tool, verification commands
 
 ---
@@ -135,14 +135,12 @@ This document integrates with:
 - [Verification Workflow](VERIFICATION_WORKFLOW.md) - Commands to run
 - [Git Workflow](GIT_WORKFLOW.md) - Commit requirements
 - [Common Fixes](COMMON_FIXES.md) - Fix patterns for issues
-- [Issue Workflow](ISSUE_WORKFLOW.md) - Overall development process
 
 ### Agent Integration
 
 All agents must follow these completion requirements:
 
 - **spec-implementation-engineer**: Implements features with completion verification
-- **code-completion-verifier**: Specializes in ensuring completion requirements
 - **product-doc-sync**: Updates documentation with same completion rules
 
 ## Incremental Development
