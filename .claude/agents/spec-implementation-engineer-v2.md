@@ -4,10 +4,7 @@ description: >
   Use this agent when you need to implement a specification or feature that has been documented,
   including writing both the production code and comprehensive tests. This agent excels at translating
   detailed specifications into working code while adhering to project standards and best practices.
-extends: base-implementation-agent
-additional-tools:
-  - mcp__serena__check_onboarding_performed
-  - mcp__serena__onboarding
+tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, LS, TodoWrite, mcp__serena__get_symbols_overview, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols, mcp__serena__search_for_pattern, mcp__serena__replace_symbol_body, mcp__serena__insert_after_symbol, mcp__serena__insert_before_symbol, mcp__serena__list_dir, mcp__serena__find_file, mcp__serena__write_memory, mcp__serena__read_memory, mcp__serena__list_memories, mcp__serena__delete_memory, mcp__serena__think_about_collected_information, mcp__serena__think_about_task_adherence, mcp__serena__think_about_whether_you_are_done, mcp__serena__check_onboarding_performed, mcp__serena__onboarding
 ---
 
 # Specification Implementation Engineer
