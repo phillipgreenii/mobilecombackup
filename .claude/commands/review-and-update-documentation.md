@@ -7,14 +7,12 @@ Review and update all project documentation including:
 
 - **CLAUDE.md**: Project instructions and development guidelines
 - **README.md**: User-facing project description and usage
-- **issues/specification.md**: Technical specification document
+- **docs/SPECIFICATION.md**: Technical specification document
 - **docs/**: All documentation files in docs directory
 
 **Issue Documentation:**
 
-- **Completed issues**: Ensure issue documents reflect actual implementation
-- **Active specifications**: Verify accuracy of ready/active issue details
-- **Templates**: Update feature and bug templates with current standards
+- **Completed issues** (`issues/completed/`): Historical records only -- do NOT rewrite; cross-reference from a `bd` issue if functionality changed instead.
 
 **Technical Documentation:**
 
