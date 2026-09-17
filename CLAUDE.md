@@ -744,6 +744,14 @@ The following agents require full access to all Serena MCP tools:
 - `mcp__serena__think_about_task_adherence`
 - `mcp__serena__think_about_whether_you_are_done`
 
+**Optional Serena MCP access (degrades gracefully):** `technical-design-reviewer`,
+`test-strategy-reviewer`, and `implementation-planner` also carry a handful of read-only
+`mcp__serena__*` tools in their `tools:` allowlist (from the deleted `base-review-agent`
+template, flattened directly into each file's frontmatter by tc-ijhxa). Unlike the three
+agents above, these are review-only agents for which Serena access is a preference, not a
+requirement -- if the Serena MCP is absent, they fall back to `Read`/`Grep` per the general
+Code Analysis Workflow guidance below.
+
 ### Code Analysis Workflow
 
 When working with Go code, agents should:
