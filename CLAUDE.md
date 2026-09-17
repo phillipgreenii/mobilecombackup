@@ -728,6 +728,15 @@ See [Git Workflow](docs/GIT_WORKFLOW.md) for complete commit standards and stagi
 
 ## Agent Tool Preferences
 
+### `extends:` / `additional-tools:` Are Not Real Frontmatter Fields
+
+Confirmed 2026-09-17 (tc-ijhxa): Claude Code's subagent loader does not support `extends:` or
+`additional-tools:` in agent frontmatter -- they are silently ignored, not an error. The only real
+tool-control fields are `tools:` (allowlist) and `disallowedTools:` (denylist); if `tools:` is
+omitted entirely, the agent inherits the full default tool set (including unrestricted Bash). Do
+not use `extends`/`additional-tools` to compose a tool list from `.claude/agents/templates/`; flatten
+the full resolved list directly into the agent's own `tools:` field instead.
+
 ### Required Agent Permissions
 
 The following agents require full access to all Serena MCP tools:

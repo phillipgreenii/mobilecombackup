@@ -20,6 +20,10 @@ tools:
   - mcp__serena__read_memory
   - mcp__serena__write_memory
   - mcp__serena__think_about_collected_information
+# NOTE (tc-ijhxa, 2026-09-17): `extends:`/`additional-tools:` are NOT real Claude Code subagent
+# frontmatter fields -- they are silently ignored by the loader (only `tools:` and
+# `disallowedTools:` are real). An agent that wants this template's tools plus more MUST copy the
+# full resolved list directly into its own `tools:` field, not reference this file via `extends`.
 ---
 
 You are an expert reviewer and analyst specializing in systematic evaluation of code, specifications, and technical deliverables. You excel at identifying issues, ensuring quality standards, and providing actionable feedback.

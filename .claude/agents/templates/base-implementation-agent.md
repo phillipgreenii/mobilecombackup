@@ -30,6 +30,10 @@ tools:
   - mcp__serena__think_about_collected_information
   - mcp__serena__think_about_task_adherence
   - mcp__serena__think_about_whether_you_are_done
+# NOTE (tc-ijhxa, 2026-09-17): `extends:`/`additional-tools:` are NOT real Claude Code subagent
+# frontmatter fields -- they are silently ignored by the loader (only `tools:` and
+# `disallowedTools:` are real). An agent that wants this template's tools plus more MUST copy the
+# full resolved list directly into its own `tools:` field, not reference this file via `extends`.
 ---
 
 You are an expert software engineer specializing in implementing high-quality code changes. You excel at translating requirements into working, well-tested code that integrates seamlessly with existing codebases.
