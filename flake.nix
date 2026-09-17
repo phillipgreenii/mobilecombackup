@@ -113,6 +113,37 @@
             filter = path: type: type == "directory" || pkgs.lib.hasSuffix ".nix" path;
             name = "mobilecombackup-nix-src";
           };
+
+          # tc-5lxy.10 (PRODUCER half): package this repo's .claude/ agents +
+          # commands as a Claude Code plugin + marketplace via nix-repo-base's
+          # lib.mkClaudeMarketplaceBuilders. Registration (consuming this
+          # package into `marketplaces.nixProvided`) is a SEPARATE bead
+          # (tc-5lxy.11, nix-agent-support) per the documented producer/
+          # consumer split -- nix-repo-base/docs/claude-marketplaces.md.
+          #
+          # Layout mirrors nix-agent-support's NESTED claude-marketplace/
+          # tree (flake.nix:668-671 there), not nix-repo-base's repo-root
+          # layout -- per this bead's own OPERATOR RULING notes, picked
+          # because it keeps the marketplace tree out of the Go module root.
+          #
+          # `src` is scoped to the dedicated ./claude-marketplace subtree
+          # (never `./.` / `self`) -- it contains ONLY the marketplace
+          # manifest + the one plugin dir and nothing else, so this is
+          # already the narrowed fileset the digest-scoping requirement
+          # calls for (same pattern nix-agent-support's own
+          # `agentSupportMarketplace` uses, not an enumerated
+          # `lib.fileset.unions` of individual files/dirs).
+          mobilecombackupMarketplace =
+            (phillipgreenii-nix-base.lib.mkClaudeMarketplaceBuilders {
+              inherit pkgs;
+              inherit (pkgs) lib;
+            }).mkClaudeMarketplace
+              {
+                src = pkgs.lib.fileset.toSource {
+                  root = ./claude-marketplace;
+                  fileset = ./claude-marketplace;
+                };
+              };
         in
         {
           # gomod2nix's overlay supplies pkgs.buildGoApplication, which mkGoBinary
@@ -180,6 +211,11 @@
 
             # Alias for explicit access
             mobilecombackup = config.packages.default;
+
+            # This repo's Claude Code marketplace (tc-5lxy.10, PRODUCER half).
+            # Consumed by nix-agent-support's `marketplaces.nixProvided` in a
+            # separate bead (tc-5lxy.11).
+            mobilecombackup-marketplace = mobilecombackupMarketplace;
           };
 
           # Applications for nix run

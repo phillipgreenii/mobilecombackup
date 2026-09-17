@@ -1,0 +1,6 @@
+{
+  "name": "mobilecombackup",
+  "description": "mobilecombackup's own agents (spec/implementation/test-strategy/technical-design review, implementation planning, product-doc sync) and commands (prepare-issue's 5-stage bd review pipeline, review-and-update-documentation, remember-anything-learned-this-session) for reuse outside this repo",
+  "version": "1.0.0",
+  "defaultEnabled": true
+}
