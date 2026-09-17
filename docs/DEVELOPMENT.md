@@ -387,15 +387,17 @@ $ devbox run validate-version
 
 ## Issue Development Workflow
 
-For complete issue development workflow, see [Issue Workflow](ISSUE_WORKFLOW.md).
+Issue tracking is `bd` (beads); the git-based `issues/` markdown tracker was retired by
+tc-5lxy.22. See the project [CLAUDE.md](../CLAUDE.md#issue-development-workflow) for the
+current workflow.
 
 ### Quick Reference
 
-1. **Create issue**: Use `/create-feature` or `/create-bug` commands
-2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
-3. **Ready issue**: Move to `issues/ready/` when planned
-4. **Implement**: Use `/implement-issue FEAT-XXX` command
-5. **Complete**: Updates move to `issues/completed/`
+1. **Create issue**: `bd create -t feature "title"` or `bd create -t bug "title"`
+2. **Groom issue**: bead-grooming skill, or `/prepare-issue <bd-id>` for the deeper 5-stage
+   review pipeline
+3. **Implement**: `/drain-beads`, or claim and work a bead directly
+4. **Complete**: `bd close <bd-id>` as part of landing the change
 
 ## Development Tools and Analysis
 

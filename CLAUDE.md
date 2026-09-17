@@ -26,30 +26,27 @@ devbox run build-cli      # Build CLI with version info
 
 ### Issue Workflow Commands
 
+Issue tracking is `bd` (beads), not the retired `issues/` markdown tracker (tc-5lxy.22).
+
 ```bash
 # Create issues
-/create-feature "description"    # Create new feature issue
-/create-bug "description"        # Create new bug issue
+bd create -t feature "description"   # Create new feature issue
+bd create -t bug "description"       # Create new bug issue
 
-# Prepare issues
-/review-issue FEAT-XXX           # Review issue specification
-/ready-issue FEAT-XXX            # Move to ready/ when complete
+# Groom / prepare issues
+# bead-grooming skill              # Single-pass backlog quality sweep
+/prepare-issue <bd-id>              # Deeper 5-stage review pipeline (spec/tech-design/test-strategy/impl-plan/final)
 
 # Implement issues
-/implement-issue FEAT-XXX        # Start implementation (moves to active/)
-
-# Batch operations
-/ready-backlog-issues            # Process all backlog issues
-/plan-and-implement-ready-issues # Implement all ready issues
+# /drain-beads                     # Autonomous claim -> implement -> validate -> land -> close loop
 ```
 
 ### File Locations Quick Reference
 
 - **Source code**: `pkg/` (Go packages) and `cmd/mobilecombackup/` (CLI)
 - **Documentation**: `docs/` (specialized docs) and `README.md` (overview)
-- **Issues**: `issues/{backlog,ready,active,completed}/`
-- **Templates**: `issues/{feature_template,bug_template}.md`
-- **Scripts**: `scripts/` and `issues/create-issue.sh`
+- **Issues**: tracked in `bd` (beads); `issues/completed/` holds the pre-beads historical archive only (read-only, do not edit)
+- **Scripts**: `scripts/`
 
 ## Environment Context
 
@@ -343,45 +340,25 @@ repository/
 
 ## Issue Development Workflow
 
-For complete issue development workflow, see [Issue Workflow](docs/ISSUE_WORKFLOW.md).
+Issue tracking is `bd` (beads) -- the git-based `issues/{backlog,ready,active}/` markdown
+tracker and its supporting commands/scripts were retired by tc-5lxy.22.
+`issues/completed/` still holds the pre-beads historical archive on disk until tc-5lxy.24
+imports it; it is read-only until then.
 
 ### Quick Reference
 
-1. **Create issue**: Use automation script or slash commands
-   - **Preferred**: `./issues/create-issue.sh FEATURE "title"` or `./issues/create-issue.sh BUG "title"`
-   - **Alternative**: `/create-feature` or `/create-bug` commands
-2. **Plan issue**: Fill details in `issues/backlog/FEAT-XXX.md`
-3. **Ready issue**: Move to `issues/ready/` when planned
-4. **Implement**: Use `/implement-issue FEAT-XXX` command
-5. **Complete**: Updates move to `issues/completed/`
-
-### Issue Creation Automation (FEAT-075)
-
-The project includes an automated issue creation script that reduces manual overhead:
-
-```bash
-# Create new feature issue
-./issues/create-issue.sh FEATURE "implement user authentication"
-# Creates: issues/backlog/FEAT-076-implement-user-authentication.md
-
-# Create new bug issue
-./issues/create-issue.sh BUG "validation fails on empty input"
-# Creates: issues/backlog/BUG-077-validation-fails-on-empty-input.md
-```
-
-**Benefits:**
-
-- Automatic sequential numbering across all issue types
-- Kebab-case title conversion with comprehensive error handling
-- Template copying and title replacement
-- Comprehensive validation and colorized feedback
-- Executes in under 1 second
+1. **Create issue**: `bd create -t feature "title"` or `bd create -t bug "title"`
+2. **Groom issue**: bead-grooming skill (single-pass) or `/prepare-issue <bd-id>` (deeper
+   5-stage review pipeline) once enough detail exists to work from
+3. **Implement**: `/drain-beads` (autonomous claim -> implement -> validate -> land -> close),
+   or claim and work a bead directly
+4. **Complete**: `bd close <bd-id>` as part of landing the change
 
 ## Documentation Rules
 
 ### Living Documentation
 
-- **issues/specification.md** is a **living representation** of the project
+- **docs/SPECIFICATION.md** is a **living representation** of the project
 - **MUST be updated** whenever documentation changes to match current system state
 - Serves as the single source of truth for current architecture and capabilities
 
@@ -395,7 +372,7 @@ The project includes an automated issue creation script that reduces manual over
 
 ### Documentation Update Workflow
 
-1. **Always review** `issues/specification.md` when updating docs
+1. **Always review** `docs/SPECIFICATION.md` when updating docs
 2. **Verify** code state matches documentation
 3. **Update** specification.md if system has evolved
 4. **Preserve** completed issues as historical records
@@ -522,7 +499,7 @@ When adding or updating documentation, use this decision tree:
 - **System architecture/design** → docs/ARCHITECTURE.md
 - **Git/commit standards** → docs/GIT_WORKFLOW.md
 - **Testing/quality workflows** → docs/VERIFICATION_WORKFLOW.md
-- **Issue management workflows** → docs/ISSUE_WORKFLOW.md
+- **Issue management workflows** → `bd` (beads); see this file's "Issue Development Workflow" section
 - **Other specialized topics** → Create appropriate docs/[TOPIC].md
 
 **Step 3: README.md Content Rules**
@@ -743,7 +720,6 @@ The following agents require full access to all Serena MCP tools:
 
 **Agents Requiring Serena MCP Access:**
 
-- `code-completion-verifier`
 - `spec-implementation-engineer`
 - `spec-review-engineer`
 
@@ -817,7 +793,6 @@ grep -r "Call" .
 - **Git Workflow**: `docs/GIT_WORKFLOW.md` - Commit rules and standards
 - **Task Completion**: `docs/TASK_COMPLETION.md` - Task completion requirements
 - **Common Fixes**: `docs/COMMON_FIXES.md` - Fix patterns for common issues
-- **Issue Workflow**: `docs/ISSUE_WORKFLOW.md` - Complete development lifecycle
 
 ### Project Documentation
 
@@ -825,9 +800,7 @@ grep -r "Call" .
 - **Troubleshooting**: `docs/TROUBLESHOOTING.md` - Test/lint failures and fixes
 - **Version Management**: `docs/VERSION_MANAGEMENT.md` - Release workflow
 - **Session Learnings**: `docs/SESSION_LEARNINGS.md` - Implementation insights
-- **Slash Commands**: `docs/SLASH_COMMANDS.md` - Available CLI commands
-- **Specification**: `issues/specification.md` - Detailed technical specs
-- **Next Steps**: `issues/next_steps.md` - Current priorities
+- **Specification**: `docs/SPECIFICATION.md` - Detailed technical specs
 
 ## Common Pitfalls and Anti-Patterns
 

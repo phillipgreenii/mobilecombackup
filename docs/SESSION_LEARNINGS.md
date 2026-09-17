@@ -45,7 +45,7 @@ This document captures implementation-specific learnings from various feature de
 
 ### Specification Maintenance
 
-- **Living Documentation**: Update `issues/specification.md` with each completed feature
+- **Living Documentation**: Update `docs/SPECIFICATION.md` with each completed feature
 - **API Documentation**: Include interface definitions and key features in specification
 - **Cross-Referencing**: Maintain links between completed features and specification sections
 
@@ -190,7 +190,7 @@ This document captures implementation-specific learnings from various feature de
 - **Exit Code Documentation**: Clearly document what each exit code means
 - **Flag Documentation**: Include all flags with examples
 - **Output Examples**: Show both success and failure output examples
-- **Specification Updates**: Add command details to issues/specification.md
+- **Specification Updates**: Add command details to docs/SPECIFICATION.md
 
 ### Test Coverage Expectations
 

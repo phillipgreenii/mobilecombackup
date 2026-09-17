@@ -2354,48 +2354,12 @@ This integration maintains the established quality workflow while adding compreh
 
 ## Issue Management and Automation
 
-### Issue Creation Automation (FEAT-075)
-
-The project includes an automated issue creation script that streamlines the development workflow by handling issue numbering, template selection, and file placement automatically.
-
-#### Script Location and Usage
-
-```bash
-# Script location
-./issues/create-issue.sh
-
-# Usage
-./issues/create-issue.sh TYPE TITLE
-
-# Examples
-./issues/create-issue.sh FEATURE "implement user authentication"
-./issues/create-issue.sh BUG "validation fails on empty input"
-```
-
-#### Key Features
-
-- **Automatic Sequential Numbering**: Scans all issue directories to find the next sequential number
-- **Cross-Type Numbering**: Supports both FEAT-XXX and BUG-XXX with unified numbering sequence
-- **Kebab-Case Conversion**: Automatically converts titles to proper kebab-case format
-- **Template Integration**: Copies appropriate templates and updates titles automatically
-- **Comprehensive Validation**: Validates inputs, templates, and environment before execution
-- **Colorized Output**: Provides clear success/error feedback with color coding
-
-#### Technical Implementation
-
-- **Octal Number Handling**: Fixed critical issue with leading zeros using `$((10#$current_num))` for proper base-10 conversion
-- **Hash-Based Deduplication**: Prevents file collisions with atomic file creation checks
-- **Error Resilience**: Comprehensive validation and error handling for all edge cases
-- **Performance**: Executes in under 1 second for typical repositories
-
-#### Integration with Development Workflow
-
-- **Agent Integration**: Preferred method for issue creation in Claude Code workflows
-- **Template Management**: Automatically handles feature_template.md and bug_template.md
-- **Directory Structure**: Places new issues in issues/backlog/ for standard workflow
-- **File Naming**: Generates consistent FEAT-XXX-kebab-title.md format
-
-This automation significantly reduces manual overhead and ensures consistency across issue creation while maintaining all quality standards.
+Issue tracking moved to `bd` (beads) in tc-5lxy.22. The FEAT-075 `issues/create-issue.sh`
+automation script, its templates, and the `issues/{backlog,ready,active}/` directory
+structure it managed are retired along with the rest of the git-based markdown tracker; see
+`bd create` and this project's CLAUDE.md "Issue Development Workflow" section for the current
+workflow. `issues/completed/` remains on disk as a historical archive until tc-5lxy.24 imports
+it into `bd`.
 
 ## Dependency Management (FEAT-074)
 
