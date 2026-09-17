@@ -1,17 +1,13 @@
 # mobilecombackup justfile — translated from devbox.json's shell.scripts
 # (tc-5lxy.8). Recipes stay thin; heavy logic stays in scripts/*.
 #
-# just's default shell is `sh -cu`, which breaks list-issues' brace
-# expansion under dash (e.g. ubuntu-latest). Force bash for every recipe.
+# just's default shell is `sh -cu`, which several recipes below rely on
+# bash for (e.g. full-test.sh's bash-only `[[ ]]`). Force bash for every
+# recipe.
 set shell := ["bash", "-cu"]
 
 default:
     @just --list
-
-# --- issue tracker (retired by tc-5lxy.22; kept until then) ---
-
-list-issues:
-    ls -1 issues/{active,ready,backlog}
 
 # --- format / build / test / lint ---
 

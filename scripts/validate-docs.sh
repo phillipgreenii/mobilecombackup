@@ -121,7 +121,6 @@ print_header "Validating scripts"
 SCRIPTS=(
   "scripts/build-version.sh"
   "scripts/validate-version.sh"
-  "issues/create-issue.sh"
 )
 
 for script in "${SCRIPTS[@]}"; do
