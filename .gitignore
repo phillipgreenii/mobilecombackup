@@ -30,6 +30,10 @@ mobilecombackup
 .serena/
 .beads/
 
+# bd/pb gate lock file (stray empty lock left by pb gate; causes spurious
+# dirty-tree failures for ff-merge-to-main landing)
+.beads.gate.lock
+
 #########
 # PYTHON
 #
