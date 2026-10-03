@@ -51,17 +51,6 @@
         phillipgreenii-nix-base.flakeModules.devshell
       ];
 
-      # issues/** is DECIDED excluded (not deferred) from both treefmt and
-      # pre-commit: this repo's own CLAUDE.md "Completed Issues Policy" says
-      # completed issues MUST NOT be modified except for cross-references and
-      # typos, and a whole-file prettier rewrite would violate that (92 of the
-      # 162 prettier-in-scope files live under issues/). See tc-5lxy.5's
-      # OPERATOR RULING note: this is INTERIM until the issue tracker migrates
-      # to beads, at which point the exclusion becomes moot.
-      phillipgreenii.pre-commit = {
-        excludes = [ "^issues/" ];
-      };
-
       perSystem =
         {
           pkgs,
@@ -344,12 +333,6 @@
             formatting = checksHelpers.formatting nixSrc;
           };
 
-          # issues/** is DECIDED excluded from treefmt too (see the top-level
-          # `phillipgreenii.pre-commit.excludes` comment for the full rationale
-          # -- Completed Issues Policy in this repo's own CLAUDE.md).
-          treefmt.settings = {
-            global.excludes = [ "issues/**" ];
-          };
         };
     };
 }
