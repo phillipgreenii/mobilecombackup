@@ -33,6 +33,10 @@ schema = 3
     version = 'v0.0.0-20191010083416-a7dc8b61c822'
     hash = 'sha256-79URDDFenmGc9JZu+5AXHToMrtTREHb3BC84b/gym9Q='
 
+  [mod.'github.com/pandatix/go-abnf']
+    version = 'v0.5.5'
+    hash = 'sha256-HTxLPMqTr7q4SRTXBEBtXfNpOENm0e0EJh6zFn22hQQ='
+
   [mod.'github.com/pelletier/go-toml/v2']
     version = 'v2.4.3'
     hash = 'sha256-CyCjKBN+zUciGhQiaFpq54qv+NDITcuh5U2HmjArow4='
@@ -46,8 +50,8 @@ schema = 3
     hash = 'sha256-uYXpFkXMT4AXWJShrCRnu51vhGQAuAU3LFQhhGVJ+74='
 
   [mod.'github.com/prometheus/common']
-    version = 'v0.72.1'
-    hash = 'sha256-0HGlQuuDqW7bp7NNSa5Wp+jh98T6rwpB1n1fzjEhgQQ='
+    version = 'v0.73.1'
+    hash = 'sha256-giSwpD4bQweEAr8IaaQB/gDF9IT/6WtDNQrcAjHFR9U='
 
   [mod.'github.com/prometheus/procfs']
     version = 'v0.23.0'
@@ -86,8 +90,8 @@ schema = 3
     hash = 'sha256-LspbjTniiq2xAICSXmgqP7carwlNaLqnCTQfw2pa80A='
 
   [mod.'go.yaml.in/yaml/v3']
-    version = 'v3.0.5'
-    hash = 'sha256-ygho+GU5kE7vPMx+dZYyNfCaeMjNxj66XmrcVf3afFE='
+    version = 'v3.0.6'
+    hash = 'sha256-4XBaZyVp0pU1FzRY+M/juXISzENKJ+v189aVvU0mvqM='
 
   [mod.'golang.org/x/sys']
     version = 'v0.49.0'
