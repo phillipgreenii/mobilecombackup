@@ -50,8 +50,8 @@ schema = 3
     hash = 'sha256-uYXpFkXMT4AXWJShrCRnu51vhGQAuAU3LFQhhGVJ+74='
 
   [mod.'github.com/prometheus/common']
-    version = 'v0.73.1'
-    hash = 'sha256-giSwpD4bQweEAr8IaaQB/gDF9IT/6WtDNQrcAjHFR9U='
+    version = 'v0.74.0'
+    hash = 'sha256-E8O4VKQMzEcDWF/qqlmHwA62Df2jKIlSnEq9AnQO2DE='
 
   [mod.'github.com/prometheus/procfs']
     version = 'v0.23.0'
@@ -78,8 +78,8 @@ schema = 3
     hash = 'sha256-nbRCTFiDCC2jKK7AHi79n7urYCMP5yDZnWtNVJrDi+k='
 
   [mod.'github.com/spf13/pflag']
-    version = 'v1.0.10'
-    hash = 'sha256-uDPnWjHpSrzXr17KEYEA1yAbizfcsfo5AyztY2tS6ZU='
+    version = 'v1.1.0'
+    hash = 'sha256-B7mjsUWaV/ltrpt8mGFyqeLQBpRd7Xcif019pAjWv+w='
 
   [mod.'github.com/spf13/viper']
     version = 'v1.21.0'
@@ -94,12 +94,12 @@ schema = 3
     hash = 'sha256-4XBaZyVp0pU1FzRY+M/juXISzENKJ+v189aVvU0mvqM='
 
   [mod.'golang.org/x/sys']
-    version = 'v0.49.0'
-    hash = 'sha256-/1S3yy3in72ygZT1CKymvOzJZqCMYiGSqZDfvSyB3LI='
+    version = 'v0.50.0'
+    hash = 'sha256-3T1I5T5pgbQBxRhN9Q2Ajvsy1kJW9WM/uddR9cOUVNA='
 
   [mod.'golang.org/x/text']
-    version = 'v0.43.0'
-    hash = 'sha256-gykmMKFe61Tc4tblLPd3IyMKCqL0MSTQpgb6yE5EnDA='
+    version = 'v0.44.0'
+    hash = 'sha256-dTeEJZSwSLJ5jumnR+JjT4gSpXW6E22IxT0aCrcf2vQ='
 
   [mod.'google.golang.org/protobuf']
     version = 'v1.36.12'
